@@ -9,13 +9,16 @@ Depends on:
 - `docs/formula-balance/03-family-taxonomy-and-viability.md`
 Review: Approved by Claude on 2026-06-20 after incorporating discriminating routine tests,
 Formula/X/Y proof, noise controls, and the future formula simulation gate.
+Amended: 2026-06-20, approved by Claude, to clarify that proof failures block final numeric and
+implementation acceptance, not high-level formula planning.
 
 ## Purpose
 
 This plan defines the next required Windows-machine validation session before concrete formula
-numbers are designed.
+numbers are finalized for implementation.
 
-The project now has accepted conceptual guidance, but formula implementation still depends on
+The project now has accepted conceptual guidance, and combat-formula design may continue while
+this proof work is pending. Formula implementation and final numeric acceptance still depend on
 proof. This plan aims to close the biggest evidence gaps in one focused session:
 
 1. Capture baseline weapon data.
@@ -24,7 +27,9 @@ proof. This plan aims to close the biggest evidence gaps in one focused session:
 4. Prove whether `OverrideAbilityActionData.Formula/X/Y` affect damage, not only CT/MP/range.
 5. Optionally confirm runtime struct offsets if Tier-2 work becomes necessary.
 
-No concrete formula set should be accepted before these checks are complete or explicitly waived.
+No concrete formula set should be implemented or treated as final before these checks are
+complete or explicitly waived. Conceptual formula architecture, family identity, and simulation
+drafts may proceed before this proof session.
 
 ## Machine Requirement
 
@@ -132,7 +137,9 @@ Decision impact:
 
 ```text
 Success: proceed to weapon Formula and ability Formula/X/Y proof.
-Failure: stop and debug the data merge pipeline before formula design.
+Failure: stop implementation proof and debug the data merge pipeline before relying on data-only
+formula edits. Conceptual formula design may continue, but must be labeled unproven for
+implementation.
 ```
 
 Proof labels after success:
@@ -251,9 +258,9 @@ Decision impact:
 
 ```text
 Success: Tier-1 ability formula and skillset identity work can proceed.
-Failure: stop formula design; Formula/X/Y override may not be consumed for damage. Re-scope the
-palette/taxonomy to CT/MP/range/element/status plus weapon routine, or move formula work to Tier
-2.
+Failure: stop treating Formula/X/Y as an available Tier-1 damage lever. Conceptual formula design
+may continue, but implementation planning must re-scope the palette/taxonomy to
+CT/MP/range/element/status plus weapon routine, or move formula work to Tier 2.
 ```
 
 Proof labels after success:
@@ -314,7 +321,7 @@ After the Windows session:
 
 ## Stop Conditions
 
-Stop and debug before designing formulas if:
+Stop and debug before finalizing implementation formulas if:
 
 - `dump_weapons.py` cannot find `ItemWeaponData.xml`;
 - the mod loader does not apply changed data;
@@ -322,6 +329,10 @@ Stop and debug before designing formulas if:
 - CT/MP smoke-test ability overrides do not affect in-game behavior;
 - ability `Formula`, `X`, or `Y` overrides do not affect damage;
 - the running game version differs from the documented target in a way that changes data schemas.
+
+These stop conditions do not block high-level formula planning, architecture discussion, or
+simulation drafts that assume full attacker/target access. They block final implementation claims
+and concrete numeric acceptance.
 
 ## Future Formula Simulation Gate
 
