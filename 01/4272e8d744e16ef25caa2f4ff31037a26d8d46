@@ -1,0 +1,20 @@
+docs/formula-balance/08-scenario-set-v0.md
+  s_fce6b25a5764ca::t_7746d5da84e8b8 1-2,4-15,18-48,53-54,56,59-60,64,66-246
+  s_fce6b25a5764ca::t_2b92d4382d42bf 3,16-17,49-52,55,57-58,61-63,65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "014272e8d744e16ef25caa2f4ff31037a26d8d46",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
