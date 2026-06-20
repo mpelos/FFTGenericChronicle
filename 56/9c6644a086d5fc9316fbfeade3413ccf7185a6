@@ -1,0 +1,20 @@
+docs/formula-balance/07-player-feedback-signals.md
+  s_fce6b25a5764ca::t_44471965df28f8 1-2,4-9,11-235
+  s_fce6b25a5764ca::t_69308be5fa0775 3,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "569c6644a086d5fc9316fbfeade3413ccf7185a6",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
