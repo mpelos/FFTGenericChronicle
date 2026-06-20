@@ -3,6 +3,7 @@ tools/*
 !tools/entd_tool.py
 !tools/guest_scan.py
 !tools/dump_baseline.py
+!tools/dump_weapons.py
 !tools/map_battle_data.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
