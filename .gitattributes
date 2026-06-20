@@ -1,0 +1,33 @@
+# Normalize line endings: git stores text as LF, checks out per the rules below.
+* text=auto
+
+# Source / docs / data -> LF
+*.py    text eol=lf
+*.cs    text eol=lf
+*.csproj text eol=lf
+*.targets text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.csv   text eol=lf
+*.xml   text eol=lf
+*.sh    text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Windows scripts -> CRLF (so they behave when double-clicked)
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary assets (never normalize / never diff as text)
+*.png   binary
+*.bin   binary
+*.nxd   binary
+*.pac   binary
+*.sqlite binary
+*.dll   binary
+*.exe   binary
+*.pdb   binary
+*.tex   binary
+*.zip   binary
+*.7z    binary
