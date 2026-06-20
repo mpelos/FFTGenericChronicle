@@ -4,6 +4,8 @@ Status: Accepted
 Date: 2026-06-20
 Owner: GPT-5 writes; Claude reviews and must approve before accepted guidance changes.
 Review: Approved by Claude on 2026-06-20.
+Amended: 2026-06-20, approved by Claude, to clarify that Tier labels describe cost and proof
+risk, not creative vetoes.
 
 ## Purpose
 
@@ -150,7 +152,10 @@ These are process gates, not balance hard rules:
 - No numeric formula set becomes final until the relevant data path or hook path is proven.
 - No weapon-family taxonomy becomes final until the weapon data baseline is captured or its
   absence is explicitly accepted as a risk.
-- Tier-1 is the baseline implementation target until a Tier-2 hook is proven.
+- Tier 1 is the lower-risk path and the default when two designs are otherwise equivalent.
+- Tier 2 and deeper engine changes are fully available when justified by the design goal.
+- Tier labels document implementation cost, uncertainty, and proof requirements. They do not
+  veto ambition by themselves.
 - GURPS and any other external system are references only. They can suggest useful models, but
   they do not override FFT feel, readability, or balance.
 - A Claude approval is required before moving a document from proposed guidance to accepted
