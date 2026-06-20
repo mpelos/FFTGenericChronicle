@@ -1,0 +1,29 @@
+docs/formula-balance/04-proof-and-baseline-plan.md
+  s_fce6b25a5764ca::t_90a08647b5c7b6 331,334
+  s_fce6b25a5764ca::t_c33ad91bfe1e3b 216,218-219,221-223,226-231,238-245,254-256
+  s_fce6b25a5764ca::t_81fe4eaf709350 3,10-11,22-25
+  s_fce6b25a5764ca::t_d62f331f15a087 1-2,4-9,12-21,26-92,147-154,157-159,161,177-190,196-215,217,220,224-225,232-237,246-253,257-266,268-303,305-321,324,360-367
+  s_fce6b25a5764ca::t_8f6fca5f8f90e1 155-156,160,162-176,191-195
+  s_fce6b25a5764ca::t_e1308caa96f750 332-333,356-357
+  s_fce6b25a5764ca::t_35edfe7df4d223 93-146
+  s_fce6b25a5764ca::t_882a94dc5949b8 267,304,322-323,325-330,335-355,358-359
+docs/formula-balance/05-formula-proposal-protocol.md
+  s_fce6b25a5764ca::t_90a08647b5c7b6 1-2,4-10,13-78,82-98,100-149,151,154-162,179,182-199,201,203-210
+  s_fce6b25a5764ca::t_acbcb14ca9dcf2 3,11-12,79-81,99,150,152-153,163-178,180-181,200,202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "7094fa08312b839bbaa507f656a25709cf6c9853",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
