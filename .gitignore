@@ -5,6 +5,7 @@ tools/*
 !tools/dump_baseline.py
 !tools/dump_weapons.py
 !tools/map_battle_data.py
+!tools/sim_damage.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/
@@ -31,5 +32,7 @@ Desktop.ini
 *.tmp
 *.swp
 .DS_Store
+__pycache__/
+*.pyc
 .vscode/
 .idea/

@@ -1,0 +1,924 @@
+{
+  "version": "sim-inputs-v0.2",
+  "provenance": {
+    "multipliers_stats": "verified-local (work/baseline_jobs.csv, block 74-92)",
+    "raw_bases": "WotL-fallback (no IVC level curve)",
+    "weapon_wp": "WotL-fallback / design-provisional (work/baseline_weapons.csv empty)",
+    "armor_response": "design-provisional starting buckets (sim tunes)",
+    "result_class": "conceptually viable, pending verified-baseline re-sim",
+    "tuning": "v0.2 (Claude): phase WP scalar (scale_band), Two Hands x1.8 ceiling (Q4), F2-lite magic faith floor 0.60 (Q5, fixes magic coexistence + documented magic-weakness); keeps v0.1 family changes"
+  },
+  "stat_model": "effective = round(raw_base[band] * multiplier / 100)",
+  "phase_bands": {
+    "early": {
+      "pa": 5,
+      "ma": 5,
+      "spd": 6,
+      "hp_raw": 150
+    },
+    "mid": {
+      "pa": 8,
+      "ma": 8,
+      "spd": 7,
+      "hp_raw": 280
+    },
+    "late": {
+      "pa": 10,
+      "ma": 10,
+      "spd": 8,
+      "hp_raw": 430
+    },
+    "stress": {
+      "pa": 12,
+      "ma": 12,
+      "spd": 9,
+      "hp_raw": 520
+    }
+  },
+  "routines": {
+    "pa_wp": "PA*WP",
+    "br_pa_wp": "floor(PA*Br/100)*WP",
+    "spd_pa_wp": "floor((PA+SPD)/2)*WP",
+    "ma_wp": "MA*WP",
+    "rdm_pa_wp": "Rdm(1..PA)*WP  (expected=(PA+1)/2*WP)",
+    "wp_wp": "WP*WP",
+    "br_pa_pa": "floor(PA*Br/100)*PA",
+    "pampa_wp": "floor((PA+MA)/2)*WP"
+  },
+  "families": {
+    "sword": {
+      "routine": "pa_wp",
+      "damage_type": "swing",
+      "wp": 16,
+      "penetration": 0.0
+    },
+    "knight_sword": {
+      "routine": "br_pa_wp",
+      "damage_type": "swing",
+      "wp": 20,
+      "penetration": 0.0
+    },
+    "katana": {
+      "routine": "br_pa_wp",
+      "damage_type": "swing",
+      "wp": 18,
+      "penetration": 0.0
+    },
+    "knife": {
+      "routine": "spd_pa_wp",
+      "damage_type": "thrust",
+      "wp": 12,
+      "penetration": 0.1
+    },
+    "ninja_blade": {
+      "routine": "spd_pa_wp",
+      "damage_type": "swing",
+      "wp": 13,
+      "penetration": 0.0
+    },
+    "longbow": {
+      "routine": "spd_pa_wp",
+      "damage_type": "missile",
+      "wp": 15,
+      "penetration": 0.15
+    },
+    "crossbow": {
+      "routine": "pa_wp",
+      "damage_type": "missile",
+      "wp": 14,
+      "penetration": 0.35
+    },
+    "gun": {
+      "routine": "wp_wp",
+      "damage_type": "missile",
+      "wp": 12,
+      "penetration": 0.7
+    },
+    "spear": {
+      "routine": "pa_wp",
+      "damage_type": "thrust",
+      "wp": 15,
+      "penetration": 0.1
+    },
+    "staff": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 14,
+      "penetration": 0.0
+    },
+    "rod": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 10,
+      "penetration": 0.0
+    },
+    "pole": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 13,
+      "penetration": 0.0
+    },
+    "axe": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 20,
+      "penetration": 0.0
+    },
+    "flail": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 24,
+      "penetration": 0.0
+    },
+    "fists": {
+      "routine": "br_pa_pa",
+      "damage_type": "crush",
+      "wp": 0,
+      "penetration": 0.15
+    },
+    "instrument": {
+      "routine": "pampa_wp",
+      "damage_type": "missile",
+      "wp": 10,
+      "penetration": 0.0
+    },
+    "book": {
+      "routine": "pampa_wp",
+      "damage_type": "crush",
+      "wp": 15,
+      "penetration": 0.0
+    },
+    "cloth_weapon": {
+      "routine": "pampa_wp",
+      "damage_type": "swing",
+      "wp": 14,
+      "penetration": 0.0
+    },
+    "bag": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 20,
+      "penetration": 0.0
+    }
+  },
+  "armor_response": {
+    "plate": {
+      "swing": 0.65,
+      "thrust": 0.65,
+      "crush": 1.15,
+      "missile": 0.8
+    },
+    "mail": {
+      "swing": 0.75,
+      "thrust": 1.1,
+      "crush": 0.95,
+      "missile": 1.1
+    },
+    "leather": {
+      "swing": 0.95,
+      "thrust": 0.95,
+      "crush": 1.0,
+      "missile": 0.95
+    },
+    "cloth": {
+      "swing": 1.0,
+      "thrust": 1.0,
+      "crush": 1.0,
+      "missile": 1.0
+    }
+  },
+  "magic": {
+    "routine": "K*MA*max(faith_floor,(CFa/100)*(TFa/100))",
+    "sample_spells": {
+      "low": 14,
+      "mid": 20,
+      "high": 26
+    },
+    "shell_multiplier": 0.667,
+    "note": "magic ignores physical armor class; mitigated by Shell, element, target Faith.",
+    "faith_factor_floor": 0.6
+  },
+  "calc": {
+    "pipeline": "pressure(routine) -> x type_response(with penetration) -> x protect/shell -> x element -> x zodiac -> clamp -> floor (chip_floor)",
+    "operation_order": [
+      "type_response",
+      "protect_shell",
+      "element",
+      "zodiac"
+    ],
+    "penetration_ceiling": 1.1,
+    "penetration_formula": "eff_resp = base + pen*(ceiling-base) if base<ceiling else base",
+    "combined_multiplier_clamp": [
+      0.25,
+      2.5
+    ],
+    "chip_floor": 1,
+    "protect_multiplier": 0.667,
+    "zodiac": {
+      "good": 1.25,
+      "neutral": 1.0,
+      "bad": 0.75
+    },
+    "default_brave": 70,
+    "default_faith": 70,
+    "phase_wp_scalar": {
+      "early": 0.5,
+      "mid": 0.75,
+      "late": 1.0,
+      "stress": 1.0
+    }
+  },
+  "jobs": {
+    "Squire": {
+      "job_id": 74,
+      "armor_class": "mail",
+      "multipliers": {
+        "hp": 100,
+        "spd": 100,
+        "pa": 90,
+        "ma": 80
+      },
+      "bands": {
+        "early": {
+          "hp": 150,
+          "pa": 4,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 280,
+          "pa": 7,
+          "ma": 6,
+          "spd": 7
+        },
+        "late": {
+          "hp": 430,
+          "pa": 9,
+          "ma": 8,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 520,
+          "pa": 11,
+          "ma": 10,
+          "spd": 9
+        }
+      }
+    },
+    "Chemist": {
+      "job_id": 75,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 80,
+        "spd": 100,
+        "pa": 75,
+        "ma": 80
+      },
+      "bands": {
+        "early": {
+          "hp": 120,
+          "pa": 4,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 224,
+          "pa": 6,
+          "ma": 6,
+          "spd": 7
+        },
+        "late": {
+          "hp": 344,
+          "pa": 8,
+          "ma": 8,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 416,
+          "pa": 9,
+          "ma": 10,
+          "spd": 9
+        }
+      }
+    },
+    "Knight": {
+      "job_id": 76,
+      "armor_class": "plate",
+      "multipliers": {
+        "hp": 120,
+        "spd": 100,
+        "pa": 120,
+        "ma": 80
+      },
+      "bands": {
+        "early": {
+          "hp": 180,
+          "pa": 6,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 336,
+          "pa": 10,
+          "ma": 6,
+          "spd": 7
+        },
+        "late": {
+          "hp": 516,
+          "pa": 12,
+          "ma": 8,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 624,
+          "pa": 14,
+          "ma": 10,
+          "spd": 9
+        }
+      }
+    },
+    "Archer": {
+      "job_id": 77,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 100,
+        "spd": 100,
+        "pa": 110,
+        "ma": 80
+      },
+      "bands": {
+        "early": {
+          "hp": 150,
+          "pa": 6,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 280,
+          "pa": 9,
+          "ma": 6,
+          "spd": 7
+        },
+        "late": {
+          "hp": 430,
+          "pa": 11,
+          "ma": 8,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 520,
+          "pa": 13,
+          "ma": 10,
+          "spd": 9
+        }
+      }
+    },
+    "Monk": {
+      "job_id": 78,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 135,
+        "spd": 110,
+        "pa": 129,
+        "ma": 80
+      },
+      "bands": {
+        "early": {
+          "hp": 202,
+          "pa": 6,
+          "ma": 4,
+          "spd": 7
+        },
+        "mid": {
+          "hp": 378,
+          "pa": 10,
+          "ma": 6,
+          "spd": 8
+        },
+        "late": {
+          "hp": 580,
+          "pa": 13,
+          "ma": 8,
+          "spd": 9
+        },
+        "stress": {
+          "hp": 702,
+          "pa": 15,
+          "ma": 10,
+          "spd": 10
+        }
+      }
+    },
+    "White Mage": {
+      "job_id": 79,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 80,
+        "spd": 110,
+        "pa": 90,
+        "ma": 110
+      },
+      "bands": {
+        "early": {
+          "hp": 120,
+          "pa": 4,
+          "ma": 6,
+          "spd": 7
+        },
+        "mid": {
+          "hp": 224,
+          "pa": 7,
+          "ma": 9,
+          "spd": 8
+        },
+        "late": {
+          "hp": 344,
+          "pa": 9,
+          "ma": 11,
+          "spd": 9
+        },
+        "stress": {
+          "hp": 416,
+          "pa": 11,
+          "ma": 13,
+          "spd": 10
+        }
+      }
+    },
+    "Black Mage": {
+      "job_id": 80,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 75,
+        "spd": 100,
+        "pa": 60,
+        "ma": 150
+      },
+      "bands": {
+        "early": {
+          "hp": 112,
+          "pa": 3,
+          "ma": 8,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 210,
+          "pa": 5,
+          "ma": 12,
+          "spd": 7
+        },
+        "late": {
+          "hp": 322,
+          "pa": 6,
+          "ma": 15,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 390,
+          "pa": 7,
+          "ma": 18,
+          "spd": 9
+        }
+      }
+    },
+    "Time Mage": {
+      "job_id": 81,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 75,
+        "spd": 100,
+        "pa": 50,
+        "ma": 130
+      },
+      "bands": {
+        "early": {
+          "hp": 112,
+          "pa": 2,
+          "ma": 6,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 210,
+          "pa": 4,
+          "ma": 10,
+          "spd": 7
+        },
+        "late": {
+          "hp": 322,
+          "pa": 5,
+          "ma": 13,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 390,
+          "pa": 6,
+          "ma": 16,
+          "spd": 9
+        }
+      }
+    },
+    "Summoner": {
+      "job_id": 82,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 70,
+        "spd": 90,
+        "pa": 50,
+        "ma": 125
+      },
+      "bands": {
+        "early": {
+          "hp": 105,
+          "pa": 2,
+          "ma": 6,
+          "spd": 5
+        },
+        "mid": {
+          "hp": 196,
+          "pa": 4,
+          "ma": 10,
+          "spd": 6
+        },
+        "late": {
+          "hp": 301,
+          "pa": 5,
+          "ma": 12,
+          "spd": 7
+        },
+        "stress": {
+          "hp": 364,
+          "pa": 6,
+          "ma": 15,
+          "spd": 8
+        }
+      }
+    },
+    "Thief": {
+      "job_id": 83,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 90,
+        "spd": 110,
+        "pa": 100,
+        "ma": 60
+      },
+      "bands": {
+        "early": {
+          "hp": 135,
+          "pa": 5,
+          "ma": 3,
+          "spd": 7
+        },
+        "mid": {
+          "hp": 252,
+          "pa": 8,
+          "ma": 5,
+          "spd": 8
+        },
+        "late": {
+          "hp": 387,
+          "pa": 10,
+          "ma": 6,
+          "spd": 9
+        },
+        "stress": {
+          "hp": 468,
+          "pa": 12,
+          "ma": 7,
+          "spd": 10
+        }
+      }
+    },
+    "Orator": {
+      "job_id": 84,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 80,
+        "spd": 100,
+        "pa": 75,
+        "ma": 75
+      },
+      "bands": {
+        "early": {
+          "hp": 120,
+          "pa": 4,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 224,
+          "pa": 6,
+          "ma": 6,
+          "spd": 7
+        },
+        "late": {
+          "hp": 344,
+          "pa": 8,
+          "ma": 8,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 416,
+          "pa": 9,
+          "ma": 9,
+          "spd": 9
+        }
+      }
+    },
+    "Mystic": {
+      "job_id": 85,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 75,
+        "spd": 100,
+        "pa": 50,
+        "ma": 120
+      },
+      "bands": {
+        "early": {
+          "hp": 112,
+          "pa": 2,
+          "ma": 6,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 210,
+          "pa": 4,
+          "ma": 10,
+          "spd": 7
+        },
+        "late": {
+          "hp": 322,
+          "pa": 5,
+          "ma": 12,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 390,
+          "pa": 6,
+          "ma": 14,
+          "spd": 9
+        }
+      }
+    },
+    "Geomancer": {
+      "job_id": 86,
+      "armor_class": "mail",
+      "multipliers": {
+        "hp": 110,
+        "spd": 100,
+        "pa": 110,
+        "ma": 105
+      },
+      "bands": {
+        "early": {
+          "hp": 165,
+          "pa": 6,
+          "ma": 5,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 308,
+          "pa": 9,
+          "ma": 8,
+          "spd": 7
+        },
+        "late": {
+          "hp": 473,
+          "pa": 11,
+          "ma": 10,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 572,
+          "pa": 13,
+          "ma": 13,
+          "spd": 9
+        }
+      }
+    },
+    "Dragoon": {
+      "job_id": 87,
+      "armor_class": "plate",
+      "multipliers": {
+        "hp": 120,
+        "spd": 100,
+        "pa": 120,
+        "ma": 50
+      },
+      "bands": {
+        "early": {
+          "hp": 180,
+          "pa": 6,
+          "ma": 2,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 336,
+          "pa": 10,
+          "ma": 4,
+          "spd": 7
+        },
+        "late": {
+          "hp": 516,
+          "pa": 12,
+          "ma": 5,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 624,
+          "pa": 14,
+          "ma": 6,
+          "spd": 9
+        }
+      }
+    },
+    "Samurai": {
+      "job_id": 88,
+      "armor_class": "mail",
+      "multipliers": {
+        "hp": 75,
+        "spd": 100,
+        "pa": 128,
+        "ma": 90
+      },
+      "bands": {
+        "early": {
+          "hp": 112,
+          "pa": 6,
+          "ma": 4,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 210,
+          "pa": 10,
+          "ma": 7,
+          "spd": 7
+        },
+        "late": {
+          "hp": 322,
+          "pa": 13,
+          "ma": 9,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 390,
+          "pa": 15,
+          "ma": 11,
+          "spd": 9
+        }
+      }
+    },
+    "Ninja": {
+      "job_id": 89,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 70,
+        "spd": 120,
+        "pa": 122,
+        "ma": 75
+      },
+      "bands": {
+        "early": {
+          "hp": 105,
+          "pa": 6,
+          "ma": 4,
+          "spd": 7
+        },
+        "mid": {
+          "hp": 196,
+          "pa": 10,
+          "ma": 6,
+          "spd": 8
+        },
+        "late": {
+          "hp": 301,
+          "pa": 12,
+          "ma": 8,
+          "spd": 10
+        },
+        "stress": {
+          "hp": 364,
+          "pa": 15,
+          "ma": 9,
+          "spd": 11
+        }
+      }
+    },
+    "Arithmetician": {
+      "job_id": 90,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 65,
+        "spd": 50,
+        "pa": 50,
+        "ma": 70
+      },
+      "bands": {
+        "early": {
+          "hp": 98,
+          "pa": 2,
+          "ma": 4,
+          "spd": 3
+        },
+        "mid": {
+          "hp": 182,
+          "pa": 4,
+          "ma": 6,
+          "spd": 4
+        },
+        "late": {
+          "hp": 280,
+          "pa": 5,
+          "ma": 7,
+          "spd": 4
+        },
+        "stress": {
+          "hp": 338,
+          "pa": 6,
+          "ma": 8,
+          "spd": 4
+        }
+      }
+    },
+    "Bard": {
+      "job_id": 91,
+      "armor_class": "cloth",
+      "multipliers": {
+        "hp": 55,
+        "spd": 100,
+        "pa": 30,
+        "ma": 115
+      },
+      "bands": {
+        "early": {
+          "hp": 82,
+          "pa": 2,
+          "ma": 6,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 154,
+          "pa": 2,
+          "ma": 9,
+          "spd": 7
+        },
+        "late": {
+          "hp": 236,
+          "pa": 3,
+          "ma": 12,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 286,
+          "pa": 4,
+          "ma": 14,
+          "spd": 9
+        }
+      }
+    },
+    "Dancer": {
+      "job_id": 92,
+      "armor_class": "leather",
+      "multipliers": {
+        "hp": 60,
+        "spd": 100,
+        "pa": 110,
+        "ma": 95
+      },
+      "bands": {
+        "early": {
+          "hp": 90,
+          "pa": 6,
+          "ma": 5,
+          "spd": 6
+        },
+        "mid": {
+          "hp": 168,
+          "pa": 9,
+          "ma": 8,
+          "spd": 7
+        },
+        "late": {
+          "hp": 258,
+          "pa": 11,
+          "ma": 10,
+          "spd": 8
+        },
+        "stress": {
+          "hp": 312,
+          "pa": 13,
+          "ma": 11,
+          "spd": 9
+        }
+      }
+    }
+  },
+  "stress_engines": {
+    "two_hands": 1.8,
+    "two_swords_hits": 2,
+    "attack_boost": 1.3333333333333333,
+    "high_brave": 97,
+    "accuracy_evasive_hitrate": 0.75
+  }
+}
