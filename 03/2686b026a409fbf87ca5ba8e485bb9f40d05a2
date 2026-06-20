@@ -1,0 +1,23 @@
+docs/formula-balance/06-damage-spec-v0.md
+  s_fce6b25a5764ca::t_79d3f4ba7273b5 187,249-250,360,363,365-367
+  s_fce6b25a5764ca::t_3a378f68bce559 421,423-426
+  s_fce6b25a5764ca::t_c98ce6e5683e05 1-2,4-14,16-116,118-186,188-248,251-256,258-264,269-359,361-362,364,368-420,422,427-432
+  s_fce6b25a5764ca::t_5c9b4fb7ddbd3f 117,257,265-268
+  s_fce6b25a5764ca::t_ee9eb162f8c1e6 3,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "032686b026a409fbf87ca5ba8e485bb9f40d05a2",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
