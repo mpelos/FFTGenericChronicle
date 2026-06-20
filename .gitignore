@@ -1,0 +1,34 @@
+# === Third-party tools / downloads (large, not our source) ===
+tools/*
+!tools/entd_tool.py
+!tools/guest_scan.py
+!tools/dump_baseline.py
+!tools/map_battle_data.py
+
+# === Unpacked game data (copyrighted, regenerated) ===
+work/modded_unpack/
+
+# === Raw extracted game data (copyrighted) and backups of game files ===
+extracted/
+backups/
+
+# === Large derived data dumps (regenerated from the game) ===
+work/*.sqlite
+work/nxd_extract/
+work/ability_en/
+work/nxd_more/
+work/nxd_out/
+
+# === .NET build output (Reloaded-II code mod) ===
+codemod/**/bin/
+codemod/**/obj/
+
+# === OS / editor cruft ===
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.tmp
+*.swp
+.DS_Store
+.vscode/
+.idea/

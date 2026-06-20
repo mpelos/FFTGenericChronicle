@@ -1,0 +1,21 @@
+{
+  "ModId": "fftivc.generic.chronicle.codemod",
+  "ModName": "Generic Chronicle (Battle Probe)",
+  "ModAuthor": "mmpel",
+  "ModVersion": "1.0.0",
+  "ModDescription": "Diagnostic code mod: AOB-scan + log to confirm battle hooks for FFT IVC Enhanced.",
+  "ModDll": "fftivc.generic.chronicle.codemod.dll",
+  "ModIcon": "Preview.png",
+  "ModR2RManagedDll32": "x86/fftivc.generic.chronicle.codemod.dll",
+  "ModR2RManagedDll64": "x64/fftivc.generic.chronicle.codemod.dll",
+  "ModNativeDll32": "",
+  "ModNativeDll64": "",
+  "IsLibrary": false,
+  "ReleaseMetadataFileName": "fftivc.generic.chronicle.codemod.ReleaseMetadata.json",
+  "PluginData": {},
+  "IsUniversalMod": false,
+  "ModDependencies": [ "reloaded.sharedlib.hooks" ],
+  "OptionalDependencies": [],
+  "SupportedAppId": [],
+  "ProjectUrl": ""
+}

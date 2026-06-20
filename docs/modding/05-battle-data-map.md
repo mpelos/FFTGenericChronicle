@@ -1,0 +1,222 @@
+# Battle Data Map - Every Variable We Can Touch, And Its Limits
+
+Complete map of the battle system's accessible variables, *before* any design decisions, so we
+know the full toolbox. Generated/validated from the installed game + mod loader on this machine.
+Raw field dump: `work/battle_data_inventory.md` (regenerate with `tools/map_battle_data.py`).
+Baseline values: `work/baseline_jobs.csv`, `work/baseline_abilities.csv` (`tools/dump_baseline.py`).
+
+## Access tiers (how to reach each variable)
+
+```text
+A. Runtime battle-unit struct (live, in memory)   -> Tier 2 code mod (Reloaded-II hook). Read/write any stat mid-battle.
+B. Nex/NXD tables (.nxd in data\enhanced\nxd)      -> FF16Tools nxd<->sqlite; loader merges cells. Per-ability action math, UI/text.
+C. TableData XML (hardcoded tables)                -> copy template to FFTIVC\tables\enhanced\; edit only changed props. Jobs, items, status, weapons.
+D. ENTD encounter binaries (fftpack\*.bin)         -> entd_tool.py. Per-battle unit roster/jobs/levels/gear.
+```
+
+A = read it live / override the result. B+C = change the data the engine reads. Most of the
+overhaul is B+C; A is for math the formula catalog can't express (see `03`/`04`).
+
+---
+
+## A. Live battle-unit variables (runtime struct)
+
+These are the per-unit values in memory during battle - everything a Tier-2 damage hook can read
+or rewrite. Offsets verified from the public `FFT_enhanced.exe` cheat table (Steam v1.0, Oct
+2025; re-scan after patches). Base pointer = the unit; same layout the classic `Battle_Stats`
+describes.
+
+```text
++0x00 char id (byte)          +0x30 HP    (word)   +0x32 MaxHP (word)
++0x04 team/group id (byte)    +0x34 MP    (word)   +0x36 MaxMP (word)
++0x05 friend/foe (bit 0x10)   +0x3E PA    (byte)   +0x3F MA    (byte)
++0x28 EXP (byte)              +0x40 Speed (byte)
++0x29 Level (byte)            +0x42 Move  (byte)   +0x43 Jump  (byte)
++0x2A MaxBrave (byte)         +0x2B Brave (byte)
++0x2C MaxFaith (byte)         +0x2D Faith (byte)
++0x4F X  +0x50 Y  +0x51 Dir (map position, byte)
+```
+
+Also reachable at the hook sites (from AOBs in `04`): the computed **damage** value (in `edx`
+before the `[rax+0x06]` store), the player/enemy tag, and the damage/JP/XP multiplier sites.
+Not yet mapped from the struct but known to exist in the classic layout: equipped item ids,
+R/S/M ability ids, active status bitfields, raw stats (RHP/RMP/...), and per-stat growth
+constants - locate these by extending the struct walk. See `04-re-strategy.md`.
+
+Limits: stats are bytes (HP/MP are 16-bit words); damage stored as a 16-bit word; engine math is
+integer (the remaster applies some multipliers as AVX floats, then truncates to int).
+
+---
+
+## B. Per-ability ACTION variables (the formula surface)
+
+`OverrideAbilityActionData` (Nex, `0004.pac`). Sparse override: `-1` = inherit exe base, `>=0` =
+override (cast to byte). 368 rows; base Formula/X/Y are exe-hardcoded (baseline from FFHacktics).
+
+```text
+Flags12[]      patches AbilityFlags1, AbilityFlags2     (physical/magical, evadable, ...)
+Flags34[]      patches AbilityFlags3, AbilityFlags4
+Range          targeting range
+EffectArea     area of effect radius
+Vertical       vertical tolerance
+Element        element (see enum)
+Formula        which hardcoded routine (id 0x00-0x64; see 02-formula-id-catalog.md)
+X, Y           the routine's two parameters (byte each)
+InflictStatus  status applied (see enum)
+CT             charge time
+MPCost         MP cost
+```
+
+Ability metadata (`AbilityData.xml`, 512 ids): `JPCost`, `ChanceToLearn`, `Flags`,
+`AbilityType`, `AIBehaviorFlags`. Text/JP (`ability.en.nxd`, 512 rows): `Name`, `Description`,
+`IconId`, `JpCost1/2` (JP = JpCost1 + 256*JpCost2), `IsRandomDamage`, `IsRandomStatus`.
+
+Limits: ability id <= 511; AbilityType id <= 453; X and Y are single bytes (0-255); only two
+numeric parameters per ability; the formula *routines* themselves are exe code (Tier 2 to change).
+
+---
+
+## C. Per-job variables (the unit-build surface)
+
+`JobData.xml` (174 jobs). Everything that defines a class:
+
+```text
+Stat curves:  HPGrowth HPMultiplier  MPGrowth MPMultiplier  SpeedGrowth SpeedMultiplier
+              PAGrowth PAMultiplier   MAGrowth MAMultiplier
+              (DisplayedStat = RawStat * Multiplier / 1638400; Growth drives level-up)
+Mobility:     Move  Jump  CharacterEvasion
+Command:      JobCommandId   InnateAbilityId1-4
+Status:       InnateStatus  ImmuneStatus  StartingStatus
+Elements:     AbsorbElements  NullifyElements  HalveElements  WeakElements
+Equipment:    EquippableItems (34 type vocab)
+Monster:      MonsterPortrait  MonsterPalette  MonsterGraphic
+```
+
+Job tree / unlock: `GeneralJob` (Nex) - `RequiredJobExp[8]`, `RequiredJobIds[]`,
+`RequiredJobLevels[]`, `RequiredJobPositions[]`. `JobNeedLevelData.xml` - per-job level gates by
+class name (Squire..OnionKnight). Text: `job.en.nxd` (Name/Description).
+
+Limits: job id <= 175. Growth/Multiplier are bytes (lower Growth = faster growth in classic
+math). Equippable is a fixed 34-type vocabulary (no inventing new equip slots in data).
+
+---
+
+## D. Item / weapon / armor variables
+
+```text
+ItemData.xml        (261)  Palette SpriteID RequiredLevel TypeFlags AdditionalDataId
+                           ItemCategory EquipBonusId Price ShopAvailability
+ItemWeaponData.xml  (128)  Range AttackFlags Formula(1-7) Power(0-40) Evasion Elements OptionsAbilityId
+ItemArmorData.xml   (64)   HPBonus MPBonus
+ItemShieldData.xml  (16)   PhysicalEvasion MagicalEvasion
+ItemAccessoryData.xml(32)  PhysicalEvasion MagicalEvasion
+ItemEquipBonusData.xml(85) PABonus MABonus SpeedBonus MoveBonus JumpBonus
+                           InnateStatus ImmuneStatus StartingStatus
+                           Absorb/Nullify/Halve/Weak/StrongElements  BoostJP
+ItemConsumableData.xml(14) Formula Z StatusEffectId
+ItemOptionsData.xml (128)  OptionType(AllOrNothing/Cancel/Random/Separate) Effects
+ItemShopsData.xml   (256)  Shops (availability)
+```
+
+Note `EquipBonus` has `StrongElements` and `BoostJP` - levers jobs don't expose. Weapon `Formula`
+is its own small set (1-7) separate from the ability formula catalog. Limits: weapon id <= 127,
+armor <= 63, item <= 260, Power <= 40.
+
+---
+
+## E. Status effects
+
+`StatusEffectData.xml` (40 statuses): `Order` (UI sort), `Counter` (duration ticks),
+`CheckFlags`, `CancelFlags`, `NoStackFlags`. Text/icon: `uistatuseffect.en.nxd`.
+
+The full status vocabulary (exact tokens from the `ImmuneStatus` enum used in JobData/EquipBonus,
+38 confirmed + 2 system slots = the 40-slot table):
+
+```text
+KO Critical Undead Crystal Chest
+Poison Oil Float Reraise Invisible Regen Protect Shell Haste Slow Stop
+Charging Jump Charm Toad Doom Vampire Faith Atheist Sleep Disable Immobilize
+Confuse Blind Silence Berserk Reflect Defending Performing Stone Traitor Chicken
+(+ Unused1, and one more system slot to fill 40)
+```
+
+Limits: status id <= 39 (fixed 40-slot table). `Counter` sets duration; `CheckFlags`/`CancelFlags`
+control interactions (e.g. FreezeCT, PoisonRegen, mutually-cancelling sets).
+
+---
+
+## F. Commands, skillsets, spawns, traps
+
+```text
+JobCommandData.xml (176)  16x AbilityId + 6x ReactionSupportMovementId per command  (= a skillset)
+                          + ExtendAbilityIdFlagBits / ExtendRSMIdFlagBits for extra slots
+MonsterJobCommandData(48) 4x AbilityId (monster skill sets)
+CommandTypeData.xml (256) Menu (command category behavior: Item/Throw/Jump/...)
+SpawnData.xml (4)         generic spawn template: HP MP Speed PA MA + 7 equipment slots
+SpawnVarianceData.xml(4)  randomized variance on HP/MP/Speed/PA/MA
+MapTrapFormationData(128) 4x (X,Y,TrapFlags,RareItemId,CommonItemId) per map
+```
+
+ENTD (`fftpack/battle_entd1-4_ent.bin`): per-encounter unit roster - sprite, flags, name id,
+**level** (1-99 fixed, 100+ = party-relative), bravery, faith, job, job level, secondary
+skillset, R/S/M abilities, equipment, position. See `entd_tool.py` and the New Game++ project.
+
+---
+
+## G. Enumerations (the full vocabularies)
+
+```text
+Elements (8):        Fire Ice Lightning Wind Earth Water Holy Dark
+EquippableItems (34):Unarmed Knife NinjaBlade Sword KnightSword FellSword Katana Axe Flail
+                     Rod Staff Pole Polearm Crossbow Bow Gun Book Instrument Bag
+                     Cloth Shield  Helmet Hat HairAdornment  Armor Clothing Robe
+                     Shoes Armguard Armlet Cloak Ring Perfume LipRouge
+WeaponAttackFlags(8):Striking Lunging Direct Arc Throwable TwoHands ForcedTwoHands TwoSwords
+AbilityType (9):     Normal Item Throwing Jumping Math Aim Reaction Support Movement
+Ability.Flags (3):   DisplayAbilityName DontLearnWithJP LearnOnHit
+AIBehaviorFlags(27): TargetEnemies TargetAllies TargetMap OnlyHitsEnemies OnlyHitsAlliesOrSelf
+                     HP MP Stats Silence AddStatus CancelStatus Unequip UndeadReverse
+                     PhysicalAttack MagicalAttack Melee3Directions Ranged3Directions LinearAttack
+                     NonSpearAttack StopAtObstacle Evadeable EvadeWithMotion Reflectable
+                     RandomHits CheckCT_Target AffectedByFaith UsableByAI
+ThrowItemType (12):  Knife NinjaBlade Sword KnightSword Katana Axe Flail Pole Polearm Book Bomb Throwing
+ItemTypeFlags (6):   Weapon Shield Armor Headgear Accessory Rare
+ItemOptionType (4):  AllOrNothing Cancel Random Separate
+StatusEffect CheckFlags (15): KO CantReact FreezeCT IgnoreAttacks PoisonRegen CrystalTreasure
+                     DefendPerform ConfusionTransparentCharmSleep + Check1/2/8/9/10/11/12
+Status (~40):        see section E
+```
+
+---
+
+## H. Hard limits & what needs code (Tier 2)
+
+```text
+Table-size caps (hardcoded):  Ability 512 | AbilityType 454 | AbilityMath 422 | Job 176
+                              Weapon 128 | Armor 64 | Shield 16 | Accessory 32 | Item 261
+                              Status 40 | ItemOptions 128 | JobCommand 176 | CommandType 256
+Numeric:  ability X/Y = 1 byte each; stats = bytes; HP/MP/damage = 16-bit; integer math only.
+Fixed vocab: elements (8), equip types (34), status (40) - cannot add new ones in data.
+Per-ability params: only Formula + X + Y + Element + Status (no third scalar) in data.
+
+Needs a Tier-2 code hook (no data path):
+  - new damage math / new scaling variable / >2 parameters per ability
+  - changing what a Formula id computes, or adding formula ids
+  - changing global modifiers (Zodiac, Faith ratio, Protect/Shell 2/3, crit, variance)
+  - the weapon-type -> XA mapping; the 1638400 stat divisor
+  - reading/writing live unit state mid-action beyond what a formula already uses
+```
+
+---
+
+## How to access each (commands)
+
+```text
+NXD read/edit:   FF16Tools.CLI unpack -i 0004.pac -f nxd/<table>.nxd -o work\... -g fft
+                 FF16Tools.CLI nxd-to-sqlite -i work\...\nxd -o x.sqlite -g fft   (edit)   sqlite-to-nxd ...
+                 deploy to:  mod\fftivc.generic.chronicle\FFTIVC\data\enhanced\nxd\<table>.nxd
+TableData XML:   copy C:\...\modloader\TableData\<Name>.xml -> mod\...\FFTIVC\tables\enhanced\<Name>.xml
+                 keep ONLY edited <Id> entries/properties (loader merges per-property)
+ENTD:            python tools\entd_tool.py dump-entry/patch-levels ...
+Runtime hook:    Reloaded-II C# mod, AOB-scan + CreateHook (see 04-re-strategy.md)
+```
