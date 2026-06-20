@@ -1,0 +1,21 @@
+README.md
+  s_fce6b25a5764ca::t_c7a03b076ba980 5,15-16,19-20,24-25,30,37-38
+  s_fce6b25a5764ca::t_ca86fc026c9fd2 3,11,13-14,33
+  s_fce6b25a5764ca::t_3f7cb19ddd04fd 1-2,4,6-10,12,17-18,21-23,26-29,31-32,34-36,39-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ee378f7bafdc37baa4ade836ab1d1626399175b1",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
