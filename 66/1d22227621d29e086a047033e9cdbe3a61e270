@@ -1,0 +1,27 @@
+docs/formula-balance/01-principles.md
+  s_fce6b25a5764ca::t_c766a6c511a2bb 1-2,4-5,7-16,41-63,73-112,117-151,154-173
+  s_fce6b25a5764ca::t_c1ab08bdba3aea 17-22,28-30,33-40,64-72,152-153,174-177
+  s_fce6b25a5764ca::t_ed9f98b189a37a 3,6,113-116
+  s_fce6b25a5764ca::t_65741d8c5cde0d 23-27,31-32
+docs/formula-balance/00-envelope.md
+  s_fce6b25a5764ca::t_ed9f98b189a37a 3,5-6,42-51
+  s_fce6b25a5764ca::t_65741d8c5cde0d 38-41
+  s_fce6b25a5764ca::t_c766a6c511a2bb 1-2,4,7-31,53-70,75-135,139-150,153-157
+  s_fce6b25a5764ca::t_c1ab08bdba3aea 32-37,52,71-74,136-138,151-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "661d22227621d29e086a047033e9cdbe3a61e270",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
