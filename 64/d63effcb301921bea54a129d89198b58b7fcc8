@@ -1,0 +1,66 @@
+work/gpt-sim-v0.2-results.json
+  s_fce6b25a5764ca::t_9c2ba7a318bf09 1-22162
+tools/sim_damage.py
+  s_fce6b25a5764ca::t_239ccddae019e0 19-21,587,591-599,601,604-606,655,662-664
+  s_fce6b25a5764ca::t_c655b2abc04e9e 401-402
+  s_fce6b25a5764ca::t_af7d14d45ff2db 398-400,513-528,532-534,536-549,551-569,572-574,577-579,581-586,588-590,600,603,607-654,656-661,665-695,710-711,713-718,721,723,726-729,731-732,737-739,747,755-758
+  s_fce6b25a5764ca::t_291307d388b2ca 182-183,192,203-208,220-226,281-284,289-298,300-308,310,314,317-319,374,383,394-395,403-449,451-453,466-467,474,476-506,508-509,550,570-571,575-576,580
+  s_fce6b25a5764ca::t_429e8071dc68d4 23-50,52,82,84,90,92,94,119-124,216,229-280,285-287,309,311-313,315-316,321-373,375-382,384-393,396-397,510,697-699
+  s_fce6b25a5764ca::t_7c314acfffa2f3 171,187-190,193-194,196-200,202
+  s_fce6b25a5764ca::t_b5bb39027e7d85 77-78,191,288,299,450,454-465,468-473,475,507,529-531,535
+  s_fce6b25a5764ca::t_71103d9c78d067 602
+  s_fce6b25a5764ca::t_bf240c347ee877 1-18,22,51,53-76,79-81,83,85-89,91,93,95-118,125-170,172-181,184-186,195,201,209-215,217-219,227-228,320,511-512,696,700-709,712,719-720,722,724-725,730,733-736,740-746,748-754,759-766
+work/sim-inputs-v0.json
+  s_c08f9ea70d3af2::t_6272bd16da047d 1-909
+work/sim-inputs-v0-notes.md
+  s_c08f9ea70d3af2::t_00fe9cc29834d2 1-46
+work/gpt-sim-v0.2-results.csv
+  s_fce6b25a5764ca::t_4bd79fda95c9ca 1-434
+.gitignore
+  s_fce6b25a5764ca::t_5b01b1c2ea6a1e 8,35-36
+work/gen_sim_inputs.py
+  s_c08f9ea70d3af2::t_dc83926f037122 1-150
+work/sim-inputs-v0.2.json
+  s_c08f9ea70d3af2::t_7c0aa1502b8923 1-924
+docs/formula-balance/11-validated-policy-v0.2.md
+  s_fce6b25a5764ca::t_00dc34798a9097 145
+  s_fce6b25a5764ca::t_5b01b1c2ea6a1e 1-144,146-215
+work/sim-inputs-v0.2-notes.md
+  s_fce6b25a5764ca::t_5b01b1c2ea6a1e 1-57
+docs/formula-balance/10-mitigation-and-scaling-policy-v0.md
+  s_fce6b25a5764ca::t_86228031dee7cc 3,5-7,252-257,271,282,284,293-294
+  s_fce6b25a5764ca::t_4b283a136844c2 1-2,4,8-189,192-193,196-198,202-245,283,285-287,290-292
+  s_fce6b25a5764ca::t_5b01b1c2ea6a1e 273-281
+  s_fce6b25a5764ca::t_d709e516ebe948 190-191,194-195,199-201,246-251,258-270,272,288-289
+tests/test_sim_damage.py
+  s_fce6b25a5764ca::t_d602aa2535290a 242-345
+  s_fce6b25a5764ca::t_416351a9d13b1b 1-130,346-348
+  s_fce6b25a5764ca::t_25455e922ad105 203-241
+  s_fce6b25a5764ca::t_86705a2f7785c4 131-202
+work/sim-inputs-v0.1.json
+  s_c08f9ea70d3af2::t_ca1aa130099d9e 1-910
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "64d63effcb301921bea54a129d89198b58b7fcc8",
+  "prompts": {},
+  "sessions": {
+    "s_c08f9ea70d3af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8120ec5d-2a13-42b5-a831-b8f4409276c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
