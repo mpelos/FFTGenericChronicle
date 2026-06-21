@@ -1,0 +1,533 @@
+{
+  "schema_version": "bard-dancer-concrete-provisional-v0",
+  "status": "accepted_concrete_provisional",
+  "date": "2026-06-21",
+  "claude_review": {
+    "verdict": "accepted",
+    "date": "2026-06-21",
+    "required_changes": [],
+    "summary": "Accepted as concrete-provisional with zero numeric mismatches in independent recomputation; remaining work is T1/formula-v1, real-roster F5, and T2.1 populated incidence/RSM values."
+  },
+  "reference_pass": {
+    "docs": [
+      "docs/job-balance/12-vanilla-skill-status-reference.md",
+      "docs/reference/fft-vanilla-ability-effect-index.md",
+      "docs/reference/fft-vanilla-command-skillset-effect-map.md",
+      "docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md",
+      "docs/reference/fft-vanilla-status-effect-map.md"
+    ],
+    "command_families": [
+      "Bardsong",
+      "Dance"
+    ],
+    "effect_tags_checked": [
+      "global",
+      "healing",
+      "damage",
+      "mp",
+      "stat_up",
+      "stat_down",
+      "brave_up",
+      "timing",
+      "random",
+      "status_add",
+      "instant_ko",
+      "ct_action"
+    ],
+    "statuses_checked": [
+      "Performing",
+      "Haste",
+      "Slow",
+      "Poison",
+      "Regen",
+      "Blind",
+      "Silence",
+      "Immobilize",
+      "Oil",
+      "KO"
+    ],
+    "trust_boundary": "Local ability ID/name/JP/random/CT/MP override data is extracted. Effect tags, command ownership, and status categories are consultation classifications. Base Formula/X/Y/range/area/status bytes are not extracted here.",
+    "name_drift_note": "Local IVC records use Seraph Song/Life's Anthem/Rousing Melody/Battle Chant/Magickal Refrain/Nameless Song/Finale and Witch Hunt/Mincing Minuet/Slow Dance/Polka/Heathen Frolic/Forbidden Dance/Last Waltz. External legacy guides may use Angel Song/Life Song/Last Song or Wiznaibus/Disillusion/Last Dance vocabulary. This pass binds the local slots while rejecting both ordinary mapwide instant KO and free action-economy capstones."
+  },
+  "performance_model": {
+    "tick_schedule": {
+      "start_tick": 0,
+      "first_tick_delay": 4,
+      "tick_interval": 8,
+      "duration_ticks": 28,
+      "full_ticks": [
+        4,
+        12,
+        20,
+        28
+      ],
+      "interrupt_tick_12_ticks": [
+        4
+      ],
+      "same_tick_interrupt_policy": "ticks at or after interrupt_tick are canceled"
+    },
+    "target_count_normalization": {
+      "default_target_count_cap": 4,
+      "strong_effect_target_count_cap": 3,
+      "random_effect_max_targets_per_tick": 1,
+      "policy": "V0 effective-target cap for balance math; final mapwide geometry still belongs to T11/T11xT5."
+    },
+    "performing_cost": {
+      "status": "Performing",
+      "performer_committed_while_active": true,
+      "performer_can_take_other_actions": false,
+      "evasion_suppressed_or_reduced": true,
+      "interruption_cancels_future_ticks": true
+    },
+    "percent_guard": "floor(round(percent * max_hp, 6))"
+  },
+  "formulas": {
+    "bard_hp_tick": "min(floor(round(percent * target_max_hp, 6)), per_tick_cap, floor(round(K * bard_MA * 0.60, 6)))",
+    "bard_hp_pulse": "min(floor(round(percent * target_max_hp, 6)), pulse_cap, floor(round(K * bard_MA * 0.60, 6)))",
+    "dancer_hp_tick": "min(floor(round(percent * target_max_hp, 6)), per_tick_cap, floor(round(K * dancer_PA * 0.60, 6)))",
+    "dancer_hp_pulse": "min(floor(round(percent * target_max_hp, 6)), pulse_cap, floor(round(K * dancer_PA * 0.60, 6)))",
+    "witch_hunt_mp_tick": "min(target_current_mp, 12, floor(round(1.90 * dancer_MA * 0.60, 6)))",
+    "tempo_credit_or_debit": "6 CT per completed tick, max 4 ticks, capped to 3 targets; no same-tick action grant",
+    "stat_layer_tick": "0.03 layer per completed tick, cap 0.12 total",
+    "magickal_refrain_layer_tick": "0.015 outgoing magic layer per completed tick, cap 0.06 total; does not stack with Belief, use the stronger layer"
+  },
+  "shared_rsm": {
+    "status": "parity_locked_values_deferred_pending_T2.1",
+    "reaction": [
+      {
+        "name": "Earplugs",
+        "role": "narrow anti-performance/speech defense",
+        "concrete_value_status": "deferred"
+      },
+      {
+        "name": "Encore",
+        "role": "performance resilience candidate",
+        "concrete_value_status": "deferred_high_risk"
+      }
+    ],
+    "support": [
+      {
+        "name": "Performance Mastery",
+        "role": "song/dance specialization only",
+        "concrete_value_status": "deferred"
+      },
+      {
+        "name": "Stagecraft",
+        "role": "narrow performer setup or self-risk reduction",
+        "concrete_value_status": "deferred"
+      }
+    ],
+    "movement": [
+      {
+        "name": "Performance Step",
+        "role": "narrow performer positioning",
+        "concrete_value_status": "deferred"
+      },
+      {
+        "name": "Fly",
+        "role": "promotion candidate only if performers cannot function without it",
+        "concrete_value_status": "deferred_high_risk"
+      }
+    ]
+  },
+  "parity_assertion": {
+    "bard_rsm_source": "shared_rsm",
+    "dancer_rsm_source": "shared_rsm",
+    "action_sets_may_differ": true,
+    "reaction_support_movement_must_be_field_equal": true,
+    "machine_diff_required_in_data_pass": true
+  },
+  "bard_actions": [
+    {
+      "name": "Seraph Song",
+      "kind": "performance_healing",
+      "percent_max_hp_per_tick": 0.05,
+      "k_ma": 3.0,
+      "per_tick_cap": 22,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 100,
+      "notes": "Gentle global recovery; living allies only; no revive."
+    },
+    {
+      "name": "Life's Anthem",
+      "kind": "performance_healing",
+      "percent_max_hp_per_tick": 0.07,
+      "k_ma": 4.0,
+      "per_tick_cap": 32,
+      "target_count_cap": 3,
+      "ticks": 4,
+      "jp": 200,
+      "notes": "Stronger recovery with lower target cap; living allies only; no mapwide Arise loop."
+    },
+    {
+      "name": "Rousing Melody",
+      "kind": "performance_tempo_credit",
+      "ct_credit_per_tick": 6,
+      "target_count_cap": 3,
+      "ticks": 4,
+      "same_tick_action_grant": false,
+      "jp": 250,
+      "notes": "Slow CT morale support; weaker than Hasteja and no Quick recursion."
+    },
+    {
+      "name": "Battle Chant",
+      "kind": "performance_brave_up",
+      "brave_delta_per_tick": 2,
+      "battle_scoped_cap": 8,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 200,
+      "notes": "Battle-scoped morale only; no permanent Brave economy in this pass."
+    },
+    {
+      "name": "Magickal Refrain",
+      "kind": "performance_magic_output_layer",
+      "magic_layer_delta_per_tick": 0.015,
+      "magic_layer_cap": 1.06,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 250,
+      "notes": "Outgoing magic layer while active; does not stack with Belief, use stronger layer."
+    },
+    {
+      "name": "Nameless Song",
+      "kind": "performance_bounded_random_ally_buff",
+      "targets_per_tick": 1,
+      "ticks": 4,
+      "result_table": [
+        "Protect",
+        "Shell",
+        "Float",
+        "Regen"
+      ],
+      "excluded_results": [
+        "Reraise",
+        "Haste",
+        "Invisible",
+        "full status immunity",
+        "instant action"
+      ],
+      "jp": 350,
+      "notes": "One random eligible ally per tick; expected value must be simulated, not best roll only."
+    },
+    {
+      "name": "Finale",
+      "kind": "setup_capstone_support_pulse",
+      "requires_completed_performance_ticks": 2,
+      "ends_current_performance": true,
+      "percent_max_hp_pulse": 0.12,
+      "k_ma": 8.0,
+      "pulse_cap": 60,
+      "target_count_cap": 4,
+      "clears_one_status_from": [
+        "Poison",
+        "Blind",
+        "Silence",
+        "Slow",
+        "Immobilize",
+        "Oil"
+      ],
+      "revives_ko": false,
+      "instant_ko": false,
+      "instant_action_grant": false,
+      "jp": 600,
+      "notes": "Repurposes the legacy capstone away from mapwide death or action economy."
+    }
+  ],
+  "dancer_actions": [
+    {
+      "name": "Witch Hunt",
+      "kind": "performance_mp_attrition",
+      "k_ma": 1.9,
+      "per_tick_cap": 12,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 100,
+      "notes": "Caster/resource pressure; target-MP limited and battle-scoped."
+    },
+    {
+      "name": "Mincing Minuet",
+      "kind": "performance_hp_attrition",
+      "percent_max_hp_per_tick": 0.04,
+      "k_pa": 3.0,
+      "per_tick_cap": 20,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "can_ko": true,
+      "jp": 200,
+      "notes": "Low global damage over time; target-count-normalized."
+    },
+    {
+      "name": "Slow Dance",
+      "kind": "performance_tempo_debit",
+      "ct_debit_per_tick": 6,
+      "target_count_cap": 3,
+      "ticks": 4,
+      "same_tick_action_denial": false,
+      "jp": 250,
+      "notes": "Slow CT pressure; weaker than Slowja and not a hard Stop."
+    },
+    {
+      "name": "Polka",
+      "kind": "performance_physical_output_down",
+      "physical_layer_delta_per_tick": 0.03,
+      "physical_output_floor": 0.88,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 200,
+      "notes": "Battle-scoped outgoing physical pressure; no permanent PA damage."
+    },
+    {
+      "name": "Heathen Frolic",
+      "kind": "performance_magic_output_down",
+      "magic_layer_delta_per_tick": 0.03,
+      "magic_output_floor": 0.88,
+      "target_count_cap": 4,
+      "ticks": 4,
+      "jp": 250,
+      "notes": "Battle-scoped outgoing magical pressure; Mystic remains targeted Faith/status controller."
+    },
+    {
+      "name": "Forbidden Dance",
+      "kind": "performance_bounded_random_enemy_status",
+      "targets_per_tick": 1,
+      "base_status_chance": 0.35,
+      "default_effective_status_chance": 0.21,
+      "ticks": 4,
+      "result_table": [
+        "Blind",
+        "Silence",
+        "Slow",
+        "Immobilize",
+        "Poison"
+      ],
+      "excluded_results": [
+        "Stop",
+        "Sleep",
+        "Stone",
+        "Charm",
+        "Death",
+        "Toad",
+        "Vampire",
+        "Traitor"
+      ],
+      "jp": 350,
+      "notes": "One random eligible enemy per tick; bounded soft disruption only."
+    },
+    {
+      "name": "Last Waltz",
+      "kind": "setup_capstone_pressure_pulse",
+      "requires_completed_performance_ticks": 2,
+      "ends_current_performance": true,
+      "percent_max_hp_pulse": 0.12,
+      "k_pa": 8.0,
+      "pulse_cap": 60,
+      "target_count_cap": 4,
+      "can_ko": false,
+      "instant_ko": false,
+      "instant_action_denial": false,
+      "boss_exclusion_required_if_later_changed_to_finisher": true,
+      "jp": 600,
+      "notes": "Nonlethal pressure pulse; no ordinary mapwide death, Stop, or CT-set hard lock."
+    }
+  ],
+  "simulations": {
+    "stress_reference_values": {
+      "bard_ma": 14,
+      "dancer_pa": 13,
+      "dancer_ma": 11,
+      "top_physical_stress_reference": 415,
+      "bahamut_three_target_reference": 405,
+      "white_mage_curaja_stress_single_target": 250,
+      "black_mage_flare_stress_single_target": 324
+    },
+    "bard_hp_over_time": [
+      {
+        "target_max_hp": 180,
+        "seraph_tick": 9,
+        "seraph_per_target_full": 36,
+        "seraph_cap4_full": 144,
+        "life_tick": 12,
+        "life_per_target_full": 48,
+        "life_cap3_full": 144,
+        "finale_pulse": 21,
+        "finale_cap4": 84
+      },
+      {
+        "target_max_hp": 390,
+        "seraph_tick": 19,
+        "seraph_per_target_full": 76,
+        "seraph_cap4_full": 304,
+        "life_tick": 27,
+        "life_per_target_full": 108,
+        "life_cap3_full": 324,
+        "finale_pulse": 46,
+        "finale_cap4": 184
+      },
+      {
+        "target_max_hp": 624,
+        "seraph_tick": 22,
+        "seraph_per_target_full": 88,
+        "seraph_cap4_full": 352,
+        "life_tick": 32,
+        "life_per_target_full": 128,
+        "life_cap3_full": 384,
+        "finale_pulse": 60,
+        "finale_cap4": 240
+      }
+    ],
+    "dancer_hp_over_time": [
+      {
+        "target_max_hp": 180,
+        "minuet_tick": 7,
+        "minuet_per_target_full": 28,
+        "minuet_cap4_full": 112,
+        "last_waltz_pulse": 21,
+        "last_waltz_cap4": 84
+      },
+      {
+        "target_max_hp": 390,
+        "minuet_tick": 15,
+        "minuet_per_target_full": 60,
+        "minuet_cap4_full": 240,
+        "last_waltz_pulse": 46,
+        "last_waltz_cap4": 184
+      },
+      {
+        "target_max_hp": 624,
+        "minuet_tick": 20,
+        "minuet_per_target_full": 80,
+        "minuet_cap4_full": 320,
+        "last_waltz_pulse": 60,
+        "last_waltz_cap4": 240
+      }
+    ],
+    "band_scaling_on_target_hp_390": [
+      {
+        "band": "early",
+        "bard_ma": 6,
+        "seraph_tick": 10,
+        "life_tick": 14,
+        "finale_pulse": 28,
+        "dancer_pa": 6,
+        "dancer_ma": 5,
+        "minuet_tick": 10,
+        "last_waltz_pulse": 28,
+        "witch_hunt_mp_tick_vs_110_mp": 5
+      },
+      {
+        "band": "mid",
+        "bard_ma": 9,
+        "seraph_tick": 16,
+        "life_tick": 21,
+        "finale_pulse": 43,
+        "dancer_pa": 9,
+        "dancer_ma": 8,
+        "minuet_tick": 15,
+        "last_waltz_pulse": 43,
+        "witch_hunt_mp_tick_vs_110_mp": 9
+      },
+      {
+        "band": "late",
+        "bard_ma": 12,
+        "seraph_tick": 19,
+        "life_tick": 27,
+        "finale_pulse": 46,
+        "dancer_pa": 11,
+        "dancer_ma": 10,
+        "minuet_tick": 15,
+        "last_waltz_pulse": 46,
+        "witch_hunt_mp_tick_vs_110_mp": 11
+      },
+      {
+        "band": "stress",
+        "bard_ma": 14,
+        "seraph_tick": 19,
+        "life_tick": 27,
+        "finale_pulse": 46,
+        "dancer_pa": 13,
+        "dancer_ma": 11,
+        "minuet_tick": 15,
+        "last_waltz_pulse": 46,
+        "witch_hunt_mp_tick_vs_110_mp": 12
+      }
+    ],
+    "interruption_at_tick_12_on_hp390_stress": {
+      "seraph_cap4_full": 304,
+      "seraph_cap4_interrupted": 76,
+      "life_cap3_full": 324,
+      "life_cap3_interrupted": 81,
+      "minuet_cap4_full": 240,
+      "minuet_cap4_interrupted": 60
+    },
+    "tempo_rows_speed8_duration28": [
+      {
+        "initial_ct": 40,
+        "base_turns": 2,
+        "base_remainder": 64,
+        "rousing_turns": 2,
+        "rousing_remainder": 88,
+        "slow_dance_turns": 2,
+        "slow_dance_remainder": 40
+      },
+      {
+        "initial_ct": 70,
+        "base_turns": 2,
+        "base_remainder": 94,
+        "rousing_turns": 3,
+        "rousing_remainder": 18,
+        "slow_dance_turns": 2,
+        "slow_dance_remainder": 70
+      }
+    ],
+    "layer_rows": {
+      "black_mage_flare_324_with_magickal_refrain_1_06": 343,
+      "top_physical_415_with_polka_0_88": 365,
+      "black_mage_flare_324_with_heathen_frolic_0_88": 285,
+      "forbidden_dance_expected_status_applications_full_four_ticks": 0.84
+    },
+    "capstone_and_throughput_ratios": {
+      "finale_hp624_cap4_total": 240,
+      "finale_hp624_cap4_total_over_top_physical_415": 0.578313,
+      "last_waltz_hp624_cap4_total": 240,
+      "last_waltz_hp624_cap4_total_over_top_physical_415": 0.578313,
+      "mincing_minuet_hp624_cap4_full_over_top_physical_415": 0.771084,
+      "seraph_hp624_cap4_full_over_bahamut_area_reference_405": 0.869136,
+      "life_hp624_cap3_full_over_bahamut_area_reference_405": 0.948148,
+      "seraph_hp390_cap4_full_over_bahamut_area_reference_405": 0.750617,
+      "life_hp390_cap3_full_over_bahamut_area_reference_405": 0.8
+    },
+    "random_variance_rows": {
+      "nameless_song": {
+        "eligible_ticks": 4,
+        "targets_per_tick": 1,
+        "application_count_min_if_no_eligible_targets": 0,
+        "application_count_expected_if_target_each_tick": 4,
+        "application_count_max": 4,
+        "uniform_table_expected_applications_per_result": 1,
+        "uniform_table_min_per_result": 0,
+        "uniform_table_max_per_result": 4
+      },
+      "forbidden_dance": {
+        "eligible_ticks": 4,
+        "targets_per_tick": 1,
+        "default_effective_status_chance": 0.21,
+        "successful_status_count_min": 0,
+        "successful_status_count_expected": 0.84,
+        "successful_status_count_max": 4,
+        "probability_of_at_least_one_success": 0.610499,
+        "uniform_table_expected_applications_per_status": 0.168,
+        "uniform_table_min_per_status": 0,
+        "uniform_table_max_per_status": 4
+      }
+    }
+  },
+  "provisional_watch_items": [
+    "Life's Anthem at HP624 cap3 totals 384 over a full uninterrupted performance, close to Bahamut 405 but healing is delayed, capped to 3 targets, and interruptible.",
+    "Seraph Song at HP624 cap4 totals 352 over a full uninterrupted performance, which must stay below direct healer replacement in F5/T3xT5xT11.",
+    "Mincing Minuet at HP624 cap4 totals 320 over time and must not replace Black Mage/Summoner direct offense.",
+    "Magickal Refrain must not stack with Belief in the first concrete pass, preventing the known Belief x Oil x fire weak compound from growing.",
+    "Finale and Last Waltz are nonlethal/non-action-economy capstones in this V0; any later finisher rewrite requires T8 boss/immune exclusions."
+  ]
+}
