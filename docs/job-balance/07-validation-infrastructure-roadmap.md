@@ -43,7 +43,9 @@ Accepted/provisional job documents now refer to checks in these categories:
 - enemy-offense disruption;
 - accuracy, evasion, line-of-fire, and height;
 - CT, delayed actions, overwatch, and interrupts;
-- AI targeting or challenge behavior.
+- AI targeting or challenge behavior;
+- mitigation stacking across armor response, Protect/Shell, element, zodiac, and clamps;
+- resource and MP economy beyond per-action recovery plumbing.
 
 Only the damage-family side is currently represented by the existing formula harness. Several other
 categories are design-required but not yet executable.
@@ -93,8 +95,8 @@ Notes:
 
 ### T3 - Healing, Sustain, And Attrition Model
 
-Goal: model multi-turn survival with healing, revive, MP recovery, automatic reactions, inventory
-cost, and action economy.
+Goal: model multi-turn survival with healing, revive, MP recovery plumbing, automatic reactions,
+inventory cost, and action economy.
 
 Unblocks:
 
@@ -108,7 +110,9 @@ Notes:
 
 - this should be prioritized before final concrete values for any repeatable heal or auto-heal;
 - it should compare item reliability against Faith/MA/MP/CT-based healing rather than treating all
-  recovery as equivalent.
+  recovery as equivalent;
+- it does not fully validate MP economy. Skills that change long-run spell availability, MP
+  efficiency, or MP recovery loops require T9.
 
 ### T4 - Accuracy, Evasion, Line-Of-Fire, And Height Model
 
@@ -191,6 +195,49 @@ Notes:
 - if robust targeting changes are not data-moddable, the design should use zone, CT, movement, or
   counter-pressure alternatives.
 
+### T6xPS - Protect/Shell Mitigation Stacking Composition
+
+Goal: model how Protect, Shell, Wall, element, zodiac, armor response, and the shared clamp compose
+in the full formula operation order.
+
+Unblocks:
+
+- White Mage `Protect`, `Shell`, and `Wall`;
+- any later defensive status, mitigation package, or magic-defense support that stacks with armor
+  response;
+- F4 Shell-on magic/physical coexistence rows.
+
+Notes:
+
+- the first composition must exercise the full order:
+  `armor type_response * protect_shell * element * zodiac`, clamped to `[0.25, 2.50]`;
+- rows must include realistic Protect plus plate, Shell plus faith-floor magic, Wall as combined
+  Protect/Shell, and at least one high-stack row that approaches the low clamp;
+- the gate should prove that defensive upkeep does not manufacture de-facto immunity or make
+  armor/Faith counters invisible to the player.
+
+### T9 - Resource And MP Economy Model
+
+Goal: model MP recovery, MP efficiency, spell availability, finite resources, and long-run resource
+loops.
+
+Unblocks:
+
+- Monk `Chakra` if MP restore remains in scope;
+- White Mage and Black Mage spell MP values;
+- caster supports that change MP cost, MP recovery, or spell availability;
+- Summoner, Time Mage, Mystic, Necromancer, Bard, Dancer, and Ramza resource designs that depend on
+  MP or similar finite resources.
+
+Notes:
+
+- T3 can record per-action resource consumption and simple finite-resource caps, but T9 is the
+  track that decides whether a resource loop changes encounter pacing or spell access;
+- caster values that alter MP economy should not reach accepted implementation data until this
+  track exists and passes the dual-independent gate;
+- T9 should distinguish tactical MP pressure from campaign economy so resource scarcity does not
+  become hidden difficulty inflation.
+
 ## Recommended Sequence
 
 Recommended order before more concrete skill-number work:
@@ -206,11 +253,15 @@ Recommended order before more concrete skill-number work:
 5. Build `T6 - Dynamic Armor Response` and `T7 - Enemy-Offense/Disarm` before concrete Knight,
    Monk anti-plate, Archer piercing, Thief disruption, or similar values.
 6. Evaluate `T8 - AI Targeting/Challenge` separately; if not feasible, redesign those skills early.
+7. Build `T6xPS - Protect/Shell Mitigation Stacking` before concrete Protect, Shell, Wall, or
+   broad defensive status values.
+8. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
+   loops.
 
 ## Acceptance Gate Per Track
 
-Each new validation model from T3 through T7 must inherit the same dual-independent discipline that
-made formula-balance v0.2 trustworthy.
+Each new validation model from T3 through T9, including composition tracks such as T3xT5, T6xT7, and
+T6xPS, must inherit the same dual-independent discipline that made formula-balance v0.2 trustworthy.
 
 Before a track output can be used to accept concrete skill data:
 
