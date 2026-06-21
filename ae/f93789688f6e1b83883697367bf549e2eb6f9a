@@ -1,0 +1,26 @@
+docs/job-balance/43-summoner-geomancer-concrete-v0.md
+  s_fce6b25a5764ca::t_71ca697ca69bfc 126-128,130-131,134,138-143,223-226,249-250,253-255,258
+  s_fce6b25a5764ca::t_d0f900359f002e 3,275-289
+  s_fce6b25a5764ca::t_cce01e69bc10b6 1-2,4-125,129,132,135-137,144-222,227-248,251-252,256-257,259-274
+  s_fce6b25a5764ca::t_89f7eecbb8dbdb 133
+work/gpt-summoner-geomancer-concrete-v0.json
+  s_fce6b25a5764ca::t_ca060bc2e219c9 1154-1175,3955-3957,3963-3964,3966
+  s_fce6b25a5764ca::t_c1a45fc2569eba 1-3,5-1153,1176-3954,3958-3962,3965,3967,3998
+  s_fce6b25a5764ca::t_23ad0d5ecdee6c 4,3968-3997
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "aef93789688f6e1b83883697367bf549e2eb6f9a",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
