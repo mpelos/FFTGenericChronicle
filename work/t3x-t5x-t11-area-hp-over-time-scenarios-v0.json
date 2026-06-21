@@ -1,0 +1,1358 @@
+{
+  "schema_version": "t3x-t5x-t11-area-hp-over-time-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/10-healing-attrition-model-schema.md",
+    "docs/job-balance/11-ct-delay-model-schema.md",
+    "docs/job-balance/16-healing-timing-composition-schema.md",
+    "docs/job-balance/34-area-terrain-model-schema.md",
+    "docs/job-balance/40-sustained-area-throughput-composition-schema.md",
+    "docs/job-balance/41-area-hp-over-time-composition-schema.md"
+  ],
+  "formula_contract": {
+    "normalization": "area_hp_effect_over_tick_schedule",
+    "tick_schedule": "same as T11xT5",
+    "healing": "effective_heal=min(per_target_value, missing_hp)",
+    "damage": "effective_damage=min(per_target_value, current_hp)",
+    "ko_policy": "units at hp <= 0 are excluded from future ticks unless affects_ko=true",
+    "undead_inversion": "healing becomes damage for undead if undead_inverts_healing=true",
+    "area_membership": "mapwide, single, diamond, or square shape from T11",
+    "total_fields": "sum raw/effective/overheal/overkill over ticks"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t3xt5xt11_area_heal_overheal_cap",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 30,
+        "target_group": "allies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "ally_missing20",
+          "team": "ally",
+          "hp": 80,
+          "max_hp": 100
+        },
+        {
+          "unit_id": "ally_missing100",
+          "team": "ally",
+          "hp": 50,
+          "max_hp": 150
+        },
+        {
+          "unit_id": "ally_full",
+          "team": "ally",
+          "hp": 100,
+          "max_hp": 100
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "ally_missing20",
+            "ally_missing100",
+            "ally_full"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          90
+        ],
+        "effective_heal_by_tick": [
+          50
+        ],
+        "overheal_by_tick": [
+          40
+        ],
+        "raw_damage_by_tick": [
+          0
+        ],
+        "effective_damage_by_tick": [
+          0
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "ally_missing20": 100,
+            "ally_missing100": 80,
+            "ally_full": 100
+          }
+        ],
+        "total_raw_heal": 90,
+        "total_effective_heal": 50,
+        "total_overheal": 40,
+        "total_raw_damage": 0,
+        "total_effective_damage": 0,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_repeated_healing_saturates",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 5
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 20,
+        "target_group": "allies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "ally_low",
+          "team": "ally",
+          "hp": 50,
+          "max_hp": 100
+        },
+        {
+          "unit_id": "ally_near_full",
+          "team": "ally",
+          "hp": 90,
+          "max_hp": 100
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1,
+          3,
+          5
+        ],
+        "tick_count": 3,
+        "affected_ids_by_tick": [
+          [
+            "ally_low",
+            "ally_near_full"
+          ],
+          [
+            "ally_low",
+            "ally_near_full"
+          ],
+          [
+            "ally_low",
+            "ally_near_full"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          40,
+          40,
+          40
+        ],
+        "effective_heal_by_tick": [
+          30,
+          20,
+          10
+        ],
+        "overheal_by_tick": [
+          10,
+          20,
+          30
+        ],
+        "raw_damage_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "effective_damage_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "overkill_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "ally_low": 70,
+            "ally_near_full": 100
+          },
+          {
+            "ally_low": 90,
+            "ally_near_full": 100
+          },
+          {
+            "ally_low": 100,
+            "ally_near_full": 100
+          }
+        ],
+        "total_raw_heal": 120,
+        "total_effective_heal": 60,
+        "total_overheal": 60,
+        "total_raw_damage": 0,
+        "total_effective_damage": 0,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_area_attrition_multi_target",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 5
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_a",
+          "team": "enemy",
+          "hp": 50,
+          "max_hp": 50
+        },
+        {
+          "unit_id": "enemy_b",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1,
+          3,
+          5
+        ],
+        "tick_count": 3,
+        "affected_ids_by_tick": [
+          [
+            "enemy_a",
+            "enemy_b"
+          ],
+          [
+            "enemy_a",
+            "enemy_b"
+          ],
+          [
+            "enemy_a",
+            "enemy_b"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "effective_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "overheal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "raw_damage_by_tick": [
+          20,
+          20,
+          20
+        ],
+        "effective_damage_by_tick": [
+          20,
+          20,
+          20
+        ],
+        "overkill_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_a": 40,
+            "enemy_b": 20
+          },
+          {
+            "enemy_a": 30,
+            "enemy_b": 10
+          },
+          {
+            "enemy_a": 20,
+            "enemy_b": 0
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 60,
+        "total_effective_damage": 60,
+        "total_overkill": 0,
+        "ko_ids": [
+          "enemy_b"
+        ],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_ko_excludes_future_ticks",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 5
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_fragile",
+          "team": "enemy",
+          "hp": 15,
+          "max_hp": 15
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1,
+          3,
+          5
+        ],
+        "tick_count": 3,
+        "affected_ids_by_tick": [
+          [
+            "enemy_fragile"
+          ],
+          [
+            "enemy_fragile"
+          ],
+          []
+        ],
+        "raw_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "effective_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "overheal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "raw_damage_by_tick": [
+          10,
+          10,
+          0
+        ],
+        "effective_damage_by_tick": [
+          10,
+          5,
+          0
+        ],
+        "overkill_by_tick": [
+          0,
+          5,
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_fragile": 5
+          },
+          {
+            "enemy_fragile": 0
+          },
+          {
+            "enemy_fragile": 0
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 20,
+        "total_effective_damage": 15,
+        "total_overkill": 5,
+        "ko_ids": [
+          "enemy_fragile"
+        ],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_healing_inverts_on_undead",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 20,
+        "target_group": "allies",
+        "undead_inverts_healing": true,
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "ally_living",
+          "team": "ally",
+          "hp": 50,
+          "max_hp": 100
+        },
+        {
+          "unit_id": "ally_undead",
+          "team": "ally",
+          "hp": 50,
+          "max_hp": 100,
+          "undead": true
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "ally_living",
+            "ally_undead"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          20
+        ],
+        "effective_heal_by_tick": [
+          20
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          20
+        ],
+        "effective_damage_by_tick": [
+          20
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "ally_living": 70,
+            "ally_undead": 30
+          }
+        ],
+        "total_raw_heal": 20,
+        "total_effective_heal": 20,
+        "total_overheal": 0,
+        "total_raw_damage": 20,
+        "total_effective_damage": 20,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_target_enters_and_leaves",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 5
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 5,
+        "target_group": "enemies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_stays",
+          "team": "enemy",
+          "hp": 50,
+          "max_hp": 50
+        },
+        {
+          "unit_id": "enemy_enters",
+          "team": "enemy",
+          "hp": 50,
+          "max_hp": 50,
+          "active_start_tick": 3
+        },
+        {
+          "unit_id": "enemy_leaves",
+          "team": "enemy",
+          "hp": 50,
+          "max_hp": 50,
+          "active_expire_tick": 3
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1,
+          3,
+          5
+        ],
+        "tick_count": 3,
+        "affected_ids_by_tick": [
+          [
+            "enemy_stays",
+            "enemy_leaves"
+          ],
+          [
+            "enemy_stays",
+            "enemy_enters"
+          ],
+          [
+            "enemy_stays",
+            "enemy_enters"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "effective_heal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "overheal_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "raw_damage_by_tick": [
+          10,
+          10,
+          10
+        ],
+        "effective_damage_by_tick": [
+          10,
+          10,
+          10
+        ],
+        "overkill_by_tick": [
+          0,
+          0,
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_stays": 45,
+            "enemy_enters": 50,
+            "enemy_leaves": 45
+          },
+          {
+            "enemy_stays": 40,
+            "enemy_enters": 45,
+            "enemy_leaves": 45
+          },
+          {
+            "enemy_stays": 35,
+            "enemy_enters": 40,
+            "enemy_leaves": 45
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 30,
+        "total_effective_damage": 30,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_unsafe_all_units_collateral_damage",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 12,
+        "target_group": "all_units",
+        "ally_safe": false,
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_1",
+          "team": "enemy",
+          "hp": 40,
+          "max_hp": 40
+        },
+        {
+          "unit_id": "enemy_2",
+          "team": "enemy",
+          "hp": 40,
+          "max_hp": 40
+        },
+        {
+          "unit_id": "ally_collateral",
+          "team": "ally",
+          "hp": 40,
+          "max_hp": 40
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_1",
+            "enemy_2",
+            "ally_collateral"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          36
+        ],
+        "effective_damage_by_tick": [
+          36
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_1": 28,
+            "enemy_2": 28,
+            "ally_collateral": 28
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 36,
+        "total_effective_damage": 36,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_ally_safe_excludes_collateral_damage",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 12,
+        "target_group": "all_units",
+        "ally_safe": true,
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_1",
+          "team": "enemy",
+          "hp": 40,
+          "max_hp": 40
+        },
+        {
+          "unit_id": "enemy_2",
+          "team": "enemy",
+          "hp": 40,
+          "max_hp": 40
+        },
+        {
+          "unit_id": "ally_safe",
+          "team": "ally",
+          "hp": 40,
+          "max_hp": 40
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_1",
+            "enemy_2"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          24
+        ],
+        "effective_damage_by_tick": [
+          24
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_1": 28,
+            "enemy_2": 28,
+            "ally_safe": 40
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 24,
+        "total_effective_damage": 24,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_diamond_area_and_targetable_filter",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "origin": {
+        "x": 5,
+        "y": 5,
+        "z": 0
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "diamond",
+          "center": {
+            "x": 5,
+            "y": 5,
+            "z": 0
+          },
+          "radius": 1,
+          "vertical_tolerance": 0
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_center",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 5,
+          "y": 5,
+          "z": 0
+        },
+        {
+          "unit_id": "enemy_north",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 5,
+          "y": 4,
+          "z": 0
+        },
+        {
+          "unit_id": "enemy_far",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 7,
+          "y": 5,
+          "z": 0
+        },
+        {
+          "unit_id": "enemy_untargetable",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 4,
+          "y": 5,
+          "z": 0,
+          "targetable": false
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_center",
+            "enemy_north"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          20
+        ],
+        "effective_damage_by_tick": [
+          20
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_center": 20,
+            "enemy_north": 20,
+            "enemy_far": 30,
+            "enemy_untargetable": 30
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 20,
+        "total_effective_damage": 20,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_no_targets_no_effect",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 3
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 10,
+        "target_group": "allies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_only",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1,
+          3
+        ],
+        "tick_count": 2,
+        "affected_ids_by_tick": [
+          [],
+          []
+        ],
+        "raw_heal_by_tick": [
+          0,
+          0
+        ],
+        "effective_heal_by_tick": [
+          0,
+          0
+        ],
+        "overheal_by_tick": [
+          0,
+          0
+        ],
+        "raw_damage_by_tick": [
+          0,
+          0
+        ],
+        "effective_damage_by_tick": [
+          0,
+          0
+        ],
+        "overkill_by_tick": [
+          0,
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_only": 30
+          },
+          {
+            "enemy_only": 30
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 0,
+        "total_effective_damage": 0,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": true
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_no_effect_all_overheal",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 30,
+        "target_group": "allies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "ally_full",
+          "team": "ally",
+          "hp": 100,
+          "max_hp": 100
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "ally_full"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          30
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          30
+        ],
+        "raw_damage_by_tick": [
+          0
+        ],
+        "effective_damage_by_tick": [
+          0
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "ally_full": 100
+          }
+        ],
+        "total_raw_heal": 30,
+        "total_effective_heal": 0,
+        "total_overheal": 30,
+        "total_raw_damage": 0,
+        "total_effective_damage": 0,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_interrupt_cancels_later_ticks",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 5,
+        "interrupt_tick": 3
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_a",
+          "team": "enemy",
+          "hp": 50,
+          "max_hp": 50
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_a"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          10
+        ],
+        "effective_damage_by_tick": [
+          10
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_a": 40
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 10,
+        "total_effective_damage": 10,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_square_membership_diagonal",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "square",
+          "center": {
+            "x": 5,
+            "y": 5,
+            "z": 0
+          },
+          "radius": 1,
+          "vertical_tolerance": 0
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_corner",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 6,
+          "y": 6,
+          "z": 0
+        },
+        {
+          "unit_id": "enemy_far",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 7,
+          "y": 5,
+          "z": 0
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_corner"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          10
+        ],
+        "effective_damage_by_tick": [
+          10
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_corner": 20,
+            "enemy_far": 30
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 10,
+        "total_effective_damage": 10,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_undead_inversion_overkill_ko",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "healing",
+        "per_target_value": 20,
+        "target_group": "allies",
+        "undead_inverts_healing": true,
+        "area": {
+          "shape": "mapwide"
+        }
+      },
+      "units": [
+        {
+          "unit_id": "ally_undead",
+          "team": "ally",
+          "hp": 15,
+          "max_hp": 100,
+          "undead": true
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "ally_undead"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          20
+        ],
+        "effective_damage_by_tick": [
+          15
+        ],
+        "overkill_by_tick": [
+          5
+        ],
+        "hp_by_tick": [
+          {
+            "ally_undead": 0
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 20,
+        "total_effective_damage": 15,
+        "total_overkill": 5,
+        "ko_ids": [
+          "ally_undead"
+        ],
+        "no_effect": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5xt11_vertical_tolerance_excludes_high_unit",
+      "model": "area_hp_over_time",
+      "timing": {
+        "start_tick": 0,
+        "first_tick_delay": 1,
+        "tick_interval": 2,
+        "duration_ticks": 1
+      },
+      "effect": {
+        "kind": "damage",
+        "per_target_value": 10,
+        "target_group": "enemies",
+        "area": {
+          "shape": "diamond",
+          "center": {
+            "x": 5,
+            "y": 5,
+            "z": 0
+          },
+          "radius": 1,
+          "vertical_tolerance": 0
+        }
+      },
+      "units": [
+        {
+          "unit_id": "enemy_inplane",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 5,
+          "y": 5,
+          "z": 0
+        },
+        {
+          "unit_id": "enemy_above",
+          "team": "enemy",
+          "hp": 30,
+          "max_hp": 30,
+          "x": 5,
+          "y": 5,
+          "z": 2
+        }
+      ],
+      "expected": {
+        "tick_times": [
+          1
+        ],
+        "tick_count": 1,
+        "affected_ids_by_tick": [
+          [
+            "enemy_inplane"
+          ]
+        ],
+        "raw_heal_by_tick": [
+          0
+        ],
+        "effective_heal_by_tick": [
+          0
+        ],
+        "overheal_by_tick": [
+          0
+        ],
+        "raw_damage_by_tick": [
+          10
+        ],
+        "effective_damage_by_tick": [
+          10
+        ],
+        "overkill_by_tick": [
+          0
+        ],
+        "hp_by_tick": [
+          {
+            "enemy_inplane": 20,
+            "enemy_above": 30
+          }
+        ],
+        "total_raw_heal": 0,
+        "total_effective_heal": 0,
+        "total_overheal": 0,
+        "total_raw_damage": 10,
+        "total_effective_damage": 10,
+        "total_overkill": 0,
+        "ko_ids": [],
+        "no_effect": false
+      }
+    }
+  ]
+}
