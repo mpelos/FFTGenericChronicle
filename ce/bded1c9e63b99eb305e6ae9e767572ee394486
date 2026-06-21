@@ -1,0 +1,22 @@
+docs/job-balance/30-roster-completion-and-infra-sprint-plan.md
+  s_fce6b25a5764ca::t_cc4fe1948a0467 3,65-87,100-110,128,136-139,141-146
+  s_fce6b25a5764ca::t_59a6f1566ab6c9 1-2,4-64,88-99,111-127,129-135,140
+docs/job-balance/02-job-design-protocol.md
+  s_fce6b25a5764ca::t_59a6f1566ab6c9 260-262
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "cebded1c9e63b99eb305e6ae9e767572ee394486",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
