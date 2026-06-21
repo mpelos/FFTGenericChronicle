@@ -1,0 +1,33 @@
+work/sim-inputs-v0.2.1.json
+  s_fce6b25a5764ca::t_07b50aeb2beac6 1,3-8,10-233,235-665,667-737,739-773,775-881,883-923
+  s_fce6b25a5764ca::t_24693787d04a8c 2,9,234,924
+  s_fce6b25a5764ca::t_445cdaff607ad1 666,738,774,882
+work/gpt-sim-v0.2.1-results.json
+  s_fce6b25a5764ca::t_ef01c5543a59c8 1-22162
+docs/job-balance/02-job-design-protocol.md
+  s_fce6b25a5764ca::t_9698970bf978c6 653-654
+work/sim-inputs-v0.2.1-notes.md
+  s_fce6b25a5764ca::t_37e9c1073868e7 1-67
+docs/job-balance/03-job-roster-and-role-map.md
+  s_fce6b25a5764ca::t_0fd0e97f5a913f 11,74,133
+  s_fce6b25a5764ca::t_0ef5936c496a9e 3
+  s_fce6b25a5764ca::t_b6a4c761992038 68-71,112,122-125
+  s_fce6b25a5764ca::t_873768a3fe6b2f 1-2,4-10,12-67,72-73,75-78,89-92,94-106,108-110,113-121,126-132,134-136,141-143,146,148,152-198,202-232
+  s_fce6b25a5764ca::t_aa33a19c07cef3 79-88,93,107,111,137-140,144-145,147,149-151,199-201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "262c7036768377a8632d89d16063d6c43e975c40",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
