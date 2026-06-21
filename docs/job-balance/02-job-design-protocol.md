@@ -257,6 +257,9 @@ Minimum required evidence:
    - Claude independent checker or independent recomputation path;
    - `0` mismatches on agreed rows, or documented reconciliation before acceptance.
 5. Label all outputs with the formula input version, scenario-set version, and job proposal version.
+6. If a proposal creates a new job chassis or changes a job's equipment, armor class, or multipliers,
+   include that job's actual roster row in the re-sim bundle. Anchor jobs are useful controls, but
+   they are not sufficient to prove no-dominance for a new or materially changed chassis.
 
 If real IVC weapon data is still missing, the strongest possible status is:
 
