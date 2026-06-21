@@ -1,0 +1,187 @@
+{
+  "scenario_count": 12,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t6_base_plate_sword_swing",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "dynamic_delta": 0,
+        "unclamped_response": 0.65,
+        "final_response": 0.65,
+        "damage_per_hit": 65,
+        "total_damage": 65
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_guard_break_additive_plate_swing",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "dynamic_delta": 0.25,
+        "unclamped_response": 0.9,
+        "final_response": 0.9,
+        "damage_per_hit": 90,
+        "total_damage": 90
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_high_clamp_cloth_crush",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 1.0,
+        "effective_penetration": 0.0,
+        "penetrated_response": 1.0,
+        "dynamic_delta": 1.8,
+        "unclamped_response": 2.8,
+        "final_response": 2.5,
+        "damage_per_hit": 250,
+        "total_damage": 250
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_low_clamp_plate_swing_guarded",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "dynamic_delta": -0.6,
+        "unclamped_response": 0.05,
+        "final_response": 0.25,
+        "damage_per_hit": 25,
+        "total_damage": 25
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_multi_hit_per_hit_projection",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 0.7,
+        "penetrated_response": 1.01,
+        "dynamic_delta": 0.15,
+        "unclamped_response": 1.16,
+        "final_response": 1.16,
+        "damage_per_hit": 92,
+        "total_damage": 184
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_penetration_cap_plate_gun",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 1.0,
+        "penetrated_response": 1.1,
+        "dynamic_delta": 0.0,
+        "unclamped_response": 1.1,
+        "final_response": 1.1,
+        "damage_per_hit": 110,
+        "total_damage": 110
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_penetration_does_not_lower_plate_crush",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 1.15,
+        "effective_penetration": 0.65,
+        "penetrated_response": 1.15,
+        "dynamic_delta": 0.0,
+        "unclamped_response": 1.15,
+        "final_response": 1.15,
+        "damage_per_hit": 115,
+        "total_damage": 115
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_piercing_bonus_crossbow_plate",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 0.6,
+        "penetrated_response": 0.98,
+        "dynamic_delta": 0.0,
+        "unclamped_response": 0.98,
+        "final_response": 0.98,
+        "damage_per_hit": 98,
+        "total_damage": 98
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_rend_armor_spear_plate",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.1,
+        "penetrated_response": 0.695,
+        "dynamic_delta": 0.2,
+        "unclamped_response": 0.895,
+        "final_response": 0.895,
+        "damage_per_hit": 89,
+        "total_damage": 89
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_response_delta_stack_mail_thrust",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 1.1,
+        "effective_penetration": 0.1,
+        "penetrated_response": 1.1,
+        "dynamic_delta": 0.1,
+        "unclamped_response": 1.2,
+        "final_response": 1.2,
+        "damage_per_hit": 120,
+        "total_damage": 120
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_static_penetration_plate_crossbow",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 0.35,
+        "penetrated_response": 0.905,
+        "dynamic_delta": 0,
+        "unclamped_response": 0.905,
+        "final_response": 0.905,
+        "damage_per_hit": 90,
+        "total_damage": 90
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6_type_vulnerability_mail_missile",
+      "model": "armor_response",
+      "calculated_fields": {
+        "base_response": 1.1,
+        "effective_penetration": 0.15,
+        "penetrated_response": 1.1,
+        "dynamic_delta": 0.2,
+        "unclamped_response": 1.3,
+        "final_response": 1.3,
+        "damage_per_hit": 130,
+        "total_damage": 130
+      },
+      "validation_errors": []
+    }
+  ]
+}

@@ -37,6 +37,7 @@ tools/*
 !tools/check_accuracy_evasion.py
 !tools/check_healing_attrition.py
 !tools/check_ct_delay.py
+!tools/check_armor_response.py
 !tools/build_vanilla_reference.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
