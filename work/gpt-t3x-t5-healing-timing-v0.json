@@ -1,0 +1,223 @@
+{
+  "scenario_count": 16,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t3xt5_auto_potion_after_nonlethal_hit",
+      "model": "reaction_after_damage",
+      "calculated_fields": {
+        "hp_after_damage": 30,
+        "reaction_can_resolve": true,
+        "effective_triggers": 1,
+        "timed_expected_heal": 21.0,
+        "expected_resource_consumed": 0.7,
+        "expected_final_hp": 51.0,
+        "survives": true
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_auto_potion_cannot_prevent_lethal_hit",
+      "model": "reaction_after_damage",
+      "calculated_fields": {
+        "hp_after_damage": -10,
+        "reaction_can_resolve": false,
+        "effective_triggers": 1,
+        "timed_expected_heal": 0.0,
+        "expected_resource_consumed": 0.0,
+        "expected_final_hp": 0,
+        "survives": false
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_auto_potion_multi_trigger_timing_cap",
+      "model": "reaction_after_damage",
+      "calculated_fields": {
+        "hp_after_damage": 150,
+        "reaction_can_resolve": true,
+        "effective_triggers": 2,
+        "timed_expected_heal": 42.0,
+        "expected_resource_consumed": 1.4,
+        "expected_final_hp": 192.0,
+        "survives": true
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_delayed_heal_after_nonlethal_hit",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 40,
+        "final_hp": 120,
+        "survives": true,
+        "timed_expected_heal": 80.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_delayed_heal_after_nonlethal_overheal_cap",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 170,
+        "final_hp": 200,
+        "survives": true,
+        "timed_expected_heal": 50.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_delivery_comparison_multiple_reliable_pick_higher_final_hp",
+      "model": "delivery_comparison",
+      "calculated_fields": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_in_time",
+        "best_option_id": "cure_spell_in_time",
+        "reliable_option_count": 2,
+        "best_final_hp": 70,
+        "best_timed_expected_heal": 60.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_delivery_comparison_reliable_tie_earliest_wins",
+      "model": "delivery_comparison",
+      "calculated_fields": {
+        "fastest_option_id": "hi_potion_now",
+        "highest_heal_option_id": "hi_potion_now",
+        "best_option_id": "hi_potion_now",
+        "reliable_option_count": 2,
+        "best_final_hp": 60,
+        "best_timed_expected_heal": 50.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_fast_weak_beats_slow_strong_under_pressure",
+      "model": "delivery_comparison",
+      "calculated_fields": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_late",
+        "best_option_id": "potion_now",
+        "reliable_option_count": 1,
+        "best_final_hp": 10,
+        "best_timed_expected_heal": 30.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_item_immediate_prevents_ko",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 10,
+        "final_hp": 10,
+        "survives": true,
+        "timed_expected_heal": 30.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_overheal_capped_item_before_threat",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 170,
+        "final_hp": 170,
+        "survives": true,
+        "timed_expected_heal": 20.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_phoenix_down_before_death_clock",
+      "model": "revive_race",
+      "calculated_fields": {
+        "revive_before_death_clock": true,
+        "same_tick_unsafe": false,
+        "revive_resolved": true,
+        "final_hp": 20,
+        "timed_expected_heal": 20.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_phoenix_down_same_tick_too_late",
+      "model": "revive_race",
+      "calculated_fields": {
+        "revive_before_death_clock": false,
+        "same_tick_unsafe": true,
+        "revive_resolved": false,
+        "final_hp": 0,
+        "timed_expected_heal": 0.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_same_tick_unsafe_for_heal_race",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": true,
+        "heal_resolved": false,
+        "hp_after_threat": -20,
+        "final_hp": 0,
+        "survives": false,
+        "timed_expected_heal": 0.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_slow_strong_wins_when_timing_safe",
+      "model": "delivery_comparison",
+      "calculated_fields": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_in_time",
+        "best_option_id": "cure_spell_in_time",
+        "reliable_option_count": 1,
+        "best_final_hp": 20,
+        "best_timed_expected_heal": 80.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_spell_delay_beats_threat",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 20,
+        "final_hp": 20,
+        "survives": true,
+        "timed_expected_heal": 80.0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3xt5_spell_delay_too_slow_lethal",
+      "model": "active_heal_race",
+      "calculated_fields": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": false,
+        "hp_after_threat": -20,
+        "final_hp": 0,
+        "survives": false,
+        "timed_expected_heal": 0.0
+      },
+      "validation_errors": []
+    }
+  ]
+}

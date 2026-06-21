@@ -1,0 +1,466 @@
+{
+  "schema_version": "t3x-t5-healing-timing-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/05-squire-chemist-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/10-healing-attrition-model-schema.md",
+    "docs/job-balance/11-ct-delay-model-schema.md",
+    "docs/job-balance/16-healing-timing-composition-schema.md",
+    "work/t3-healing-attrition-scenarios-v0.json",
+    "work/t5-ct-delay-scenarios-v0.json"
+  ],
+  "formula_contract": {
+    "normalization": "single_healing_race",
+    "active_heal_before_threat": "resolution_delay_ticks < threat_tick",
+    "same_tick_policy": "unsafe_for_healing_and_revive_races_in_T3xT5_0",
+    "active_heal_after_nonlethal": "delayed healing still resolves if hp_after_threat > 0",
+    "active_heal_after_lethal": "delayed healing does not prevent KO if hp_after_threat <= 0 before resolution",
+    "reaction_timing": "post_damage_survivor_only",
+    "reaction_expected_heal": "effective_heal * trigger_chance * min(incoming_triggers, per_round_cap) if hp_after_damage > 0 else 0",
+    "revive_before_death_clock": "resolution_delay_ticks < death_clock_ticks",
+    "numeric_comparison": {
+      "float_decimals": 6
+    }
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t3xt5_item_immediate_prevents_ko",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 30,
+        "expected_heal": 30,
+        "resolution_delay_ticks": 0
+      },
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 2,
+        "incoming_damage": 60
+      },
+      "expected": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 10,
+        "final_hp": 10,
+        "survives": true,
+        "timed_expected_heal": 30
+      }
+    },
+    {
+      "scenario_id": "t3xt5_spell_delay_too_slow_lethal",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 80,
+        "expected_heal": 80,
+        "resolution_delay_ticks": 4
+      },
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 3,
+        "incoming_damage": 60
+      },
+      "expected": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": false,
+        "hp_after_threat": -20,
+        "final_hp": 0,
+        "survives": false,
+        "timed_expected_heal": 0
+      }
+    },
+    {
+      "scenario_id": "t3xt5_spell_delay_beats_threat",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 80,
+        "expected_heal": 80,
+        "resolution_delay_ticks": 3
+      },
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 5,
+        "incoming_damage": 100
+      },
+      "expected": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 20,
+        "final_hp": 20,
+        "survives": true,
+        "timed_expected_heal": 80
+      }
+    },
+    {
+      "scenario_id": "t3xt5_fast_weak_beats_slow_strong_under_pressure",
+      "model": "delivery_comparison",
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 3,
+        "incoming_damage": 60
+      },
+      "options": [
+        {
+          "option_id": "potion_now",
+          "effective_heal": 30,
+          "expected_heal": 30,
+          "resolution_delay_ticks": 0
+        },
+        {
+          "option_id": "cure_spell_late",
+          "effective_heal": 80,
+          "expected_heal": 80,
+          "resolution_delay_ticks": 4
+        }
+      ],
+      "expected": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_late",
+        "best_option_id": "potion_now",
+        "reliable_option_count": 1,
+        "best_final_hp": 10,
+        "best_timed_expected_heal": 30
+      }
+    },
+    {
+      "scenario_id": "t3xt5_slow_strong_wins_when_timing_safe",
+      "model": "delivery_comparison",
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 5,
+        "incoming_damage": 100
+      },
+      "options": [
+        {
+          "option_id": "potion_now",
+          "effective_heal": 30,
+          "expected_heal": 30,
+          "resolution_delay_ticks": 0
+        },
+        {
+          "option_id": "cure_spell_in_time",
+          "effective_heal": 80,
+          "expected_heal": 80,
+          "resolution_delay_ticks": 3
+        }
+      ],
+      "expected": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_in_time",
+        "best_option_id": "cure_spell_in_time",
+        "reliable_option_count": 1,
+        "best_final_hp": 20,
+        "best_timed_expected_heal": 80
+      }
+    },
+    {
+      "scenario_id": "t3xt5_delivery_comparison_multiple_reliable_pick_higher_final_hp",
+      "model": "delivery_comparison",
+      "target": {
+        "hp_before": 80,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 5,
+        "incoming_damage": 70
+      },
+      "options": [
+        {
+          "option_id": "potion_now",
+          "effective_heal": 30,
+          "expected_heal": 30,
+          "resolution_delay_ticks": 0
+        },
+        {
+          "option_id": "cure_spell_in_time",
+          "effective_heal": 60,
+          "expected_heal": 60,
+          "resolution_delay_ticks": 2
+        }
+      ],
+      "expected": {
+        "fastest_option_id": "potion_now",
+        "highest_heal_option_id": "cure_spell_in_time",
+        "best_option_id": "cure_spell_in_time",
+        "reliable_option_count": 2,
+        "best_final_hp": 70,
+        "best_timed_expected_heal": 60
+      }
+    },
+    {
+      "scenario_id": "t3xt5_delivery_comparison_reliable_tie_earliest_wins",
+      "model": "delivery_comparison",
+      "target": {
+        "hp_before": 80,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 5,
+        "incoming_damage": 70
+      },
+      "options": [
+        {
+          "option_id": "hi_potion_now",
+          "effective_heal": 50,
+          "expected_heal": 50,
+          "resolution_delay_ticks": 0
+        },
+        {
+          "option_id": "cure_spell_same_result",
+          "effective_heal": 50,
+          "expected_heal": 50,
+          "resolution_delay_ticks": 2
+        }
+      ],
+      "expected": {
+        "fastest_option_id": "hi_potion_now",
+        "highest_heal_option_id": "hi_potion_now",
+        "best_option_id": "hi_potion_now",
+        "reliable_option_count": 2,
+        "best_final_hp": 60,
+        "best_timed_expected_heal": 50
+      }
+    },
+    {
+      "scenario_id": "t3xt5_same_tick_unsafe_for_heal_race",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 80,
+        "expected_heal": 80,
+        "resolution_delay_ticks": 4
+      },
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 4,
+        "incoming_damage": 60
+      },
+      "expected": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": true,
+        "heal_resolved": false,
+        "hp_after_threat": -20,
+        "final_hp": 0,
+        "survives": false,
+        "timed_expected_heal": 0
+      }
+    },
+    {
+      "scenario_id": "t3xt5_delayed_heal_after_nonlethal_hit",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 80,
+        "expected_heal": 80,
+        "resolution_delay_ticks": 4
+      },
+      "target": {
+        "hp_before": 100,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 2,
+        "incoming_damage": 60
+      },
+      "expected": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 40,
+        "final_hp": 120,
+        "survives": true,
+        "timed_expected_heal": 80
+      }
+    },
+    {
+      "scenario_id": "t3xt5_delayed_heal_after_nonlethal_overheal_cap",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 50,
+        "expected_heal": 50,
+        "resolution_delay_ticks": 4
+      },
+      "target": {
+        "hp_before": 190,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 2,
+        "incoming_damage": 20
+      },
+      "expected": {
+        "heal_before_threat": false,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 170,
+        "final_hp": 200,
+        "survives": true,
+        "timed_expected_heal": 50
+      }
+    },
+    {
+      "scenario_id": "t3xt5_auto_potion_after_nonlethal_hit",
+      "model": "reaction_after_damage",
+      "reaction": {
+        "effective_heal": 30,
+        "trigger_chance": 0.7,
+        "incoming_triggers": 1,
+        "per_round_cap": 1,
+        "resource_cost": 1
+      },
+      "target": {
+        "hp_before": 80,
+        "max_hp": 200
+      },
+      "threat": {
+        "incoming_damage": 50
+      },
+      "expected": {
+        "hp_after_damage": 30,
+        "reaction_can_resolve": true,
+        "effective_triggers": 1,
+        "timed_expected_heal": 21,
+        "expected_resource_consumed": 0.7,
+        "expected_final_hp": 51,
+        "survives": true
+      }
+    },
+    {
+      "scenario_id": "t3xt5_auto_potion_multi_trigger_timing_cap",
+      "model": "reaction_after_damage",
+      "reaction": {
+        "effective_heal": 30,
+        "trigger_chance": 0.7,
+        "incoming_triggers": 3,
+        "per_round_cap": 2,
+        "resource_cost": 1
+      },
+      "target": {
+        "hp_before": 200,
+        "max_hp": 200
+      },
+      "threat": {
+        "incoming_damage": 50
+      },
+      "expected": {
+        "hp_after_damage": 150,
+        "reaction_can_resolve": true,
+        "effective_triggers": 2,
+        "timed_expected_heal": 42,
+        "expected_resource_consumed": 1.4,
+        "expected_final_hp": 192,
+        "survives": true
+      }
+    },
+    {
+      "scenario_id": "t3xt5_auto_potion_cannot_prevent_lethal_hit",
+      "model": "reaction_after_damage",
+      "reaction": {
+        "effective_heal": 30,
+        "trigger_chance": 0.7,
+        "incoming_triggers": 1,
+        "per_round_cap": 1,
+        "resource_cost": 1
+      },
+      "target": {
+        "hp_before": 40,
+        "max_hp": 200
+      },
+      "threat": {
+        "incoming_damage": 50
+      },
+      "expected": {
+        "hp_after_damage": -10,
+        "reaction_can_resolve": false,
+        "effective_triggers": 1,
+        "timed_expected_heal": 0,
+        "expected_resource_consumed": 0,
+        "expected_final_hp": 0,
+        "survives": false
+      }
+    },
+    {
+      "scenario_id": "t3xt5_phoenix_down_before_death_clock",
+      "model": "revive_race",
+      "revive": {
+        "revive_hp": 20,
+        "expected_heal": 20,
+        "resolution_delay_ticks": 0
+      },
+      "death_clock": {
+        "death_clock_ticks": 3
+      },
+      "expected": {
+        "revive_before_death_clock": true,
+        "same_tick_unsafe": false,
+        "revive_resolved": true,
+        "final_hp": 20,
+        "timed_expected_heal": 20
+      }
+    },
+    {
+      "scenario_id": "t3xt5_phoenix_down_same_tick_too_late",
+      "model": "revive_race",
+      "revive": {
+        "revive_hp": 20,
+        "expected_heal": 20,
+        "resolution_delay_ticks": 3
+      },
+      "death_clock": {
+        "death_clock_ticks": 3
+      },
+      "expected": {
+        "revive_before_death_clock": false,
+        "same_tick_unsafe": true,
+        "revive_resolved": false,
+        "final_hp": 0,
+        "timed_expected_heal": 0
+      }
+    },
+    {
+      "scenario_id": "t3xt5_overheal_capped_item_before_threat",
+      "model": "active_heal_race",
+      "healing": {
+        "effective_heal": 20,
+        "expected_heal": 20,
+        "resolution_delay_ticks": 0
+      },
+      "target": {
+        "hp_before": 180,
+        "max_hp": 200
+      },
+      "threat": {
+        "threat_tick": 1,
+        "incoming_damage": 30
+      },
+      "expected": {
+        "heal_before_threat": true,
+        "same_tick_unsafe": false,
+        "heal_resolved": true,
+        "hp_after_threat": 170,
+        "final_hp": 170,
+        "survives": true,
+        "timed_expected_heal": 20
+      }
+    }
+  ]
+}
