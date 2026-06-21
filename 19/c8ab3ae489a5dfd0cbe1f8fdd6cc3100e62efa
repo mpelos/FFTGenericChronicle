@@ -1,0 +1,36 @@
+work/t3x-t5x-t8-ko-corpse-undead-scenarios-v0.json
+  s_fce6b25a5764ca::t_64194e75c9cc8e 61-78,111-128,161-178,211-228,277-297,335-352,378-395,432-449,486-503,529-546,572-589,615-632,665-682,715-732,765-782
+  s_fce6b25a5764ca::t_a1a3995094561c 3
+  s_fce6b25a5764ca::t_6fa15adb7470e6 783-807,826-850,869-893,912-940,959-985
+  s_fce6b25a5764ca::t_18d8819bd303d6 808-825,851-868,894-911,941-958,986-1001
+  s_fce6b25a5764ca::t_0f2f2523bf9d8d 1002-1049
+  s_fce6b25a5764ca::t_6e2002c97be352 1050-1069
+  s_fce6b25a5764ca::t_2a7ce79a2aa737 1-2,4-60,79-110,129-160,179-210,229-276,298-334,353-377,396-431,450-485,504-528,547-571,590-614,633-664,683-714,733-764,1070-1072
+tools/check_ko_corpse_undead.py
+  s_fce6b25a5764ca::t_2a7ce79a2aa737 1-195
+work/gpt-t3x-t5x-t8-ko-corpse-undead-v0.json
+  s_fce6b25a5764ca::t_18d8819bd303d6 306-403
+  s_fce6b25a5764ca::t_6e2002c97be352 3,404-425
+  s_fce6b25a5764ca::t_64194e75c9cc8e 1-2,4-305,426-431
+docs/job-balance/37-ko-corpse-undead-state-composition-schema.md
+  s_fce6b25a5764ca::t_6fa15adb7470e6 129-132,135
+  s_fce6b25a5764ca::t_a1a3995094561c 3,184-197
+  s_fce6b25a5764ca::t_2a7ce79a2aa737 1-2,4-113,117-124,126-128,133-134,136-183
+  s_fce6b25a5764ca::t_0f2f2523bf9d8d 114-116,125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "19c8ab3ae489a5dfd0cbe1f8fdd6cc3100e62efa",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
