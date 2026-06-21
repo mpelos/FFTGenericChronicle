@@ -44,6 +44,7 @@ Accepted/provisional job documents now refer to checks in these categories:
 - accuracy, evasion, line-of-fire, and height;
 - CT, delayed actions, overwatch, and interrupts;
 - AI targeting or challenge behavior;
+- timed targetability exclusion and airborne/off-board windows;
 - mitigation stacking across armor response, Protect/Shell, element, zodiac, and clamps;
 - resource and MP economy beyond per-action recovery plumbing;
 - spell routing/Reflect composition;
@@ -200,6 +201,29 @@ Notes:
 - if robust targeting changes are not data-moddable, the design should use zone, CT, movement, or
   counter-pressure alternatives.
 
+### T5xT8 - Timed Untargetability And Airborne Exclusion Composition
+
+Goal: model effects that remove a unit from normal targetability for a bounded timing window, then
+return it to the battlefield.
+
+Unblocks:
+
+- Dragoon `Jump` airborne untargetability;
+- Vanish, Invisible, AI-ignore, or self-exclusion effects if later tied to duration;
+- any future movement, reaction, or action that sets `can_target=false` for a timed window.
+
+Notes:
+
+- T5 supplies the duration, landing/resolution tick, same-tick policy, and whiff window;
+- T8 supplies candidate eligibility, targetability, AI ignore, and control/targeting interaction;
+- neither T5 nor T8 is sufficient alone for off-board loops, because timing and targetability must
+  be evaluated together;
+- the first bundle should include a normal delayed Jump, a target moving before landing, enemies
+  retargeting while the unit is airborne, a same-tick landing edge case, and a repeated-Jump loop
+  stress row;
+- the gate should prove that self-exclusion creates tactical tempo rather than removing enemy
+  agency.
+
 ### T6xPS - Protect/Shell Mitigation Stacking Composition
 
 Goal: model how Protect, Shell, Wall, element, zodiac, armor response, and the shared clamp compose
@@ -325,20 +349,22 @@ Recommended order before more concrete skill-number work:
 5. Build `T6 - Dynamic Armor Response` and `T7 - Enemy-Offense/Disarm` before concrete Knight,
    Monk anti-plate, Archer piercing, Thief disruption, or similar values.
 6. Evaluate `T8 - AI Targeting/Challenge` separately; if not feasible, redesign those skills early.
-7. Build `T6xPS - Protect/Shell Mitigation Stacking` before concrete Protect, Shell, Wall, or
+7. Build `T5xT8 - Timed Untargetability/Airborne Exclusion` before concrete Jump untargetability
+   or timed self-exclusion values.
+8. Build `T6xPS - Protect/Shell Mitigation Stacking` before concrete Protect, Shell, Wall, or
    broad defensive status values.
-8. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
+9. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
    loops.
-9. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
-10. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
-11. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
+10. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
+11. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
+12. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
     Bard/Dancer global values.
 
 ## Acceptance Gate Per Track
 
 Each new validation model from T3 through T11, including composition tracks such as T3xT5, T6xT7,
-T6xPS, and T8xSR, must inherit the same dual-independent discipline that made formula-balance v0.2
-trustworthy.
+T5xT8, T6xPS, and T8xSR, must inherit the same dual-independent discipline that made
+formula-balance v0.2 trustworthy.
 
 Before a track output can be used to accept concrete skill data:
 
@@ -406,3 +432,4 @@ Later accepted job proposals extended this roadmap with additional gates:
 - T6xPS and T9 from White Mage/Black Mage review;
 - T8xSR and T10 from Time Mage/Mystic review;
 - T11, with T11A and T11B sub-contracts, from Summoner/Geomancer review.
+- T5xT8 from Dragoon/Samurai review.
