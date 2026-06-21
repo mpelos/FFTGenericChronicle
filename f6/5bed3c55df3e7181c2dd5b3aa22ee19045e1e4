@@ -1,0 +1,32 @@
+work/gpt-t5x-t8-timed-untargetability-v0.json
+  s_fce6b25a5764ca::t_9f5bade29dc5f2 1-2,4-186,247-251
+  s_fce6b25a5764ca::t_76ab060c775af8 3,187-246
+work/t5x-t8-timed-untargetability-scenarios-v0.json
+  s_fce6b25a5764ca::t_43b473402c6b14 652-685,700-732,747-772,783-816
+  s_fce6b25a5764ca::t_a2513276e21c43 1-2,4-49,60-94,107-141,152-186,197-237,248-288,299-331,344-376,387-426,440-459,469-488,496-536,553-592,609-641,831-833
+  s_fce6b25a5764ca::t_76ab060c775af8 686-699,733-746,773-782,817-830
+  s_fce6b25a5764ca::t_22b5d2c65dfd2a 3
+  s_fce6b25a5764ca::t_9f5bade29dc5f2 50-59,95-106,142-151,187-196,238-247,289-298,332-343,377-386,427-439,460-468,489-495,537-552,593-608,642-651
+tools/check_timed_untargetability.py
+  s_fce6b25a5764ca::t_fa28d75b872a23 1-308
+docs/job-balance/39-timed-untargetability-composition-schema.md
+  s_fce6b25a5764ca::t_bc3477b75e9f0f 1-2,4-194,199-241
+  s_fce6b25a5764ca::t_a13c7524ff96e1 3,242-253
+  s_fce6b25a5764ca::t_0c2b23d3cfd673 195-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "f65bed3c55df3e7181c2dd5b3aa22ee19045e1e4",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
