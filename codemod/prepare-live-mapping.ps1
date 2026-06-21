@@ -5,13 +5,15 @@ param(
     [string]$ModId = 'fftivc.generic.chronicle.codemod',
     [string]$ProcessName = 'FFT_enhanced',
     [switch]$EnableModInAppConfig,
-    [switch]$NoArchiveLog
+    [switch]$NoArchiveLog,
+    [switch]$DryRun
 )
 
 # Prepare a clean live mapping session:
 # - build/deploy the code mod
 # - install a vanilla-preserving runtime settings profile
 # - archive the old game-side battleprobe_log.txt so the next launch produces unmistakably fresh evidence
+# - with -DryRun, validate/print the plan without editing AppConfig, deploying, or moving logs
 $ErrorActionPreference = 'Stop'
 
 function Test-AppModEnabled {
@@ -88,11 +90,31 @@ function Test-ProcessLoadedModule {
 
 $repo = Split-Path -Parent $PSScriptRoot
 $deploy = Join-Path $PSScriptRoot 'build-deploy.ps1'
+$settingsValidateProject = Join-Path $PSScriptRoot 'fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj'
+$runtimeSettingsPath = if ([IO.Path]::IsPathRooted($RuntimeSettings)) {
+    [IO.Path]::GetFullPath($RuntimeSettings)
+} else {
+    [IO.Path]::GetFullPath((Join-Path $repo $RuntimeSettings))
+}
 $runningGame = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue
 $runningReloaded = Get-Process -Name 'Reloaded-II' -ErrorAction SilentlyContinue
 $modModuleName = "$ModId.dll"
 
 Write-Host "Preparing Generic Chronicle live mapping session" -ForegroundColor Cyan
+Write-Host "Runtime settings: $runtimeSettingsPath" -ForegroundColor DarkGray
+if ($DryRun) {
+    Write-Host "Dry run: no AppConfig edits, deploys, or log moves will be performed." -ForegroundColor Yellow
+}
+
+if (-not (Test-Path -LiteralPath $runtimeSettingsPath)) {
+    throw "Runtime settings not found: $runtimeSettingsPath"
+}
+
+& dotnet run --project $settingsValidateProject -c Release -- $runtimeSettingsPath
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 if ($runningGame) {
     Write-Host "$ProcessName is currently running. Restart it through Reloaded-II before collecting evidence; the current process will not load the freshly built DLL." -ForegroundColor Yellow
     foreach ($process in @($runningGame)) {
@@ -105,7 +127,10 @@ if ($runningGame) {
     }
 }
 
-if ($EnableModInAppConfig -and ($runningGame -or $runningReloaded)) {
+if ($EnableModInAppConfig -and $DryRun) {
+    Write-Host "Dry run: would enable $ModId in AppConfig if needed: $AppConfig" -ForegroundColor DarkGray
+}
+elseif ($EnableModInAppConfig -and ($runningGame -or $runningReloaded)) {
     Write-Host "Refusing to edit AppConfig while Reloaded-II or $ProcessName is running. Close both, then rerun with -EnableModInAppConfig." -ForegroundColor Yellow
     exit 1
 }
@@ -119,19 +144,28 @@ else {
     Write-Host "AppConfig does not enable $ModId. Enable it in Reloaded-II, or rerun this helper with -EnableModInAppConfig after closing Reloaded-II." -ForegroundColor Yellow
 }
 
-if ($runningGame -or $runningReloaded) {
+if (($runningGame -or $runningReloaded) -and -not $DryRun) {
     Write-Host "Stopping before deploy because Reloaded-II or $ProcessName is running." -ForegroundColor Yellow
     Write-Host "Close both, rerun this helper, then reopen Reloaded-II and launch FFT for live evidence." -ForegroundColor Yellow
     exit 1
 }
 
-& $deploy -RuntimeSettings $RuntimeSettings -SuppressGameRunningWarning
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if ($DryRun) {
+    Write-Host "Dry run: would deploy code mod with runtime settings:" -ForegroundColor DarkGray
+    Write-Host "  $deploy -RuntimeSettings $runtimeSettingsPath -SuppressGameRunningWarning"
+}
+else {
+    & $deploy -RuntimeSettings $runtimeSettingsPath -SuppressGameRunningWarning
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
 }
 
 if (-not $NoArchiveLog) {
-    if ($runningGame) {
+    if ($DryRun) {
+        Write-Host "Dry run: would archive old game log if present: $GameLog" -ForegroundColor DarkGray
+    }
+    elseif ($runningGame) {
         Write-Host "Skipped archiving game log because FFT_enhanced is running: $GameLog" -ForegroundColor Yellow
     }
     elseif (Test-Path -LiteralPath $GameLog) {
@@ -150,7 +184,9 @@ Write-Host "Next:" -ForegroundColor Green
 Write-Host "1. Launch FFT through Reloaded-II and make one or more controlled damage events."
 Write-Host "2. Analyze the fresh log:"
 Write-Host "   python tools\analyze_battleprobe_log.py"
-Write-Host "3. If slots are stable, promote exact settings:"
+Write-Host "3. Or wait for slot/response evidence directly:"
+Write-Host "   python tools\watch_live_mapping.py --runtime-events 3 --target-slots-present 3 --attacker-slots-present 3 --response-events 1 --require-trace-var trace.finaldamage --max-rewrite-failures 0"
+Write-Host "4. If slots are stable, promote exact settings:"
 Write-Host "   python tools\promote_runtime_offsets.py --min-events 3 --base-settings work\battle-runtime-settings.v0.2.scan.live-noop.json --output work\battle-runtime-settings.v0.2.live-noop.exact-from-log.json --also-policy --policy-base-settings work\battle-runtime-settings.v0.2.scan.generated.json --policy-output work\battle-runtime-settings.v0.2.policy.exact-from-log.json"
 Write-Host ""
 Write-Host "Fresh log path: $GameLog" -ForegroundColor Yellow

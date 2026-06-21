@@ -3,12 +3,23 @@ param(
     [string]$MatrixResponseSettings = 'work\battle-runtime-settings.v0.2.matrix.generated.json',
     [string]$ScanSettings = 'work\battle-runtime-settings.v0.2.scan.generated.json',
     [string]$GurpsDrSettings = 'docs\modding\examples\battle-runtime-settings.gurps-dr.example.json',
+    [string]$StaticDrSettings = 'docs\modding\examples\battle-runtime-settings.static-dr.example.json',
     [string]$MpSettings = 'docs\modding\examples\battle-runtime-settings.mp.example.json',
+    [string]$SentinelBandsSettings = 'docs\modding\examples\battle-runtime-settings.sentinel-bands.example.json',
+    [string]$DryRunSettings = 'docs\modding\examples\battle-runtime-settings.dry-run.example.json',
+    [string]$NeuterSpotcheckSettings = 'work\battle-runtime-settings.neuter-spotcheck.json',
+    [string]$DeathHpSettings = 'work\battle-runtime-settings.death-test.json',
+    [string]$DeathKillFlagSettings = 'work\battle-runtime-settings.death-test-killflag.json',
     [string]$Scenarios = 'docs\modding\examples\runtime-simulation-scenarios.example.json',
     [string]$MatrixScenarios = 'docs\modding\examples\runtime-simulation-matrix.v0.2.example.json',
     [string]$MatrixResponseScenarios = 'docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json',
     [string]$GurpsDrScenarios = 'docs\modding\examples\runtime-simulation-gurps-dr.example.json',
+    [string]$StaticDrScenarios = 'docs\modding\examples\runtime-simulation-static-dr.example.json',
     [string]$MpScenarios = 'docs\modding\examples\runtime-simulation-mp.example.json',
+    [string]$SentinelBandsScenarios = 'docs\modding\examples\runtime-simulation-sentinel-bands.example.json',
+    [string]$DryRunScenarios = 'docs\modding\examples\runtime-simulation-dry-run.example.json',
+    [string]$NeuterSpotcheckScenarios = 'docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json',
+    [string]$DeathGateScenarios = 'docs\modding\examples\runtime-simulation-death-gate.example.json',
     [switch]$SkipPython,
     [switch]$SkipDotNet,
     [switch]$SkipGitDiffCheck
@@ -58,6 +69,27 @@ try {
     Write-Host "Generic Chronicle offline checks" -ForegroundColor Green
     Write-Host "Repo: $repo" -ForegroundColor DarkGray
 
+    Invoke-Step "PowerShell syntax" {
+        $parseFiles = @(
+            Get-ChildItem -LiteralPath (Join-Path $repo 'codemod') -Filter '*.ps1' |
+                Select-Object -ExpandProperty FullName
+        )
+        $rootDeploy = Join-Path $repo 'deploy.ps1'
+        if (Test-Path -LiteralPath $rootDeploy) {
+            $parseFiles += $rootDeploy
+        }
+
+        foreach ($scriptFile in $parseFiles) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($scriptFile, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+                $messages = $errors | ForEach-Object { "$($_.Extent.StartLineNumber):$($_.Extent.StartColumnNumber) $($_.Message)" }
+                throw "PowerShell parse failed for $scriptFile`n$($messages -join [Environment]::NewLine)"
+            }
+        }
+    }
+
     if (-not $SkipPython) {
         Invoke-Step "Python syntax" {
             $pythonFiles = @(Get-ChildItem -LiteralPath (Join-Path $repo 'tools') -Filter '*.py' |
@@ -70,6 +102,9 @@ try {
         Invoke-Step "Python tooling smoke tests" {
             Invoke-Native 'python' @('tools\test_runtime_tooling.py')
             Invoke-Native 'python' @('tools\test_memtable_candidates.py')
+            Invoke-Native 'python' @('tools\test_neuter_data.py')
+            Invoke-Native 'python' @('tools\test_runtime_formula_context.py')
+            Invoke-Native 'python' @('tools\test_runtime_profiles.py')
         }
 
         Invoke-Step "JSON files" {
@@ -78,20 +113,31 @@ try {
                 'docs\modding\examples\runtime-simulation-matrix.v0.2.example.json',
                 'docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json',
                 'docs\modding\examples\runtime-simulation-gurps-dr.example.json',
+                'docs\modding\examples\runtime-simulation-static-dr.example.json',
                 'docs\modding\examples\runtime-simulation-mp.example.json',
+                'docs\modding\examples\runtime-simulation-sentinel-bands.example.json',
+                'docs\modding\examples\runtime-simulation-dry-run.example.json',
+                'docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json',
+                'docs\modding\examples\runtime-simulation-death-gate.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2-response.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.matrix.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.scan.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.scan.live-noop.example.json',
                 'docs\modding\examples\battle-runtime-settings.gurps-dr.example.json',
+                'docs\modding\examples\battle-runtime-settings.static-dr.example.json',
                 'docs\modding\examples\battle-runtime-settings.mp.example.json',
+                'docs\modding\examples\battle-runtime-settings.sentinel-bands.example.json',
                 'docs\modding\examples\battle-runtime-settings.dry-run.example.json',
                 'docs\modding\examples\battle-runtime-settings.memtable-probe.disabled.example.json',
                 'work\battle-runtime-settings.v0.2.generated.json',
                 'work\battle-runtime-settings.v0.2.matrix.generated.json',
                 'work\battle-runtime-settings.v0.2.scan.generated.json',
                 'work\battle-runtime-settings.v0.2.scan.live-noop.json',
+                'work\battle-runtime-settings.neuter-spotcheck.json',
+                'work\battle-runtime-settings.death-flag-capture.json',
+                'work\battle-runtime-settings.death-test.json',
+                'work\battle-runtime-settings.death-test-killflag.json',
                 'work\memtable-probe-candidates.disabled.json',
                 'work\runtime-simulation.v0.2.generated.sample.json'
             )
@@ -218,6 +264,24 @@ try {
 
             $mpScenariosPath = Resolve-RepoPath $MpScenarios
             $mpSettingsPath = Resolve-RepoPath $MpSettings
+            $staticDrScenariosPath = Resolve-RepoPath $StaticDrScenarios
+            $staticDrSettingsPath = Resolve-RepoPath $StaticDrSettings
+            if ((Test-Path -LiteralPath $staticDrScenariosPath) -and
+                (Test-Path -LiteralPath $staticDrSettingsPath)) {
+                Write-Host "static DR fixture -> $StaticDrSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $staticDrSettingsPath,
+                    $staticDrScenariosPath,
+                    '--no-trace'
+                )
+            }
+
             if ((Test-Path -LiteralPath $mpScenariosPath) -and
                 (Test-Path -LiteralPath $mpSettingsPath)) {
                 Write-Host "MP fixture -> $MpSettings" -ForegroundColor DarkGray
@@ -233,6 +297,141 @@ try {
                     '--no-trace'
                 )
             }
+
+            $sentinelBandsScenariosPath = Resolve-RepoPath $SentinelBandsScenarios
+            $sentinelBandsSettingsPath = Resolve-RepoPath $SentinelBandsSettings
+            if ((Test-Path -LiteralPath $sentinelBandsScenariosPath) -and
+                (Test-Path -LiteralPath $sentinelBandsSettingsPath)) {
+                Write-Host "sentinel bands fixture -> $SentinelBandsSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $sentinelBandsSettingsPath,
+                    $sentinelBandsScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $neuterSpotcheckScenariosPath = Resolve-RepoPath $NeuterSpotcheckScenarios
+            $neuterSpotcheckSettingsPath = Resolve-RepoPath $NeuterSpotcheckSettings
+            $dryRunScenariosPath = Resolve-RepoPath $DryRunScenarios
+            $dryRunSettingsPath = Resolve-RepoPath $DryRunSettings
+            if ((Test-Path -LiteralPath $dryRunScenariosPath) -and
+                (Test-Path -LiteralPath $dryRunSettingsPath)) {
+                Write-Host "dry-run fixture -> $DryRunSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $dryRunSettingsPath,
+                    $dryRunScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            if ((Test-Path -LiteralPath $neuterSpotcheckScenariosPath) -and
+                (Test-Path -LiteralPath $neuterSpotcheckSettingsPath)) {
+                Write-Host "neuter spot-check fixture -> $NeuterSpotcheckSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $neuterSpotcheckSettingsPath,
+                    $neuterSpotcheckScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $deathGateScenariosPath = Resolve-RepoPath $DeathGateScenarios
+            $deathHpSettingsPath = Resolve-RepoPath $DeathHpSettings
+            if ((Test-Path -LiteralPath $deathGateScenariosPath) -and
+                (Test-Path -LiteralPath $deathHpSettingsPath)) {
+                Write-Host "death gate HP-only fixture -> $DeathHpSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $deathHpSettingsPath,
+                    $deathGateScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $deathKillFlagSettingsPath = Resolve-RepoPath $DeathKillFlagSettings
+            if ((Test-Path -LiteralPath $deathGateScenariosPath) -and
+                (Test-Path -LiteralPath $deathKillFlagSettingsPath)) {
+                Write-Host "death gate KO-flag fixture -> $DeathKillFlagSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $deathKillFlagSettingsPath,
+                    $deathGateScenariosPath,
+                    '--no-trace'
+                )
+            }
+        }
+
+        Invoke-Step "Live mapping helper dry-run" {
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-live-mapping.ps1',
+                '-DryRun'
+            )
+        }
+
+        Invoke-Step "Dry-run evaluation helper dry-run" {
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-dry-run-evaluation.ps1',
+                '-DryRun'
+            )
+        }
+
+        Invoke-Step "Death gate helper dry-runs" {
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-death-gate.ps1',
+                '-DryRun',
+                '-NeuterSpotcheck'
+            )
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-death-gate.ps1',
+                '-DryRun'
+            )
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-death-gate.ps1',
+                '-DryRun',
+                '-KillFlag'
+            )
         }
     }
 

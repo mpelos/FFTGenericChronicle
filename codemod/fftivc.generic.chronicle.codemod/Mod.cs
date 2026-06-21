@@ -2797,6 +2797,8 @@ internal sealed class FormulaDerivedVariable
 // can be set without clobbering the rest of the field. Configured in JSON once the offset is mapped.
 internal sealed class DeathStateWrite
 {
+    private const int CopiedRawSize = 0x180;
+
     public string Name { get; set; } = "";
     public int Offset { get; set; } = -1;
     public string Width { get; set; } = "Byte";   // Byte | Word | DWord
@@ -2804,21 +2806,67 @@ internal sealed class DeathStateWrite
     public int? OrMask { get; set; }               // field |= OrMask  (set status bit(s))
     public int? AndMask { get; set; }              // field &= AndMask (clear bit(s))
 
-    private int WidthBytes => (Width ?? "Byte").Trim().ToLowerInvariant() switch
+    internal bool TryValidate(out int width, out long mask, out string error)
     {
-        "word" or "short" or "uint16" or "int16" => 2,
-        "dword" or "int" or "uint32" or "int32" => 4,
-        _ => 1,
-    };
+        width = 0;
+        mask = 0;
+        error = "";
+
+        if (Offset < 0) { error = "negative offset"; return false; }
+        if (!TryGetWidthBytes(out width, out error)) return false;
+        if (Offset + width > CopiedRawSize)
+        {
+            error = $"Offset 0x{Offset:X}+{width} exceeds copied unit snapshot size 0x{CopiedRawSize:X}.";
+            return false;
+        }
+        if (Value is null && OrMask is null && AndMask is null) { error = "no Value/OrMask/AndMask"; return false; }
+
+        mask = FieldMask(width);
+        if (!FitsWidth(Value, nameof(Value), mask, out error)) return false;
+        if (!FitsWidth(OrMask, nameof(OrMask), mask, out error)) return false;
+        if (!FitsWidth(AndMask, nameof(AndMask), mask, out error)) return false;
+        return true;
+    }
+
+    internal bool TryGetWidthBytes(out int width, out string error)
+    {
+        error = "";
+        width = (Width ?? "Byte").Trim().ToLowerInvariant() switch
+        {
+            "byte" or "uint8" or "int8" or "sbyte" => 1,
+            "word" or "short" or "uint16" or "int16" => 2,
+            "dword" or "int" or "uint32" or "int32" => 4,
+            _ => 0,
+        };
+
+        if (width != 0) return true;
+        error = $"unsupported Width '{Width}'. Use Byte, Word, or DWord.";
+        return false;
+    }
+
+    private static long FieldMask(int width)
+        => width == 4 ? 0xFFFF_FFFFL : (1L << (8 * width)) - 1;
+
+    private static bool FitsWidth(int? value, string field, long mask, out string error)
+    {
+        error = "";
+        if (!value.HasValue) return true;
+        if (value.Value < 0)
+        {
+            error = $"{field} must be nonnegative.";
+            return false;
+        }
+        if (value.Value <= mask) return true;
+        error = $"{field}=0x{value.Value:X} exceeds field mask 0x{mask:X}.";
+        return false;
+    }
 
     public bool TryApply(nint basePtr, out string desc, out string error)
     {
         desc = "";
         error = "";
-        if (Offset < 0) { error = "negative offset"; return false; }
-        if (Value is null && OrMask is null && AndMask is null) { error = "no Value/OrMask/AndMask"; return false; }
+        if (!TryValidate(out int width, out long mask, out error)) return false;
 
-        int width = WidthBytes;
         nint addr = basePtr + Offset;
         var cur = new byte[width];
         if (!CurrentProcessMemory.TryRead(addr, cur, out error)) return false;
@@ -2826,14 +2874,14 @@ internal sealed class DeathStateWrite
         long current = 0;
         for (int i = 0; i < width; i++) current |= (long)cur[i] << (8 * i);
         long next = Value ?? current;
-        if (OrMask.HasValue) next |= (uint)OrMask.Value;
-        if (AndMask.HasValue) next &= (uint)AndMask.Value;
+        if (OrMask.HasValue) next |= (long)OrMask.Value;
+        if (AndMask.HasValue) next &= (long)AndMask.Value;
+        next &= mask;
 
         var bytes = new byte[width];
         for (int i = 0; i < width; i++) bytes[i] = (byte)((next >> (8 * i)) & 0xFF);
         if (!CurrentProcessMemory.TryWriteBytes(addr, bytes, out error)) return false;
 
-        long mask = (1L << (8 * width)) - 1;
         desc = $"{(string.IsNullOrWhiteSpace(Name) ? "death" : Name)} +0x{Offset:X2} w{width} {current & mask:X}->{next & mask:X}";
         return true;
     }

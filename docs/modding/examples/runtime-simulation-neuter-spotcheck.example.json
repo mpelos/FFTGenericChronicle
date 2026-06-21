@@ -1,0 +1,80 @@
+{
+  "scenarios": [
+    {
+      "name": "neuter-spotcheck-foe-placeholder-preserved",
+      "previousHp": 250,
+      "currentHp": 249,
+      "vanillaDamage": 1,
+      "eventIndex": 31,
+      "eventSeed": 92001,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 1,
+        "desiredHp": 249,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "event=damage",
+          "final=1:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2700",
+        "charId": 128,
+        "level": 12,
+        "hp": 249,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      },
+      "attacker": null
+    },
+    {
+      "name": "neuter-spotcheck-ally-placeholder-observed",
+      "previousHp": 250,
+      "currentHp": 249,
+      "vanillaDamage": 1,
+      "eventIndex": 32,
+      "eventSeed": 92002,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 1,
+        "desiredHp": 249,
+        "ruleName": "FinalDamageFormula"
+      },
+      "target": {
+        "ptr": "0x2800",
+        "charId": 1,
+        "level": 12,
+        "hp": 249,
+        "maxHp": 250,
+        "team": 1,
+        "isFoe": false
+      },
+      "attacker": null
+    },
+    {
+      "name": "neuter-spotcheck-healing-preserved",
+      "previousHp": 240,
+      "currentHp": 250,
+      "vanillaDamage": -10,
+      "eventIndex": 33,
+      "eventSeed": 92003,
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 250,
+        "ruleName": "off"
+      },
+      "target": {
+        "ptr": "0x2900",
+        "charId": 128,
+        "level": 12,
+        "hp": 250,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      },
+      "attacker": null
+    }
+  ]
+}

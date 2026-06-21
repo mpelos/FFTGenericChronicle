@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "name": "dry-run-damage-ma-soften",
+      "previousHp": 100,
+      "currentHp": 82,
+      "vanillaDamage": 18,
+      "eventIndex": 21,
+      "eventSeed": 20201,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 11,
+        "desiredHp": 89,
+        "ruleName": "FinalDamageFormula"
+      },
+      "target": {
+        "ptr": "0x2100",
+        "charId": 130,
+        "level": 12,
+        "hp": 82,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "ma": 7
+      },
+      "attacker": null
+    },
+    {
+      "name": "dry-run-healing-ma-boost",
+      "previousHp": 80,
+      "currentHp": 92,
+      "vanillaDamage": -12,
+      "eventIndex": 22,
+      "eventSeed": 20202,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": -19,
+        "desiredHp": 99,
+        "ruleName": "FinalDamageFormula"
+      },
+      "target": {
+        "ptr": "0x2101",
+        "charId": 131,
+        "level": 12,
+        "hp": 92,
+        "maxHp": 100,
+        "team": 1,
+        "isFoe": false,
+        "ma": 7
+      },
+      "attacker": null
+    },
+    {
+      "name": "dry-run-mp-loss-ma-tax",
+      "eventKind": "mp",
+      "previousMp": 20,
+      "currentMp": 12,
+      "eventIndex": 23,
+      "eventSeed": 20203,
+      "expect": {
+        "shouldRewrite": true,
+        "finalMpChange": -11,
+        "desiredMp": 9,
+        "ruleName": "FinalMpChangeFormula"
+      },
+      "target": {
+        "ptr": "0x2102",
+        "charId": 132,
+        "level": 12,
+        "hp": 100,
+        "maxHp": 100,
+        "mp": 12,
+        "maxMp": 30,
+        "team": 2,
+        "isFoe": true,
+        "ma": 3
+      },
+      "attacker": null
+    },
+    {
+      "name": "dry-run-mp-gain-ma-boost",
+      "eventKind": "mp",
+      "previousMp": 10,
+      "currentMp": 18,
+      "eventIndex": 24,
+      "eventSeed": 20204,
+      "expect": {
+        "shouldRewrite": true,
+        "finalMpChange": 11,
+        "desiredMp": 21,
+        "ruleName": "FinalMpChangeFormula"
+      },
+      "target": {
+        "ptr": "0x2103",
+        "charId": 133,
+        "level": 12,
+        "hp": 100,
+        "maxHp": 100,
+        "mp": 18,
+        "maxMp": 30,
+        "team": 1,
+        "isFoe": false,
+        "ma": 3
+      },
+      "attacker": null
+    }
+  ]
+}

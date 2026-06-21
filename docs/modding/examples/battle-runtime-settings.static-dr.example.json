@@ -1,0 +1,16 @@
+{
+  "_note": "Offline proof fixture for the simplest static DR path. No attacker/equipment context is required: positive HP damage is reduced by FlatDamageReduction, healing is ignored unless explicitly enabled.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "FlatDamageReduction": 10,
+  "ApplyEquipmentDr": false,
+  "ApplyDamageResponseRules": false,
+  "LogResolvedRuntimeContext": true,
+  "FormulaTraceVariables": [
+    { "Name": "trace.vanillaDamage", "Formula": "vanillaDamage" },
+    { "Name": "trace.finalDamage", "Formula": "result.finalDamage" },
+    { "Name": "trace.desiredHp", "Formula": "result.desiredHp" }
+  ]
+}

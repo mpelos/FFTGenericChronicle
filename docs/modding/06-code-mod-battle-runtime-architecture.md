@@ -231,9 +231,14 @@ Status of the placeholder (FIX PASS 1, 2026-06-21):
   `Formula`/element/CT/MP at inherit). Since Test D proved `Y` is read for magnitude, `X=Y=1`
   collapses stat*Y / stat+X damage to ~one stat (non-lethal) regardless of which parameter the
   routine uses. 168 abilities neutered (Fire/Bolt/Ice lines, monster skills); heals (Cure =
-  `TargetAllies`) correctly untouched. Residual gap: 32 high-id monster skills (382-413) fall
-  outside the 368-row override table, and the rare formulas that ignore X/Y (e.g. `%`-damage,
-  Gravity) are not shrunk by this lever.
+  `TargetAllies`) correctly untouched.
+- **High-id fallback half BUILT.** The 32 classified IDs outside the 368-row override table are
+  Throw 382-393, Jump 394-405, and Aim/Charge 406-413. Throw and Jump are expected to be covered by
+  the weapon `Power=1` neuter because the formula catalog maps them through WP; Jump's secondary
+  table only exposes range/vertical. Aim/Charge has its own secondary `Power`, so the generator
+  also emits `AbilityChargeAimData.xml` forcing Aim +2..+20 to `Power=1` while leaving CT/Ticks
+  inherited. Residual risk: Throw/Jump still need a live spot-check, and formulas that ignore
+  X/Y/WP/charge Power (e.g. `%`-damage, Gravity) are not shrunk by these levers.
 - **Death after neuter:** since neutered vanilla no longer kills, the runtime must cause death
   itself. `Mod.cs` now has `CaptureStructOnDeath` (find the death/status flag from a live
   alive->dead diff) and `CauseDeathOnZeroHp` + `DeathStateWrites[]` (set that flag once mapped). See
@@ -404,8 +409,9 @@ Runtime behavior:
   configured/enabled counts, found table bases, logged rows, and probe issues such as
   `[MEMTABLE-NOTFOUND]`, `[MEMTABLE-FAILED]`, and `[MEMTABLE-ROW-SKIP]`.
 - `tools/watch_live_mapping.py` also counts `[MEMTABLE-FOUND]` and `[MEMTABLE-ROW]` evidence in
-  its status output. It still treats `[RUNTIME]` events as the readiness gate, because the
-  memory-table branch is context evidence rather than an HP rewrite proof.
+  its status output, and can explicitly wait for it with `--memtable-found` and
+  `--memtable-rows`. For a pure table-probe pass, use `--runtime-events 0` so the watcher does
+  not require a damage event before reporting readiness.
 - `tools/find_memtable_candidates.py` is an offline PE scanner for independent candidate
   discovery. It scans `FFT_enhanced.exe` for RIP-relative `LEA`/`MOV` table references, scores
   candidates near a configurable stride (`0x258` by default), and writes CSV output to
@@ -429,6 +435,12 @@ Runtime behavior:
   RIP-relative parameters.
 - This is evidence collection only. Formula variables are not yet populated from these rows; that
   comes after a live correlation is proven.
+
+Example wait command for a future reviewed candidate:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --memtable-found 1 --memtable-rows 1
+```
 
 ### 5. Formula engine
 
@@ -594,6 +606,16 @@ Rewrite gate: RewriteConditionFormula also uses this context after derived varia
 MP rewrite gate: MpRewriteConditionFormula uses the MP event context after derived variables are
                  ready. A nonzero result means "rewrite MP"; zero preserves vanilla MP.
 ```
+
+For a generated, source-derived catalog of current expression functions and variable families,
+use:
+
+```powershell
+python tools\report_runtime_formula_context.py
+```
+
+The checked output is `work/runtime_formula_context.md`, and `run-offline-checks.ps1` fails if it
+is stale. This is the quickest reference before writing a new formula/DR/response profile.
 
 Raw reads are little-endian. `Byte`/`Word`/`DWord` read unsigned values, while `SByte` and
 `Short` sign-extend memory fields that are stored as signed values. Attacker raw reads are
@@ -761,6 +783,12 @@ Formula-coded sentinel example:
   "FinalDamageFormula": "mulDiv(max(0, tableClamp(swing, a.pa) + action.power - equipmentDr), action.woundNum, action.woundDen)"
 }
 ```
+
+The checked-in regression version of this idea is
+`docs/modding/examples/battle-runtime-settings.sentinel-bands.example.json` plus
+`docs/modding/examples/runtime-simulation-sentinel-bands.example.json`. It proves three
+placeholder-sized HP-damage bands, trace output for the resolved action variables, and a
+no-signal fallback to `vanillaDamage`.
 
 Weapon-derived action signal example:
 
@@ -1034,9 +1062,22 @@ This is the default no-game gate before changing combat formulas. It runs Python
 tests, strict JSON parsing for the checked-in examples/work files, the C# build, smoke tests,
 runtime settings validation, scenario simulation fixtures with `expect` assertions, the v0.2
 matrix against both exact-slot and scan-slot generated policy settings, the matrix-response
-fixture, the GURPS-DR fixture, the MP fixture, and the dry-run settings profile, plus
+fixture, the GURPS-DR fixture, the static DR fixture, the MP fixture, the sentinel-band action
+fixture, the neuter spot-check fixture, the death-gate HP/KO profile fixture, the dry-run HP/MP
+fixture, and the read-only/live-safe helper dry-runs for live mapping, dry-run evaluation, and the
+death gate, plus the runtime formula-context/profile-audit report staleness checks and
 `git diff --check`. It deliberately does not deploy to Reloaded-II, edit AppConfig, touch saves,
 archive logs, or launch FFT.
+
+The profile audit is generated with:
+
+```powershell
+python tools\report_runtime_profiles.py
+```
+
+The checked output is `work/runtime_profile_audit.md`. It records each important settings profile's
+role, whether it can mutate HP/MP/death state if deployed, and the invariants that must stay true
+before live use.
 
 Runtime settings simulation:
 
@@ -1083,11 +1124,104 @@ single `DamageResponse(matrix response)` route backed by `FormulaMatrices`:
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.v0.2.matrix.generated.json docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json
 ```
 
+The static DR fixture is the smallest possible DR canary. It uses `FlatDamageReduction=10`,
+requires no attacker/equipment mapping, asserts normal damage reduction, clamps chip damage to 0,
+and leaves healing untouched:
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- docs\modding\examples\battle-runtime-settings.static-dr.example.json docs\modding\examples\runtime-simulation-static-dr.example.json
+```
+
 The MP fixture uses `eventKind: "mp"` and asserts signed `finalMpChange` / `desiredMp`:
 
 ```powershell
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- docs\modding\examples\battle-runtime-settings.mp.example.json docs\modding\examples\runtime-simulation-mp.example.json
 ```
+
+The dry-run fixture exercises the live-safe evaluation profile across HP damage, HP healing, MP
+loss, and MP gain. `DryRunRewrites` is a live-application guard, so the simulator proves the
+rewrite decisions and desired HP/MP targets while the live profile still prevents memory writes:
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- docs\modding\examples\battle-runtime-settings.dry-run.example.json docs\modding\examples\runtime-simulation-dry-run.example.json
+```
+
+For a matching live dry-run pass, trigger one representative HP damage, HP healing, MP loss, and
+MP gain event, then let the watcher wait for all four dry-run rewrite decisions:
+
+```powershell
+codemod\prepare-dry-run-evaluation.ps1 -DryRun
+codemod\prepare-dry-run-evaluation.ps1
+python tools\watch_live_mapping.py --runtime-events 0 --placeholder-rewrites 1 --hp-healing-rewrites 1 --mp-loss-rewrites 1 --mp-gain-rewrites 1 --max-rewrite-failures 0
+```
+
+The helper's `-DryRun` mode still validates and simulates the selected profile; it only skips the
+code-mod deploy and log move.
+
+The analyzer report should then include both `HP Write Proof Check` and `MP Rewrite Check`. The MP
+section summarizes `[MPLOSS]`, `[MPGAIN]`, `[MP-REWRITE]`/`[MP-REWRITE-DRY-RUN]`, MP rewrite
+failures, signed `finalMpChange`, desired MP ranges, and `sampleAgeMs` baselines.
+
+The sentinel-band fixture proves the current fallback path for action classification when true
+ability/action IDs are still unavailable at the hook. It maps placeholder-sized vanilla damage
+bands to `action.sentinelLow`, `action.sentinelMid`, and `action.sentinelHigh`, lets those
+variables drive `FinalDamageFormula`, and asserts that an unknown damage band falls back to
+`vanillaDamage`:
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- docs\modding\examples\battle-runtime-settings.sentinel-bands.example.json docs\modding\examples\runtime-simulation-sentinel-bands.example.json
+```
+
+For a matching live sentinel pass, the watcher can now wait for nonzero action signals, specific
+sentinel signals, or the normalized action variables that appear in the log:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --action-signals 3 --require-action-signal 301 --require-action-signal 302 --require-action-signal 303 --require-action-var sentinellow --require-action-var sentinelmid --require-action-var sentinelhigh
+```
+
+The neuter spot-check fixture is the safe pre-Test-2b profile. It uses `DryRunRewrites=true` and
+`FinalDamageFormula="vanillaDamage"` so live damage events produce `[REWRITE-DRY-RUN]` lines with
+the observed vanilla delta, but no HP write. Use this before forcing HP to 0 if the installed data
+mod needs a quick sanity check across attack/spell/Throw/Jump/Aim families:
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.neuter-spotcheck.json docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json
+```
+
+For the matching live pass, the watcher can wait for placeholder-sized HP rewrites directly:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --placeholder-rewrites 3 --max-placeholder-damage 30 --max-large-vanilla-rewrites 0 --max-rewrite-failures 0
+```
+
+The death-gate fixture asserts the offline-computable part of Test 2b for both runtime profiles:
+placeholder damage against foes is rewritten to HP 0, allies are preserved, and healing stays
+ignored. It does not prove the live KO animation/state transition; that remains the live gate.
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test.json docs\modding\examples\runtime-simulation-death-gate.example.json
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test-killflag.json docs\modding\examples\runtime-simulation-death-gate.example.json
+```
+
+For the matching live pass, wait for the stronger Death Gate evidence instead of just any rewrite:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --max-rewrite-failures 0
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --max-death-events 0 --settle-seconds 2 --max-rewrite-failures 0
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --death-writes 1 --max-rewrite-failures 0 --max-death-write-failures 0
+```
+
+The two HP-only commands represent the two possible outcomes of the same gate. The first passes if
+writing HP=0 alone produces death evidence. The second is the negative proof aid: it passes only
+after a lethal HP rewrite is observed and no `[DEATH-*]` evidence appears during a short settle
+window, which is the expected "zombie at 0 HP" branch before switching to the killflag profile.
+After either branch, `tools/analyze_battleprobe_log.py` emits `Death Gate Outcome`, a cross-check
+that classifies the log as HP-only evidence, zombie-candidate evidence, killflag-branch evidence,
+or a failed/ambiguous run.
+
+As with the dry-run evaluation helper, `prepare-death-gate.ps1 -DryRun` still runs the neuter
+artifact tests plus settings validation/simulation; it skips the NXD rebuild, data/code deploy, and
+game-log archive.
 
 JSON output can be captured for regression comparison:
 
@@ -1302,10 +1436,20 @@ Preferred clean-session helper:
 ```
 
 This builds/deploys the code mod, installs `work\battle-runtime-settings.v0.2.scan.live-noop.json`,
-and moves any existing game-side `battleprobe_log.txt` to a timestamped `.bak-*` file. Use it
-before a live mapping run so an old `iter 8` log cannot be mistaken for current evidence.
+validates that settings file first, and moves any existing game-side `battleprobe_log.txt` to a
+timestamped `.bak-*` file. Use it before a live mapping run so an old `iter 8` log cannot be
+mistaken for current evidence. Use `-DryRun` to validate and print the deploy/log plan without
+copying, editing AppConfig, or moving logs.
 If `FFT_enhanced` is already running, the helper warns that the current process will not load the
 fresh DLL/settings until restarted and skips game-log archiving.
+
+Before launching the game, the read-only readiness helper can compare the installed code-mod DLL
+against the local build output, identify which known live-mapping runtime profile is installed by
+hash, validate any available live-mapping profiles, and print the exact watcher/analyzer commands:
+
+```powershell
+.\codemod\check-live-readiness.ps1
+```
 
 Then restart the game through Reloaded-II and create one controlled damage event. The runtime log
 is written next to the game executable as `battleprobe_log.txt` (`AppContext.BaseDirectory`), not
@@ -1327,6 +1471,13 @@ Or let the watcher wait until the fresh log contains runtime evidence:
 python tools\watch_live_mapping.py --runtime-events 1
 ```
 
+For slot/response-aware mapping, the watcher can require present target/attacker slots, a
+response rule, and a formula trace variable:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 3 --target-slots-present 3 --attacker-slots-present 3 --response-events 1 --require-trace-var trace.finaldamage
+```
+
 For a longer controlled mapping pass, it can analyze and promote offsets automatically once enough
 events exist:
 
@@ -1341,12 +1492,20 @@ showing `targetSlots`, `attackerSlots`, `action`, and `response`.
 
 The analyzer now turns `[RUNTIME]` lines into a `Runtime Context Summary`:
 
-- `Actions` groups the action signal name, signal id, source, and nonzero variables;
+- `Actions` groups the action signal name, signal id, source, and raw nonzero variables;
+- `Action Variables` parses action `vars=...` into per-variable counts, numeric ranges, and top
+  values; this is the quick check for `swing`, `thrust`, `sentinellow`, `wp`, and similar action
+  classification output;
+- `Formula Trace Variables` parses `[RUNTIME] ... vars=...` and summarizes each traced formula
+  variable's count, numeric range, and most common values;
 - `Slots` groups target/attacker slot states, item ids, offsets, widths, and scan match counts;
 - `Slot Recommendations` calls out when a slot looks stable enough to convert from scan mode to
   exact `Offset`/`Width`, or when the scan is missing/ambiguous;
 - `Responses` and `Final Damage` show which percent/type response was resolved and whether the
   no-op profile preserved `FinalDamageFormula`.
+- `DR/Response Proof Check` cross-checks target/attacker slot presence, ambiguous scans, positive
+  `equipmentDr`, response-rule count, final-rule linkage, and final trace variables
+  (`result.final` / normalized `trace.finaldamage`) into a single proof-oriented verdict.
 
 Once the report shows stable slots across multiple controlled events, promote the scan profile to
 an exact-offset settings file:
@@ -2036,6 +2195,10 @@ python tools\watch_live_mapping.py --runtime-events 0 --rewrite-events 1
 The watcher still requires the current runtime header, then runs the analyzer unless
 `--skip-analyze` is passed.
 
+For MP live checks, the analyzer emits an `MP Rewrite Check`. It parses `[MPLOSS]` / `[MPGAIN]`
+sample ages, `[RUNTIME-MP]` traces, signed `finalMpChange`, desired MP, dry-run decisions,
+concrete writes, skips, and `[MP-REWRITE-FAILED]` lines.
+
 ## What this gives us
 
 Achievable with this architecture:
@@ -2059,7 +2222,7 @@ Not solved by the first version:
 
 - exact damage preview text;
 - AI scoring based on our formula;
-- all KO/crystal/reaction/status side effects;
+- full KO lifecycle, crystal/treasure timing, reaction/status side effects;
 - perfect ability id capture;
 - multi-hit/reaction chains.
 
@@ -2077,41 +2240,65 @@ Those are follow-up layers, not reasons to abandon the code-mod path.
 3. **Dry-run evaluation proof.** Implemented in code, unverified live. Enable
    `DryRunRewrites=true` with HP/MP rewrite gates and `LogResolvedRuntimeContext=true`. Confirm
    `[REWRITE-DRY-RUN]` and `[MP-REWRITE-DRY-RUN]` lines appear for controlled events while HP/MP
-   remain untouched by the code mod. This proves event detection, context resolution, and formula
-   decisions before any memory write risk.
-4. **HP write proof.** Implemented in code, first write proven live, continuous-polling fix
-   unverified live. Disable dry-run, enable `RewriteObservedDamage`, and first test
-   `ProofFinalDamage=1`. Then run `python tools\analyze_battleprobe_log.py` and require the
-   `HP Write Proof Check` to report concrete `finalDamage=1` rewrites, no rewrite failures, and
-   fresh `sampleAgeMs` baselines. If this works, we have a real post-damage hook.
-5. **Healing write proof.** Implemented in code, unverified live. Enable
+   remain untouched by the code mod. The watcher can now require HP damage, HP healing, MP loss,
+   and MP gain dry-run decisions in one pass; the analyzer's `MP Rewrite Check` summarizes the MP
+   side. This proves event detection, context resolution, and formula decisions before any memory
+   write risk.
+4. **HP write proof.** Implemented in code and partially proven live. Live Test 1 proved HP writes;
+   Live Test 1b proved continuous polling fixes non-lethal timing, but also proved reactive polling
+   cannot prevent vanilla lethal death. From here, HP rewrite tests must run with the data-layer
+   neuter placeholder when the expected custom result can be lethal. The analyzer's
+   `HP Write Proof Check` still verifies concrete rewrites, rewrite failures, and fresh
+   `sampleAgeMs` baselines for non-lethal proof logs.
+5. **Death-causing proof.** Current next live gate. With weapon + ability + charge/aim neuter
+   deployed, run Test 2b from `07-live-findings.md`: first force foe HP to 0 without
+   `CauseDeathOnZeroHp`; if the unit remains standing at 0 HP, hot-swap to the killflag profile that writes
+   `BattleUnit +0x61 |= 0x20`. The watcher now supports both HP-only branches: require
+   `[DEATH-*]` when HP=0 alone kills, or require no `[DEATH-*]` after a short settle window when
+   the unit zombies. The analyzer summarizes `[DEATH-DIFF]`, `[DEATH-WRITE]`, write failures, the
+   mapped `+0x61` KO flag, and the combined `Death Gate Outcome` verdict.
+6. **Healing write proof.** Implemented in code, unverified live. Enable
    `RewriteObservedHealing=true` with `ProofFinalHealing` or a negative `FinalDamageFormula`, then
    verify a vanilla heal can be corrected by the runtime.
-6. **Static DR proof.** Implemented in code, unverified live. Enable `FlatDamageReduction=10` or
-   a matching `DamageRules` entry. Verify hits are reduced after vanilla applies damage.
-7. **Equipment DR proof.** Runtime support is implemented, unverified live. Map equipped armor,
+7. **Static DR proof.** Implemented in code and covered offline by
+   `runtime-simulation-static-dr.example.json`, unverified live. Enable `FlatDamageReduction=10`
+   or a matching `DamageRules` entry. Verify hits are reduced after vanilla applies damage.
+8. **Equipment DR proof.** Runtime support is implemented, unverified live. Map equipped armor,
    configure `EquipmentSlots` + `EquipmentDrRules`, and verify hits are reduced by item DR.
    Start with exact `ItemId`, then test catalog-backed rules such as `ItemCategory=Armor` plus
    `DamageReductionFormula`. Use `LogResolvedRuntimeContext=true` to confirm whether `Body`
-   resolved as present, missing, or ambiguous before trusting any HP outcome.
-8. **Percent/type response proof.** Runtime support is implemented and covered offline. After
+   resolved as present, missing, or ambiguous before trusting any HP outcome. The watcher can
+   require slot + DR evidence before accepting the run:
+
+   ```powershell
+   python tools\watch_live_mapping.py --runtime-events 0 --target-slots-present 1 --equipment-dr-events 1 --rewrite-events 1 --max-rewrite-failures 0
+   ```
+
+9. **Percent/type response proof.** Runtime support is implemented and covered offline. After
    equipment offsets are mapped, configure `DamageResponseRules` for plate/mail/leather/cloth
    and verify that `swing`, `thrust`, `crush`, and `missile` placeholder actions produce the v0.2
    response pattern in live HP outcomes. The `[RUNTIME]` line should show the expected
-   `response=raw.../permille...` value for each hit.
-9. **Action context proof.** First, use the new `[CTX]` recent-unit evidence in controlled
+   `response=raw.../permille...` value for each hit. The watcher can require action, slot,
+   response, and trace-variable evidence in one pass:
+
+   ```powershell
+   python tools\watch_live_mapping.py --runtime-events 0 --action-signals 1 --target-slots-present 1 --attacker-slots-present 1 --response-events 1 --require-trace-var trace.finaldamage --max-rewrite-failures 0
+   ```
+
+10. **Action context proof.** First, use the new `[CTX]` recent-unit evidence in controlled
    battles to see whether attacker touch order is useful. In parallel, use `[RUNTIME]` lines to
    test `ActionSignalRules` by making two ability families produce distinct placeholder deltas
    and verifying formulas see `action.swing`/`action.thrust`. Then capture true active attacker
    and action family/ability through either a current-action structure or UI/preview hook.
-10. **Formula engine proof.** Target-side expression formulas are implemented in code, unverified
+11. **Formula engine proof.** Target-side expression formulas are implemented in code, unverified
    live. Offline smoke tests prove the expression engine can already consume attacker PA,
    target armor DR, catalog-backed item metadata, and sentinel action variables. The remaining
-   full proof is to feed it live attacker PA/weapon class/action type after step 7 maps that
+   full proof is to feed it live attacker PA/weapon class/action type after step 8 maps that
    context.
 
-If steps 1-6 pass, the answer to "can we put DR in armor?" is yes for real HP outcomes. Steps
-7-8 determine how complete and elegant the final battle system can become.
+If steps 1-8 pass, the answer to "can we put DR in armor?" is yes for real HP outcomes, including
+lethal outcomes owned by the runtime. Steps 9-11 determine how complete and elegant the final
+battle system can become.
 
 ## Sources
 

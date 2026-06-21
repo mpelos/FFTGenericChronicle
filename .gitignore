@@ -16,7 +16,9 @@ tools/*
 !tools/dump_item_catalog.py
 !tools/promote_runtime_offsets.py
 !tools/build_neuter_data.py
+!tools/report_neuter_coverage.py
 !tools/test_memtable_candidates.py
+!tools/test_neuter_data.py
 !tools/test_runtime_tooling.py
 !tools/watch_live_mapping.py
 
@@ -36,6 +38,7 @@ work/nxd_extract/
 work/ability_en/
 work/nxd_more/
 work/nxd_out/
+work/nxd_proof/
 
 # === .NET build output (Reloaded-II code mod) ===
 codemod/**/bin/

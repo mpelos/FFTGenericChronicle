@@ -1780,6 +1780,7 @@ internal static class Program
         Check(dryRunNoOpDecision.TrackingValue == 18, "dry-run no-op rewrite decision should keep current tracking");
 
         TestMemoryTableProbe();
+        TestDeathStateWrite();
         TestRuntimeSettingsLoad();
         TestExampleSettingsLoad(root);
         TestRuntimeSettingsValidator(root, catalog);
@@ -1895,6 +1896,61 @@ internal static class Program
         invalidProbe.Normalize();
         Check(!invalidProbe.TryValidate(out string invalidError), "field exceeding stride should fail validation");
         Check(invalidError.Contains("exceeds stride"), $"invalid probe error should explain stride, got {invalidError}");
+    }
+
+    private static void TestDeathStateWrite()
+    {
+        var koFlag = new DeathStateWrite { Name = "KO flag", Offset = 0x61, Width = "Byte", OrMask = 0x20 };
+        Check(koFlag.TryValidate(out int koWidth, out long koMask, out string koValidateError), $"KO flag write should validate: {koValidateError}");
+        Check(koWidth == 1 && koMask == 0xFF, $"KO flag write width/mask expected 1/0xFF, got {koWidth}/0x{koMask:X}");
+
+        nint unit = Marshal.AllocHGlobal(0x180);
+        try
+        {
+            for (int i = 0; i < 0x180; i++)
+                Marshal.WriteByte(unit, i, 0);
+
+            Check(koFlag.TryApply(unit, out string koDesc, out string koError), $"KO flag write should apply: {koError}");
+            Check(Marshal.ReadByte(unit, 0x61) == 0x20, "KO flag write should set bit 0x20");
+            Check(koDesc.Contains("+0x61") && koDesc.Contains("0->20"), $"KO flag desc should show offset and transition, got {koDesc}");
+
+            Marshal.WriteByte(unit, 0x61, 0x21);
+            Check(koFlag.TryApply(unit, out _, out string koAgainError), $"KO flag write should preserve existing bits: {koAgainError}");
+            Check(Marshal.ReadByte(unit, 0x61) == 0x21, "KO flag OR write should preserve existing status bits");
+
+            Marshal.WriteInt16(unit, 0x70, unchecked((short)0xABCD));
+            var clearHighStatus = new DeathStateWrite { Name = "Clear high status byte", Offset = 0x70, Width = "Word", AndMask = 0x00FF };
+            Check(clearHighStatus.TryApply(unit, out string clearDesc, out string clearError), $"word AND write should apply: {clearError}");
+            Check(Marshal.ReadByte(unit, 0x70) == 0xCD && Marshal.ReadByte(unit, 0x71) == 0x00, "word AND write should clear the high byte only");
+            Check(clearDesc.Contains("ABCD->CD"), $"word AND desc should show masked transition, got {clearDesc}");
+
+            var dwordValue = new DeathStateWrite { Name = "DWord value", Offset = 0x74, Width = "DWord", Value = 0x12345678 };
+            Check(dwordValue.TryApply(unit, out _, out string dwordError), $"dword value write should apply: {dwordError}");
+            Check(Marshal.ReadByte(unit, 0x74) == 0x78, "dword value byte 0 should be little-endian");
+            Check(Marshal.ReadByte(unit, 0x75) == 0x56, "dword value byte 1 should be little-endian");
+            Check(Marshal.ReadByte(unit, 0x76) == 0x34, "dword value byte 2 should be little-endian");
+            Check(Marshal.ReadByte(unit, 0x77) == 0x12, "dword value byte 3 should be little-endian");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(unit);
+        }
+
+        var badWidth = new DeathStateWrite { Offset = 0x61, Width = "Nibble", OrMask = 1 };
+        Check(!badWidth.TryValidate(out _, out _, out string badWidthError), "bad death write width should fail validation");
+        Check(badWidthError.Contains("unsupported Width"), $"bad width error should explain width, got {badWidthError}");
+
+        var tooWide = new DeathStateWrite { Offset = 0x17F, Width = "Word", OrMask = 1 };
+        Check(!tooWide.TryValidate(out _, out _, out string tooWideError), "death write exceeding copied snapshot should fail validation");
+        Check(tooWideError.Contains("exceeds copied unit snapshot"), $"too-wide error should explain snapshot size, got {tooWideError}");
+
+        var badMask = new DeathStateWrite { Offset = 0x61, Width = "Byte", OrMask = 0x100 };
+        Check(!badMask.TryValidate(out _, out _, out string badMaskError), "byte death write mask > 0xFF should fail validation");
+        Check(badMaskError.Contains("exceeds field mask"), $"bad mask error should explain field mask, got {badMaskError}");
+
+        var noOp = new DeathStateWrite { Offset = 0x61, Width = "Byte" };
+        Check(!noOp.TryValidate(out _, out _, out string noOpError), "death write without Value/OrMask/AndMask should fail validation");
+        Check(noOpError.Contains("no Value/OrMask/AndMask"), $"no-op error should explain missing operation, got {noOpError}");
     }
 
     private static void TestRuntimeSettingsLoad()
@@ -2089,6 +2145,60 @@ internal static class Program
             FinalDamageFormula = "mapOr(damageByChar, t.charId, vanillaDamage)",
         }, catalog);
         Check(validMapReport.Success, "validator should accept valid formula maps");
+
+        var validDeathWriteReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "9999",
+            CauseDeathOnZeroHp = true,
+            DeathStateWrites =
+            [
+                new DeathStateWrite { Name = "KO flag", Offset = 0x61, Width = "Byte", OrMask = 0x20 },
+            ],
+        }, catalog);
+        Check(validDeathWriteReport.Success, "validator should accept the mapped KO flag death-state write");
+
+        var missingDeathWriteReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "9999",
+            CauseDeathOnZeroHp = true,
+        }, catalog);
+        Check(!missingDeathWriteReport.Success, "validator should reject CauseDeathOnZeroHp without DeathStateWrites");
+        Check(
+            missingDeathWriteReport.Findings.Any(finding => finding.Scope == "DeathStateWrites" && finding.Message.Contains("no DeathStateWrites")),
+            "validator should explain missing death-state writes");
+
+        var invalidDeathWriteReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "9999",
+            CauseDeathOnZeroHp = true,
+            DeathCaptureFollowTicks = -1,
+            DeathStateWrites =
+            [
+                new DeathStateWrite { Name = "Bad width", Offset = 0x61, Width = "Nibble", OrMask = 0x01 },
+                new DeathStateWrite { Name = "Too wide", Offset = 0x17F, Width = "Word", OrMask = 0x01 },
+                new DeathStateWrite { Name = "Bad byte mask", Offset = 0x61, Width = "Byte", OrMask = 0x100 },
+                new DeathStateWrite { Name = "No op", Offset = 0x61, Width = "Byte" },
+            ],
+        }, catalog);
+        Check(!invalidDeathWriteReport.Success, "validator should reject invalid death-state writes");
+        Check(
+            invalidDeathWriteReport.Findings.Any(finding => finding.Scope == "DeathCaptureFollowTicks" && finding.Severity == "ERROR"),
+            "validator should report negative death capture follow ticks");
+        Check(
+            invalidDeathWriteReport.Findings.Any(finding => finding.Scope.Contains("Bad width") && finding.Message.Contains("unsupported Width")),
+            "validator should report invalid death write width");
+        Check(
+            invalidDeathWriteReport.Findings.Any(finding => finding.Scope.Contains("Too wide") && finding.Message.Contains("exceeds copied unit snapshot")),
+            "validator should report death write offset overflow");
+        Check(
+            invalidDeathWriteReport.Findings.Any(finding => finding.Scope.Contains("Bad byte mask") && finding.Message.Contains("exceeds field mask")),
+            "validator should report out-of-range death write masks");
+        Check(
+            invalidDeathWriteReport.Findings.Any(finding => finding.Scope.Contains("No op") && finding.Message.Contains("no Value/OrMask/AndMask")),
+            "validator should report no-op death writes");
 
         var invalidSettings = new RuntimeSettings
         {

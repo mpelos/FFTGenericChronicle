@@ -42,6 +42,7 @@ internal static class RuntimeSettingsValidator
         ValidateEquipmentSlots("AttackerEquipmentSlots", settings.AttackerEquipmentSlots, report);
         ValidateEquipmentRules(settings, report);
         ValidateMemoryTableProbes(settings, report);
+        ValidateDeathStateWrites(settings, report);
         ValidateFormulas(settings, catalog, report);
         ValidateIntegratedEvaluation(settings, catalog, report);
 
@@ -202,6 +203,41 @@ internal static class RuntimeSettingsValidator
                 report.Error(scope, error);
             if (probe.Enabled)
                 report.Warn(scope, "probe is enabled; live runs will scan process memory. Keep disabled until reviewed.");
+        }
+    }
+
+    private static void ValidateDeathStateWrites(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DeathCaptureFollowTicks < 0)
+            report.Error("DeathCaptureFollowTicks", "DeathCaptureFollowTicks must be nonnegative.");
+        else if (settings.DeathCaptureFollowTicks > 4000)
+            report.Warn("DeathCaptureFollowTicks", "runtime clamps DeathCaptureFollowTicks to 4000.");
+
+        if (settings.CauseDeathOnZeroHp && !settings.RewriteObservedDamage)
+            report.Warn("CauseDeathOnZeroHp", "death-state writes only run after an HP damage rewrite sets desired HP to zero.");
+        if (settings.CauseDeathOnZeroHp && settings.DryRunRewrites)
+            report.Warn("CauseDeathOnZeroHp", "DryRunRewrites prevents both HP writes and death-state writes.");
+        if (settings.CauseDeathOnZeroHp && settings.DeathStateWrites.Count == 0)
+            report.Error("DeathStateWrites", "CauseDeathOnZeroHp is enabled but no DeathStateWrites are configured.");
+
+        for (int i = 0; i < settings.DeathStateWrites.Count; i++)
+        {
+            var write = settings.DeathStateWrites[i];
+            string scope = $"DeathStateWrites.{RuleName(write?.Name ?? "", i + 1)}";
+            if (write is null)
+            {
+                report.Error(scope, "write entry is null.");
+                continue;
+            }
+
+            if (!write.TryValidate(out int width, out _, out string error))
+            {
+                report.Error(scope, error);
+                continue;
+            }
+
+            if (write.Offset + width > RawSize)
+                report.Error(scope, $"Offset 0x{write.Offset:X}+{width} exceeds copied unit snapshot size 0x{RawSize:X}.");
         }
     }
 

@@ -1,0 +1,123 @@
+{
+  "scenarios": [
+    {
+      "name": "sentinel-low-band",
+      "previousHp": 200,
+      "currentHp": 176,
+      "vanillaDamage": 24,
+      "eventIndex": 301,
+      "eventSeed": 9001,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 11,
+        "desiredHp": 189,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-low:source=vanilla-damage:signal=301",
+          "banddamage=24",
+          "sentinellow=1",
+          "trace.finaldamage=11",
+          "final=11:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2301",
+        "charId": 128,
+        "level": 12,
+        "hp": 176,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      }
+    },
+    {
+      "name": "sentinel-mid-band",
+      "previousHp": 200,
+      "currentHp": 155,
+      "vanillaDamage": 45,
+      "eventIndex": 302,
+      "eventSeed": 9002,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 22,
+        "desiredHp": 178,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-mid:source=vanilla-damage:signal=302",
+          "banddamage=45",
+          "sentinelmid=1",
+          "trace.finaldamage=22",
+          "final=22:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2302",
+        "charId": 129,
+        "level": 12,
+        "hp": 155,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      }
+    },
+    {
+      "name": "sentinel-high-band",
+      "previousHp": 200,
+      "currentHp": 125,
+      "vanillaDamage": 75,
+      "eventIndex": 303,
+      "eventSeed": 9003,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 33,
+        "desiredHp": 167,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-high:source=vanilla-damage:signal=303",
+          "banddamage=75",
+          "sentinelhigh=1",
+          "trace.finaldamage=33",
+          "final=33:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2303",
+        "charId": 130,
+        "level": 12,
+        "hp": 125,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      }
+    },
+    {
+      "name": "sentinel-unknown-band-falls-back",
+      "previousHp": 200,
+      "currentHp": 80,
+      "vanillaDamage": 120,
+      "eventIndex": 304,
+      "eventSeed": 9004,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 120,
+        "desiredHp": 80,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=none",
+          "trace.actionsignal=0",
+          "trace.finaldamage=120",
+          "final=120:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2304",
+        "charId": 131,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true
+      }
+    }
+  ]
+}

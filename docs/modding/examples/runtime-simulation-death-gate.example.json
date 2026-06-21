@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "name": "death-gate-foe-placeholder-damage-forces-zero",
+      "previousHp": 250,
+      "currentHp": 249,
+      "vanillaDamage": 1,
+      "eventIndex": 21,
+      "eventSeed": 91001,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 9999,
+        "desiredHp": 0,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "event=damage",
+          "attacker=none",
+          "final=9999:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2400",
+        "charId": 128,
+        "level": 12,
+        "hp": 249,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60
+      },
+      "attacker": null
+    },
+    {
+      "name": "death-gate-ally-placeholder-damage-preserved",
+      "previousHp": 250,
+      "currentHp": 249,
+      "vanillaDamage": 1,
+      "eventIndex": 22,
+      "eventSeed": 91002,
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 249,
+        "ruleName": "off"
+      },
+      "target": {
+        "ptr": "0x2500",
+        "charId": 1,
+        "level": 12,
+        "hp": 249,
+        "maxHp": 250,
+        "team": 1,
+        "isFoe": false,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60
+      },
+      "attacker": null
+    },
+    {
+      "name": "death-gate-healing-preserved",
+      "previousHp": 240,
+      "currentHp": 250,
+      "vanillaDamage": -10,
+      "eventIndex": 23,
+      "eventSeed": 91003,
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 250,
+        "ruleName": "off"
+      },
+      "target": {
+        "ptr": "0x2600",
+        "charId": 128,
+        "level": 12,
+        "hp": 250,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60
+      },
+      "attacker": null
+    }
+  ]
+}

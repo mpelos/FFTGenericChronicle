@@ -6,8 +6,8 @@
   Every weapon Power is forced to 1 so vanilla physical attacks are tiny and non-lethal;
   the code-mod reconciler owns the real damage result. Only <Id> + <Power> are shipped so
   the loader merges per-property and nothing else is disturbed.
-  Weapons neutered: 126 (Power>1 in vanilla). Bare-hands/monster/spell damage
-  is NOT covered here - that needs the OverrideAbilityActionData NXD neuter.
+  Weapons neutered: 126 (Power>1 in vanilla). Ability/spell/monster placeholders
+  are handled by sibling OverrideAbilityActionData NXD and AbilityChargeAimData XML neuters.
 -->
 
 <ItemWeaponTable>

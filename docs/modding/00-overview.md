@@ -156,6 +156,17 @@ tools/analyze_battleprobe_log.py -> work/battleprobe_analysis.md (pointer-keyed 
                                observations and recommends stable exact slot offsets; includes
                                `[MEMTABLE]` probe tables/rows/issues; includes an HP write-proof
                                check using `finalDamage=1`, rewrite failures, and `sampleAgeMs`;
+                               includes an MP rewrite check for `[MPLOSS]`, `[MPGAIN]`,
+                               `[MP-REWRITE*]`, and `[RUNTIME-MP]` evidence;
+                               parses and summarizes action variables such as `swing`, `thrust`,
+                               `sentinellow`, and `wp`;
+                               parses runtime formula trace variables from `[RUNTIME] ... vars=...`;
+                               includes a neuter placeholder check that flags large
+                               `vanillaDamage` deltas during HP rewrites;
+                               includes a Death Gate Outcome check that classifies HP-only,
+                               zombie-candidate, and killflag evidence after lethal HP rewrites;
+                               includes a DR/Response Proof Check that cross-checks slot,
+                               equipment DR, response, final-rule, and formula-trace evidence;
                                warns when the log is from an old harness build)
 tools/promote_runtime_offsets.py
                             -> work/battle-runtime-settings.v0.2.exact-from-log.json (promotes
@@ -166,17 +177,72 @@ tools/test_runtime_tooling.py smoke-tests the runtime log analyzer, memory-table
                               watcher state, and exact-offset promoter
 tools/test_memtable_candidates.py smoke-tests the offline RIP-relative scanner and contextual
                                  AOB/settings conversion
+tools/test_neuter_data.py    smoke-tests the data-layer neuter placeholder artifacts: weapon
+                              Power XML, charge/aim Power XML, damaging ability classification,
+                              OverrideAbilityActionData X/Y sqlite edits, high-id fallback
+                              coverage, and NXD presence
+tools/test_runtime_formula_context.py
+                            -> smoke-tests `work/runtime_formula_context.md` for staleness and
+                               critical formula/DR/response capabilities
+tools/test_runtime_profiles.py
+                            -> smoke-tests `work/runtime_profile_audit.md` for staleness and
+                               critical profile-role invariants: live-noop, dry-run, death gate,
+                               GURPS DR, policy, and MEMTABLE-disabled safety
+tools/report_neuter_coverage.py
+                            -> work/neuter_coverage.md (human-readable neuter coverage report:
+                               weapon count, charge/aim count, ability count, spot checks,
+                               high-id fallback actions, and residual runtime risks)
+tools/report_runtime_formula_context.py
+                            -> work/runtime_formula_context.md (generated formula capability
+                               catalog: expression operators/functions, top-level HP/MP vars,
+                               target/attacker/action/slot/item metadata vars, response/result
+                               vars, and settings-defined extension points)
+tools/report_runtime_profiles.py
+                            -> work/runtime_profile_audit.md (generated runtime-settings profile
+                               audit: role, live mutation risk, and invariant checks for the
+                               profiles used in live mapping, dry-run evaluation, death gates,
+                               DR/response policy, GURPS proof, and MEMTABLE probing)
 tools/watch_live_mapping.py waits for fresh `[RUNTIME]` live evidence, reports memory-table probe
-                            evidence and optional `[REWRITE]` evidence when present, then can run
-                            analysis and exact-offset promotion
-codemod/prepare-live-mapping.ps1 builds/deploys the code mod with the scan live-noop profile and
-                               archives stale game-side battle logs before a live mapping run
+                            evidence plus optional action-signal/action-variable, `[REWRITE]`,
+                            target/attacker slot-present evidence, positive equipment DR,
+                            response-rule evidence, formula trace variables, placeholder-sized HP
+                            damage rewrite, HP healing rewrite, MP loss/gain rewrite, lethal HP
+                            rewrite, and `[DEATH-*]` evidence when requested;
+                            can fail fast on rewrite failures, death-write failures, unexpected
+                            death events, or large vanilla HP rewrites; supports a short settle
+                            window for negative death-gate checks;
+                            can also wait for `[MEMTABLE-FOUND]`/`[MEMTABLE-ROW]`,
+                            then run analysis and exact-offset promotion
+codemod/prepare-live-mapping.ps1 builds/deploys the code mod with the scan live-noop profile,
+                               validates runtime settings first, archives stale game-side battle
+                               logs before a live mapping run, supports `-DryRun`, and prints the
+                               slot/response watcher + promotion commands
 codemod/build-deploy.ps1 explicitly deploys the code mod into Reloaded-II. Plain `dotnet build`
                          now writes only to `codemod/_build/`, so offline tests do not touch an
                          open Reloaded-II install. Any `-RuntimeSettings` input is validated
                          before it is copied unless `-SkipRuntimeSettingsValidation` is used.
 codemod/check-live-readiness.ps1 read-only diagnostic for app config, loaded process modules,
-                                 installed code-mod DLL, generated `modded` packs, and runtime log
+                                 installed code-mod DLL hash vs local build, installed runtime
+                                 settings hash vs known live-mapping profiles, generated `modded`
+                                 packs, runtime log, and the next watcher/analyzer commands
+codemod/check-death-gate-readiness.ps1
+                            -> read-only Test 2b diagnostic: validates neuter artifacts, death
+                               runtime settings, AppConfig enabled mods, installed data-mod hashes,
+                               installed code-mod DLL hash vs local build, installed settings
+                               presence, identifies which death-gate runtime profile is installed
+                               by hash, and prints watcher commands
+codemod/prepare-dry-run-evaluation.ps1
+                            -> explicit live-safe dry-run proof helper: validates/simulates the
+                               dry-run HP/MP profile, deploys only the code mod/runtime settings
+                               when run without `-DryRun`, archives the old log, refuses to run
+                               while Reloaded-II/FFT is open, and prints the HP/MP watcher command;
+                               `-DryRun` still runs the read-only validations/simulation
+codemod/prepare-death-gate.ps1
+                            -> explicit Test 2b preparation helper: rebuilds neuter NXD, validates
+                               artifacts/settings, deploys data mod + code mod with the selected
+                               death profile, archives the old log, and refuses to run while
+                               Reloaded-II/FFT is open; `-DryRun` runs read-only validations/simulation
+                               and prints the plan without copying/deploying/rebuilding
 codemod/restore-fft-reloaded-mods.ps1 restores the known FFT Reloaded-II enabled mod list, but
                                       refuses to edit while Reloaded-II or FFT is running
 codemod/fftivc.generic.chronicle.codemod.smoketests
@@ -211,18 +277,29 @@ codemod/fftivc.generic.chronicle.codemod.settingssimulate
                                it into a regression gate for generated balance policies.
 codemod/run-offline-checks.ps1
                             -> offline-only regression runner. Runs Python syntax/tooling tests,
-                               JSON parsing, C# build/smoke tests, settings validation,
+                               neuter artifact QA, JSON parsing, C# build/smoke tests, settings validation,
                                short + matrix scenario simulation, scan-slot matrix comparison,
                                matrix-response simulation, GURPS-DR proof simulation, MP
-                               simulation, dry-run profile validation, and git diff whitespace checks
+                               simulation, static DR proof simulation, sentinel-band action
+                               proof simulation, neuter spot-check simulation, death-gate HP/KO
+                               profile simulation, dry-run HP/MP simulation, live helper dry-runs,
+                               runtime formula-context/profile-audit report staleness, and git
+                               diff whitespace checks
                                without deploying to Reloaded-II or launching the game.
 docs/modding/examples/battle-runtime-settings.gurps-dr.example.json
                             -> subtractive DR proof profile: GURPS-like swing/thrust tables,
                                real item-catalog armor DR, post-DR wound multipliers, and trace
                                variables for each intermediate.
+docs/modding/examples/battle-runtime-settings.static-dr.example.json
+                            -> simplest static DR proof profile: `FlatDamageReduction` reduces
+                               positive HP damage without attacker/equipment context.
 docs/modding/examples/battle-runtime-settings.mp.example.json
                             -> MP rewrite proof profile: signed MP loss/gain formulas, MP
                                action-signal classification, and MpRules selection.
+docs/modding/examples/battle-runtime-settings.sentinel-bands.example.json
+                            -> ActionSignalRules proof profile: placeholder-sized vanilla
+                               damage bands become action variables that drive final formulas,
+                               while unknown bands fall back to vanillaDamage.
 docs/modding/examples/battle-runtime-settings.dry-run.example.json
                             -> live-safety profile for mapping/evaluation. Computes HP/MP rewrite
                                decisions and traces while `DryRunRewrites` prevents memory writes.
@@ -240,9 +317,26 @@ docs/modding/examples/runtime-simulation-gurps-dr.example.json
                             -> five-scenario proof that subtractive armor DR can reduce,
                                partially absorb, or fully stop swing/thrust/fist damage before
                                GURPS-like wound multipliers.
+docs/modding/examples/runtime-simulation-static-dr.example.json
+                            -> simulator assertions for `FlatDamageReduction`: normal damage,
+                               chip damage clamped to 0, and healing left alone.
 docs/modding/examples/runtime-simulation-mp.example.json
                             -> MP simulator scenarios with assertions for signed MP loss/gain
                                rewrites and MpRules fallback behavior.
+docs/modding/examples/runtime-simulation-sentinel-bands.example.json
+                            -> simulator assertions that vanilla damage bands select low/mid/high
+                               sentinel actions and preserve unknown-band fallback behavior.
+docs/modding/examples/runtime-simulation-dry-run.example.json
+                            -> simulator assertions for the live-safe dry-run profile covering
+                               HP damage, HP healing, MP loss, and MP gain rewrite decisions.
+docs/modding/examples/runtime-simulation-neuter-spotcheck.example.json
+                            -> dry-run neuter spot-check scenarios asserting placeholder damage
+                               is preserved as `finalDamage=1`, including ally observation and
+                               healing skip behavior.
+docs/modding/examples/runtime-simulation-death-gate.example.json
+                            -> death-gate simulator scenarios asserting that the HP-only and
+                               KO-flag profiles force foes to 0 HP from neuter placeholder
+                               damage while preserving allies and healing events.
 tools/entd_tool.py          dump/patch ENTD encounter binaries (from New Game++)
 tools/guest_scan.py         scan ENTD for guest/ally slots (from New Game++)
 work/override_ability.sqlite OverrideAbilityActionData extracted (the formula override table)
@@ -317,13 +411,13 @@ FF16Tools.CLI (extract/convert) is reused from `D:\Projects\FFTModNewGame++\tool
 
 ```text
 1. [DONE] Proof patch validating the data pipeline (JobData.xml Move/Jump) - confirmed live.
-2. [NEXT - last data gate] Confirm the EXE reads override Formula/X/Y from OverrideAbilityActionData
-   (not just CT/MP): crank X on Cure(0x01)/Fire(0x10) in the NXD, cast in battle, watch the result.
-   If yes, LEVEL 1 (full catalog re-pointing) is 100% confirmed and needs no further validation.
-3. [LEVEL 2 alternative path] Continue `06`: prove the post-damage runtime reconciler. Next
-   concrete gates are pointer-stable unit logging, equipment/status field mapping, then live
-   validation of the implemented opt-in HP rewrite proof and target-side formula/rule engine
-   (`damage -> 1`, `damage - DR`, `FinalDamageFormula`, or first matching `DamageRules` entry).
+2. [DONE] Confirm the EXE reads override Formula/X/Y from OverrideAbilityActionData - Live Test D
+   proved damage magnitude changes through the override NXD.
+3. [NEXT - LEVEL 2 death gate] Continue `06`/`07`: with weapon + ability + charge/aim neuter
+   deployed, run
+   Test 2b to prove whether a runtime lethal result can kill by writing HP=0 alone, or whether it
+   must also write the mapped KO flag (`BattleUnit +0x61 |= 0x20`). This decides whether the
+   runtime can own lethal outcomes after vanilla damage is made harmless.
 4. [OFFLINE/LIVE BRIDGE] Continue the independent roster/unit-table research branch suggested by
    community prior art: the configurable `MemoryTableProbes` framework now exists, but it still
    needs an independently discovered/validated pattern and a live correlation pass to connect

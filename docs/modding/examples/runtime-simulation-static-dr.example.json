@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "name": "static-dr-reduces-damage",
+      "previousHp": 100,
+      "currentHp": 75,
+      "vanillaDamage": 25,
+      "eventIndex": 31,
+      "eventSeed": 30301,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 15,
+        "desiredHp": 85,
+        "ruleName": "FlatDamageReduction",
+        "traceContains": [
+          "final=15:FlatDamageReduction",
+          "trace.finaldamage=15",
+          "trace.desiredhp=85"
+        ]
+      },
+      "target": {
+        "ptr": "0x2200",
+        "charId": 134,
+        "level": 12,
+        "hp": 75,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true
+      },
+      "attacker": null
+    },
+    {
+      "name": "static-dr-clamps-chip-damage",
+      "previousHp": 100,
+      "currentHp": 93,
+      "vanillaDamage": 7,
+      "eventIndex": 32,
+      "eventSeed": 30302,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 0,
+        "desiredHp": 100,
+        "ruleName": "FlatDamageReduction"
+      },
+      "target": {
+        "ptr": "0x2201",
+        "charId": 135,
+        "level": 12,
+        "hp": 93,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true
+      },
+      "attacker": null
+    },
+    {
+      "name": "static-dr-leaves-healing-alone",
+      "previousHp": 80,
+      "currentHp": 90,
+      "vanillaDamage": -10,
+      "eventIndex": 33,
+      "eventSeed": 30303,
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 90,
+        "ruleName": "off"
+      },
+      "target": {
+        "ptr": "0x2202",
+        "charId": 136,
+        "level": 12,
+        "hp": 90,
+        "maxHp": 100,
+        "team": 1,
+        "isFoe": false
+      },
+      "attacker": null
+    }
+  ]
+}

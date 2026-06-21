@@ -1,0 +1,68 @@
+{
+  "_note": "Offline proof for the ActionSignalRules sentinel channel. This is not a deploy profile. It proves that placeholder-sized vanilla damage bands can classify an action and drive a final damage formula while unknown bands fall back to vanillaDamage.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "RewriteConditionFormula": "event.isDamage",
+  "FinalDamageFormula": "if(action.sentinelLow, 11, if(action.sentinelMid, 22, if(action.sentinelHigh, 33, vanillaDamage)))",
+  "ApplyEquipmentDr": false,
+  "ApplyDamageResponseRules": false,
+  "ActionSignalRules": [
+    {
+      "Name": "sentinel-low",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 1,
+      "MaxVanillaDamage": 30,
+      "Signal": 301,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelLow": 1,
+        "swing": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    },
+    {
+      "Name": "sentinel-mid",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 31,
+      "MaxVanillaDamage": 60,
+      "Signal": 302,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelMid": 1,
+        "thrust": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    },
+    {
+      "Name": "sentinel-high",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 61,
+      "MaxVanillaDamage": 90,
+      "Signal": 303,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelHigh": 1,
+        "spell": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    }
+  ],
+  "FormulaTraceVariables": [
+    { "Name": "trace.actionSignal", "Formula": "action.signal" },
+    { "Name": "trace.bandDamage", "Formula": "action.bandDamage" },
+    { "Name": "trace.sentinelLow", "Formula": "action.sentinelLow" },
+    { "Name": "trace.sentinelMid", "Formula": "action.sentinelMid" },
+    { "Name": "trace.sentinelHigh", "Formula": "action.sentinelHigh" },
+    { "Name": "trace.finalDamage", "Formula": "result.finalDamage" }
+  ]
+}

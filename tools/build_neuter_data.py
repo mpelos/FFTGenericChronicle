@@ -8,25 +8,39 @@ to make vanilla damage harmless and predictable so the engine never kills / neve
 wrong number, and our C# engine owns the real outcome. Test D proved the data lever works
 (the exe reads OverrideAbilityActionData Formula/X/Y, and ItemWeaponData Power).
 
-This script currently emits the WEAPON neuter (physical attacks), which is pure TableData
-XML and needs no external tool. It re-points every weapon to Power=1 so any weapon-power
-based attack (PA*WP, WP*WP, (PA+Sp)/2*WP, ...) deals a tiny, non-lethal, but still non-zero
-delta the reconciler can observe and rewrite.
+This script emits both halves of the neuter placeholder:
+  1. ItemWeaponData XML: every weapon Power is forced to 1, so weapon-power attacks
+     (PA*WP, WP*WP, (PA+Sp)/2*WP, ...) deal a tiny, non-lethal, non-zero delta.
+  2. OverrideAbilityActionData sqlite/NXD source: damaging offensive abilities are detected
+     from AbilityData AIBehaviorFlags (HP + TargetEnemies, not TargetAllies) and get X=Y=1.
+  3. AbilityChargeAimData XML: Aim/Charge secondary Power is forced to 1 so high-id
+     Aim actions outside OverrideAbilityActionData cannot scale back up through their
+     hardcoded side table.
 
 Coverage / gaps (documented honestly):
   - Covers: every attack that scales with weapon Power (most human physical attacks).
-  - Does NOT cover: bare-hands / monster innate attacks (no weapon power term) and spell
-    damage. Those need the OverrideAbilityActionData NXD neuter (separate pass; needs the
-    base per-ability Formula/X/Y, which is exe-hardcoded, plus FF16Tools).
+  - Covers: spells/skills/monster actions whose ability id is present in the 368-row
+    OverrideAbilityActionData override table and whose magnitude reads X or Y.
+  - Covers: Aim/Charge high-id actions whose magnitude reads AbilityChargeAimData Power.
+  - Does NOT cover: rare formulas that ignore X/Y, WP, and charge/aim Power (for example
+    %-damage/Gravity), or any action family that never produces a weapon-power,
+    ability-parameter, or charge/aim placeholder delta.
 
 Usage:
     python tools/build_neuter_data.py
-Output (repo data-mod source, deploy with deploy.ps1):
+    python tools/build_neuter_data.py --build-nxd
+Outputs/prepares (repo data-mod source, deploy with deploy.ps1 after the NXD step):
     mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml
+    mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/AbilityChargeAimData.xml
+    work/override_ability.neuter.sqlite
+Then run the printed FF16Tools command to rebuild:
+    mod/fftivc.generic.chronicle/FFTIVC/data/enhanced/nxd/overrideabilityactiondata.nxd
 """
 from __future__ import annotations
+import argparse
 import shutil
 import sqlite3
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -35,18 +49,38 @@ REPO = Path(__file__).resolve().parents[1]
 MODLOADER = Path(r"C:/Reloaded-II/Mods/fftivc.utility.modloader/TableData")
 TEMPLATE = MODLOADER / "ItemWeaponData.xml"
 ABILITY_TEMPLATE = MODLOADER / "AbilityData.xml"
+CHARGE_AIM_TEMPLATE = MODLOADER / "AbilityChargeAimData.xml"
 OUT = REPO / "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml"
+CHARGE_AIM_OUT = REPO / "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/AbilityChargeAimData.xml"
 
 # Ability (spell/skill/monster) neuter via the OverrideAbilityActionData NXD.
 BASE_OVERRIDE_SQLITE = REPO / "work/override_ability.sqlite"          # extracted base (sparse, -1=inherit)
 NEUTER_OVERRIDE_SQLITE = REPO / "work/override_ability.neuter.sqlite"  # base + X=1,Y=1 on damaging rows
 ABILITY_NXD_OUT = REPO / "mod/fftivc.generic.chronicle/FFTIVC/data/enhanced/nxd/overrideabilityactiondata.nxd"
+DEFAULT_FF16TOOLS = Path(r"D:/Projects/FFTModNewGame++/tools/FF16Tools.CLI-1.13.2-win-x64/win-x64/FF16Tools.CLI.exe")
 
 NEUTER_POWER = 1  # tiny but non-zero so the reconciler still observes a delta
 NEUTER_XY = 1     # X/Y forced to 1 on damaging abilities -> damage collapses to ~one stat (non-lethal)
+NEUTER_CHARGE_AIM_POWER = 1
 
 
-def build_weapon_neuter() -> str:
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build Generic Chronicle data-layer neuter placeholder artifacts.")
+    parser.add_argument(
+        "--build-nxd",
+        action="store_true",
+        help="Also rebuild overrideabilityactiondata.nxd from work/override_ability.neuter.sqlite using FF16Tools.",
+    )
+    parser.add_argument(
+        "--ff16tools",
+        type=Path,
+        default=DEFAULT_FF16TOOLS,
+        help=f"Path to FF16Tools.CLI.exe. Default: {DEFAULT_FF16TOOLS}",
+    )
+    return parser.parse_args()
+
+
+def build_weapon_neuter() -> tuple[str, int]:
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: weapon template not found: {TEMPLATE}")
     tree = ET.parse(TEMPLATE)
@@ -76,8 +110,8 @@ def build_weapon_neuter() -> str:
         "  Every weapon Power is forced to 1 so vanilla physical attacks are tiny and non-lethal;",
         "  the code-mod reconciler owns the real damage result. Only <Id> + <Power> are shipped so",
         "  the loader merges per-property and nothing else is disturbed.",
-        f"  Weapons neutered: {len(edited)} (Power>1 in vanilla). Bare-hands/monster/spell damage",
-        "  is NOT covered here - that needs the OverrideAbilityActionData NXD neuter.",
+        f"  Weapons neutered: {len(edited)} (Power>1 in vanilla). Ability/spell/monster placeholders",
+        "  are handled by sibling OverrideAbilityActionData NXD and AbilityChargeAimData XML neuters.",
         "-->",
         "",
         "<ItemWeaponTable>",
@@ -91,6 +125,54 @@ def build_weapon_neuter() -> str:
         lines.append("    </ItemWeapon>")
     lines.append("  </Entries>")
     lines.append("</ItemWeaponTable>")
+    lines.append("")
+    return "\n".join(lines), len(edited)
+
+
+def build_charge_aim_neuter() -> tuple[str, int]:
+    if not CHARGE_AIM_TEMPLATE.exists():
+        sys.exit(f"ERROR: charge/aim template not found: {CHARGE_AIM_TEMPLATE}")
+    tree = ET.parse(CHARGE_AIM_TEMPLATE)
+    root = tree.getroot()
+    entries = root.find("Entries")
+    if entries is None:
+        sys.exit("ERROR: <Entries> not found in charge/aim template")
+
+    edited = []
+    for ability in entries.findall("AbilityChargeAim"):
+        id_el = ability.find("Id")
+        power_el = ability.find("Power")
+        if id_el is None or power_el is None:
+            continue
+        ability_id = int(id_el.text)
+        power = int(power_el.text)
+        if power <= NEUTER_CHARGE_AIM_POWER:
+            continue
+        edited.append(ability_id)
+
+    lines = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        "",
+        "<!--",
+        "  GENERATED by tools/build_neuter_data.py - do not hand-edit.",
+        "  Data-layer NEUTER PLACEHOLDER for high-id Aim/Charge actions.",
+        "  OverrideAbilityActionData only has rows through ability 367; Aim +2..+20 live in this",
+        "  hardcoded secondary table instead. Force only Power=1 so charge/aim attacks stay as",
+        "  placeholder deltas while keeping CT/Ticks inherited from vanilla.",
+        f"  Aim/Charge abilities neutered: {len(edited)} (Power>1 in vanilla).",
+        "-->",
+        "",
+        "<AbilityChargeAimTable>",
+        "  <Version>1</Version>",
+        "  <Entries>",
+    ]
+    for ability_id in edited:
+        lines.append("    <AbilityChargeAim>")
+        lines.append(f"      <Id>{ability_id}</Id>")
+        lines.append(f"      <Power>{NEUTER_CHARGE_AIM_POWER}</Power>")
+        lines.append("    </AbilityChargeAim>")
+    lines.append("  </Entries>")
+    lines.append("</AbilityChargeAimTable>")
     lines.append("")
     return "\n".join(lines), len(edited)
 
@@ -143,22 +225,60 @@ def build_ability_neuter() -> tuple[int, int, list[int]]:
     return len(to_neuter), len(skipped), skipped
 
 
+def ff16tools_command(ff16tools: Path) -> list[str]:
+    return [
+        str(ff16tools),
+        "sqlite-to-nxd",
+        "-i",
+        str(NEUTER_OVERRIDE_SQLITE),
+        "-o",
+        str(ABILITY_NXD_OUT.parent),
+        "-g",
+        "fft",
+        "-t",
+        "OverrideAbilityActionData",
+    ]
+
+
+def build_ability_nxd(ff16tools: Path) -> None:
+    if not ff16tools.exists():
+        sys.exit(f"ERROR: FF16Tools CLI not found: {ff16tools}")
+    if not NEUTER_OVERRIDE_SQLITE.exists():
+        sys.exit(f"ERROR: neuter override sqlite not found: {NEUTER_OVERRIDE_SQLITE}")
+
+    ABILITY_NXD_OUT.parent.mkdir(parents=True, exist_ok=True)
+    cmd = ff16tools_command(ff16tools)
+    print("[neuter] building ability NXD:", flush=True)
+    print("  " + " ".join(f'"{part}"' if " " in part else part for part in cmd), flush=True)
+    subprocess.run(cmd, check=True)
+    if not ABILITY_NXD_OUT.exists() or ABILITY_NXD_OUT.stat().st_size == 0:
+        sys.exit(f"ERROR: FF16Tools did not produce a non-empty NXD: {ABILITY_NXD_OUT}")
+    print(f"[neuter] ability NXD written: {ABILITY_NXD_OUT}")
+
+
 def main() -> None:
+    args = parse_args()
     xml, count = build_weapon_neuter()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(xml, encoding="utf-8")
     print(f"[neuter] wrote {OUT}")
     print(f"[neuter] weapons neutered to Power={NEUTER_POWER}: {count}")
 
+    charge_xml, charge_count = build_charge_aim_neuter()
+    CHARGE_AIM_OUT.parent.mkdir(parents=True, exist_ok=True)
+    CHARGE_AIM_OUT.write_text(charge_xml, encoding="utf-8")
+    print(f"[neuter] wrote {CHARGE_AIM_OUT}")
+    print(f"[neuter] Aim/Charge abilities neutered to Power={NEUTER_CHARGE_AIM_POWER}: {charge_count}")
+
     neutered, skipped_n, skipped_ids = build_ability_neuter()
     ABILITY_NXD_OUT.parent.mkdir(parents=True, exist_ok=True)
     print(f"[neuter] ability sqlite written: {NEUTER_OVERRIDE_SQLITE}")
     print(f"[neuter] damaging abilities set X=Y={NEUTER_XY}: {neutered} (skipped {skipped_n} out of table range: {skipped_ids})")
-    print("[neuter] NEXT: build the NXD with FF16Tools, e.g.:")
-    print(
-        '  & "D:/Projects/FFTModNewGame++/tools/FF16Tools.CLI-1.13.2-win-x64/win-x64/FF16Tools.CLI.exe" '
-        f'sqlite-to-nxd -i "{NEUTER_OVERRIDE_SQLITE}" -o "{ABILITY_NXD_OUT.parent}" -g fft -t OverrideAbilityActionData'
-    )
+    if args.build_nxd:
+        build_ability_nxd(args.ff16tools)
+    else:
+        print("[neuter] NEXT: build the NXD with FF16Tools, e.g.:")
+        print("  python tools/build_neuter_data.py --build-nxd")
 
 
 if __name__ == "__main__":

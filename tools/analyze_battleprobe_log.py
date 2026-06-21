@@ -26,6 +26,7 @@ DEFAULT_LOG = Path(
 )
 DEFAULT_OUT = ROOT / "work" / "battleprobe_analysis.md"
 DEFAULT_CATALOG = ROOT / "work" / "item_catalog.csv"
+PLACEHOLDER_DAMAGE_MAX = 30
 
 UNIT_RE = re.compile(
     r"\[UNIT ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2}) (?P<faction>ally|foe ) t(?P<team>\d+)\] (?P<stats>.+)"
@@ -38,11 +39,24 @@ HP_EVENT_RE = re.compile(
     r"\[(?P<kind>DAMAGE|HEALING) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] "
     r"(?P<prev>\d+) -> (?P<hp>\d+) = (?P<amount>\d+)(?: sampleAgeMs=(?P<sample_age>-?\d+))?"
 )
+MP_EVENT_RE = re.compile(
+    r"\[(?P<kind>MPLOSS|MPGAIN) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] "
+    r"(?P<prev>\d+) -> (?P<mp>\d+) = (?P<amount>\d+)(?: sampleAgeMs=(?P<sample_age>-?\d+))?"
+)
 CTX_RE = re.compile(r"\[CTX ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 RUNTIME_RE = re.compile(r"\[RUNTIME ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
+RUNTIME_MP_RE = re.compile(r"\[RUNTIME-MP ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 REWRITE_EVENT_RE = re.compile(
     r"\[(?P<tag>(?:MP-)?REWRITE(?:-DRY-RUN|-FAILED|-SKIP|-ECHO-SKIP)?) "
     r"ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)"
+)
+DEATH_EVENT_RE = re.compile(
+    r"\[(?P<tag>DEATH-(?:DUMP|DIFF|FOLLOW|WRITE(?:-FAILED|-SKIP)?)) "
+    r"ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})(?P<meta>[^\]]*)\] (?P<body>.*)"
+)
+DEATH_WRITE_BODY_RE = re.compile(
+    r"(?P<name>.*?) \+0x(?P<offset>[0-9A-F]{2,4}) w(?P<width>\d+) "
+    r"(?P<from>[0-9A-F]+)->(?P<to>[0-9A-F]+)"
 )
 HP_REWRITE_BODY_RE = re.compile(
     r"rule=(?P<rule>.*?) vanillaDamage=(?P<vanilla>-?\d+) finalDamage=(?P<final>-?\d+) "
@@ -87,9 +101,11 @@ def main() -> int:
     diffs: dict[str, list[str]] = defaultdict(list)
     diff_offsets: Counter[str] = Counter()
     hp_events: list[dict[str, object]] = []
+    mp_events: list[dict[str, object]] = []
     contexts: list[tuple[str, str]] = []
     runtime_contexts: list[tuple[str, str]] = []
     rewrites: list[dict[str, object]] = []
+    death_events: list[dict[str, object]] = []
     memory_table_events: list[dict[str, object]] = []
     headers: list[str] = []
     old_unit_lines = 0
@@ -137,6 +153,10 @@ def main() -> int:
             hp_events.append(event)
             continue
 
+        if event := parse_mp_event_line(line, line_no):
+            mp_events.append(event)
+            continue
+
         if m := CTX_RE.search(line):
             contexts.append((m.group(1), m.group("body")))
             continue
@@ -145,12 +165,20 @@ def main() -> int:
             runtime_contexts.append((m.group(1), m.group("body")))
             continue
 
+        if m := RUNTIME_MP_RE.search(line):
+            runtime_contexts.append((m.group(1), m.group("body")))
+            continue
+
         if rewrite := parse_rewrite_line(line, line_no):
             rewrites.append(rewrite)
+            continue
+
+        if death := parse_death_line(line, line_no):
+            death_events.append(death)
 
     args.output.parent.mkdir(exist_ok=True)
     args.output.write_text(
-        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, contexts, runtime_contexts, rewrites, memory_table_events, old_unit_lines, item_catalog, args.catalog),
+        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, mp_events, contexts, runtime_contexts, rewrites, death_events, memory_table_events, old_unit_lines, item_catalog, args.catalog),
         encoding="utf-8",
     )
     print(f"wrote {args.output}")
@@ -296,6 +324,27 @@ def parse_hp_event_line(line: str, line_no: int = 0) -> dict[str, object] | None
     }
 
 
+def parse_mp_event_line(line: str, line_no: int = 0) -> dict[str, object] | None:
+    m = MP_EVENT_RE.search(line)
+    if not m:
+        return None
+
+    sample_age = m.group("sample_age")
+    previous = parse_int(m.group("prev"))
+    current = parse_int(m.group("mp"))
+    return {
+        "line": line_no,
+        "kind": m.group("kind"),
+        "ptr": m.group(2),
+        "id": m.group(3),
+        "previous": previous,
+        "current": current,
+        "amount": parse_int(m.group("amount")),
+        "change": current - previous,
+        "sample_age_ms": parse_int(sample_age) if sample_age is not None else None,
+    }
+
+
 def parse_rewrite_line(line: str, line_no: int = 0) -> dict[str, object] | None:
     m = REWRITE_EVENT_RE.search(line)
     if not m:
@@ -328,6 +377,53 @@ def parse_rewrite_line(line: str, line_no: int = 0) -> dict[str, object] | None:
     return rewrite
 
 
+def parse_death_line(line: str, line_no: int = 0) -> dict[str, object] | None:
+    m = DEATH_EVENT_RE.search(line)
+    if not m:
+        return None
+
+    tag = m.group("tag")
+    body = m.group("body")
+    event: dict[str, object] = {
+        "line": line_no,
+        "tag": tag,
+        "status": death_status(tag),
+        "ptr": m.group(2),
+        "id": m.group(3),
+        "meta": m.group("meta").strip(),
+        "body": body,
+        "offsets": OFFSET_RE.findall(body),
+    }
+
+    if write_match := DEATH_WRITE_BODY_RE.search(body):
+        event.update(
+            {
+                "name": write_match.group("name").strip(),
+                "offset": f"+0x{write_match.group('offset')}",
+                "offset_int": int(write_match.group("offset"), 16),
+                "width": parse_int(write_match.group("width")),
+                "from_value": parse_number("0x" + write_match.group("from")),
+                "to_value": parse_number("0x" + write_match.group("to")),
+            }
+        )
+
+    return event
+
+
+def death_status(tag: str) -> str:
+    if tag.endswith("-FAILED"):
+        return "failed"
+    if tag.endswith("-SKIP"):
+        return "skip"
+    if tag == "DEATH-WRITE":
+        return "write"
+    if tag == "DEATH-DIFF":
+        return "diff"
+    if tag == "DEATH-FOLLOW":
+        return "follow"
+    return "dump"
+
+
 def rewrite_status(tag: str) -> str:
     if tag.endswith("-DRY-RUN"):
         return "dry-run"
@@ -352,6 +448,7 @@ def parse_runtime_context(ptr: str, body: str) -> dict[str, object]:
         "attacker_slots": parse_slot_list(fields.get("attackerSlots", "")),
         "equipment_dr": fields.get("equipmentDr", ""),
         "response": parse_response(fields.get("response", "")),
+        "trace_vars": parse_trace_vars(fields.get("vars", "")),
         "final": parse_final(fields.get("final", "")),
     }
 
@@ -366,20 +463,36 @@ def split_runtime_fields(body: str) -> dict[str, str]:
     return fields
 
 
-def parse_action(text: str) -> dict[str, str]:
+def parse_action(text: str) -> dict[str, object]:
     if not text or text == "none":
-        return {"name": "none", "source": "", "signal": "", "vars": ""}
+        return {"name": "none", "source": "", "signal": "", "vars": "", "variables": {}}
 
     m = re.match(r"(?P<name>.*?):source=(?P<source>.*?):signal=(?P<signal>-?\d+)(?::vars=(?P<vars>.*))?$", text)
     if not m:
-        return {"name": text, "source": "", "signal": "", "vars": ""}
+        return {"name": text, "source": "", "signal": "", "vars": "", "variables": {}}
 
+    variables = m.group("vars") or ""
     return {
         "name": m.group("name"),
         "source": m.group("source"),
         "signal": m.group("signal"),
-        "vars": m.group("vars") or "",
+        "vars": variables,
+        "variables": parse_trace_vars(variables),
     }
+
+
+def parse_trace_vars(text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not text or text == "none":
+        return values
+
+    for piece in text.split(","):
+        name, sep, value = piece.partition("=")
+        name = name.strip()
+        if not sep or not name:
+            continue
+        values[name] = value.strip()
+    return values
 
 
 def parse_slot_list(text: str) -> list[dict[str, object]]:
@@ -475,9 +588,11 @@ def render(
     diffs: dict[str, list[str]],
     diff_offsets: Counter[str],
     hp_events: list[dict[str, object]],
+    mp_events: list[dict[str, object]],
     contexts: list[tuple[str, str]],
     runtime_contexts: list[tuple[str, str]],
     rewrites: list[dict[str, object]],
+    death_events: list[dict[str, object]],
     memory_table_events: list[dict[str, object]],
     old_unit_lines: int,
     item_catalog: dict[int, dict[str, str]],
@@ -598,6 +713,8 @@ def render(
 
     lines.extend(render_memory_table_summary(memory_table_events))
     lines.extend(render_runtime_summary(runtime_details))
+    lines.extend(render_death_summary(death_events))
+    lines.extend(render_death_gate_summary(rewrites, death_events))
 
     lines.append("## HP Events / Rewrite")
     damage = [event for event in hp_events if event.get("kind") == "DAMAGE"]
@@ -632,10 +749,252 @@ def render(
             parsed = f" final={rewrite.get('final')} {rewrite.get('from_value')}->{rewrite.get('to_value')}"
         lines.append(f"  - `{rewrite.get('ptr')}` `{rewrite.get('tag')}`{parsed} {rewrite.get('body')}")
     lines.append("")
+    lines.extend(render_neuter_placeholder_summary(rewrites))
     lines.extend(render_hp_write_proof_summary(hp_events, rewrites))
+    lines.extend(render_mp_rewrite_summary(mp_events, rewrites))
     lines.append("")
 
     return "\n".join(lines)
+
+
+def render_neuter_placeholder_summary(rewrites: list[dict[str, object]]) -> list[str]:
+    lines = ["### Neuter Placeholder Check"]
+    hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp"
+        and rewrite.get("status") in {"write", "dry-run"}
+        and isinstance(rewrite.get("vanilla"), int)
+    ]
+    failed_hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp" and rewrite.get("status") == "failed"
+    ]
+
+    if not hp_rewrites:
+        lines.append("- No parsed HP rewrite lines with `vanillaDamage`.")
+        lines.append("- Verdict: **no HP placeholder evidence**")
+        lines.append("")
+        return lines
+
+    positive = [rewrite for rewrite in hp_rewrites if int(rewrite.get("vanilla", 0)) > 0]
+    healing = [rewrite for rewrite in hp_rewrites if int(rewrite.get("vanilla", 0)) < 0]
+    lethal_zero = [
+        rewrite for rewrite in hp_rewrites
+        if int(rewrite.get("final", 0)) >= 9999 and rewrite.get("to_value") == 0
+    ]
+
+    lines.append(f"- HP rewrite lines with parsed vanilla damage: {len(hp_rewrites)}")
+    lines.append(f"- Positive damage rewrites: {len(positive)}")
+    if positive:
+        values = [int(rewrite.get("vanilla", 0)) for rewrite in positive]
+        small = [value for value in values if 0 < value <= PLACEHOLDER_DAMAGE_MAX]
+        one = [value for value in values if value == 1]
+        large = [value for value in values if value > PLACEHOLDER_DAMAGE_MAX]
+        lines.append(f"- Positive `vanillaDamage`: min={min(values)} max={max(values)}")
+        lines.append(f"- Placeholder-sized positive rewrites (`1..{PLACEHOLDER_DAMAGE_MAX}`): {len(small)}/{len(values)}")
+        lines.append(f"- Exact `vanillaDamage=1` rewrites: {len(one)}/{len(values)}")
+        if large:
+            lines.append(f"- Large positive vanilla deltas (`>{PLACEHOLDER_DAMAGE_MAX}`): {len(large)}")
+    if healing:
+        values = [int(rewrite.get("vanilla", 0)) for rewrite in healing]
+        lines.append(f"- Healing rewrite vanilla deltas: min={min(values)} max={max(values)}")
+    lines.append(f"- Death-gate lethal rewrites (`finalDamage>=9999`, HP -> 0): {len(lethal_zero)}")
+    lines.append(f"- HP rewrite failures: {len(failed_hp_rewrites)}")
+    lines.append(f"- Verdict: **{neuter_placeholder_verdict(positive, failed_hp_rewrites)}**")
+    lines.append("")
+    return lines
+
+
+def neuter_placeholder_verdict(
+    positive_rewrites: list[dict[str, object]],
+    failed_hp_rewrites: list[dict[str, object]],
+) -> str:
+    if failed_hp_rewrites:
+        return "failed: HP rewrite failures logged"
+    if not positive_rewrites:
+        return "no positive HP damage rewrites to evaluate"
+
+    values = [int(rewrite.get("vanilla", 0)) for rewrite in positive_rewrites]
+    if all(0 < value <= PLACEHOLDER_DAMAGE_MAX for value in values):
+        return "pass-candidate: observed positive vanilla damage is placeholder-sized"
+    return "attention: large vanilla damage observed; data neuter may be incomplete or this is not a neuter run"
+
+
+def render_death_summary(death_events: list[dict[str, object]]) -> list[str]:
+    lines: list[str] = ["## Death State"]
+    if not death_events:
+        lines.append("No parsed `[DEATH-*]` lines.")
+        lines.append("")
+        return lines
+
+    tag_counts = Counter(str(event.get("tag", "?")) for event in death_events)
+    status_counts = Counter(str(event.get("status", "?")) for event in death_events)
+    lines.append("- Events: " + ", ".join(f"`{tag}`={count}" for tag, count in tag_counts.most_common()))
+    lines.append("- Status: " + ", ".join(f"{status}={count}" for status, count in status_counts.most_common()))
+
+    diff_events = [event for event in death_events if event.get("status") in {"diff", "follow"}]
+    diff_offsets = Counter(
+        str(offset)
+        for event in diff_events
+        for offset in event.get("offsets", [])
+    )
+    if diff_offsets:
+        lines.append("- Death diff offsets: " + ", ".join(f"`+0x{off}`={count}" for off, count in diff_offsets.most_common()))
+
+    writes = [event for event in death_events if str(event.get("tag", "")).startswith("DEATH-WRITE")]
+    concrete_writes = [event for event in writes if event.get("status") == "write"]
+    failed_writes = [event for event in writes if event.get("status") == "failed"]
+    skipped_writes = [event for event in writes if event.get("status") == "skip"]
+    if writes:
+        lines.append(
+            f"- Death writes: concrete={len(concrete_writes)}, failed={len(failed_writes)}, skipped={len(skipped_writes)}"
+        )
+
+    ko_flag_diffs = [
+        event for event in diff_events
+        if "61" in event.get("offsets", []) or "+0x61" in str(event.get("body", ""))
+    ]
+    ko_flag_writes = [
+        event for event in concrete_writes
+        if event.get("offset_int") == 0x61
+    ]
+    lines.append(f"- Verdict: **{death_summary_verdict(death_events, failed_writes, ko_flag_diffs, ko_flag_writes)}**")
+
+    if diff_events:
+        lines.append("")
+        lines.append("### Death Diffs")
+        for event in diff_events[:12]:
+            lines.append(f"- line {event.get('line')}: `{event.get('tag')}` `{event.get('ptr')}` {event.get('body')}")
+        if len(diff_events) > 12:
+            lines.append(f"- _Truncated: {len(diff_events) - 12} more death diff/follow event(s)._")
+
+    if writes:
+        lines.append("")
+        lines.append("### Death Writes")
+        for event in writes[:12]:
+            parsed = ""
+            if "offset" in event:
+                parsed = f" parsed={event.get('offset')} w{event.get('width')} {event.get('from_value')}->{event.get('to_value')}"
+            lines.append(f"- line {event.get('line')}: `{event.get('tag')}` `{event.get('ptr')}`{parsed} {event.get('body')}")
+        if len(writes) > 12:
+            lines.append(f"- _Truncated: {len(writes) - 12} more death write event(s)._")
+
+    lines.append("")
+    return lines
+
+
+def death_summary_verdict(
+    death_events: list[dict[str, object]],
+    failed_writes: list[dict[str, object]],
+    ko_flag_diffs: list[dict[str, object]],
+    ko_flag_writes: list[dict[str, object]],
+) -> str:
+    if failed_writes:
+        return "failed: death-state write failures logged"
+    if ko_flag_writes:
+        return "write-candidate: KO flag +0x61 was written; confirm the unit actually dies in-game"
+    if ko_flag_diffs:
+        return "mapping-candidate: death diffs include KO flag +0x61"
+    if death_events:
+        return "death-state evidence present; review diffs/writes"
+    return "no death-state evidence"
+
+
+def render_death_gate_summary(
+    rewrites: list[dict[str, object]],
+    death_events: list[dict[str, object]],
+) -> list[str]:
+    lines: list[str] = ["## Death Gate Outcome"]
+    hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp" and rewrite.get("status") in {"write", "dry-run"}
+    ]
+    lethal_zero = [
+        rewrite for rewrite in hp_rewrites
+        if isinstance(rewrite.get("final"), int)
+        and int(rewrite.get("final", 0)) >= 9999
+        and rewrite.get("to_value") == 0
+    ]
+    concrete_lethal_zero = [rewrite for rewrite in lethal_zero if rewrite.get("status") == "write"]
+    dry_run_lethal_zero = [rewrite for rewrite in lethal_zero if rewrite.get("status") == "dry-run"]
+    failed_hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp" and rewrite.get("status") == "failed"
+    ]
+    placeholder_lethal = [
+        rewrite for rewrite in lethal_zero
+        if isinstance(rewrite.get("vanilla"), int) and 0 < int(rewrite.get("vanilla", 0)) <= PLACEHOLDER_DAMAGE_MAX
+    ]
+    large_lethal = [
+        rewrite for rewrite in lethal_zero
+        if isinstance(rewrite.get("vanilla"), int) and int(rewrite.get("vanilla", 0)) > PLACEHOLDER_DAMAGE_MAX
+    ]
+    death_writes = [event for event in death_events if event.get("status") == "write"]
+    failed_death_writes = [event for event in death_events if event.get("status") == "failed"]
+    ko_flag_writes = [event for event in death_writes if event.get("offset_int") == 0x61]
+    ko_flag_diffs = [
+        event for event in death_events
+        if event.get("status") in {"diff", "follow"}
+        and ("61" in event.get("offsets", []) or "+0x61" in str(event.get("body", "")))
+    ]
+
+    lines.append(f"- Lethal HP rewrites (`finalDamage>=9999`, HP -> 0): {len(lethal_zero)}")
+    lines.append(f"- Concrete lethal HP writes: {len(concrete_lethal_zero)}")
+    lines.append(f"- Dry-run lethal HP decisions: {len(dry_run_lethal_zero)}")
+    lines.append(f"- Placeholder-sized lethal rewrites: {len(placeholder_lethal)}/{len(lethal_zero)}")
+    if large_lethal:
+        lines.append(f"- Large-vanilla lethal rewrites: {len(large_lethal)}")
+    lines.append(f"- Death events: {len(death_events)}")
+    lines.append(f"- KO flag diffs (`+0x61`): {len(ko_flag_diffs)}")
+    lines.append(f"- KO flag writes (`+0x61`): {len(ko_flag_writes)}")
+    lines.append(f"- HP rewrite failures: {len(failed_hp_rewrites)}")
+    lines.append(f"- Death-write failures: {len(failed_death_writes)}")
+    lines.append(f"- Verdict: **{death_gate_verdict(lethal_zero, concrete_lethal_zero, failed_hp_rewrites, death_events, failed_death_writes, ko_flag_writes, ko_flag_diffs, large_lethal)}**")
+    if concrete_lethal_zero and not death_events:
+        lines.append("- Note: absence of `[DEATH-*]` is strongest when this log was captured with the watcher `--settle-seconds` negative gate.")
+
+    if lethal_zero:
+        lines.append("")
+        lines.append("### Lethal Rewrite Samples")
+        for rewrite in lethal_zero[:8]:
+            lines.append(
+                f"- line {rewrite.get('line')}: `{rewrite.get('tag')}` `{rewrite.get('ptr')}` "
+                f"vanilla={rewrite.get('vanilla')} final={rewrite.get('final')} "
+                f"{rewrite.get('from_value')}->{rewrite.get('to_value')} rule={rewrite.get('rule', '?')}"
+            )
+        if len(lethal_zero) > 8:
+            lines.append(f"- _Truncated: {len(lethal_zero) - 8} more lethal rewrite event(s)._")
+    lines.append("")
+    return lines
+
+
+def death_gate_verdict(
+    lethal_zero: list[dict[str, object]],
+    concrete_lethal_zero: list[dict[str, object]],
+    failed_hp_rewrites: list[dict[str, object]],
+    death_events: list[dict[str, object]],
+    failed_death_writes: list[dict[str, object]],
+    ko_flag_writes: list[dict[str, object]],
+    ko_flag_diffs: list[dict[str, object]],
+    large_lethal: list[dict[str, object]],
+) -> str:
+    if failed_hp_rewrites:
+        return "failed: HP rewrite failures logged"
+    if failed_death_writes:
+        return "failed: death-state write failures logged"
+    if not lethal_zero:
+        return "no death-gate lethal HP rewrite evidence"
+    if not concrete_lethal_zero:
+        return "dry-run only: formulas reached HP 0, but no live HP write was attempted"
+    if large_lethal:
+        return "attention: lethal rewrite came from large vanilla damage; verify the neuter placeholder first"
+    if ko_flag_writes:
+        return "killflag-branch evidence: runtime wrote KO flag +0x61; confirm the unit dies in-game"
+    if ko_flag_diffs:
+        return "HP-only branch evidence: HP=0 write coincided with KO flag diff +0x61; confirm in-game death"
+    if death_events:
+        return "HP-only branch evidence: death events appeared after HP=0 write; review diffs/visual result"
+    return "zombie-candidate: HP=0 was written, but no death-state evidence appears in this log"
 
 
 def render_memory_table_summary(memory_table_events: list[dict[str, object]]) -> list[str]:
@@ -779,6 +1138,89 @@ def hp_write_proof_verdict(
     return "pass-candidate: HP rewrites are finalDamage=1 with fresh baselines"
 
 
+def render_mp_rewrite_summary(mp_events: list[dict[str, object]], rewrites: list[dict[str, object]]) -> list[str]:
+    lines = ["### MP Rewrite Check"]
+    mp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "mp" and rewrite.get("status") in {"write", "dry-run"}
+    ]
+    concrete_rewrites = [rewrite for rewrite in mp_rewrites if rewrite.get("status") == "write"]
+    dry_run_rewrites = [rewrite for rewrite in mp_rewrites if rewrite.get("status") == "dry-run"]
+    failed_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "mp" and rewrite.get("status") == "failed"
+    ]
+    skipped_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "mp" and rewrite.get("status") in {"skip", "echo-skip"}
+    ]
+    loss_rewrites = [
+        rewrite for rewrite in mp_rewrites
+        if isinstance(rewrite.get("vanilla"), int) and int(rewrite.get("vanilla", 0)) < 0
+    ]
+    gain_rewrites = [
+        rewrite for rewrite in mp_rewrites
+        if isinstance(rewrite.get("vanilla"), int) and int(rewrite.get("vanilla", 0)) > 0
+    ]
+    loss_events = [event for event in mp_events if event.get("kind") == "MPLOSS"]
+    gain_events = [event for event in mp_events if event.get("kind") == "MPGAIN"]
+    sample_ages = [
+        int(event["sample_age_ms"])
+        for event in mp_events
+        if isinstance(event.get("sample_age_ms"), int) and int(event["sample_age_ms"]) >= 0
+    ]
+    final_values = [int(rewrite["final"]) for rewrite in mp_rewrites if isinstance(rewrite.get("final"), int)]
+    desired_values = [int(rewrite["to_value"]) for rewrite in mp_rewrites if isinstance(rewrite.get("to_value"), int)]
+    status_counts = Counter(str(rewrite.get("status", "?")) for rewrite in rewrites if rewrite.get("resource") == "mp")
+
+    lines.append(f"- MP events: loss={len(loss_events)}, gain={len(gain_events)}")
+    if sample_ages:
+        lines.append(f"- MP sample age: min={min(sample_ages)}ms max={max(sample_ages)}ms")
+    elif mp_events:
+        lines.append("- MP sample age: missing")
+    lines.append(f"- Parsed MP rewrite decisions: {len(mp_rewrites)}")
+    lines.append(f"- Concrete MP writes: {len(concrete_rewrites)}")
+    lines.append(f"- Dry-run MP decisions: {len(dry_run_rewrites)}")
+    lines.append(f"- MP loss rewrites: {len(loss_rewrites)}")
+    lines.append(f"- MP gain rewrites: {len(gain_rewrites)}")
+    lines.append(f"- MP rewrite failures: {len(failed_rewrites)}")
+    lines.append(f"- MP rewrite skips/echo-skips: {len(skipped_rewrites)}")
+    if status_counts:
+        lines.append("- MP rewrite status: " + ", ".join(f"{status}={count}" for status, count in status_counts.items()))
+    if final_values:
+        lines.append(f"- `finalMpChange`: min={min(final_values)} max={max(final_values)}")
+    if desired_values:
+        lines.append(f"- Desired MP: min={min(desired_values)} max={max(desired_values)}")
+
+    lines.append(f"- Verdict: **{mp_rewrite_verdict(mp_events, mp_rewrites, failed_rewrites, sample_ages)}**")
+
+    if failed_rewrites:
+        for rewrite in failed_rewrites[:8]:
+            lines.append(f"  - failure line {rewrite.get('line')}: `{rewrite.get('body')}`")
+    if skipped_rewrites:
+        for rewrite in skipped_rewrites[:8]:
+            lines.append(f"  - skip line {rewrite.get('line')}: `{rewrite.get('body')}`")
+    lines.append("")
+    return lines
+
+
+def mp_rewrite_verdict(
+    mp_events: list[dict[str, object]],
+    mp_rewrites: list[dict[str, object]],
+    failed_rewrites: list[dict[str, object]],
+    sample_ages: list[int],
+) -> str:
+    if failed_rewrites:
+        return "failed: MP rewrite failures logged"
+    if not mp_events and not mp_rewrites:
+        return "no MP rewrite evidence"
+    if mp_events and not mp_rewrites:
+        return "no parsed MP rewrite decisions"
+    if mp_events and not sample_ages:
+        return "inconclusive: MP event log does not include sampleAgeMs; rebuild/retest with the current DLL"
+    return "pass-candidate: MP rewrite decisions parsed without failures"
+
+
 def correlate_hp_rewrites(
     hp_events: list[dict[str, object]],
     hp_rewrites: list[dict[str, object]],
@@ -847,8 +1289,11 @@ def render_runtime_summary(runtime_details: list[dict[str, object]]) -> list[str
     lines.append("")
 
     lines.extend(render_action_summary(runtime_details))
+    lines.extend(render_action_var_summary(runtime_details))
+    lines.extend(render_trace_var_summary(runtime_details))
     lines.extend(render_slot_summary(runtime_details))
     lines.extend(render_response_summary(runtime_details))
+    lines.extend(render_dr_response_proof_summary(runtime_details))
     return lines
 
 
@@ -876,6 +1321,67 @@ def render_action_summary(runtime_details: list[dict[str, object]]) -> list[str]
     lines.append("| --- | ---: | --- | --- | ---: |")
     for (name, signal, source, variables), count in actions.most_common(20):
         lines.append(f"| {name or '?'} | {signal or '?'} | {source or '?'} | `{variables or '-'}` | {count} |")
+    lines.append("")
+    return lines
+
+
+def render_action_var_summary(runtime_details: list[dict[str, object]]) -> list[str]:
+    by_name: dict[str, Counter[str]] = defaultdict(Counter)
+    for ctx in runtime_details:
+        action = ctx.get("action", {})
+        if not isinstance(action, dict):
+            continue
+        variables = action.get("variables", {})
+        if not isinstance(variables, dict):
+            continue
+        for name, value in variables.items():
+            by_name[str(name)][str(value)] += 1
+
+    lines = ["### Action Variables"]
+    if not by_name:
+        lines.append("No action variables parsed.")
+        lines.append("")
+        return lines
+
+    lines.append("| Variable | Count | Numeric Range | Top Values |")
+    lines.append("| --- | ---: | --- | --- |")
+    for name, values in sorted(by_name.items()):
+        numeric_values = [parse_number(value) for value in values.elements()]
+        numeric_values = [value for value in numeric_values if value is not None]
+        numeric_range = "-"
+        if numeric_values:
+            numeric_range = f"{min(numeric_values)}..{max(numeric_values)}"
+        top_values = ", ".join(f"`{value}` x{count}" for value, count in values.most_common(5))
+        lines.append(f"| `{name}` | {sum(values.values())} | {numeric_range} | {top_values or '-'} |")
+    lines.append("")
+    return lines
+
+
+def render_trace_var_summary(runtime_details: list[dict[str, object]]) -> list[str]:
+    by_name: dict[str, Counter[str]] = defaultdict(Counter)
+    for ctx in runtime_details:
+        trace_vars = ctx.get("trace_vars", {})
+        if not isinstance(trace_vars, dict):
+            continue
+        for name, value in trace_vars.items():
+            by_name[str(name)][str(value)] += 1
+
+    lines = ["### Formula Trace Variables"]
+    if not by_name:
+        lines.append("No formula trace variables parsed.")
+        lines.append("")
+        return lines
+
+    lines.append("| Variable | Count | Numeric Range | Top Values |")
+    lines.append("| --- | ---: | --- | --- |")
+    for name, values in sorted(by_name.items()):
+        numeric_values = [parse_number(value) for value in values.elements()]
+        numeric_values = [value for value in numeric_values if value is not None]
+        numeric_range = "-"
+        if numeric_values:
+            numeric_range = f"{min(numeric_values)}..{max(numeric_values)}"
+        top_values = ", ".join(f"`{value}` x{count}" for value, count in values.most_common(5))
+        lines.append(f"| `{name}` | {sum(values.values())} | {numeric_range} | {top_values or '-'} |")
     lines.append("")
     return lines
 
@@ -1004,6 +1510,113 @@ def render_response_summary(runtime_details: list[dict[str, object]]) -> list[st
         lines.append(f"| {value} | {rule or '?'} | {count} |")
     lines.append("")
     return lines
+
+
+def render_dr_response_proof_summary(runtime_details: list[dict[str, object]]) -> list[str]:
+    lines = ["### DR/Response Proof Check"]
+    if not runtime_details:
+        lines.append("No parsed runtime context to evaluate.")
+        lines.append("")
+        return lines
+
+    target_slot_contexts = [
+        ctx for ctx in runtime_details
+        if any(slot.get("state") == "present" for slot in slot_observations("target", ctx.get("target_slots", [])))
+    ]
+    attacker_slot_contexts = [
+        ctx for ctx in runtime_details
+        if any(slot.get("state") == "present" for slot in slot_observations("attacker", ctx.get("attacker_slots", [])))
+    ]
+    ambiguous_slot_contexts = [
+        ctx for ctx in runtime_details
+        if any(
+            slot.get("state") == "ambiguous"
+            for slot in slot_observations("target", ctx.get("target_slots", []))
+            + slot_observations("attacker", ctx.get("attacker_slots", []))
+        )
+    ]
+    equipment_dr_contexts = [
+        ctx for ctx in runtime_details
+        if runtime_equipment_dr_value(ctx.get("equipment_dr", "")) > 0
+    ]
+    response_contexts = [
+        ctx for ctx in runtime_details
+        if isinstance(ctx.get("response"), dict) and int(ctx["response"].get("rules", 0) or 0) > 0
+    ]
+    non_neutral_response_contexts = [
+        ctx for ctx in response_contexts
+        if isinstance(ctx.get("response"), dict) and int(ctx["response"].get("permille", 1000) or 1000) != 1000
+    ]
+    final_response_contexts = [
+        ctx for ctx in runtime_details
+        if isinstance(ctx.get("final"), dict) and "DamageResponse" in str(ctx["final"].get("rule", ""))
+    ]
+    trace_contexts = [
+        ctx for ctx in runtime_details
+        if isinstance(ctx.get("trace_vars"), dict) and bool(ctx.get("trace_vars"))
+    ]
+    final_trace_contexts = [
+        ctx for ctx in runtime_details
+        if has_final_trace_variable(ctx.get("trace_vars", {}))
+    ]
+
+    lines.append(f"- Runtime contexts: {len(runtime_details)}")
+    lines.append(f"- Target slot present contexts: {len(target_slot_contexts)}")
+    lines.append(f"- Attacker slot present contexts: {len(attacker_slot_contexts)}")
+    lines.append(f"- Ambiguous slot contexts: {len(ambiguous_slot_contexts)}")
+    lines.append(f"- Positive equipment DR contexts: {len(equipment_dr_contexts)}")
+    lines.append(f"- Response-rule contexts: {len(response_contexts)}")
+    lines.append(f"- Non-neutral response contexts (`permille != 1000`): {len(non_neutral_response_contexts)}")
+    lines.append(f"- Final rule includes `DamageResponse`: {len(final_response_contexts)}")
+    lines.append(f"- Formula trace contexts: {len(trace_contexts)}")
+    lines.append(f"- Final trace contexts (`result.final`/`trace.finaldamage`): {len(final_trace_contexts)}")
+    lines.append(
+        f"- Verdict: **{dr_response_proof_verdict(runtime_details, target_slot_contexts, attacker_slot_contexts, ambiguous_slot_contexts, equipment_dr_contexts, response_contexts, final_response_contexts, final_trace_contexts)}**"
+    )
+    lines.append("")
+    return lines
+
+
+def runtime_equipment_dr_value(value: object) -> int:
+    raw, _, _ = str(value or "").partition(":")
+    parsed = parse_number(raw)
+    return parsed if parsed is not None else 0
+
+
+def has_final_trace_variable(trace_vars: object) -> bool:
+    if not isinstance(trace_vars, dict):
+        return False
+    normalized = {str(name).strip().lower() for name in trace_vars}
+    return bool(normalized & {"result.final", "trace.finaldamage", "trace.final_damage"})
+
+
+def dr_response_proof_verdict(
+    runtime_details: list[dict[str, object]],
+    target_slot_contexts: list[dict[str, object]],
+    attacker_slot_contexts: list[dict[str, object]],
+    ambiguous_slot_contexts: list[dict[str, object]],
+    equipment_dr_contexts: list[dict[str, object]],
+    response_contexts: list[dict[str, object]],
+    final_response_contexts: list[dict[str, object]],
+    final_trace_contexts: list[dict[str, object]],
+) -> str:
+    if not runtime_details:
+        return "no runtime context evidence"
+    if ambiguous_slot_contexts:
+        return "attention: slot scan ambiguity present; tighten offsets before trusting DR/response"
+    if equipment_dr_contexts and response_contexts and final_response_contexts:
+        return "pass-candidate: equipment DR and damage response both resolved in runtime context"
+    if equipment_dr_contexts and target_slot_contexts:
+        return "dr-candidate: target slot and positive equipment DR resolved"
+    if response_contexts and final_response_contexts:
+        return "response-candidate: response rules affected final damage"
+    if response_contexts:
+        return "response-context candidate: response rule resolved, but final rule linkage needs review"
+    if target_slot_contexts or attacker_slot_contexts:
+        return "slot-mapping candidate: slots resolved, but no positive DR/response evidence yet"
+    if final_trace_contexts:
+        return "formula-trace candidate: formulas traced, but no slot/DR/response evidence yet"
+    return "runtime context present, but no DR/response proof evidence"
 
 
 def build_warnings(

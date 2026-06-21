@@ -230,10 +230,16 @@ offensive abilities from `AbilityData.xml` `AIBehaviorFlags` (`HP` + `TargetEnem
 `TargetAllies`) and forces `X=1, Y=1` on those 168 rows (base `Formula`/element/CT/MP left at
 inherit). Verified round-trip: Fire/Thunder/Blizzard (16/20/24) -> X=1,Y=1; Cure/Cura (1/2)
 untouched. No exe base formulas needed - Test D proved `Y` drives magnitude, so `X=Y=1` collapses
-damage to ~one stat (non-lethal) whichever parameter the routine reads. Residual gap: 32 high-id
-monster skills (382-413) are beyond the 368-row override table, and `%`-damage / Gravity formulas
-ignore X/Y. With weapon + ability neuter deployed, vanilla can no longer one-shot in the common
-case, so Test 2b (death by HP=0 write) can be re-run cleanly.
+damage to ~one stat (non-lethal) whichever parameter the routine reads.
+
+The 32 classified IDs beyond the 368-row override table are not a single monster-skill gap: they
+are Throw 382-393, Jump 394-405, and Aim/Charge 406-413. Throw/Jump are expected to be covered by
+the weapon `Power=1` neuter because the formula catalog routes them through WP; Aim/Charge has a
+secondary table, so the generator now emits `AbilityChargeAimData.xml` with Aim +2..+20
+`Power=1` (Aim +1 is already 1). Remaining risk: Throw/Jump still need a live spot-check, and
+formulas that ignore X/Y/WP/charge Power (`%`-damage / Gravity-style effects) may still need a
+separate lever. With weapon + ability + charge/aim neuter deployed, vanilla can no longer one-shot
+in the common case, so Test 2b (death by HP=0 write) can be re-run cleanly.
 
 ### 2. Death-state capture instrumentation (gate step 2, the measurement) - BUILT
 
@@ -266,12 +272,48 @@ hot-reload ~1/s; copy the chosen profile to
   **No data neuter deployed** (units must die normally). Observe-only. Let enemies die from vanilla
   damage. Then read the log for `[DEATH-DIFF]`/`[DEATH-FOLLOW]` offsets other than `0x30/0x31` (HP).
   A byte/bit that flips exactly at death is the death/status field.
-- **Test 2b - death by HP write.** Deploy the **weapon neuter** data mod (`deploy.ps1`). Profile
+- **Test 2b - death by HP write.** Deploy the **weapon + ability/spell + charge/aim neuter** data mod
+  (`deploy.ps1`, after the `OverrideAbilityActionData` NXD has been built). Profile
   `work/battle-runtime-settings.death-test.json` (`FinalDamageFormula="9999"`, `AffectFoes` only).
-  Attack an enemy with a (neutered) weapon: vanilla deals ~PA, then the reconciler forces that foe's
+  Attack an enemy with a neutered action: vanilla deals a small placeholder, then the reconciler forces that foe's
   HP to 0. **Does it DIE or ZOMBIE at 0 HP?** If it dies -> writing HP=0 is sufficient, no
   death-state write needed. If it zombies -> fill `DeathStateWrites` from Test 2a, set
   `CauseDeathOnZeroHp=true`, retest.
+
+Useful watchers:
+
+```powershell
+codemod\check-death-gate-readiness.ps1
+codemod\prepare-death-gate.ps1 -DryRun -NeuterSpotcheck
+codemod\prepare-death-gate.ps1 -NeuterSpotcheck
+python tools\watch_live_mapping.py --runtime-events 0 --placeholder-rewrites 3 --max-placeholder-damage 30 --max-large-vanilla-rewrites 0 --max-rewrite-failures 0
+python tools\analyze_battleprobe_log.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test.json docs\modding\examples\runtime-simulation-death-gate.example.json --no-trace
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test-killflag.json docs\modding\examples\runtime-simulation-death-gate.example.json --no-trace
+codemod\prepare-death-gate.ps1 -DryRun
+codemod\prepare-death-gate.ps1
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --max-rewrite-failures 0
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --max-death-events 0 --settle-seconds 2 --max-rewrite-failures 0
+codemod\prepare-death-gate.ps1 -KillFlag
+python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --death-writes 1 --max-rewrite-failures 0 --max-death-write-failures 0
+```
+
+The readiness check is read-only and should be run before deploying/launching. The simulator
+commands are also offline-only; they prove both death profiles compute the intended HP result
+(foe -> 0 HP, allies/healing preserved) before any live write is attempted. The optional
+`-NeuterSpotcheck` preparation deploys the same data neuter with a dry-run runtime profile first:
+trigger representative attacks/spells/Throw/Jump/Aim and then run the analyzer to confirm observed
+`vanillaDamage` deltas are placeholder-sized before trying HP=0; the watcher guard fails if a
+large vanilla HP rewrite or rewrite failure appears. The HP-only death gate has two watcher
+branches: one waits for lethal rewrite plus `[DEATH-*]` evidence, proving HP=0 alone may be enough;
+the other waits for the lethal rewrite and requires zero `[DEATH-*]` events during a short settle
+window, which is the expected "zombie at 0 HP" branch before switching to the killflag profile.
+If the unit zombies, rerun the preparation helper with `-KillFlag`; the killflag watcher waits for
+the lethal HP rewrite, `[DEATH-*]` evidence, and the profile's concrete `[DEATH-WRITE]`, while
+failing on HP rewrite failures or death-write failures. `tools/analyze_battleprobe_log.py`
+summarizes `[DEATH-DIFF]`, `[DEATH-WRITE]`, `[DEATH-WRITE-FAILED]`, the `+0x61` KO flag verdict,
+the combined `Death Gate Outcome`, and whether observed `vanillaDamage` deltas during HP rewrites
+are placeholder-sized.
 
 The outcome of 2b decides whether the death-state RE (2a) is even on the critical path, before we
 invest further in it.
