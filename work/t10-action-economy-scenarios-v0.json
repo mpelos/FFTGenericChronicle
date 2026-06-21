@@ -1,0 +1,1083 @@
+{
+  "schema_version": "t10-action-economy-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/11-ct-delay-model-schema.md",
+    "docs/job-balance/20-time-mystic-v1-proposal.md",
+    "docs/job-balance/27-necromancer-v1-proposal.md",
+    "docs/job-balance/29-special-knight-v1-proposal.md",
+    "docs/job-balance/30-roster-completion-and-infra-sprint-plan.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/36-action-economy-model-schema.md"
+  ],
+  "formula_contract": {
+    "normalization": "single_tactical_action_grant_window",
+    "anti_recursion": "trigger_context=granted_action fails when block_granted_action_grants=true",
+    "resolution_order": [
+      "recursion_blocked",
+      "source_cannot_act",
+      "target_cannot_receive",
+      "per_target_cap",
+      "party_cap",
+      "success"
+    ],
+    "source_action_spent": "counted when the attempt occurs, whether it succeeds or fails",
+    "net_action_delta": "successful_grants - total_source_actions_spent",
+    "caps": "successful grants increment party and target counts"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t10_quick_one_for_one",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 0,
+        "total_source_actions_spent": 1,
+        "net_action_delta": 0,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "knight": 1
+        },
+        "event_outcomes": [
+          "quick_knight:success"
+        ],
+        "failure_reasons": []
+      }
+    },
+    {
+      "scenario_id": "t10_invalid_target_failure",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "stopped_ally",
+          "can_act": false,
+          "can_receive_grant": false
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_stopped",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "stopped_ally",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "quick_stopped:fail:target_cannot_receive"
+        ],
+        "failure_reasons": [
+          "quick_stopped:target_cannot_receive"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_source_cannot_act_failure",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "silenced_time_mage",
+          "can_act": false,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_source_disabled",
+          "source_unit_id": "silenced_time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "quick_source_disabled:fail:source_cannot_act"
+        ],
+        "failure_reasons": [
+          "quick_source_disabled:source_cannot_act"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_per_target_cap_exact_one",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight_a",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_knight_b",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 1,
+        "total_source_actions_spent": 2,
+        "net_action_delta": -1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "knight": 1
+        },
+        "event_outcomes": [
+          "quick_knight_a:success",
+          "quick_knight_b:fail:per_target_cap"
+        ],
+        "failure_reasons": [
+          "quick_knight_b:per_target_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_per_target_cap_two",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 4,
+        "per_target_grant_cap": 2,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_c",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "samurai",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_samurai_a",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "samurai",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_samurai_b",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "samurai",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_samurai_c",
+          "source_unit_id": "time_mage_c",
+          "target_unit_id": "samurai",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 2,
+        "failed_grants": 1,
+        "total_source_actions_spent": 3,
+        "net_action_delta": -1,
+        "party_grant_count": 2,
+        "target_grant_counts": {
+          "samurai": 2
+        },
+        "event_outcomes": [
+          "quick_samurai_a:success",
+          "quick_samurai_b:success",
+          "quick_samurai_c:fail:per_target_cap"
+        ],
+        "failure_reasons": [
+          "quick_samurai_c:per_target_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_party_cap_two",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_c",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "archer",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "summoner",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_archer",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "archer",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_summoner",
+          "source_unit_id": "time_mage_c",
+          "target_unit_id": "summoner",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 2,
+        "failed_grants": 1,
+        "total_source_actions_spent": 3,
+        "net_action_delta": -1,
+        "party_grant_count": 2,
+        "target_grant_counts": {
+          "archer": 1,
+          "knight": 1
+        },
+        "event_outcomes": [
+          "quick_knight:success",
+          "quick_archer:success",
+          "quick_summoner:fail:party_cap"
+        ],
+        "failure_reasons": [
+          "quick_summoner:party_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_party_cap_counts_reaction_grant",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 1,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "critical_time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "archer",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "critical_quick_archer",
+          "source_unit_id": "critical_time_mage",
+          "target_unit_id": "archer",
+          "trigger_context": "reaction",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": 0,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "knight": 1
+        },
+        "event_outcomes": [
+          "quick_knight:success",
+          "critical_quick_archer:fail:party_cap"
+        ],
+        "failure_reasons": [
+          "critical_quick_archer:party_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_granted_action_recursion_blocked",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_b",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "time_mage_b",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "b_quicks_a_from_grant",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "time_mage_a",
+          "trigger_context": "granted_action",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": 0,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "time_mage_b": 1
+        },
+        "event_outcomes": [
+          "quick_b:success",
+          "b_quicks_a_from_grant:fail:recursion_blocked"
+        ],
+        "failure_reasons": [
+          "b_quicks_a_from_grant:recursion_blocked"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_critical_quick_reaction_grant",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "critical_time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "critical_quick_self",
+          "source_unit_id": "critical_time_mage",
+          "target_unit_id": "critical_time_mage",
+          "trigger_context": "reaction",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 0,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "critical_time_mage": 1
+        },
+        "event_outcomes": [
+          "critical_quick_self:success"
+        ],
+        "failure_reasons": []
+      }
+    },
+    {
+      "scenario_id": "t10_reaction_chain_capped_by_target",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "critical_time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "critical_quick_first",
+          "source_unit_id": "critical_time_mage",
+          "target_unit_id": "critical_time_mage",
+          "trigger_context": "reaction",
+          "source_action_spent": 0
+        },
+        {
+          "event_id": "critical_quick_second",
+          "source_unit_id": "critical_time_mage",
+          "target_unit_id": "critical_time_mage",
+          "trigger_context": "reaction",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 1,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "critical_time_mage": 1
+        },
+        "event_outcomes": [
+          "critical_quick_first:success",
+          "critical_quick_second:fail:per_target_cap"
+        ],
+        "failure_reasons": [
+          "critical_quick_second:per_target_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_intervention_extra_attack",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "special_knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "intervention_counter",
+          "source_unit_id": "special_knight",
+          "target_unit_id": "special_knight",
+          "trigger_context": "reaction",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 0,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "special_knight": 1
+        },
+        "event_outcomes": [
+          "intervention_counter:success"
+        ],
+        "failure_reasons": []
+      }
+    },
+    {
+      "scenario_id": "t10_self_action_refund",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "samurai",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "refund_self",
+          "source_unit_id": "samurai",
+          "target_unit_id": "samurai",
+          "trigger_context": "action_refund",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 0,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "samurai": 1
+        },
+        "event_outcomes": [
+          "refund_self:success"
+        ],
+        "failure_reasons": []
+      }
+    },
+    {
+      "scenario_id": "t10_failed_quick_spends_source_action",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "ko_ally",
+          "can_act": false,
+          "can_receive_grant": false
+        }
+      ],
+      "events": [
+        {
+          "event_id": "bad_quick",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "ko_ally",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "bad_quick:fail:target_cannot_receive"
+        ],
+        "failure_reasons": [
+          "bad_quick:target_cannot_receive"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_party_cap_zero_blocks_all",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 0,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_blocked_by_zero_cap",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "quick_blocked_by_zero_cap:fail:party_cap"
+        ],
+        "failure_reasons": [
+          "quick_blocked_by_zero_cap:party_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_recursion_precedes_invalid_target",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "ko_time_mage_b",
+          "can_act": false,
+          "can_receive_grant": false
+        }
+      ],
+      "events": [
+        {
+          "event_id": "granted_quick_invalid_target",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "ko_time_mage_b",
+          "trigger_context": "granted_action",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 0,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "granted_quick_invalid_target:fail:recursion_blocked"
+        ],
+        "failure_reasons": [
+          "granted_quick_invalid_target:recursion_blocked"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_source_precedes_target_failure",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "stopped_time_mage",
+          "can_act": false,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "ko_ally",
+          "can_act": false,
+          "can_receive_grant": false
+        }
+      ],
+      "events": [
+        {
+          "event_id": "source_and_target_invalid",
+          "source_unit_id": "stopped_time_mage",
+          "target_unit_id": "ko_ally",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "source_and_target_invalid:fail:source_cannot_act"
+        ],
+        "failure_reasons": [
+          "source_and_target_invalid:source_cannot_act"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_per_target_precedes_party_cap",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 1,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight_first",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "quick_knight_second",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 1,
+        "failed_grants": 1,
+        "total_source_actions_spent": 2,
+        "net_action_delta": -1,
+        "party_grant_count": 1,
+        "target_grant_counts": {
+          "knight": 1
+        },
+        "event_outcomes": [
+          "quick_knight_first:success",
+          "quick_knight_second:fail:per_target_cap"
+        ],
+        "failure_reasons": [
+          "quick_knight_second:per_target_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_policy_false_allows_bounded_granted_action",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 2,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": false
+      },
+      "units": [
+        {
+          "unit_id": "time_mage_a",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "time_mage_b",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_b",
+          "source_unit_id": "time_mage_a",
+          "target_unit_id": "time_mage_b",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        },
+        {
+          "event_id": "b_quicks_a_from_grant",
+          "source_unit_id": "time_mage_b",
+          "target_unit_id": "time_mage_a",
+          "trigger_context": "granted_action",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 2,
+        "failed_grants": 0,
+        "total_source_actions_spent": 1,
+        "net_action_delta": 1,
+        "party_grant_count": 2,
+        "target_grant_counts": {
+          "time_mage_a": 1,
+          "time_mage_b": 1
+        },
+        "event_outcomes": [
+          "quick_b:success",
+          "b_quicks_a_from_grant:success"
+        ],
+        "failure_reasons": []
+      }
+    },
+    {
+      "scenario_id": "t10_recursion_precedes_source_failure",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "stopped_time_mage",
+          "can_act": false,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "granted_from_stopped",
+          "source_unit_id": "stopped_time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "granted_action",
+          "source_action_spent": 0
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 0,
+        "net_action_delta": 0,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "granted_from_stopped:fail:recursion_blocked"
+        ],
+        "failure_reasons": [
+          "granted_from_stopped:recursion_blocked"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_per_target_cap_zero_blocks",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 3,
+        "per_target_grant_cap": 0,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "time_mage",
+          "can_act": true,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_knight",
+          "source_unit_id": "time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "quick_knight:fail:per_target_cap"
+        ],
+        "failure_reasons": [
+          "quick_knight:per_target_cap"
+        ]
+      }
+    },
+    {
+      "scenario_id": "t10_source_precedes_party_cap",
+      "model": "action_economy",
+      "policy": {
+        "party_grant_cap": 0,
+        "per_target_grant_cap": 1,
+        "block_granted_action_grants": true
+      },
+      "units": [
+        {
+          "unit_id": "stopped_time_mage",
+          "can_act": false,
+          "can_receive_grant": true
+        },
+        {
+          "unit_id": "knight",
+          "can_act": true,
+          "can_receive_grant": true
+        }
+      ],
+      "events": [
+        {
+          "event_id": "quick_blocked",
+          "source_unit_id": "stopped_time_mage",
+          "target_unit_id": "knight",
+          "trigger_context": "natural_action",
+          "source_action_spent": 1
+        }
+      ],
+      "expected": {
+        "successful_grants": 0,
+        "failed_grants": 1,
+        "total_source_actions_spent": 1,
+        "net_action_delta": -1,
+        "party_grant_count": 0,
+        "target_grant_counts": {},
+        "event_outcomes": [
+          "quick_blocked:fail:source_cannot_act"
+        ],
+        "failure_reasons": [
+          "quick_blocked:source_cannot_act"
+        ]
+      }
+    }
+  ]
+}
