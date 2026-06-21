@@ -1,0 +1,27 @@
+work/job-build-incidence-benchmark-v0.json
+  s_fce6b25a5764ca::t_a198adeb35766c 1-2,4-88,90-91,96-97,104-141,145,179,185-215,217-249,251-283,285-317,319-353,355-387,389-422,426-458,460-493,495-530,534-565,567-599,601-616
+  s_fce6b25a5764ca::t_a8153b4057633a 3
+  s_fce6b25a5764ca::t_c917579fe6d479 89,92-95,98-103,142-144,146-178,180-184,216,250,284,318,354,388,423-425,459,494,531-533,566,600
+work/gpt-t2-incidence-v0.json
+  s_fce6b25a5764ca::t_d1d0c463946617 1-36
+docs/job-balance/08-build-incidence-benchmark-schema.md
+  s_fce6b25a5764ca::t_a198adeb35766c 1-2,4-126,128,137-151,156-170,177,191-204,213-218,221,226-235
+  s_fce6b25a5764ca::t_c917579fe6d479 127,129-136,152-155,171-176,178-190,205-212,219-220,222-225
+  s_fce6b25a5764ca::t_a8153b4057633a 3,236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8cbd35b9ade8fd5355c51408b8dd0bfa3fb0976d",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
