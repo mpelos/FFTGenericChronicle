@@ -4,6 +4,8 @@ Status: Reference audit ready for Claude review
 Date: 2026-06-21
 Depends on:
 - `docs/reference/fft-vanilla-ability-effect-index.md`
+- `docs/reference/fft-vanilla-command-skillset-effect-map.md`
+- `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
 - `docs/reference/fft-vanilla-status-effect-map.md`
 - `work/baseline_abilities.csv`
 - `work/baseline_jobs.csv`
@@ -26,6 +28,18 @@ rewriting skills.
   - includes command-bucket coverage and effect-family counts so designers can search by behavior
     instead of only by job name;
   - separates local extracted facts from researched effect tags.
+- `docs/reference/fft-vanilla-command-skillset-effect-map.md`
+  - job/command-shaped view of the same 491 local ability records;
+  - groups every skill under its command bucket or job-like owner;
+  - exposes a tag mix per command, useful before rewriting a specific job kit;
+  - should be the first reference opened when redesigning one job at a time.
+- `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
+  - effect-shaped view of the same 491 local ability records;
+  - lists every skill under each effect family, including shared tags such as `damage`,
+    `status_add`, `ct_action`, `defense`, `equipment_break`, `global`, `reaction`,
+    `movement`, `undead`, and `special`;
+  - should be the first reference opened when a proposed skill touches a mechanic rather than
+    a single job identity.
 - `docs/reference/fft-vanilla-status-effect-map.md`
   - map of locally observed and externally documented vanilla status effects;
   - includes category, core mechanical effect, design hooks, likely validation track, and whether
@@ -49,6 +63,21 @@ Use the ability index to answer:
 - whether a proposed replacement is reusing a local placeholder, duplicate display name, or
   formula-sensitive record.
 
+Use the command skillset map to answer:
+
+- what the vanilla command already does as a whole;
+- whether a job proposal is preserving, narrowing, replacing, or deleting the original command
+  identity;
+- whether a proposed job kit is drifting into another command's identity without a clear reason.
+
+Use the effect tag crosswalk to answer:
+
+- every vanilla skill that already touches the same effect family;
+- whether the mechanic is common, rare, unique, monster-only, support-only, reaction-only, or
+  global/mapwide;
+- whether a proposed skill needs extra validation because it combines effect families that FFT
+  usually keeps separate.
+
 Use the status map to answer:
 
 - whether a status affects action denial, evasion, CT timing, healing/revive, AI targeting,
@@ -62,6 +91,8 @@ Every new or revised job proposal should now include a short reference pass befo
 
 - name the vanilla skills, status effects, or effect tags that most closely overlap the proposed
   job identity;
+- check both the command skillset map and the effect tag crosswalk when the proposal changes an
+  existing command family or adds a mechanic-heavy skill;
 - call out when the proposal intentionally replaces, narrows, combines, or rejects a vanilla
   behavior;
 - cite the validation tracks needed when the job touches damage, healing, status, CT/timing,

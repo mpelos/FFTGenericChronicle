@@ -49,6 +49,13 @@ families that matter for the job-balance validation tracks.
   before inventing or deleting a skill.
 - Effect-family counts count design tags, not extracted formulas or byte-level mechanics.
 
+## Derived Lookup Maps
+
+- `docs/reference/fft-vanilla-command-skillset-effect-map.md` groups every local ability
+  record by command bucket/job-like owner, with the tag mix for that command.
+- `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md` groups every local ability
+  record by effect tag, so proposals can inspect all vanilla examples of a mechanic.
+
 ## Command Bucket Coverage
 
 | Command bucket | Records |
