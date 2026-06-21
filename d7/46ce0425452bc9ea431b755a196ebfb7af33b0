@@ -1,0 +1,20 @@
+docs/job-balance/06-knight-archer-v1-proposal.md
+  s_fce6b25a5764ca::t_8f4e5b9b2341fe 1-2,4-56,58-92,95-223,225-478,480,482-489
+  s_fce6b25a5764ca::t_b14be8fe6b7240 3,57,93-94,224,479,481,490
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d746ce0425452bc9ea431b755a196ebfb7af33b0",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
