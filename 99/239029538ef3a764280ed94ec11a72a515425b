@@ -1,0 +1,31 @@
+work/gpt-t4-accuracy-evasion-v0.json
+  s_fce6b25a5764ca::t_8373b39476fd9d 1-284
+.gitignore
+  s_fce6b25a5764ca::t_a495038abbb9ee 10
+docs/job-balance/09-accuracy-evasion-model-schema.md
+  s_fce6b25a5764ca::t_6165db6b79a8ca 1-2,4-66,85-117,119-153,155-165
+  s_fce6b25a5764ca::t_a495038abbb9ee 3,166
+  s_fce6b25a5764ca::t_05af2e1a34d589 67-84,118,154
+tools/check_accuracy_evasion.py
+  s_fce6b25a5764ca::t_a495038abbb9ee 1-161
+work/t4-accuracy-evasion-scenarios-v0.json
+  s_fce6b25a5764ca::t_a495038abbb9ee 3
+  s_fce6b25a5764ca::t_6165db6b79a8ca 1-2,4-24,34-266,292-406
+  s_fce6b25a5764ca::t_05af2e1a34d589 25-33,267-291
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "99239029538ef3a764280ed94ec11a72a515425b",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
