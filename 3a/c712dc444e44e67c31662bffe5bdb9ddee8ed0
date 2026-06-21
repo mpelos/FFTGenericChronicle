@@ -1,0 +1,34 @@
+work/t11-area-terrain-scenarios-v0.json
+  s_fce6b25a5764ca::t_ffbcb54edee7e8 3
+  s_fce6b25a5764ca::t_6ac2674c3a3de6 1-2,4-19,21-104,123-180,198-282,299-342,358-408,425-489,507-570,588-636,652-688,702-775,791-842,856-935,951-1001,1018-1083,1475-1477
+  s_fce6b25a5764ca::t_989bf1100b1749 105-122,181-197,283-298,343-357,409-424,490-506,571-587,637-651,689-701,776-790,843-855,936-950,1002-1017,1084-1099
+  s_fce6b25a5764ca::t_778ca677fc36d5 1145-1160,1205-1217,1269-1284,1336-1350,1401-1415,1460-1474
+  s_fce6b25a5764ca::t_b70dc44bdaae1c 1100-1144,1161-1204,1218-1268,1285-1335,1351-1400,1416-1459
+  s_fce6b25a5764ca::t_22cd8f32033cbf 20
+tools/check_area_terrain.py
+  s_fce6b25a5764ca::t_6ac2674c3a3de6 1-70,72-306
+  s_fce6b25a5764ca::t_22cd8f32033cbf 71
+work/gpt-t11-area-terrain-v0.json
+  s_fce6b25a5764ca::t_989bf1100b1749 1-2,4-250,353-357
+  s_fce6b25a5764ca::t_778ca677fc36d5 3,251-352
+docs/job-balance/34-area-terrain-model-schema.md
+  s_fce6b25a5764ca::t_6ac2674c3a3de6 1-2,4-91,99-111,115-177,184-230
+  s_fce6b25a5764ca::t_ffbcb54edee7e8 3,231-246
+  s_fce6b25a5764ca::t_9dd1e4ff3c7117 92-98,112-114,178-183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3ac712dc444e44e67c31662bffe5bdb9ddee8ed0",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
