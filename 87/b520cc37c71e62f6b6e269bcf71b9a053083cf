@@ -1,0 +1,25 @@
+docs/job-balance/21-summoner-geomancer-v1-proposal.md
+  s_fce6b25a5764ca::t_150563bb5a8a9b 3,39-41,60-70,72-79,95,137-138,163,176-183,281,321-324,470-471,477-480,485-488,497-499,510,529,534,538-539,541-543,545,547-551
+  s_fce6b25a5764ca::t_f2b652822aa517 1-2,4-38,42-59,71,80-94,96-136,139-162,164-169,171-175,184-215,217-280,282-320,325-469,472-476,481-484,489-496,500-509,511-528,530-532,535-537,540,544,546
+  s_fce6b25a5764ca::t_d3892bf12b04d5 170,216,533
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_4772ea65223eb6 50-51,284-298,302-308,312,334-335,339
+  s_fce6b25a5764ca::t_52ae821de4d968 392,394,403-408
+  s_fce6b25a5764ca::t_85dd3862426859 299-301,309-311
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "87b520cc37c71e62f6b6e269bcf71b9a053083cf",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
