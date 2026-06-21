@@ -1,0 +1,22 @@
+docs/job-balance/05-squire-chemist-v1-proposal.md
+  s_fce6b25a5764ca::t_313c6f03060335 47,209,454,456
+  s_fce6b25a5764ca::t_d3a4e04f929999 1-2,4-25,31-46,48-108,114-208,210-292,296-387,389-411,414-426,432-445,448-453,455,457-463
+  s_fce6b25a5764ca::t_acb048c4c3f592 3,26-30,109-113,293-295,388,412-413,427-431,446-447
+  s_fce6b25a5764ca::t_94e5b946f1a03c 464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ceaf8044e1efe70879b7d03d86741ec667b1d6c1",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
