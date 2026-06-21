@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from pathlib import Path
 
 
@@ -94,6 +95,80 @@ TAG_DESCRIPTIONS = {
 }
 
 
+TAG_DESIGN_USE = {
+    "accuracy": "Hit-rate and evasion model checks.",
+    "ally_buff": "Buff stacking, target eligibility, and action-economy checks.",
+    "aoe": "Area targeting and friendly-fire pressure.",
+    "arithmeticks_selector": "Rejected Calculator-style global selector behavior.",
+    "brave_down": "Brave economy and Chicken threshold checks.",
+    "brave_up": "Brave economy and reaction-rate checks.",
+    "caster_support": "Caster throughput and MP/CT checks.",
+    "ct_action": "Charge time, interruption, and action-economy checks.",
+    "damage": "Damage envelope and armor-response checks.",
+    "damage_boost": "Support-skill build incidence and damage envelope checks.",
+    "defense": "Mitigation, evasion, and status-defense checks.",
+    "drain": "Healing plus damage coupling checks.",
+    "economy": "Campaign economy; defer unless the job explicitly owns it.",
+    "elemental": "Element weakness, absorb, halve, and strengthen checks.",
+    "equipment_break": "Equipment pressure, disarm, and anti-gear checks.",
+    "equipment_unlock": "Cross-job build planning and equipment identity checks.",
+    "faith_down": "Faith economy and spell reliability checks.",
+    "faith_up": "Faith economy and spell vulnerability checks.",
+    "global": "Mapwide throughput and sustained-risk checks.",
+    "healing": "Healing envelope, attrition, revive, and undead checks.",
+    "instant_ko": "Hard-control and boss/immunity checks.",
+    "jp_exp": "Progression economy; defer unless the job explicitly owns it.",
+    "jump": "Untargetable timing and vertical/range checks.",
+    "local_placeholder": "Do not design against this until implementation proof exists.",
+    "magical": "Spell power, Faith, Shell, and caster scaling checks.",
+    "movement": "Mobility, terrain, and encounter-shape checks.",
+    "mp": "Resource economy and caster sustain checks.",
+    "physical": "Weapon formula, armor, Protect, and evasion checks.",
+    "random": "Reliability and player-agency checks.",
+    "reaction": "Reaction trigger-rate and build-incidence checks.",
+    "recruit": "Control, allegiance, and campaign-risk checks.",
+    "revive": "KO, death-clock, and undead interaction checks.",
+    "special": "Proof-first behavior; do not assume a generic formula.",
+    "stat_down": "Debuff duration and stacking checks.",
+    "stat_up": "Buff duration and stacking checks.",
+    "status_add": "Status hit-rate, duration, immunity, and cleanup checks.",
+    "status_clear": "Cleanse coverage and counterplay checks.",
+    "steal": "Campaign/equipment economy and hit-rate checks.",
+    "support": "Cross-job build incidence and unlock timing checks.",
+    "terrain": "Map dependency and Geomancer-style availability checks.",
+    "throw": "Item/weapon consumption and ranged damage checks.",
+    "timing": "CT/Speed economy and turn-frequency checks.",
+    "undead": "Healing inversion, revive rules, and corpse-state checks.",
+    "unique": "Vocabulary only unless this mod intentionally reuses unique-job behavior.",
+}
+
+
+STATUS_DESIGN_CONCERNS = {
+    "Action/control denial": [
+        "Berserk", "Charm", "Chicken", "Confuse", "Disable", "Sleep", "Stone",
+        "Stop", "Toad", "Vampire",
+    ],
+    "Timing and action states": [
+        "Charging", "Defending", "Haste", "Jump", "Performing", "Slow", "Stop",
+    ],
+    "Mitigation, evasion, and targeting": [
+        "Blind", "Defending", "Invisible", "Protect", "Reflect", "Shell",
+    ],
+    "Attrition, healing, revive, and defeat": [
+        "Critical", "Doom", "KO", "Poison", "Regen", "Reraise", "Undead",
+    ],
+    "Movement, terrain, and position locks": [
+        "Float", "Immobilize", "Jump",
+    ],
+    "Permanent or campaign-facing states": [
+        "Chest", "Crystal", "Dark/Evil Looking", "Traitor", "Unused1", "Wall",
+    ],
+    "Faith, Brave, and formula multipliers": [
+        "Atheist", "Berserk", "Chicken", "Faith", "Protect", "Shell",
+    ],
+}
+
+
 STATUS_EFFECTS = {
     "Atheist": ("other", "Faith multiplier effectively collapses; many faith-based effects fail or shrink.", "magic reliability, status immunity, Faith economy", "T3/T4"),
     "Berserk": ("control", "Unit is forced into basic attacks and loses normal player control.", "anti-caster control, forced offense", "T2/T4/T5"),
@@ -105,6 +180,7 @@ STATUS_EFFECTS = {
     "Confuse": ("control", "Unit takes random actions; reactions and some move effects are suppressed.", "soft control, disruption", "T2/T5"),
     "Critical": ("hp state", "Low HP state that can trigger critical reactions.", "reaction gating, comeback hooks", "T3/T5"),
     "Crystal": ("defeated state", "Post-KO crystal state used for loot/ability inheritance.", "campaign inheritance only", "none"),
+    "Dark/Evil Looking": ("dummied/unused", "Unused visual/action-state-like flag; proof-first before any design use.", "do not use until proven", "proof first"),
     "Defending": ("action state", "Defensive stance, broadly doubling evasion until the next turn.", "defense stance, guard action", "T4/T5"),
     "Disable": ("debuff", "Unit cannot act, evade, or use reactions but can still move.", "action denial without full immobilization", "T4/T5"),
     "Doom": ("debuff", "Turn countdown toward KO unless removed or immunity intervenes.", "delayed lethal pressure", "T3/T5"),
@@ -133,6 +209,7 @@ STATUS_EFFECTS = {
     "Undead": ("other/undead", "Healing/revive interactions are inverted or altered for undead units.", "necromancy, healing reversal", "T3"),
     "Unused1": ("unused/local", "Local baseline vocabulary includes this status; behavior is not design-authoritative.", "do not use until proven", "proof first"),
     "Vampire": ("control/undead", "Unit is forced into vampire behavior and loses normal reactions/evasion.", "hard control, monster/undead flavor", "T4/T8"),
+    "Wall": ("dummied/unused", "Unused full-defense style state; treat as an implementation-proof-only concept.", "do not use until proven", "proof first"),
 }
 
 
@@ -518,6 +595,16 @@ def summary_from_tags(tags: list[str]) -> str:
     return "; ".join(primary)
 
 
+def ability_row_data(rows: list[dict[str, str]]) -> list[tuple[dict[str, str], str, str, list[str]]]:
+    data = []
+    for row in rows:
+        ability_id = int(row["Id"])
+        command, owner = group_for(ability_id)
+        tags = tags_for(row)
+        data.append((row, command, owner, tags))
+    return data
+
+
 def load_abilities() -> list[dict[str, str]]:
     with (WORK / "baseline_abilities.csv").open(newline="", encoding="utf-8") as handle:
         rows = [row for row in csv.DictReader(handle) if row["Name"].strip()]
@@ -537,11 +624,21 @@ def load_local_statuses() -> set[str]:
 
 
 def ability_doc(rows: list[dict[str, str]]) -> str:
+    row_data = ability_row_data(rows)
+    bucket_counts = Counter(command for _, command, _, _ in row_data)
+    tag_counts = Counter(tag for _, _, _, tags in row_data for tag in tags)
+    ct_overrides = sum(1 for row in rows if row.get("ov_CT"))
+    mp_overrides = sum(1 for row in rows if row.get("ov_MPCost"))
+    random_rows = sum(
+        1
+        for row in rows
+        if row.get("IsRandomDamage") == "1" or row.get("IsRandomStatus") == "1"
+    )
     lines = [
         "# Vanilla Ability Effect Index V0",
         "",
         "Status: Reference draft",
-        "Date: 2026-06-20",
+        "Date: 2026-06-21",
         "Generated by: `tools/build_vanilla_reference.py`",
         "Inputs:",
         "- `work/baseline_abilities.csv`",
@@ -561,6 +658,8 @@ def ability_doc(rows: list[dict[str, str]]) -> str:
         "",
         "- Local ability IDs, names, JP, random flags, CT overrides, and MP overrides come from",
         "  `work/baseline_abilities.csv`.",
+        "- Those local CSV fields are the extracted facts. Command bucket, vanilla owner, effect",
+        "  summary, and effect tags are research/design classifications used for consultation.",
         "- The local extraction does not contain every base formula, range, area, status, or X/Y value.",
         "  `tools/dump_baseline.py` explicitly notes that those base values are hardcoded in",
         "  `FFT_enhanced.exe` and must be checked against external formula data or proof patches.",
@@ -573,6 +672,37 @@ def ability_doc(rows: list[dict[str, str]]) -> str:
         "  proof artifact makes them authoritative.",
         "- Before a concrete redesign uses a formula-sensitive effect, use the matching validation",
         "  track and/or a local proof patch.",
+        "",
+        "## Coverage Snapshot",
+        "",
+        f"- Covers {len(rows)} non-empty local ability records from `work/baseline_abilities.csv`.",
+        "- Includes generic jobs, special/unique jobs, enemy/unique actions, monster actions, items,",
+        "  Throw, Jump unlocks, Aim, Arithmeticks selectors, reactions, supports, and movement skills.",
+        f"- Local override fields expose {ct_overrides} CT overrides and {mp_overrides} MP overrides;",
+        "  base range/area/vertical/element/formula/X/Y/status values are not present in the local",
+        "  extraction when the override fields are blank.",
+        f"- Local random flags are present on {random_rows} ability records.",
+        "- Every row is mapped to one or more effect tags so job proposals can search by behavior",
+        "  before inventing or deleting a skill.",
+        "- Effect-family counts count design tags, not extracted formulas or byte-level mechanics.",
+        "",
+        "## Command Bucket Coverage",
+        "",
+        "| Command bucket | Records |",
+        "| --- | ---: |",
+    ]
+    for command, count in bucket_counts.items():
+        lines.append(f"| {command} | {count} |")
+    lines += [
+        "",
+        "## Effect Family Map",
+        "",
+        "| Effect tag | Records | Design use during job balance |",
+        "| --- | ---: | --- |",
+    ]
+    for tag, desc in sorted(TAG_DESCRIPTIONS.items()):
+        lines.append(f"| `{tag}` | {tag_counts.get(tag, 0)} | {TAG_DESIGN_USE[tag]} |")
+    lines += [
         "",
         "## External References Consulted",
         "",
@@ -600,10 +730,8 @@ def ability_doc(rows: list[dict[str, str]]) -> str:
         "| Id | Ability | Command bucket | Vanilla owner | JP | Local flags | Effect summary | Tags |",
         "| ---: | --- | --- | --- | ---: | --- | --- | --- |",
     ]
-    for row in rows:
+    for row, command, owner, tags in row_data:
         ability_id = int(row["Id"])
-        command, owner = group_for(ability_id)
-        tags = tags_for(row)
         flags = []
         if row["IsRandomDamage"] == "1":
             flags.append("random_damage")
@@ -639,7 +767,7 @@ def status_doc(local_statuses: set[str]) -> str:
         "# Vanilla Status And Effect Map V0",
         "",
         "Status: Reference draft",
-        "Date: 2026-06-20",
+        "Date: 2026-06-21",
         "Generated by: `tools/build_vanilla_reference.py`",
         "Inputs:",
         "- `work/baseline_jobs.csv` for locally observed status vocabulary",
@@ -665,6 +793,17 @@ def status_doc(local_statuses: set[str]) -> str:
         "- Final Fantasy Wiki status category page:",
         "  https://finalfantasy.fandom.com/wiki/Final_Fantasy_Tactics_statuses",
         "",
+        "## Source And Trust Model",
+        "",
+        "- The extracted local fact is whether a status name appears in `work/baseline_jobs.csv`",
+        "  innate, immune, or starting status fields.",
+        "- Category, core mechanical effect, design hooks, and validation tracks are researched",
+        "  design classifications for consultation; they are not byte-accurate status data.",
+        "- `Dark/Evil Looking` and `Wall` are external-only dummied statuses. They do not appear in",
+        "  local JobData vocabulary and must remain proof-first before any design use.",
+        "- `Chest` is the local JobData name for the defeated treasure-chest state, called `Treasure`",
+        "  in some external references.",
+        "",
         "## Local Coverage",
         "",
         "Statuses observed in `work/baseline_jobs.csv`:",
@@ -675,6 +814,17 @@ def status_doc(local_statuses: set[str]) -> str:
         "document therefore includes the broader vanilla status set from external references as design",
         "vocabulary.",
         "",
+        "## Coverage Snapshot",
+        "",
+        f"- Tracks {len(STATUS_EFFECTS)} vanilla status or status-like records used as design vocabulary:",
+        f"  {len(local_statuses)} local JobData statuses plus 2 external-only dummied statuses.",
+        f"- Marks {len(local_statuses)} status names observed in local `JobData` innate/immune/starting fields.",
+        "- Includes action states, beneficial effects, status ailments, HP/defeat states, and other",
+        "  formula-affecting states from external references.",
+        "- Does not treat statuses as immutable. Generic Chronicle can rewrite status identities, but",
+        "  any broad control, timing, healing, revive, mitigation, or AI-targeting change must be",
+        "  justified as a system-level design choice.",
+        "",
         "## Status Map",
         "",
         "| Status | Category | Core mechanical effect | Design hooks | Validation track | Local JobData vocab |",
@@ -683,6 +833,16 @@ def status_doc(local_statuses: set[str]) -> str:
     for status, (category, effect, hooks, track) in sorted(STATUS_EFFECTS.items()):
         local = "yes" if status in local_statuses else "no"
         lines.append(f"| `{status}` | {category} | {effect} | {hooks} | {track} | {local} |")
+    lines += [
+        "",
+        "## Status Map By Design Concern",
+        "",
+        "| Design concern | Statuses to inspect first |",
+        "| --- | --- |",
+    ]
+    for concern, statuses in STATUS_DESIGN_CONCERNS.items():
+        status_text = ", ".join(f"`{status}`" for status in statuses)
+        lines.append(f"| {concern} | {status_text} |")
     lines += [
         "",
         "## Cross-Status Interaction Notes",
