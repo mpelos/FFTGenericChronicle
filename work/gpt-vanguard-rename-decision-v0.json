@@ -1,0 +1,55 @@
+{
+  "artifact": "vanguard_rename_decision_v0",
+  "status": "proposed_for_claude_hash_match_review",
+  "date": "2026-06-21",
+  "decision": {
+    "old_placeholder": "Special Knight",
+    "new_name": "Vanguard",
+    "scope": "Mime replacement late generic elite frontline job",
+    "consensus": "GPT and Claude selected Vanguard"
+  },
+  "rationale": [
+    "communicates both leading the charge and holding the line",
+    "supports formation control, local protection, guard pressure, and setup-finisher identity",
+    "avoids Holy Knight, Paladin, Oath, Faith, and long-range holy sword implications",
+    "reduces Knight-variant comparison risk",
+    "works as a concise FFT-style job name"
+  ],
+  "rejected_alternatives": [
+    {"name": "Vanguard Knight", "reason": "accurate but reintroduces Knight-variant comparison"},
+    {"name": "Oath Knight", "reason": "implies vow/holy/faith identity and can collide with Ramza"},
+    {"name": "Aegis Knight", "reason": "too shield-only and Aegis already exists as a unique action term"},
+    {"name": "Sentinel", "reason": "clean defender title but loses offensive initiative and elite late-job read"},
+    {"name": "Warden", "reason": "protection flavor but too jailer-like"},
+    {"name": "Ward Knight", "reason": "awkward as a job display name"},
+    {"name": "Bastion", "reason": "clunky beside FFT job names"},
+    {"name": "Bulwark", "reason": "clunky beside FFT job names"},
+    {"name": "Cataphract", "reason": "mechanically adjacent but too obscure"},
+    {"name": "Hoplite", "reason": "mechanically adjacent but too obscure"},
+    {"name": "Marshal", "reason": "too officer-like and not enough personal frontline protector"}
+  ],
+  "skill_rename": {
+    "old_placeholder": "Vanguard Break",
+    "new_placeholder": "Breach",
+    "reason": "avoid circular job-name plus action-name wording after the job becomes Vanguard",
+    "still_rejected": ["Vanguard Art"],
+    "unchanged_placeholders": ["Intercede", "Aegis Stance", "Sunder Guard", "Commanding Challenge", "Decisive Strike"]
+  },
+  "update_policy": {
+    "now": [
+      "record this authoritative alias note",
+      "use Vanguard in new documents and drafts"
+    ],
+    "later": [
+      "perform broad mechanical rename sweep as a dedicated pass",
+      "grep verify historical Special Knight references",
+      "send sweep to Claude for review"
+    ],
+    "avoid_now": "piecemeal broad churn in accepted docs"
+  },
+  "claude_review_request": [
+    "Confirm Vanguard as consensus name",
+    "Confirm Breach as replacement for Vanguard Break placeholder",
+    "Confirm alias-note-first policy"
+  ]
+}
