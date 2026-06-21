@@ -1,0 +1,21 @@
+docs/job-balance/04-foundation-physical-jobs-proposal.md
+  s_fce6b25a5764ca::t_8d60c4667710c3 1-2,4-72,87-144,147-251,259-380,387-460,464-474
+  s_fce6b25a5764ca::t_0f1f088405956f 3,73-86,252-258,381-386,461-463
+  s_fce6b25a5764ca::t_cf969f29a723c3 145-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "b4ec4988738c99120e1ad7719a69f1e9ab244679",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
