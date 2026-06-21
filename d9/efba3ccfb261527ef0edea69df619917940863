@@ -1,0 +1,33 @@
+tools/check_spell_routing_reflect.py
+  s_fce6b25a5764ca::t_791f8d79a6ed4b 1-14,18-164
+  s_fce6b25a5764ca::t_dcf036d3918771 15-17
+work/t8xsr-spell-routing-reflect-scenarios-v0.json
+  s_fce6b25a5764ca::t_791f8d79a6ed4b 1-2,4-16,18-49,62-88,101-127,140-166,179-206,219-255,268-304,317-352,365-400,413-439,452-488,501-537,662-664
+  s_fce6b25a5764ca::t_d92e2ab94f7856 577-588,616-627,650-661
+  s_fce6b25a5764ca::t_e0ac5702de5047 550-576,589-615,628-649
+  s_fce6b25a5764ca::t_bd43d808969217 50-61,89-100,128-139,167-178,207-218,256-267,305-316,353-364,401-412,440-451,489-500,538-549
+  s_fce6b25a5764ca::t_a049fd8f1cb4c8 3,17
+work/gpt-t8xsr-spell-routing-reflect-v0.json
+  s_fce6b25a5764ca::t_2f895c099992b3 1-2,4-170,213-218
+  s_fce6b25a5764ca::t_d92e2ab94f7856 3,171-212
+docs/job-balance/38-spell-routing-reflect-composition-schema.md
+  s_fce6b25a5764ca::t_791f8d79a6ed4b 1-2,4-134,138-181
+  s_fce6b25a5764ca::t_ac142f329d5c04 3,182-192
+  s_fce6b25a5764ca::t_70b364013ca8c7 135-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d9efba3ccfb261527ef0edea69df619917940863",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
