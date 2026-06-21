@@ -1,0 +1,22 @@
+docs/job-balance/18-monk-v1-proposal.md
+  s_fce6b25a5764ca::t_547875c05be62c 59,205
+  s_fce6b25a5764ca::t_7c1d210415b49f 117
+  s_fce6b25a5764ca::t_22f7d48c3f1bc9 1-2,4-37,41-58,60-115,128-149,151,153-157,162,172-176,178-179,182,187-194,196-204,206-278,285-295,300-339,341
+  s_fce6b25a5764ca::t_70466dd91d014f 3,38-40,116,118-127,150,152,158-161,163-171,177,180-181,183-186,195,279-284,296-299,340,342-343
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "1fc7be04e4b6a03b2e7ef5056eb9ec7cad652362",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
