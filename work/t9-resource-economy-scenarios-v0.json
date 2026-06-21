@@ -1,0 +1,877 @@
+{
+  "schema_version": "t9-resource-economy-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/05-squire-chemist-v1-proposal.md",
+    "docs/job-balance/18-monk-v1-proposal.md",
+    "docs/job-balance/19-white-black-mage-v1-proposal.md",
+    "docs/job-balance/20-time-mystic-v1-proposal.md",
+    "docs/job-balance/21-summoner-geomancer-v1-proposal.md",
+    "docs/job-balance/27-necromancer-v1-proposal.md",
+    "docs/job-balance/30-roster-completion-and-infra-sprint-plan.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/35-resource-economy-model-schema.md"
+  ],
+  "formula_contract": {
+    "normalization": "single_resource_pool_per_encounter_sequence",
+    "bounds": "resource is clamped to [0, max_resource]",
+    "effective_cost": "max(min_cost, ceil(round(base_cost * product(scenario cost_multipliers) * product(event cost_multipliers), 6)))",
+    "cost_rounding": "all multipliers apply before one final round(..., 6) and ceil",
+    "cast_success": "current_resource >= effective_cost",
+    "cast_failure": "resource unchanged and refund_on_success skipped",
+    "recovery": "flat_amount + floor(max_resource * percent_of_max), capped at max_resource with overcap_lost",
+    "drain": "recover min(drain_amount, target_resource), capped at max_resource",
+    "resource_damage": "lose min(current_resource, amount)",
+    "reference_casts": "floor(ending_resource / reference_effective_cost)",
+    "numeric_comparison": {
+      "float_decimals": 6
+    }
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t9_basic_spell_budget_three_casts",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 100,
+        "starting_resource": 80
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        }
+      ],
+      "expected": {
+        "ending_resource": 20,
+        "minimum_resource": 20,
+        "total_cast_cost_paid": 60,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 3,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:20",
+          "cast_success:20",
+          "cast_success:20"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_cast_fails_when_mp_insufficient",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 35
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        }
+      ],
+      "expected": {
+        "ending_resource": 15,
+        "minimum_resource": 15,
+        "total_cast_cost_paid": 20,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 1,
+        "failed_casts": 1,
+        "event_outcomes": [
+          "cast_success:20",
+          "cast_fail:20"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_exact_zero_allows_cast_then_fails",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 40
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 40,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 1,
+        "event_outcomes": [
+          "cast_success:20",
+          "cast_success:20",
+          "cast_fail:20"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_halve_mp_ceil_rounding",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 26
+      },
+      "min_cost": 1,
+      "cost_multipliers": [
+        0.5
+      ],
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 25
+        },
+        {
+          "kind": "cast",
+          "base_cost": 25
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 26,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:13",
+          "cast_success:13"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_discount_stack_single_final_rounding",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 100,
+        "starting_resource": 30
+      },
+      "min_cost": 1,
+      "cost_multipliers": [
+        0.5,
+        0.8
+      ],
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 37
+        },
+        {
+          "kind": "cast",
+          "base_cost": 37
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 30,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:15",
+          "cast_success:15"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_minimum_cost_prevents_free_spell",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 20,
+        "starting_resource": 2
+      },
+      "min_cost": 1,
+      "cost_multipliers": [
+        0.1
+      ],
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 1
+        },
+        {
+          "kind": "cast",
+          "base_cost": 1
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 2,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:1",
+          "cast_success:1"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_flat_recovery_cap_no_overcap",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 50,
+        "starting_resource": 10
+      },
+      "events": [
+        {
+          "kind": "recover",
+          "flat_amount": 30
+        }
+      ],
+      "expected": {
+        "ending_resource": 40,
+        "minimum_resource": 10,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 30,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "recover:30"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_flat_recovery_overcap_lost",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 50,
+        "starting_resource": 40
+      },
+      "events": [
+        {
+          "kind": "recover",
+          "flat_amount": 30
+        }
+      ],
+      "expected": {
+        "ending_resource": 50,
+        "minimum_resource": 40,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 10,
+        "total_resource_lost": 0,
+        "overcap_lost": 20,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "recover:10"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_percent_recovery_floor",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 50,
+        "starting_resource": 7
+      },
+      "events": [
+        {
+          "kind": "recover",
+          "percent_of_max": 0.25
+        }
+      ],
+      "expected": {
+        "ending_resource": 19,
+        "minimum_resource": 7,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 12,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "recover:12"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_drain_capped_by_target_resource",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 10
+      },
+      "events": [
+        {
+          "kind": "drain",
+          "drain_amount": 20,
+          "target_resource": 8
+        }
+      ],
+      "expected": {
+        "ending_resource": 18,
+        "minimum_resource": 10,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 8,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "drain:8"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_resource_damage_cannot_go_below_zero",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 40,
+        "starting_resource": 12
+      },
+      "events": [
+        {
+          "kind": "resource_damage",
+          "amount": 30
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 12,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "resource_damage:12"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_refund_after_success",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 80,
+        "starting_resource": 30
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 30,
+          "refund_on_success": 10
+        }
+      ],
+      "expected": {
+        "ending_resource": 10,
+        "minimum_resource": 10,
+        "total_cast_cost_paid": 30,
+        "total_recovered": 10,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 1,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:30",
+          "refund:10"
+        ],
+        "recovery_to_spend_ratio": 0.333333,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_failed_cast_gets_no_refund",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 80,
+        "starting_resource": 25
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 30,
+          "refund_on_success": 10
+        }
+      ],
+      "expected": {
+        "ending_resource": 25,
+        "minimum_resource": 25,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 1,
+        "event_outcomes": [
+          "cast_fail:30"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_neutral_resource_loop_ratio",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 80,
+        "starting_resource": 40
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "recover",
+          "flat_amount": 20
+        },
+        {
+          "kind": "cast",
+          "base_cost": 20
+        },
+        {
+          "kind": "recover",
+          "flat_amount": 20
+        }
+      ],
+      "expected": {
+        "ending_resource": 40,
+        "minimum_resource": 20,
+        "total_cast_cost_paid": 40,
+        "total_recovered": 40,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:20",
+          "recover:20",
+          "cast_success:20",
+          "recover:20"
+        ],
+        "recovery_to_spend_ratio": 1.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_reference_casts_after_discount",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 90,
+        "starting_resource": 45
+      },
+      "min_cost": 1,
+      "cost_multipliers": [
+        0.5
+      ],
+      "events": [],
+      "reference_cast": {
+        "base_cost": 20,
+        "min_cost": 1
+      },
+      "expected": {
+        "ending_resource": 45,
+        "minimum_resource": 45,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": 10,
+        "remaining_reference_casts": 4,
+        "can_cast_reference": true
+      }
+    },
+    {
+      "scenario_id": "t9_event_local_cost_multiplier",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 22
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 21,
+          "cost_multipliers": [
+            0.5
+          ]
+        },
+        {
+          "kind": "cast",
+          "base_cost": 21,
+          "cost_multipliers": [
+            0.5
+          ]
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 22,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 2,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:11",
+          "cast_success:11"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_min_cost_overrides_zero_base_cost",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 10,
+        "starting_resource": 1
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 0
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 1,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 1,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:1"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_starting_resource_clamped_to_max",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 50,
+        "starting_resource": 70
+      },
+      "events": [],
+      "expected": {
+        "ending_resource": 50,
+        "minimum_resource": 50,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_starting_resource_clamped_to_zero",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 50,
+        "starting_resource": -10
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 1
+        }
+      ],
+      "expected": {
+        "ending_resource": 0,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 1,
+        "event_outcomes": [
+          "cast_fail:1"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_combined_flat_percent_recovery",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 100,
+        "starting_resource": 0
+      },
+      "events": [
+        {
+          "kind": "recover",
+          "flat_amount": 5,
+          "percent_of_max": 0.25
+        }
+      ],
+      "expected": {
+        "ending_resource": 30,
+        "minimum_resource": 0,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 30,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "recover:30"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_scenario_and_event_multipliers_compound",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 100,
+        "starting_resource": 50
+      },
+      "min_cost": 1,
+      "cost_multipliers": [
+        0.5
+      ],
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 40,
+          "cost_multipliers": [
+            0.5
+          ]
+        }
+      ],
+      "expected": {
+        "ending_resource": 40,
+        "minimum_resource": 40,
+        "total_cast_cost_paid": 10,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 1,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:10"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_drain_capped_by_drain_amount",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 60,
+        "starting_resource": 5
+      },
+      "events": [
+        {
+          "kind": "drain",
+          "drain_amount": 10,
+          "target_resource": 50
+        }
+      ],
+      "expected": {
+        "ending_resource": 15,
+        "minimum_resource": 5,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 10,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 0,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "drain:10"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_min_cost_zero_allows_free_cast",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 20,
+        "starting_resource": 10
+      },
+      "min_cost": 0,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 0
+        }
+      ],
+      "expected": {
+        "ending_resource": 10,
+        "minimum_resource": 10,
+        "total_cast_cost_paid": 0,
+        "total_recovered": 0,
+        "total_resource_lost": 0,
+        "overcap_lost": 0,
+        "successful_casts": 1,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:0"
+        ],
+        "recovery_to_spend_ratio": 0.0,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    },
+    {
+      "scenario_id": "t9_refund_overcap_capped",
+      "model": "resource_economy",
+      "resource": {
+        "max_resource": 40,
+        "starting_resource": 35
+      },
+      "min_cost": 1,
+      "events": [
+        {
+          "kind": "cast",
+          "base_cost": 10,
+          "refund_on_success": 30
+        }
+      ],
+      "expected": {
+        "ending_resource": 40,
+        "minimum_resource": 35,
+        "total_cast_cost_paid": 10,
+        "total_recovered": 15,
+        "total_resource_lost": 0,
+        "overcap_lost": 15,
+        "successful_casts": 1,
+        "failed_casts": 0,
+        "event_outcomes": [
+          "cast_success:10",
+          "refund:15"
+        ],
+        "recovery_to_spend_ratio": 1.5,
+        "reference_effective_cost": null,
+        "remaining_reference_casts": null,
+        "can_cast_reference": null
+      }
+    }
+  ]
+}
