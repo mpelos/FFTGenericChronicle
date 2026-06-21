@@ -21,6 +21,7 @@ from analyze_battleprobe_log import (
     parse_runtime_context,
     parse_rewrite_line,
 )
+from analyze_actor_probe_ct import parse_actor_probe_line, resolve_ct_attackers
 from promote_runtime_offsets import (
     DEFAULT_BASE,
     DEFAULT_OUTPUT,
@@ -63,6 +64,10 @@ class LogState:
     death_write_skips: int = 0
     memory_table_found: int = 0
     memory_table_rows: int = 0
+    actor_probe_events: int = 0
+    ct_actor_resolved: int = 0
+    ct_drop_resolved: int = 0
+    ct_lowest_resolved: int = 0
 
     @property
     def is_ready(self) -> bool:
@@ -81,6 +86,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--equipment-dr-events", type=int, default=0, help="Minimum [RUNTIME] events with positive equipmentDr.")
     p.add_argument("--response-events", type=int, default=0, help="Minimum [RUNTIME] events with response rules > 0.")
     p.add_argument("--require-trace-var", action="append", default=[], help="Formula trace variable that must appear with a nonzero value; can be repeated.")
+    p.add_argument("--actor-probes", type=int, default=0, help="Minimum [ACTOR-PROBE] events to wait for.")
+    p.add_argument("--ct-attackers", type=int, default=0, help="Minimum [ACTOR-PROBE] events with a resolved CT attacker.")
+    p.add_argument("--ct-drop-attackers", type=int, default=0, help="Minimum CT attacker resolutions from a recent CT drop.")
+    p.add_argument("--ct-lowest-attackers", type=int, default=0, help="Minimum CT attacker resolutions from lowest absolute CT.")
     p.add_argument("--rewrite-events", type=int, default=0, help="Minimum [REWRITE] lines to wait for.")
     p.add_argument("--max-rewrite-failures", type=int, default=None, help="Maximum [REWRITE-FAILED]/[MP-REWRITE-FAILED] lines allowed before failing.")
     p.add_argument("--placeholder-rewrites", type=int, default=0, help="Minimum HP [REWRITE]/dry-run lines with positive vanillaDamage within --max-placeholder-damage.")
@@ -125,6 +134,10 @@ def main() -> int:
     required_equipment_dr_events = max(0, args.equipment_dr_events)
     required_response_events = max(0, args.response_events)
     required_trace_vars = tuple(normalize_trace_var(value) for value in args.require_trace_var)
+    required_actor_probes = max(0, args.actor_probes)
+    required_ct_attackers = max(0, args.ct_attackers)
+    required_ct_drop_attackers = max(0, args.ct_drop_attackers)
+    required_ct_lowest_attackers = max(0, args.ct_lowest_attackers)
     required_rewrite_events = max(0, args.rewrite_events)
     max_rewrite_failures = normalize_optional_max(args.max_rewrite_failures)
     required_placeholder_rewrites = max(0, args.placeholder_rewrites)
@@ -152,6 +165,10 @@ def main() -> int:
         f"{required_attacker_slot_present_events} attacker slot present event(s), "
         f"{required_equipment_dr_events} equipment DR event(s), "
         f"{required_response_events} response event(s), "
+        f"{required_actor_probes} [ACTOR-PROBE] event(s), "
+        f"{required_ct_attackers} CT attacker resolution(s), "
+        f"{required_ct_drop_attackers} CT-drop attacker resolution(s), "
+        f"{required_ct_lowest_attackers} CT-lowest attacker resolution(s), "
         f"{required_rewrite_events} [REWRITE] event(s), "
         f"{required_placeholder_rewrites} placeholder rewrite(s), "
         f"{required_hp_healing_rewrites} HP healing rewrite(s), "
@@ -207,6 +224,10 @@ def main() -> int:
             required_equipment_dr_events=required_equipment_dr_events,
             required_response_events=required_response_events,
             required_trace_vars=required_trace_vars,
+            required_actor_probes=required_actor_probes,
+            required_ct_attackers=required_ct_attackers,
+            required_ct_drop_attackers=required_ct_drop_attackers,
+            required_ct_lowest_attackers=required_ct_lowest_attackers,
             required_memtable_found=required_memtable_found,
             required_memtable_rows=required_memtable_rows,
         )
@@ -227,6 +248,10 @@ def main() -> int:
             and state.equipment_dr_events >= required_equipment_dr_events
             and state.response_events >= required_response_events
             and has_required_trace_vars(state, required_trace_vars)
+            and state.actor_probe_events >= required_actor_probes
+            and state.ct_actor_resolved >= required_ct_attackers
+            and state.ct_drop_resolved >= required_ct_drop_attackers
+            and state.ct_lowest_resolved >= required_ct_lowest_attackers
             and state.rewrite_events >= required_rewrite_events
             and failure_guards_pass(
                 state,
@@ -297,6 +322,10 @@ def main() -> int:
         required_equipment_dr_events=required_equipment_dr_events,
         required_response_events=required_response_events,
         required_trace_vars=required_trace_vars,
+        required_actor_probes=required_actor_probes,
+        required_ct_attackers=required_ct_attackers,
+        required_ct_drop_attackers=required_ct_drop_attackers,
+        required_ct_lowest_attackers=required_ct_lowest_attackers,
         required_memtable_found=required_memtable_found,
         required_memtable_rows=required_memtable_rows,
     ))
@@ -341,6 +370,7 @@ def inspect_log(
     death_write_skips = 0
     memory_table_found = 0
     memory_table_rows = 0
+    actor_probe_events = []
 
     for line_no, line in enumerate(log.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
         if "Generic Chronicle Battle Runtime Harness" in line:
@@ -376,6 +406,8 @@ def inspect_log(
                     variable = normalize_trace_var(str(name))
                     if variable and is_present_trace_var(str(value)):
                         trace_var_counts[variable] = trace_var_counts.get(variable, 0) + 1
+        if actor_probe_event := parse_actor_probe_line(line, line_no):
+            actor_probe_events.append(actor_probe_event)
         if REWRITE_EVENT_RE.search(line):
             rewrite_events += 1
             rewrite = parse_rewrite_line(line, line_no)
@@ -414,6 +446,11 @@ def inspect_log(
         if MEMTABLE_ROW_RE.search(line):
             memory_table_rows += 1
 
+    ct_resolutions = resolve_ct_attackers(actor_probe_events)
+    ct_actor_resolved = sum(1 for resolution in ct_resolutions if resolution.attacker_id is not None)
+    ct_drop_resolved = sum(1 for resolution in ct_resolutions if resolution.source == "ct-drop")
+    ct_lowest_resolved = sum(1 for resolution in ct_resolutions if resolution.source == "ct-lowest")
+
     return LogState(
         True,
         mtime,
@@ -444,6 +481,10 @@ def inspect_log(
         death_write_skips,
         memory_table_found,
         memory_table_rows,
+        len(actor_probe_events),
+        ct_actor_resolved,
+        ct_drop_resolved,
+        ct_lowest_resolved,
     )
 
 
@@ -466,6 +507,10 @@ def describe_state(
     required_equipment_dr_events: int = 0,
     required_response_events: int = 0,
     required_trace_vars: tuple[str, ...] = (),
+    required_actor_probes: int = 0,
+    required_ct_attackers: int = 0,
+    required_ct_drop_attackers: int = 0,
+    required_ct_lowest_attackers: int = 0,
     required_memtable_found: int = 0,
     required_memtable_rows: int = 0,
 ) -> str:
@@ -532,6 +577,30 @@ def describe_state(
             f"current runtime loaded; waiting for trace variable(s) "
             f"{', '.join(missing_trace_vars)}; "
             f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
+        )
+    if state.actor_probe_events < required_actor_probes:
+        return (
+            f"current runtime loaded; waiting for [ACTOR-PROBE] events "
+            f"({state.actor_probe_events}/{required_actor_probes}); "
+            f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
+        )
+    if state.ct_actor_resolved < required_ct_attackers:
+        return (
+            f"current runtime loaded; waiting for CT attacker resolution evidence "
+            f"({state.ct_actor_resolved}/{required_ct_attackers}); "
+            f"{state.actor_probe_events} [ACTOR-PROBE] event(s){evidence_suffix(state)}"
+        )
+    if state.ct_drop_resolved < required_ct_drop_attackers:
+        return (
+            f"current runtime loaded; waiting for CT-drop attacker evidence "
+            f"({state.ct_drop_resolved}/{required_ct_drop_attackers}); "
+            f"{state.actor_probe_events} [ACTOR-PROBE] event(s){evidence_suffix(state)}"
+        )
+    if state.ct_lowest_resolved < required_ct_lowest_attackers:
+        return (
+            f"current runtime loaded; waiting for CT-lowest attacker evidence "
+            f"({state.ct_lowest_resolved}/{required_ct_lowest_attackers}); "
+            f"{state.actor_probe_events} [ACTOR-PROBE] event(s){evidence_suffix(state)}"
         )
     if state.rewrite_events < required_rewrite_events:
         return (
@@ -771,6 +840,14 @@ def evidence_suffix(state: LogState) -> str:
     if state.trace_var_counts:
         summary = ",".join(f"{name}={count}" for name, count in state.trace_var_counts[:8])
         parts.append(f"trace vars {summary}")
+    if state.actor_probe_events:
+        parts.append(f"{state.actor_probe_events} [ACTOR-PROBE]")
+    if state.ct_actor_resolved:
+        parts.append(f"{state.ct_actor_resolved} CT attacker")
+    if state.ct_drop_resolved:
+        parts.append(f"{state.ct_drop_resolved} CT-drop")
+    if state.ct_lowest_resolved:
+        parts.append(f"{state.ct_lowest_resolved} CT-lowest")
     if state.death_events:
         parts.append(f"{state.death_events} [DEATH-*]")
     if state.death_writes:

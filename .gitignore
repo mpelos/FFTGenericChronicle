@@ -12,13 +12,17 @@ tools/*
 !tools/build_verified_wp_bundle.py
 !tools/find_memtable_candidates.py
 !tools/summarize_weapon_baseline.py
+!tools/analyze_actor_probe_ct.py
 !tools/analyze_battleprobe_log.py
 !tools/dump_item_catalog.py
 !tools/promote_runtime_offsets.py
 !tools/build_neuter_data.py
 !tools/report_neuter_coverage.py
+!tools/report_runtime_profiles.py
+!tools/test_actor_probe_ct.py
 !tools/test_memtable_candidates.py
 !tools/test_neuter_data.py
+!tools/test_runtime_profiles.py
 !tools/test_runtime_tooling.py
 !tools/watch_live_mapping.py
 
@@ -33,6 +37,7 @@ backups/
 
 # === Large derived data dumps (regenerated from the game) ===
 work/*.sqlite
+work/actor_probe_ct_analysis.md
 work/battleprobe_analysis.md
 work/nxd_extract/
 work/ability_en/

@@ -259,6 +259,8 @@ def main() -> int:
                     "settings: RewriteObservedDamage=True CauseDeathOnZeroHp=False",
                     "[GC-Probe] [UNIT ptr=0x2000 id=0x80 foe  t3] Lv1 HP250 PA4 MA3 Sp6 Mv5 Jp3 Br59 Fa51",
                     "[GC-Probe] [DAMAGE ptr=0x2000 id=0x80] 250 -> 249 = 1 sampleAgeMs=25",
+                    "[GC-Probe] [ACTOR-PROBE tgt=0x1E off=0x40-0x52] 01@0A460000000000000000000000000000000000 80@100C0000000000000000000000000000000000 1E@0C540000000000000000000000000000000000",
+                    "[GC-Probe] [ACTOR-PROBE tgt=0x1F off=0x40-0x52] 01@0A5A0000000000000000000000000000000000 80@10400000000000000000000000000000000000 1E@0C080000000000000000000000000000000000 1F@09510000000000000000000000000000000000",
                     "[GC-Probe] [RUNTIME ptr=0x2000 id=0x80] " + SAMPLE_RUNTIME_1,
                     "[GC-Probe] [REWRITE ptr=0x2000 id=0x80] rule=FinalDamageFormula vanillaDamage=1 finalDamage=9999 HP 249->0",
                     "[GC-Probe] [DEATH-DIFF ptr=0x2000 id=0x80] alive->dead +0x30->00 +0x61:00->20",
@@ -283,6 +285,9 @@ def main() -> int:
         check("## Death Gate Outcome" in report, "full analyzer report should include Death Gate Outcome")
         check("HP-only branch evidence" in report, "full analyzer report should classify HP-only death gate evidence")
         check("### Neuter Placeholder Check" in report, "full analyzer report should keep neuter placeholder check")
+        check("## Actor Probe CT Summary" in report, "full analyzer report should include actor probe CT summary")
+        check("Resolved actor probes: 2/2" in report, "full analyzer report should resolve actor probes")
+        check("`ct-drop`" in report and "0x1E" in report, "full analyzer report should include CT-drop attacker evidence")
 
     with tempfile.TemporaryDirectory() as tmp:
         log_path = Path(tmp) / "battleprobe_log.txt"
@@ -306,6 +311,7 @@ def main() -> int:
         check(fresh_state.has_current_header and fresh_state.runtime_events == 0, "fresh state should detect current header")
         check("waiting for [RUNTIME]" in describe_state(fresh_state, 1), "fresh watcher message should wait for runtime")
         check("waiting for [MEMTABLE-FOUND]" in describe_state(fresh_state, 0, required_memtable_found=1), "watcher should wait for memory table found evidence")
+        check("waiting for [ACTOR-PROBE]" in describe_state(fresh_state, 0, required_actor_probes=1), "watcher should wait for actor probes")
 
         memory_log = fresh_log + "\n".join(SAMPLE_MEMTABLE_LINES[:3]) + "\n"
         log_path.write_text(memory_log, encoding="utf-8")
@@ -315,6 +321,33 @@ def main() -> int:
         check("[MEMTABLE-FOUND]" in describe_state(memory_state, 1), "watcher message should mention memory tables")
         check("ready: 0 [RUNTIME]" in describe_state(memory_state, 0, required_memtable_found=1, required_memtable_rows=1), "watcher should accept required memory-table evidence")
         check("waiting for [MEMTABLE-ROW]" in describe_state(memory_state, 0, required_memtable_found=1, required_memtable_rows=2), "watcher should wait for enough memory-table rows")
+
+        actor_probe_log = (
+            fresh_log
+            + "[GC-Probe] [ACTOR-PROBE tgt=0x1E off=0x40-0x52] 01@0A460000000000000000000000000000000000 80@100C0000000000000000000000000000000000 1E@0C540000000000000000000000000000000000\n"
+            + "[GC-Probe] [ACTOR-PROBE tgt=0x1F off=0x40-0x52] 01@0A5A0000000000000000000000000000000000 80@10400000000000000000000000000000000000 1E@0C080000000000000000000000000000000000 1F@09510000000000000000000000000000000000\n"
+        )
+        log_path.write_text(actor_probe_log, encoding="utf-8")
+        actor_probe_state = inspect_log(log_path, start_time=0.0, allow_existing=True)
+        check(actor_probe_state.actor_probe_events == 2, "watcher should count actor probes")
+        check(actor_probe_state.ct_actor_resolved == 2, "watcher should count resolved CT attackers")
+        check(actor_probe_state.ct_lowest_resolved == 1, "watcher should count CT-lowest resolutions")
+        check(actor_probe_state.ct_drop_resolved == 1, "watcher should count CT-drop resolutions")
+        check(
+            "ready: 0 [RUNTIME]" in describe_state(
+                actor_probe_state,
+                0,
+                required_actor_probes=2,
+                required_ct_attackers=2,
+                required_ct_drop_attackers=1,
+                required_ct_lowest_attackers=1,
+            ),
+            "watcher should accept actor-probe CT evidence",
+        )
+        check(
+            "waiting for CT-drop attacker evidence" in describe_state(actor_probe_state, 0, required_ct_drop_attackers=2),
+            "watcher should wait for enough CT-drop evidence",
+        )
 
         ready_log = memory_log + "[GC-Probe] [RUNTIME ptr=0x2000 id=0x80] " + SAMPLE_RUNTIME_1 + "\n"
         log_path.write_text(ready_log, encoding="utf-8")

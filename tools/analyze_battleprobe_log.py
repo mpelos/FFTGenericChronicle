@@ -20,6 +20,8 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from analyze_actor_probe_ct import ActorProbeEvent, CtCandidate, parse_actor_probe_line, resolve_ct_attackers
+
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_LOG = Path(
     r"D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt"
@@ -107,6 +109,7 @@ def main() -> int:
     rewrites: list[dict[str, object]] = []
     death_events: list[dict[str, object]] = []
     memory_table_events: list[dict[str, object]] = []
+    actor_probe_events: list[ActorProbeEvent] = []
     headers: list[str] = []
     old_unit_lines = 0
     item_catalog = {} if args.no_catalog else load_item_catalog(args.catalog)
@@ -118,6 +121,10 @@ def main() -> int:
 
         if event := parse_memory_table_line(line):
             memory_table_events.append(event)
+            continue
+
+        if event := parse_actor_probe_line(line, line_no):
+            actor_probe_events.append(event)
             continue
 
         if m := UNIT_RE.search(line):
@@ -178,7 +185,7 @@ def main() -> int:
 
     args.output.parent.mkdir(exist_ok=True)
     args.output.write_text(
-        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, mp_events, contexts, runtime_contexts, rewrites, death_events, memory_table_events, old_unit_lines, item_catalog, args.catalog),
+        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, mp_events, contexts, runtime_contexts, rewrites, death_events, memory_table_events, actor_probe_events, old_unit_lines, item_catalog, args.catalog),
         encoding="utf-8",
     )
     print(f"wrote {args.output}")
@@ -594,6 +601,7 @@ def render(
     rewrites: list[dict[str, object]],
     death_events: list[dict[str, object]],
     memory_table_events: list[dict[str, object]],
+    actor_probe_events: list[ActorProbeEvent],
     old_unit_lines: int,
     item_catalog: dict[int, dict[str, str]],
     catalog_path: Path,
@@ -713,6 +721,7 @@ def render(
 
     lines.extend(render_memory_table_summary(memory_table_events))
     lines.extend(render_runtime_summary(runtime_details))
+    lines.extend(render_actor_probe_ct_summary(actor_probe_events))
     lines.extend(render_death_summary(death_events))
     lines.extend(render_death_gate_summary(rewrites, death_events))
 
@@ -818,6 +827,65 @@ def neuter_placeholder_verdict(
     if all(0 < value <= PLACEHOLDER_DAMAGE_MAX for value in values):
         return "pass-candidate: observed positive vanilla damage is placeholder-sized"
     return "attention: large vanilla damage observed; data neuter may be incomplete or this is not a neuter run"
+
+
+def render_actor_probe_ct_summary(actor_probe_events: list[ActorProbeEvent]) -> list[str]:
+    lines = ["## Actor Probe CT Summary"]
+    if not actor_probe_events:
+        lines.append("No parsed `[ACTOR-PROBE]` lines.")
+        lines.append("")
+        return lines
+
+    resolutions = resolve_ct_attackers(actor_probe_events)
+    resolved = [resolution for resolution in resolutions if resolution.attacker_id is not None]
+    source_counts = Counter(resolution.source for resolution in resolutions)
+    lines.append(f"- Actor probe events: {len(actor_probe_events)}")
+    lines.append(f"- Resolved actor probes: {len(resolved)}/{len(resolutions)}")
+    lines.append("- Sources: " + ", ".join(f"`{source}`={count}" for source, count in sorted(source_counts.items())))
+    lines.append("- Rule: exclude target, prefer largest recent CT drop, else lowest absolute CT.")
+    lines.append("")
+    lines.append("| # | Line | Target | Attacker | Source | Top candidates |")
+    lines.append("| --- | ---: | --- | --- | --- | --- |")
+    for index, resolution in enumerate(resolutions[:20], start=1):
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(index),
+                    str(resolution.event.line_no),
+                    format_unit_id(resolution.event.target_id),
+                    format_unit_id(resolution.attacker_id),
+                    f"`{resolution.source}`",
+                    format_ct_candidates(resolution.candidates),
+                ]
+            )
+            + " |"
+        )
+    if len(resolutions) > 20:
+        lines.append(f"| ... |  |  |  |  | +{len(resolutions) - 20} more actor probes |")
+    lines.append("")
+    return lines
+
+
+def format_ct_candidates(candidates: tuple[CtCandidate, ...]) -> str:
+    if not candidates:
+        return "`none`"
+
+    ordered = sorted(candidates, key=lambda candidate: (-candidate.ct_drop, candidate.ct, candidate.unit_id))
+    rendered = []
+    for candidate in ordered[:5]:
+        previous = "-" if candidate.previous_ct is None else str(candidate.previous_ct)
+        speed = "-" if candidate.speed is None else str(candidate.speed)
+        rendered.append(
+            f"{format_unit_id(candidate.unit_id)}(ct={candidate.ct},prev={previous},drop={candidate.ct_drop},spd={speed})"
+        )
+    if len(ordered) > 5:
+        rendered.append(f"+{len(ordered) - 5} more")
+    return "`" + " ".join(rendered) + "`"
+
+
+def format_unit_id(value: int | None) -> str:
+    return "none" if value is None else f"0x{value:02X}"
 
 
 def render_death_summary(death_events: list[dict[str, object]]) -> list[str]:

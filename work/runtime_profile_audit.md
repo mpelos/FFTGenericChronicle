@@ -19,8 +19,10 @@ Overall status: PASS
 | `dry-run-evaluation` | live-safe dry-run | no writes because DryRunRewrites=true | `dry_run`, `hp_mp_dry_run` | PASS |
 | `neuter-spotcheck` | live-safe dry-run | no writes because DryRunRewrites=true | `dry_run`, `live_noop`, `no_response_or_dr` | PASS |
 | `death-flag-capture` | observe-only live capture | no HP/MP rewrites | `observe_only_death_capture` | PASS |
-| `death-test-hp-only` | live death gate | writes HP to 0 for foes only | `death_hp_only`, `foes_only`, `known_ko_flag_configured` | PASS |
-| `death-test-killflag` | live death gate | writes HP to 0 and the KO flag for foes only | `death_killflag`, `foes_only`, `known_ko_flag_configured` | PASS |
+| `actor-probe` | observe-only attacker RE capture | no HP/MP rewrites | `actor_probe_observe_only` | PASS |
+| `engine-death-test` | live architecture proof | rewrites HP, but never below MinHpFloor | `engine_owned_death` | PASS |
+| `death-test-hp-only` | legacy/refuted death-write probe | writes HP to 0 for foes only; do not use as success path | `legacy_death_hp_only`, `foes_only`, `known_ko_flag_configured` | PASS |
+| `death-test-killflag` | legacy/refuted death-write probe | writes HP to 0 and the KO flag for foes only; do not use as success path | `legacy_death_killflag`, `foes_only`, `known_ko_flag_configured` | PASS |
 | `static-dr-example` | offline/live DR canary | rewrites HP if deployed | `static_dr`, `no_response_or_dr` | PASS |
 | `gurps-dr-example` | offline GURPS DR proof | rewrites HP if deployed with required context | `gurps_dr`, `guarded_context_formula` | PASS |
 | `sentinel-bands-example` | offline action-signal proof | rewrites HP if deployed | `sentinel_bands`, `no_response_or_dr` | PASS |
@@ -34,7 +36,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.v0.2.scan.live-noop.json`
 - Intent: Collect target/attacker slot, action, response, and trace evidence while preserving vanilla HP.
 - Live mutation: writes HP back to vanilla result
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### scan-policy
@@ -42,7 +44,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.v0.2.scan.generated.json`
 - Intent: Apply the generated v0.2 response policy with scan-mode equipment slots.
 - Live mutation: rewrites HP when action/attacker context is present
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### matrix-policy
@@ -50,7 +52,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.v0.2.matrix.generated.json`
 - Intent: Apply the generated v0.2 matrix response policy with scan-mode equipment slots.
 - Live mutation: rewrites HP when action/attacker context is present
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/1, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=9, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/1, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=9, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### exact-policy-template
@@ -58,7 +60,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.v0.2.generated.json`
 - Intent: Generated v0.2 policy profile with exact configured slot offsets in fixture/simulation form.
 - Live mutation: rewrites HP when action/attacker context is present
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=True/16, equipmentDr=False/0, slots=1/1, actionSignals=19, traces=5, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### dry-run-evaluation
@@ -66,7 +68,7 @@ Overall status: PASS
 - Path: `docs/modding/examples/battle-runtime-settings.dry-run.example.json`
 - Intent: Evaluate HP damage, HP healing, MP loss, and MP gain formulas without memory writes.
 - Live mutation: no writes because DryRunRewrites=true
-- Summary: dryRun=True, hpDamage=True, hpHeal=True, mpLoss=True, mpGain=True, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=8, deathWrite=False/0
+- Summary: dryRun=True, hpDamage=True, hpHeal=True, mpLoss=True, mpGain=True, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=8, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### neuter-spotcheck
@@ -74,7 +76,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.neuter-spotcheck.json`
 - Intent: Verify data-layer neuter placeholder deltas before attempting lethal HP rewrites.
 - Live mutation: no writes because DryRunRewrites=true
-- Summary: dryRun=True, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=4, deathWrite=False/0
+- Summary: dryRun=True, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=4, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### death-flag-capture
@@ -82,23 +84,39 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.death-flag-capture.json`
 - Intent: Observe vanilla deaths and log struct death diffs/follow-up without rewriting HP/MP.
 - Live mutation: no HP/MP rewrites
-- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False
+- Errors: none
+
+### actor-probe
+
+- Path: `work/battle-runtime-settings.actor-probe.json`
+- Intent: Snapshot the 0x40-0x52 unit window on damage events to validate CT-based attacker resolution.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True
+- Errors: none
+
+### engine-death-test
+
+- Path: `work/battle-runtime-settings.engine-death-test.json`
+- Intent: Prove engine-owned death with MinHpFloor=1: custom lethal results leave at 1 HP, then vanilla kills.
+- Live mutation: rewrites HP, but never below MinHpFloor
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=1, actorProbe=False
 - Errors: none
 
 ### death-test-hp-only
 
 - Path: `work/battle-runtime-settings.death-test.json`
-- Intent: Force foe HP to 0 after neutered placeholder damage, without writing the KO flag.
-- Live mutation: writes HP to 0 for foes only
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/1
+- Intent: Historical Test 2b profile: force foe HP to 0 without writing the KO flag. Live evidence proved this creates a zombie, not death.
+- Live mutation: writes HP to 0 for foes only; do not use as success path
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/1, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### death-test-killflag
 
 - Path: `work/battle-runtime-settings.death-test-killflag.json`
-- Intent: Force foe HP to 0 and set the mapped KO/status bit +0x61 |= 0x20.
-- Live mutation: writes HP to 0 and the KO flag for foes only
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=True/1
+- Intent: Historical Test 2c profile: force foe HP to 0 and set +0x61 |= 0x20. Live evidence proved the bit is an effect, not a trigger.
+- Live mutation: writes HP to 0 and the KO flag for foes only; do not use as success path
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=True/1, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### static-dr-example
@@ -106,7 +124,7 @@ Overall status: PASS
 - Path: `docs/modding/examples/battle-runtime-settings.static-dr.example.json`
 - Intent: Prove global flat DR without attacker/equipment context.
 - Live mutation: rewrites HP if deployed
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=3, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=3, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### gurps-dr-example
@@ -114,7 +132,7 @@ Overall status: PASS
 - Path: `docs/modding/examples/battle-runtime-settings.gurps-dr.example.json`
 - Intent: GURPS-like swing/thrust tables, item-catalog DR, and wound multipliers.
 - Live mutation: rewrites HP if deployed with required context
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/1, slots=1/1, actionSignals=3, traces=12, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/1, slots=1/1, actionSignals=3, traces=12, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### sentinel-bands-example
@@ -122,7 +140,7 @@ Overall status: PASS
 - Path: `docs/modding/examples/battle-runtime-settings.sentinel-bands.example.json`
 - Intent: Classify placeholder-sized vanilla damage bands into action variables.
 - Live mutation: rewrites HP if deployed
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=3, traces=6, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=3, traces=6, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### mp-example
@@ -130,7 +148,7 @@ Overall status: PASS
 - Path: `docs/modding/examples/battle-runtime-settings.mp.example.json`
 - Intent: Exercise signed MP loss/gain formulas and MP rewrite gates.
 - Live mutation: rewrites MP if deployed
-- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=True, mpGain=True, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=1, traces=3, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=True, mpGain=True, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=1, traces=3, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ### memtable-probe-disabled
@@ -138,14 +156,17 @@ Overall status: PASS
 - Path: `work/memtable-probe-candidates.disabled.json`
 - Intent: Store reviewed MEMTABLE candidates disabled until live validation.
 - Live mutation: no runtime effect while probes are disabled
-- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False
 - Errors: none
 
 ## Live Boundary
 
 - `scan-live-noop`, `dry-run-evaluation`, and `neuter-spotcheck` are the safer live-prep profiles.
-- `death-test-hp-only` and `death-test-killflag` intentionally write lethal outcomes and should only
-  be used after the neuter data mod has been spot-checked.
+- `engine-death-test` is the active death/KO architecture proof: `MinHpFloor=1` delegates the real
+  KO transition to the engine.
+- `death-test-hp-only` and `death-test-killflag` are preserved only as historical/refuted probes.
+  They proved memory writes can create zombie/partial states and must not be treated as a success path.
+- `actor-probe` is observe-only evidence capture for CT-based attacker resolution.
 - Policy profiles still require live slot/action/attacker evidence before they are trusted for the
   actual redesign.
 - Passing this audit is not permission to launch or deploy; it is an offline contract check.

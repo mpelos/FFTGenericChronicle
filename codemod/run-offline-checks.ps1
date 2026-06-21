@@ -101,6 +101,7 @@ try {
 
         Invoke-Step "Python tooling smoke tests" {
             Invoke-Native 'python' @('tools\test_runtime_tooling.py')
+            Invoke-Native 'python' @('tools\test_actor_probe_ct.py')
             Invoke-Native 'python' @('tools\test_memtable_candidates.py')
             Invoke-Native 'python' @('tools\test_neuter_data.py')
             Invoke-Native 'python' @('tools\test_runtime_formula_context.py')
@@ -136,6 +137,8 @@ try {
                 'work\battle-runtime-settings.v0.2.scan.live-noop.json',
                 'work\battle-runtime-settings.neuter-spotcheck.json',
                 'work\battle-runtime-settings.death-flag-capture.json',
+                'work\battle-runtime-settings.actor-probe.json',
+                'work\battle-runtime-settings.engine-death-test.json',
                 'work\battle-runtime-settings.death-test.json',
                 'work\battle-runtime-settings.death-test-killflag.json',
                 'work\memtable-probe-candidates.disabled.json',
