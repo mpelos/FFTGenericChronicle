@@ -50,6 +50,7 @@ Accepted/provisional job documents now refer to checks in these categories:
 - spell routing/Reflect composition;
 - action grants and turn-economy recursion;
 - area, multi-target, and terrain availability.
+- sustained area throughput across target count and duration.
 
 Only the damage-family side is currently represented by the existing formula harness. Several other
 categories are design-required but not yet executable.
@@ -334,6 +335,31 @@ Notes:
   does for multi-hit engines: total effective output is per-target output multiplied by expected
   target count.
 
+### T11xT5 - Sustained Area Throughput Composition
+
+Goal: model effects whose real output is the product of area target count and repeated timing ticks.
+
+Unblocks:
+
+- Bard mapwide songs that heal, buff, or alter morale over several ticks;
+- Dancer mapwide dances that damage, drain, debuff, or pressure resources over several ticks;
+- any future global, aura, terrain, zone, or mapwide effect whose value compounds over duration.
+
+Notes:
+
+- T11 supplies expected target count, target group, and area/global shape;
+- T5 supplies tick timing, duration, performer/action lock, interruption windows, and repeated
+  resolution count;
+- neither T11 nor T5 is sufficient alone because the balance question is:
+  `per_tick_value * expected_target_count * expected_tick_count`;
+- T3xT5xT11 is the healing/attrition form of this composition, where T3 supplies per-tick HP,
+  revive, poison, regen, or attrition value;
+- the first bundle should include low per-target values that become large through many targets,
+  short-duration versus long-duration rows, interruption rows, and small-party versus full-party
+  target-count rows;
+- the gate should prove that sustained global effects remain a performance plan rather than a
+  hidden replacement for direct healing, direct damage, or targeted control.
+
 ## Recommended Sequence
 
 Recommended order before more concrete skill-number work:
@@ -359,12 +385,14 @@ Recommended order before more concrete skill-number work:
 11. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
 12. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
     Bard/Dancer global values.
+13. Build `T11xT5 - Sustained Area Throughput` before concrete repeated mapwide or large-area
+    performance, aura, terrain, zone, or duration-based area values.
 
 ## Acceptance Gate Per Track
 
 Each new validation model from T3 through T11, including composition tracks such as T3xT5, T6xT7,
-T5xT8, T6xPS, and T8xSR, must inherit the same dual-independent discipline that made
-formula-balance v0.2 trustworthy.
+T5xT8, T6xPS, T8xSR, T11xT5, and T3xT5xT11, must inherit the same dual-independent discipline that
+made formula-balance v0.2 trustworthy.
 
 Before a track output can be used to accept concrete skill data:
 
@@ -433,3 +461,4 @@ Later accepted job proposals extended this roadmap with additional gates:
 - T8xSR and T10 from Time Mage/Mystic review;
 - T11, with T11A and T11B sub-contracts, from Summoner/Geomancer review.
 - T5xT8 from Dragoon/Samurai review.
+- T11xT5 and T3xT5xT11 from Bard/Dancer review.
