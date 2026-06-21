@@ -1,0 +1,28 @@
+tools/build_vanilla_reference.py
+  s_fce6b25a5764ca::t_353106161fac4f 706-712
+  s_fce6b25a5764ca::t_414002845db622 6,598-614,761-762,778-912,1034-1039,1042-1043
+docs/job-balance/12-vanilla-skill-status-reference.md
+  s_fce6b25a5764ca::t_3aec1eae2e1b43 7-8,31-42,66-80,94-95
+docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md
+  s_fce6b25a5764ca::t_55eca3baae3147 1-1528
+docs/reference/fft-vanilla-command-skillset-effect-map.md
+  s_fce6b25a5764ca::t_55eca3baae3147 1-836
+docs/reference/fft-vanilla-ability-effect-index.md
+  s_fce6b25a5764ca::t_0ddfef6f8a5c52 52-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "02fca18316052813c5e56e8b87e11ebdd87631c2",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
