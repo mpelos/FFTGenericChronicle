@@ -1,0 +1,406 @@
+{
+  "schema_version": "t4-accuracy-evasion-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-20",
+  "source_docs": [
+    "docs/job-balance/06-knight-archer-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/09-accuracy-evasion-model-schema.md"
+  ],
+  "external_sources": [
+    {
+      "id": "aerostar_battle_mechanics",
+      "url": "https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/3876",
+      "notes": [
+        "Section 1.4 evasion formulas.",
+        "Charge/Aim uses normal weapon evasion and can miss if the target panel is vacated.",
+        "Jump is not evadable."
+      ]
+    }
+  ],
+  "formula_contract": {
+    "rounding": "truncate_after_full_multiplication",
+    "percentage_min": 0,
+    "percentage_max": 100,
+    "per_factor_clamp": {
+      "effective_evade": "min(100, max(0, evade * evasion_multiplier))",
+      "term": "100 - effective_evade",
+      "applies_to": [
+        "physical",
+        "magical"
+      ]
+    },
+    "final_hit_clamp": "min(100, max(0, truncated_hit))",
+    "physical": {
+      "front": [
+        "base_hit",
+        "p_class_evade",
+        "p_shield_evade",
+        "p_accessory_evade",
+        "weapon_evade_if_enabled"
+      ],
+      "side": [
+        "base_hit",
+        "p_shield_evade",
+        "p_accessory_evade",
+        "weapon_evade_if_enabled"
+      ],
+      "rear": [
+        "base_hit",
+        "p_accessory_evade"
+      ]
+    },
+    "magical": {
+      "any": [
+        "base_hit",
+        "m_shield_evade",
+        "m_accessory_evade"
+      ]
+    },
+    "non_evadable": {
+      "expected_hit": "base_hit_if_can_target_else_0"
+    },
+    "targeting": {
+      "line_of_fire_blocked": "can_target_false_and_expected_hit_0",
+      "panel_vacated_before_resolution": "can_target_false_and_expected_hit_0"
+    }
+  },
+  "tokens": {
+    "not_applicable": "NA"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t4_phys_front_no_evade_100",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 0,
+        "p_shield_evade": 0,
+        "p_accessory_evade": 0,
+        "weapon_evade": 0,
+        "weapon_evade_enabled": false,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 100
+      }
+    },
+    {
+      "scenario_id": "t4_phys_front_full_layers",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 45
+      }
+    },
+    {
+      "scenario_id": "t4_phys_side_no_class_evade",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "side",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 51
+      }
+    },
+    {
+      "scenario_id": "t4_phys_rear_accessory_only",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "rear",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 85
+      }
+    },
+    {
+      "scenario_id": "t4_magic_shield_accessory",
+      "model": "magical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "any",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "m_shield_evade": 15,
+        "m_accessory_evade": 25,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 63
+      }
+    },
+    {
+      "scenario_id": "t4_phys_front_base80_full_layers",
+      "model": "physical",
+      "attack": {
+        "base_hit": 80,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 36
+      }
+    },
+    {
+      "scenario_id": "t4_phys_front_weapon_evade_disabled",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": false,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 57
+      }
+    },
+    {
+      "scenario_id": "t4_phys_front_doubled_evasion_stress",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 20,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 2
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 16
+      }
+    },
+    {
+      "scenario_id": "t4_phys_front_doubled_evasion_clamp",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 20,
+        "p_shield_evade": 60,
+        "p_accessory_evade": 10,
+        "weapon_evade": 15,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 2
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 0
+      }
+    },
+    {
+      "scenario_id": "t4_non_evadable_jump_like",
+      "model": "non_evadable",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": false
+      },
+      "target": {
+        "p_class_evade": 50,
+        "p_shield_evade": 50,
+        "p_accessory_evade": 50,
+        "weapon_evade": 50,
+        "weapon_evade_enabled": true,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 4
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 100
+      }
+    },
+    {
+      "scenario_id": "t4_targeting_line_of_fire_blocked",
+      "model": "targeting",
+      "attack": {
+        "base_hit": 100,
+        "facing": "side",
+        "line_of_fire": "blocked",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 0,
+        "p_shield_evade": 0,
+        "p_accessory_evade": 0,
+        "weapon_evade": 0,
+        "weapon_evade_enabled": false,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": false,
+        "hit": 0
+      }
+    },
+    {
+      "scenario_id": "t4_targeting_charge_panel_vacated",
+      "model": "targeting",
+      "attack": {
+        "base_hit": 100,
+        "facing": "front",
+        "line_of_fire": "clear",
+        "can_be_evaded": true,
+        "delayed_panel_target": true,
+        "panel_vacated_before_resolution": true
+      },
+      "target": {
+        "p_class_evade": 0,
+        "p_shield_evade": 0,
+        "p_accessory_evade": 0,
+        "weapon_evade": 0,
+        "weapon_evade_enabled": false,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 0
+      },
+      "expected": {
+        "can_target": false,
+        "hit": 0
+      }
+    },
+    {
+      "scenario_id": "t4_height_context_no_vanilla_hit_change",
+      "model": "physical",
+      "attack": {
+        "base_hit": 100,
+        "facing": "side",
+        "line_of_fire": "clear",
+        "can_be_evaded": true
+      },
+      "target": {
+        "p_class_evade": 10,
+        "p_shield_evade": 25,
+        "p_accessory_evade": 15,
+        "weapon_evade": 0,
+        "weapon_evade_enabled": false,
+        "evasion_multiplier": 1
+      },
+      "position": {
+        "height_delta": 5
+      },
+      "expected": {
+        "can_target": true,
+        "hit": 63
+      }
+    }
+  ],
+  "expected_counter_outputs": [
+    "scenario_id",
+    "model",
+    "can_target",
+    "expected_hit",
+    "calculated_hit",
+    "factors",
+    "validation_errors"
+  ]
+}
