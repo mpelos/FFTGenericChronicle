@@ -1,0 +1,228 @@
+{
+  "scenario_count": 13,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t6xt7_break_to_fists_guard_break_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.85,
+        "original_damage_per_hit": 163,
+        "original_total_damage": 163,
+        "resulting_final_response": 1.35,
+        "resulting_damage_per_hit": 129,
+        "resulting_total_damage": 129,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.588235,
+        "damage_ratio": 0.791411,
+        "total_damage_delta": -34
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_crossbow_output_down_penetration_bonus_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.98,
+        "original_damage_per_hit": 150,
+        "original_total_damage": 150,
+        "resulting_final_response": 0.98,
+        "resulting_damage_per_hit": 51,
+        "resulting_total_damage": 51,
+        "raw_output_ratio": 0.344156,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.34,
+        "total_damage_delta": -99
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_final_response_upper_clamp_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 2.5,
+        "original_damage_per_hit": 250,
+        "original_total_damage": 250,
+        "resulting_final_response": 2.5,
+        "resulting_damage_per_hit": 250,
+        "resulting_total_damage": 250,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_float_safe_rod_crush_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 1.15,
+        "original_damage_per_hit": 115,
+        "original_total_damage": 115,
+        "resulting_final_response": 1.15,
+        "resulting_damage_per_hit": 115,
+        "resulting_total_damage": 115,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_gun_break_no_family_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 1.01,
+        "original_damage_per_hit": 145,
+        "original_total_damage": 145,
+        "resulting_final_response": 0.0,
+        "resulting_damage_per_hit": 0,
+        "resulting_total_damage": 0,
+        "raw_output_ratio": 0.0,
+        "response_ratio": 0.0,
+        "damage_ratio": 0.0,
+        "total_damage_delta": -145
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_gun_penetration_bonus_clamps_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 1.1,
+        "original_damage_per_hit": 158,
+        "original_total_damage": 158,
+        "resulting_final_response": 1.1,
+        "resulting_damage_per_hit": 158,
+        "resulting_total_damage": 158,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_ninja_blade_multi_hit_output_down_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 92,
+        "original_total_damage": 184,
+        "resulting_final_response": 0.65,
+        "resulting_damage_per_hit": 46,
+        "resulting_total_damage": 92,
+        "raw_output_ratio": 0.496503,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -92
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_spear_break_to_fists_vs_mail",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 1.1,
+        "original_damage_per_hit": 198,
+        "original_total_damage": 198,
+        "resulting_final_response": 0.9725,
+        "resulting_damage_per_hit": 93,
+        "resulting_total_damage": 93,
+        "raw_output_ratio": 0.533333,
+        "response_ratio": 0.884091,
+        "damage_ratio": 0.469697,
+        "total_damage_delta": -105
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_cloth",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 1.0,
+        "original_damage_per_hit": 192,
+        "original_total_damage": 192,
+        "resulting_final_response": 1.015,
+        "resulting_damage_per_hit": 97,
+        "resulting_total_damage": 97,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.015,
+        "damage_ratio": 0.505208,
+        "total_damage_delta": -95
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_leather",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.95,
+        "original_damage_per_hit": 182,
+        "original_total_damage": 182,
+        "resulting_final_response": 1.015,
+        "resulting_damage_per_hit": 97,
+        "resulting_total_damage": 97,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.068421,
+        "damage_ratio": 0.532967,
+        "total_damage_delta": -85
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 124,
+        "original_total_damage": 124,
+        "resulting_final_response": 1.15,
+        "resulting_damage_per_hit": 110,
+        "resulting_total_damage": 110,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.769231,
+        "damage_ratio": 0.887097,
+        "total_damage_delta": -14
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_sword_output_down_same_family_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 124,
+        "original_total_damage": 124,
+        "resulting_final_response": 0.65,
+        "resulting_damage_per_hit": 62,
+        "resulting_total_damage": 62,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -62
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xt7_two_response_deltas_sum_vs_plate",
+      "model": "offense_armor_composition",
+      "calculated_fields": {
+        "original_final_response": 0.95,
+        "original_damage_per_hit": 182,
+        "original_total_damage": 182,
+        "resulting_final_response": 0.95,
+        "resulting_damage_per_hit": 91,
+        "resulting_total_damage": 91,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -91
+      },
+      "validation_errors": []
+    }
+  ]
+}

@@ -1,0 +1,531 @@
+{
+  "schema_version": "t6x-t7-offense-armor-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/13-armor-response-model-schema.md",
+    "docs/job-balance/14-enemy-offense-disarm-model-schema.md",
+    "docs/job-balance/17-offense-armor-composition-schema.md",
+    "work/t6-armor-response-scenarios-v0.json",
+    "work/t7-enemy-offense-scenarios-v0.json"
+  ],
+  "formula_contract": {
+    "normalization": "per_application_per_hit",
+    "composition_boundary": "T7 output_per_hit is the pre-armor output consumed by T6",
+    "base_response": "armor_response[armor_class][damage_type]",
+    "effective_penetration": "clamp(family_penetration + penetration_bonus, 0.0, 1.0)",
+    "penetration_formula": "base + effective_penetration*(penetration_ceiling-base) if base<penetration_ceiling else base",
+    "penetration_ceiling": 1.1,
+    "dynamic_delta": "sum(response_delta values)",
+    "final_response": "clamp(penetrated_response + dynamic_delta, combined_multiplier_clamp[0], combined_multiplier_clamp[1])",
+    "combined_multiplier_clamp": [
+      0.25,
+      2.5
+    ],
+    "damage_per_hit": "floor(round(output_per_hit * final_response, 6))",
+    "total_damage": "damage_per_hit * hit_count",
+    "no_family_policy": "resulting_family=none deals zero damage and has no armor-response matchup",
+    "ratio_denominator_zero_policy": "ratio fields return 0.0 when denominator is 0",
+    "numeric_comparison": {
+      "float_decimals": 6
+    }
+  },
+  "armor_response": {
+    "plate": {
+      "swing": 0.65,
+      "thrust": 0.65,
+      "crush": 1.15,
+      "missile": 0.8
+    },
+    "mail": {
+      "swing": 0.75,
+      "thrust": 1.1,
+      "crush": 0.95,
+      "missile": 1.1
+    },
+    "leather": {
+      "swing": 0.95,
+      "thrust": 0.95,
+      "crush": 1.0,
+      "missile": 0.95
+    },
+    "cloth": {
+      "swing": 1.0,
+      "thrust": 1.0,
+      "crush": 1.0,
+      "missile": 1.0
+    }
+  },
+  "family_penetration": {
+    "sword": 0.0,
+    "knight_sword": 0.0,
+    "katana": 0.0,
+    "knife": 0.1,
+    "ninja_blade": 0.0,
+    "longbow": 0.15,
+    "crossbow": 0.35,
+    "gun": 0.7,
+    "spear": 0.1,
+    "staff": 0.0,
+    "rod": 0.0,
+    "pole": 0.0,
+    "axe": 0.0,
+    "flail": 0.0,
+    "fists": 0.15,
+    "instrument": 0.0,
+    "book": 0.0,
+    "cloth_weapon": 0.0,
+    "bag": 0.0
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "fists",
+        "damage_type": "crush",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 124,
+        "original_total_damage": 124,
+        "resulting_final_response": 1.15,
+        "resulting_damage_per_hit": 110,
+        "resulting_total_damage": 110,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.769231,
+        "damage_ratio": 0.887097,
+        "total_damage_delta": -14
+      }
+    },
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_cloth",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "cloth"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "fists",
+        "damage_type": "crush",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 1.0,
+        "original_damage_per_hit": 192,
+        "original_total_damage": 192,
+        "resulting_final_response": 1.015,
+        "resulting_damage_per_hit": 97,
+        "resulting_total_damage": 97,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.015,
+        "damage_ratio": 0.505208,
+        "total_damage_delta": -95
+      }
+    },
+    {
+      "scenario_id": "t6xt7_spear_break_to_fists_vs_mail",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "mail"
+      },
+      "original": {
+        "family": "spear",
+        "damage_type": "thrust",
+        "output_per_hit": 180,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "fists",
+        "damage_type": "crush",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 1.1,
+        "original_damage_per_hit": 198,
+        "original_total_damage": 198,
+        "resulting_final_response": 0.9725,
+        "resulting_damage_per_hit": 93,
+        "resulting_total_damage": 93,
+        "raw_output_ratio": 0.533333,
+        "response_ratio": 0.884091,
+        "damage_ratio": 0.469697,
+        "total_damage_delta": -105
+      }
+    },
+    {
+      "scenario_id": "t6xt7_sword_break_to_fists_vs_leather",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "leather"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "fists",
+        "damage_type": "crush",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 0.95,
+        "original_damage_per_hit": 182,
+        "original_total_damage": 182,
+        "resulting_final_response": 1.015,
+        "resulting_damage_per_hit": 97,
+        "resulting_total_damage": 97,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.068421,
+        "damage_ratio": 0.532967,
+        "total_damage_delta": -85
+      }
+    },
+    {
+      "scenario_id": "t6xt7_gun_break_no_family_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "gun",
+        "damage_type": "missile",
+        "output_per_hit": 144,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "none",
+        "damage_type": "none",
+        "output_per_hit": 0,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 1.01,
+        "original_damage_per_hit": 145,
+        "original_total_damage": 145,
+        "resulting_final_response": 0.0,
+        "resulting_damage_per_hit": 0,
+        "resulting_total_damage": 0,
+        "raw_output_ratio": 0.0,
+        "response_ratio": 0.0,
+        "damage_ratio": 0.0,
+        "total_damage_delta": -145
+      }
+    },
+    {
+      "scenario_id": "t6xt7_gun_penetration_bonus_clamps_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "gun",
+        "damage_type": "missile",
+        "output_per_hit": 144,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "gun",
+        "damage_type": "missile",
+        "output_per_hit": 144,
+        "hit_count": 1
+      },
+      "dynamic_effects": [
+        {
+          "kind": "penetration_bonus",
+          "penetration_bonus": 0.5
+        }
+      ],
+      "expected": {
+        "original_final_response": 1.1,
+        "original_damage_per_hit": 158,
+        "original_total_damage": 158,
+        "resulting_final_response": 1.1,
+        "resulting_damage_per_hit": 158,
+        "resulting_total_damage": 158,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      }
+    },
+    {
+      "scenario_id": "t6xt7_sword_output_down_same_family_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 124,
+        "original_total_damage": 124,
+        "resulting_final_response": 0.65,
+        "resulting_damage_per_hit": 62,
+        "resulting_total_damage": 62,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -62
+      }
+    },
+    {
+      "scenario_id": "t6xt7_two_response_deltas_sum_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [
+        {
+          "kind": "guard_break",
+          "response_delta": 0.1
+        },
+        {
+          "kind": "armor_exposed",
+          "response_delta": 0.2
+        }
+      ],
+      "expected": {
+        "original_final_response": 0.95,
+        "original_damage_per_hit": 182,
+        "original_total_damage": 182,
+        "resulting_final_response": 0.95,
+        "resulting_damage_per_hit": 91,
+        "resulting_total_damage": 91,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -91
+      }
+    },
+    {
+      "scenario_id": "t6xt7_crossbow_output_down_penetration_bonus_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "crossbow",
+        "damage_type": "missile",
+        "output_per_hit": 154,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "crossbow",
+        "damage_type": "missile",
+        "output_per_hit": 53,
+        "hit_count": 1
+      },
+      "dynamic_effects": [
+        {
+          "kind": "penetration_bonus",
+          "penetration_bonus": 0.25
+        }
+      ],
+      "expected": {
+        "original_final_response": 0.98,
+        "original_damage_per_hit": 150,
+        "original_total_damage": 150,
+        "resulting_final_response": 0.98,
+        "resulting_damage_per_hit": 51,
+        "resulting_total_damage": 51,
+        "raw_output_ratio": 0.344156,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.34,
+        "total_damage_delta": -99
+      }
+    },
+    {
+      "scenario_id": "t6xt7_final_response_upper_clamp_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "rod",
+        "damage_type": "crush",
+        "output_per_hit": 100,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "rod",
+        "damage_type": "crush",
+        "output_per_hit": 100,
+        "hit_count": 1
+      },
+      "dynamic_effects": [
+        {
+          "kind": "armor_exposed",
+          "response_delta": 1.0
+        },
+        {
+          "kind": "guard_break",
+          "response_delta": 1.0
+        }
+      ],
+      "expected": {
+        "original_final_response": 2.5,
+        "original_damage_per_hit": 250,
+        "original_total_damage": 250,
+        "resulting_final_response": 2.5,
+        "resulting_damage_per_hit": 250,
+        "resulting_total_damage": 250,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      }
+    },
+    {
+      "scenario_id": "t6xt7_ninja_blade_multi_hit_output_down_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "ninja_blade",
+        "damage_type": "swing",
+        "output_per_hit": 143,
+        "hit_count": 2
+      },
+      "resulting": {
+        "family": "ninja_blade",
+        "damage_type": "swing",
+        "output_per_hit": 71,
+        "hit_count": 2
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 0.65,
+        "original_damage_per_hit": 92,
+        "original_total_damage": 184,
+        "resulting_final_response": 0.65,
+        "resulting_damage_per_hit": 46,
+        "resulting_total_damage": 92,
+        "raw_output_ratio": 0.496503,
+        "response_ratio": 1.0,
+        "damage_ratio": 0.5,
+        "total_damage_delta": -92
+      }
+    },
+    {
+      "scenario_id": "t6xt7_break_to_fists_guard_break_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "sword",
+        "damage_type": "swing",
+        "output_per_hit": 192,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "fists",
+        "damage_type": "crush",
+        "output_per_hit": 96,
+        "hit_count": 1
+      },
+      "dynamic_effects": [
+        {
+          "kind": "guard_break",
+          "response_delta": 0.2
+        }
+      ],
+      "expected": {
+        "original_final_response": 0.85,
+        "original_damage_per_hit": 163,
+        "original_total_damage": 163,
+        "resulting_final_response": 1.35,
+        "resulting_damage_per_hit": 129,
+        "resulting_total_damage": 129,
+        "raw_output_ratio": 0.5,
+        "response_ratio": 1.588235,
+        "damage_ratio": 0.791411,
+        "total_damage_delta": -34
+      }
+    },
+    {
+      "scenario_id": "t6xt7_float_safe_rod_crush_vs_plate",
+      "model": "offense_armor_composition",
+      "target": {
+        "armor_class": "plate"
+      },
+      "original": {
+        "family": "rod",
+        "damage_type": "crush",
+        "output_per_hit": 100,
+        "hit_count": 1
+      },
+      "resulting": {
+        "family": "rod",
+        "damage_type": "crush",
+        "output_per_hit": 100,
+        "hit_count": 1
+      },
+      "dynamic_effects": [],
+      "expected": {
+        "original_final_response": 1.15,
+        "original_damage_per_hit": 115,
+        "original_total_damage": 115,
+        "resulting_final_response": 1.15,
+        "resulting_damage_per_hit": 115,
+        "resulting_total_damage": 115,
+        "raw_output_ratio": 1.0,
+        "response_ratio": 1.0,
+        "damage_ratio": 1.0,
+        "total_damage_delta": 0
+      }
+    }
+  ]
+}
