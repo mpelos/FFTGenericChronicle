@@ -1,0 +1,715 @@
+{
+  "schema_version": "job-concrete-v0",
+  "date": "2026-06-21",
+  "status": "accepted-concrete-provisional",
+  "acceptance_scope": "action-skill concrete-provisional values only; RSM deferred pending T2.1 populated incidence and formula v1",
+  "necromancer_anchor": {
+    "source": "Mystic bands reused as conservative provisional anchor because sim-inputs-v0.2.1 has no Necromancer record yet",
+    "armor_class": "cloth",
+    "growth_profile": "magical",
+    "equipment_posture": [
+      "book",
+      "pole",
+      "fists"
+    ],
+    "bands": {
+      "early": {
+        "hp": 112,
+        "pa": 2,
+        "ma": 6,
+        "spd": 6
+      },
+      "mid": {
+        "hp": 210,
+        "pa": 4,
+        "ma": 10,
+        "spd": 7
+      },
+      "late": {
+        "hp": 322,
+        "pa": 5,
+        "ma": 12,
+        "spd": 8
+      },
+      "stress": {
+        "hp": 390,
+        "pa": 6,
+        "ma": 14,
+        "spd": 9
+      }
+    }
+  },
+  "formula": {
+    "faith_damage_drain": "floor(round(K * MA * 0.60)) under the v0.2.1 Faith floor",
+    "hostile_status": "floor(round(base_hit * 0.60, 6))",
+    "percent_max_hp": "floor(round(percent_of_max_hp * max_hp, 6)); cap after guard",
+    "corpse_policy": "allow_acting_bodies=false; Corpse Puppet creates non-acting targetable object only",
+    "no_calculator_policy": "no arithmeticks selectors, no mapwide abstract targeting, no free global spell routing",
+    "drain_recovery": "floor(0.50 * amount); damage amount itself uses floor(round(K * MA * 0.60))",
+    "death_mark_fallback": "min(floor(round(0.20 * max_hp, 6)), 120); fallback is nonlethal",
+    "rounding_convention_confirmed": {
+      "faith_damage_drain": "round-to-nearest-int inside floor(round(K * MA * 0.60)); example K12*MA14*0.60=100.8 -> 101",
+      "half_recovery": "floor, not round; example 43 * 0.50 -> 21"
+    }
+  },
+  "top_physical_stress_reference": 415,
+  "black_mage_stress_references": {
+    "stress_tier_i_k14": 151,
+    "stress_tier_iv_k22": 238,
+    "stress_flare_k30": 324
+  },
+  "mystic_reference_values": {
+    "empowerment_stress_mp_damage": 42,
+    "invigoration_stress_damage": 84
+  },
+  "necromancer_actions": [
+    {
+      "skill": "Rot",
+      "kind": "poison_attrition",
+      "percent_max_hp_per_tick": 0.08,
+      "tick_count": 4,
+      "tick_interval": 12,
+      "per_tick_cap": 45,
+      "base_hit": 70,
+      "mp": 12,
+      "ct": 2,
+      "jp": 150,
+      "gate": "T3/T5/T9"
+    },
+    {
+      "skill": "Death Mark",
+      "kind": "delayed_conditional_lethal",
+      "countdown_ticks": 36,
+      "base_hit": 45,
+      "fallback_percent_max_hp": 0.2,
+      "fallback_cap": 120,
+      "lethal_hp_threshold_percent": 0.5,
+      "mp": 22,
+      "ct": 3,
+      "jp": 450,
+      "gate": "T4/T5/T8/T3"
+    },
+    {
+      "skill": "Drain",
+      "kind": "hp_drain",
+      "k": 12,
+      "drain_to_caster_ratio": 0.5,
+      "mp": 16,
+      "ct": 3,
+      "jp": 250,
+      "gate": "T3/T3xT5/F4/T9"
+    },
+    {
+      "skill": "Syphon",
+      "kind": "mp_drain",
+      "k": 6,
+      "drain_to_caster_ratio": 0.5,
+      "mp": 10,
+      "ct": 2,
+      "jp": 250,
+      "gate": "T9"
+    },
+    {
+      "skill": "Undead Mark",
+      "kind": "undead_mark",
+      "base_hit": 55,
+      "duration_ticks": 24,
+      "mp": 18,
+      "ct": 3,
+      "jp": 450,
+      "gate": "T3/T3xT5/T4/T5/T8"
+    },
+    {
+      "skill": "Corpse Puppet",
+      "kind": "corpse_object",
+      "requires_state": "KO",
+      "resolution_delay_ticks": 2,
+      "created_can_act": false,
+      "created_targetable": true,
+      "expires_after_ticks": 24,
+      "consumes_corpse": true,
+      "mp": 12,
+      "ct": 2,
+      "jp": 500,
+      "gate": "T3xT5xT8"
+    },
+    {
+      "skill": "Command Undead",
+      "kind": "undead_control",
+      "required_states": [
+        "Undead",
+        "Undead-marked"
+      ],
+      "base_hit": 40,
+      "duration_ticks": 12,
+      "created_action_grant": false,
+      "mp": 22,
+      "ct": 4,
+      "jp": 650,
+      "gate": "T4/T5/T8/T3xT5xT8"
+    },
+    {
+      "skill": "Gravebind",
+      "kind": "corpse_anchor_area_attrition",
+      "requires_anchor": [
+        "KO corpse",
+        "corpse puppet",
+        "undead-marked target"
+      ],
+      "percent_max_hp_per_tick": 0.06,
+      "tick_count": 3,
+      "tick_interval": 12,
+      "per_tick_cap": 35,
+      "max_targets": 3,
+      "mp": 24,
+      "ct": 4,
+      "jp": 600,
+      "gate": "T3xT5xT11/T11/T9"
+    },
+    {
+      "skill": "Dark Harvest",
+      "kind": "conditional_finisher_damage",
+      "precondition": "target has Rot, Death Mark, Undead Mark, or hp <= 30% max_hp",
+      "percent_max_hp_damage": 0.3,
+      "damage_cap": 140,
+      "base_hit": 70,
+      "boss_immune": true,
+      "mp": 34,
+      "ct": 4,
+      "jp": 900,
+      "gate": "T4/T5/T8/T3"
+    }
+  ],
+  "status_rows": [
+    {
+      "skill": "Rot",
+      "kind": "poison_attrition",
+      "base_hit": 70,
+      "effective_default_faith": 42,
+      "duration_or_countdown_ticks": null,
+      "ct": 2,
+      "mp": 12
+    },
+    {
+      "skill": "Death Mark",
+      "kind": "delayed_conditional_lethal",
+      "base_hit": 45,
+      "effective_default_faith": 27,
+      "duration_or_countdown_ticks": 36,
+      "ct": 3,
+      "mp": 22
+    },
+    {
+      "skill": "Undead Mark",
+      "kind": "undead_mark",
+      "base_hit": 55,
+      "effective_default_faith": 33,
+      "duration_or_countdown_ticks": 24,
+      "ct": 3,
+      "mp": 18
+    },
+    {
+      "skill": "Command Undead",
+      "kind": "undead_control",
+      "base_hit": 40,
+      "effective_default_faith": 24,
+      "duration_or_countdown_ticks": 12,
+      "ct": 4,
+      "mp": 22
+    },
+    {
+      "skill": "Dark Harvest",
+      "kind": "conditional_finisher_damage",
+      "base_hit": 70,
+      "effective_default_faith": 42,
+      "duration_or_countdown_ticks": null,
+      "ct": 4,
+      "mp": 34
+    }
+  ],
+  "drain_rows": [
+    {
+      "skill": "Drain",
+      "phase": "early",
+      "ma": 6,
+      "hp_damage": 43,
+      "caster_hp_recovery": 21,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Syphon",
+      "phase": "early",
+      "ma": 6,
+      "mp_damage": 22,
+      "caster_mp_recovery": 11,
+      "mp_damage_to_mystic_empowerment_if_stress": null
+    },
+    {
+      "skill": "Drain",
+      "phase": "mid",
+      "ma": 10,
+      "hp_damage": 72,
+      "caster_hp_recovery": 36,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Syphon",
+      "phase": "mid",
+      "ma": 10,
+      "mp_damage": 36,
+      "caster_mp_recovery": 18,
+      "mp_damage_to_mystic_empowerment_if_stress": null
+    },
+    {
+      "skill": "Drain",
+      "phase": "late",
+      "ma": 12,
+      "hp_damage": 86,
+      "caster_hp_recovery": 43,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Syphon",
+      "phase": "late",
+      "ma": 12,
+      "mp_damage": 43,
+      "caster_mp_recovery": 21,
+      "mp_damage_to_mystic_empowerment_if_stress": null
+    },
+    {
+      "skill": "Drain",
+      "phase": "stress",
+      "ma": 14,
+      "hp_damage": 101,
+      "caster_hp_recovery": 50,
+      "damage_to_black_tier_i_if_stress": 0.668874
+    },
+    {
+      "skill": "Syphon",
+      "phase": "stress",
+      "ma": 14,
+      "mp_damage": 50,
+      "caster_mp_recovery": 25,
+      "mp_damage_to_mystic_empowerment_if_stress": 1.190476
+    }
+  ],
+  "attrition_rows": [
+    {
+      "skill": "Rot",
+      "max_hp": 180,
+      "raw_tick": 14,
+      "tick_after_cap": 14,
+      "tick_count": 4,
+      "per_target_total": 56,
+      "max_targets": 1,
+      "max_total": 56,
+      "effective_hit": 42
+    },
+    {
+      "skill": "Gravebind",
+      "max_hp": 180,
+      "raw_tick": 10,
+      "tick_after_cap": 10,
+      "tick_count": 3,
+      "per_target_total": 30,
+      "max_targets": 3,
+      "max_total": 90,
+      "effective_hit": null
+    },
+    {
+      "skill": "Rot",
+      "max_hp": 390,
+      "raw_tick": 31,
+      "tick_after_cap": 31,
+      "tick_count": 4,
+      "per_target_total": 124,
+      "max_targets": 1,
+      "max_total": 124,
+      "effective_hit": 42
+    },
+    {
+      "skill": "Gravebind",
+      "max_hp": 390,
+      "raw_tick": 23,
+      "tick_after_cap": 23,
+      "tick_count": 3,
+      "per_target_total": 69,
+      "max_targets": 3,
+      "max_total": 207,
+      "effective_hit": null
+    },
+    {
+      "skill": "Rot",
+      "max_hp": 624,
+      "raw_tick": 49,
+      "tick_after_cap": 45,
+      "tick_count": 4,
+      "per_target_total": 180,
+      "max_targets": 1,
+      "max_total": 180,
+      "effective_hit": 42
+    },
+    {
+      "skill": "Gravebind",
+      "max_hp": 624,
+      "raw_tick": 37,
+      "tick_after_cap": 35,
+      "tick_count": 3,
+      "per_target_total": 105,
+      "max_targets": 3,
+      "max_total": 315,
+      "effective_hit": null
+    }
+  ],
+  "doom_expiry_rows": [
+    {
+      "max_hp": 180,
+      "current_hp_at_expiry": 70,
+      "lethal_threshold_50_percent": 90,
+      "outcome": "lethal_if_mark_persists_and_no_immunity",
+      "damage_or_ko_hp_delta": 70,
+      "nonlethal_fallback": false,
+      "countdown_ticks": 36,
+      "effective_initial_mark_hit": 27
+    },
+    {
+      "max_hp": 180,
+      "current_hp_at_expiry": 100,
+      "lethal_threshold_50_percent": 90,
+      "outcome": "fallback_damage_nonlethal",
+      "damage_or_ko_hp_delta": 36,
+      "nonlethal_fallback": true,
+      "countdown_ticks": 36,
+      "effective_initial_mark_hit": 27
+    },
+    {
+      "max_hp": 390,
+      "current_hp_at_expiry": 150,
+      "lethal_threshold_50_percent": 195,
+      "outcome": "lethal_if_mark_persists_and_no_immunity",
+      "damage_or_ko_hp_delta": 150,
+      "nonlethal_fallback": false,
+      "countdown_ticks": 36,
+      "effective_initial_mark_hit": 27
+    },
+    {
+      "max_hp": 624,
+      "current_hp_at_expiry": 300,
+      "lethal_threshold_50_percent": 312,
+      "outcome": "lethal_if_mark_persists_and_no_immunity",
+      "damage_or_ko_hp_delta": 300,
+      "nonlethal_fallback": false,
+      "countdown_ticks": 36,
+      "effective_initial_mark_hit": 27
+    },
+    {
+      "max_hp": 624,
+      "current_hp_at_expiry": 400,
+      "lethal_threshold_50_percent": 312,
+      "outcome": "fallback_damage_nonlethal",
+      "damage_or_ko_hp_delta": 120,
+      "nonlethal_fallback": true,
+      "countdown_ticks": 36,
+      "effective_initial_mark_hit": 27
+    }
+  ],
+  "dark_harvest_rows": [
+    {
+      "max_hp": 180,
+      "current_hp": 54,
+      "hp_threshold_30_percent": 54,
+      "eligible_by_hp_only": true,
+      "raw_30_percent_max_hp": 54,
+      "damage_after_cap": 54,
+      "would_ko_if_lands": true,
+      "effective_hit": 42
+    },
+    {
+      "max_hp": 390,
+      "current_hp": 117,
+      "hp_threshold_30_percent": 117,
+      "eligible_by_hp_only": true,
+      "raw_30_percent_max_hp": 117,
+      "damage_after_cap": 117,
+      "would_ko_if_lands": true,
+      "effective_hit": 42
+    },
+    {
+      "max_hp": 624,
+      "current_hp": 187,
+      "hp_threshold_30_percent": 187,
+      "eligible_by_hp_only": true,
+      "raw_30_percent_max_hp": 187,
+      "damage_after_cap": 140,
+      "would_ko_if_lands": false,
+      "effective_hit": 42
+    },
+    {
+      "max_hp": 624,
+      "current_hp": 300,
+      "hp_threshold_30_percent": 187,
+      "eligible_by_hp_only": false,
+      "raw_30_percent_max_hp": 187,
+      "damage_after_cap": 140,
+      "would_ko_if_lands": false,
+      "effective_hit": 42
+    }
+  ],
+  "corpse_puppet_rows": [
+    {
+      "scenario_id": "corpse_puppet_before_death_clock",
+      "target_state": "KO",
+      "death_clock_ticks": 5,
+      "resolution_delay_ticks": 2,
+      "targetable": true,
+      "reachable": true,
+      "line_of_effect": true,
+      "blocked_by_immunity": false,
+      "success": true,
+      "failure_reason": null,
+      "corpse_consumed": true,
+      "created_object": {
+        "can_act": false,
+        "targetable": true,
+        "expires_after_ticks": 24
+      },
+      "acting_body_suppressed": false
+    },
+    {
+      "scenario_id": "corpse_puppet_same_tick_unsafe",
+      "target_state": "KO",
+      "death_clock_ticks": 2,
+      "resolution_delay_ticks": 2,
+      "targetable": true,
+      "reachable": true,
+      "line_of_effect": true,
+      "blocked_by_immunity": false,
+      "success": false,
+      "failure_reason": "death_clock_expired_or_same_tick_unsafe",
+      "corpse_consumed": false,
+      "created_object": null,
+      "acting_body_suppressed": false
+    },
+    {
+      "scenario_id": "corpse_puppet_boss_immunity",
+      "target_state": "KO",
+      "death_clock_ticks": 5,
+      "resolution_delay_ticks": 2,
+      "targetable": true,
+      "reachable": true,
+      "line_of_effect": true,
+      "blocked_by_immunity": true,
+      "success": false,
+      "failure_reason": "immunity",
+      "corpse_consumed": false,
+      "created_object": null,
+      "acting_body_suppressed": false
+    },
+    {
+      "scenario_id": "corpse_puppet_wrong_state",
+      "target_state": "alive",
+      "death_clock_ticks": null,
+      "resolution_delay_ticks": 2,
+      "targetable": true,
+      "reachable": true,
+      "line_of_effect": true,
+      "blocked_by_immunity": false,
+      "success": false,
+      "failure_reason": "wrong_state",
+      "corpse_consumed": false,
+      "created_object": null,
+      "acting_body_suppressed": false
+    }
+  ],
+  "undead_healing_inversion_rows": [
+    {
+      "incoming_heal": 50,
+      "normal_target_delta": 50,
+      "undead_marked_target_delta": -50,
+      "gate": "T3/T3xT5",
+      "note": "Undead Mark inverts healing into damage while active; final item/Esuna cleanup policy deferred."
+    },
+    {
+      "incoming_heal": 108,
+      "normal_target_delta": 108,
+      "undead_marked_target_delta": -108,
+      "gate": "T3/T3xT5",
+      "note": "Undead Mark inverts healing into damage while active; final item/Esuna cleanup policy deferred."
+    },
+    {
+      "incoming_heal": 250,
+      "normal_target_delta": 250,
+      "undead_marked_target_delta": -250,
+      "gate": "T3/T3xT5",
+      "note": "Undead Mark inverts healing into damage while active; final item/Esuna cleanup policy deferred."
+    }
+  ],
+  "mp_sequences": {
+    "necromancer_late_dark_mix": {
+      "max_mp": 100,
+      "event_outcomes": [
+        {
+          "skill": "Rot",
+          "cost": 12,
+          "outcome": "success",
+          "mp_after": 88,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Drain",
+          "cost": 16,
+          "outcome": "success",
+          "mp_after": 72,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Undead Mark",
+          "cost": 18,
+          "outcome": "success",
+          "mp_after": 54,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Corpse Puppet",
+          "cost": 12,
+          "outcome": "success",
+          "mp_after": 42,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Dark Harvest",
+          "cost": 34,
+          "outcome": "success",
+          "mp_after": 8,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Death Mark",
+          "cost": 22,
+          "outcome": "fail_insufficient_mp",
+          "mp_after": 8,
+          "target_mp_after": null
+        }
+      ],
+      "final_mp": 8,
+      "total_paid": 92,
+      "total_recovered": 0,
+      "target_resource_lost": 0,
+      "successful_casts": 5,
+      "failed_casts": 1
+    },
+    "necromancer_syphon_target_depletion": {
+      "max_mp": 70,
+      "event_outcomes": [
+        {
+          "skill": "Syphon",
+          "cost": 10,
+          "outcome": "success_target_mp_damage_50_recover_25",
+          "mp_after": 70,
+          "target_mp_after": 40
+        },
+        {
+          "skill": "Syphon",
+          "cost": 10,
+          "outcome": "success_target_mp_damage_40_recover_20",
+          "mp_after": 70,
+          "target_mp_after": 0
+        },
+        {
+          "skill": "Syphon",
+          "cost": 10,
+          "outcome": "success_target_mp_damage_0_recover_0",
+          "mp_after": 60,
+          "target_mp_after": 0
+        }
+      ],
+      "final_mp": 60,
+      "total_paid": 30,
+      "total_recovered": 20,
+      "target_resource_lost": 90,
+      "successful_casts": 3,
+      "failed_casts": 0
+    }
+  },
+  "summary": {
+    "stress_drain_damage": 101,
+    "stress_drain_to_black_tier_i": 0.668874,
+    "stress_syphon_mp_damage": 50,
+    "stress_syphon_to_mystic_empowerment": 1.190476,
+    "rot_624_total_if_full_duration": 180,
+    "gravebind_624_three_target_full_duration": 315,
+    "dark_harvest_624_cap": 140,
+    "death_mark_effective_hit": 27,
+    "command_undead_effective_hit": 24,
+    "corpse_puppet_all_successes_create_can_act": false,
+    "arithmeticks_selectors_present": false,
+    "mystic_drain_pair_coexistence_watch": {
+      "risk": "Necromancer Drain/Syphon and Mystic Invigoration/Empowerment are near-duplicate drain mechanics on the same MA/cloth axis",
+      "necromancer_values": {
+        "Drain_K": 12,
+        "Syphon_K": 6
+      },
+      "mystic_values": {
+        "Invigoration_K": 10,
+        "Empowerment_K": 5
+      },
+      "moat_to_validate": "kit composition: Necromancer corpse/Death Mark/Dark Harvest/Gravebind vs Mystic Faith windows/control/Harmony",
+      "gate": "T2.1 populated incidence and F5 coexistence"
+    },
+    "gravebind_area_over_time_f5_watch": {
+      "stress_624_three_target_full_duration": 315,
+      "ratio_to_top_physical": 0.759036,
+      "category": "non-elemental percent max-HP area attrition over time",
+      "not_part_of_belief_oil_compound": true,
+      "reason": "Belief and Oil do not amplify Gravebind because it is outside the Faith/element damage band"
+    },
+    "undead_mark_state_inversion_note": {
+      "category": "state inversion, not damage amplification",
+      "effect": "healing on marked target becomes equal-magnitude damage while active",
+      "not_part_of_belief_oil_compound": true,
+      "watch": "battle-scoped and cleanseable cleanup policy still deferred"
+    }
+  },
+  "deferred": [
+    "RSM values for Necromancer pending T2.1 populated build incidence",
+    "real Necromancer stat/multiplier row and formula-v1 re-sim; current values use Mystic anchor",
+    "final book/pole/fists equipment coexistence against Mystic after real weapon data",
+    "drain-pair coexistence with Mystic, especially Drain/Syphon stacked with Invigoration/Empowerment",
+    "final Poison/Rot and Gravebind area/tick behavior after real-roster F5",
+    "Gravebind as a separate area-over-time percent-HP attrition vector outside the Belief/Oil/weak-element compound",
+    "final Doom/Death Mark immunity and cleanse policy after T4/T5/T8",
+    "final Undead Mark healing/revive inversion with item/support cleanup policy, tracked as state inversion rather than damage amplification",
+    "Corpse Puppet remains non-acting in V0; any acting body requires new T10 approval",
+    "Dark Harvest boss/immune policy and marked-target eligibility during F5",
+    "final acceptance until T1 Windows weapon dump and formula-balance v1"
+  ],
+  "claude_review": {
+    "reviewer": "claude-opus-4-8",
+    "date": "2026-06-21",
+    "verdict": "accepted as concrete-provisional action-skill values",
+    "numeric_regressions": 0,
+    "recomputed_from_gates": [
+      "F4 faith routine for drain damage",
+      "floor half recovery for drains",
+      "percent-HP guard for attrition and Death Mark fallback",
+      "T3xT5xT8 corpse policy with allow_acting_bodies=false",
+      "T9 MP sequences",
+      "status x0.60"
+    ],
+    "accepted_conditions": [
+      "formula block self-describes drain_recovery and death_mark_fallback",
+      "round-to-nearest-int damage and floor recovery conventions confirmed",
+      "Corpse Puppet creates no acting body",
+      "Drain/Syphon versus Mystic drain pair recorded as T2.1 coexistence watch",
+      "Gravebind recorded as separate area-over-time percent-HP vector outside Belief/Oil",
+      "Undead Mark recorded as state inversion rather than damage amplification"
+    ],
+    "remaining_gates": [
+      "T1 Windows weapon dump",
+      "formula-balance v1",
+      "real-roster F5",
+      "T2.1 populated incidence for RSM values",
+      "real Necromancer job row replacing Mystic proxy stats"
+    ]
+  }
+}
