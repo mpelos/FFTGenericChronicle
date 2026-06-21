@@ -1,0 +1,32 @@
+tools/build_vanilla_reference.py
+  s_fce6b25a5764ca::t_9968cf4a451e36 164,183,212
+  s_fce6b25a5764ca::t_1a748f71f5e5c3 661-662,687,796-806,819-820
+  s_fce6b25a5764ca::t_0754b70ad3562e 6,98-163,165-171,598-607,627-636,675-686,688-705,733,817-818,821-827,836-845
+  s_fce6b25a5764ca::t_26797ebc9746f3 641,770
+docs/job-balance/12-vanilla-skill-status-reference.md
+  s_fce6b25a5764ca::t_601a18ac8e3896 35-36,85-87
+  s_fce6b25a5764ca::t_9780d1aa57abbe 3-4,26-27,33-34,59-73,91,97-105
+docs/reference/fft-vanilla-ability-effect-index.md
+  s_fce6b25a5764ca::t_d65cd079955ab7 4,39-49,51-136
+  s_fce6b25a5764ca::t_e51469e43fc870 24-25,50
+docs/reference/fft-vanilla-status-effect-map.md
+  s_fce6b25a5764ca::t_e51469e43fc870 30-40,53-54
+  s_fce6b25a5764ca::t_0a634888846bb7 76,105,116
+  s_fce6b25a5764ca::t_d65cd079955ab7 4,51-52,55-61,106-115,117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "6f15880e7166109fae4eed4229575e13dbf00b23",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
