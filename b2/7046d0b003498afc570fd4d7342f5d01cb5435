@@ -1,0 +1,22 @@
+docs/job-balance/24-dragoon-samurai-v1-proposal.md
+  s_fce6b25a5764ca::t_ae2f879c159f61 1-2,4-36,40-66,70-78,80-82,84-91,93-129,133-178,189-294,296-337,343-359,373-383,385-387,390,398-413,416-417,421-522,524-528,530-539,541,545-574,576,578-591,602
+  s_fce6b25a5764ca::t_b2034752c9308a 3,37-39,67-69,79,83,92,130-132,179-188,295,338-342,360-372,384,388-389,391-397,414-415,418-420,523,529,540,542-544,575,577,592-601,603-605
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_2b7cc527baa747 47,204-226,352-354,356,358-360,366-367,435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "b27046d0b003498afc570fd4d7342f5d01cb5435",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
