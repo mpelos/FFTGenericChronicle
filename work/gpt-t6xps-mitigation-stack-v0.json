@@ -1,0 +1,273 @@
+{
+  "scenario_count": 14,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t6xps_base_plate_sword_neutral",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.65,
+        "bounded_response": 0.65,
+        "damage_per_hit": 65,
+        "visible_damage_per_hit": 65,
+        "total_damage": 65,
+        "visible_total_damage": 65
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_cloth_shell_element_resist",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 1.0,
+        "effective_penetration": 0.0,
+        "penetrated_response": 1.0,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.3335,
+        "bounded_response": 0.3335,
+        "damage_per_hit": 33,
+        "visible_damage_per_hit": 33,
+        "total_damage": 33,
+        "visible_total_damage": 33
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_high_clamp_plate_fists_weak_good_zodiac",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 1.15,
+        "effective_penetration": 0.15,
+        "penetrated_response": 1.15,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.5,
+        "zodiac_multiplier": 1.5,
+        "combined_response": 2.5875,
+        "bounded_response": 2.5,
+        "damage_per_hit": 250,
+        "visible_damage_per_hit": 250,
+        "total_damage": 250,
+        "visible_total_damage": 250
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_low_clamp_plate_protect_resist_bad_zodiac",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.162581,
+        "bounded_response": 0.25,
+        "damage_per_hit": 25,
+        "visible_damage_per_hit": 25,
+        "total_damage": 25,
+        "visible_total_damage": 25
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_multi_hit_chip_floor_wall_resist",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.444889,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.108442,
+        "bounded_response": 0.25,
+        "damage_per_hit": 0,
+        "visible_damage_per_hit": 1,
+        "total_damage": 0,
+        "visible_total_damage": 2
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_penetration_bonus_clamp_gun_plate_protect",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 1.0,
+        "penetrated_response": 1.1,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.7337,
+        "bounded_response": 0.7337,
+        "damage_per_hit": 73,
+        "visible_damage_per_hit": 73,
+        "total_damage": 73,
+        "visible_total_damage": 73
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_penetration_bonus_subcap_longbow_plate",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 0.35,
+        "penetrated_response": 0.905,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.905,
+        "bounded_response": 0.905,
+        "damage_per_hit": 90,
+        "visible_damage_per_hit": 90,
+        "total_damage": 90,
+        "visible_total_damage": 90
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_penetration_not_lower_plate_crush_protect",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 1.15,
+        "effective_penetration": 0.15,
+        "penetrated_response": 1.15,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.76705,
+        "bounded_response": 0.76705,
+        "damage_per_hit": 76,
+        "visible_damage_per_hit": 76,
+        "total_damage": 76,
+        "visible_total_damage": 76
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_penetration_then_protect_crossbow_plate",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.8,
+        "effective_penetration": 0.35,
+        "penetrated_response": 0.905,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.603635,
+        "bounded_response": 0.603635,
+        "damage_per_hit": 60,
+        "visible_damage_per_hit": 60,
+        "total_damage": 60,
+        "visible_total_damage": 60
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_protect_plate_sword",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.43355,
+        "bounded_response": 0.43355,
+        "damage_per_hit": 43,
+        "visible_damage_per_hit": 43,
+        "total_damage": 43,
+        "visible_total_damage": 43
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_shell_plate_sword",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.43355,
+        "bounded_response": 0.43355,
+        "damage_per_hit": 43,
+        "visible_damage_per_hit": 43,
+        "total_damage": 43,
+        "visible_total_damage": 43
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_single_final_clamp_order_guard",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 1.5,
+        "combined_response": 0.325163,
+        "bounded_response": 0.325163,
+        "damage_per_hit": 32,
+        "visible_damage_per_hit": 32,
+        "total_damage": 32,
+        "visible_total_damage": 32
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_wall_both_plate_sword",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.444889,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.289178,
+        "bounded_response": 0.289178,
+        "damage_per_hit": 28,
+        "visible_damage_per_hit": 28,
+        "total_damage": 28,
+        "visible_total_damage": 28
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t6xps_zero_pressure_no_chip",
+      "model": "mitigation_stack",
+      "calculated_fields": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.162581,
+        "bounded_response": 0.25,
+        "damage_per_hit": 0,
+        "visible_damage_per_hit": 0,
+        "total_damage": 0,
+        "visible_total_damage": 0
+      },
+      "validation_errors": []
+    }
+  ]
+}

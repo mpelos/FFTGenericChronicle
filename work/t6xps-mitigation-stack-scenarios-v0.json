@@ -1,0 +1,561 @@
+{
+  "schema_version": "t6xps-mitigation-stack-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/13-armor-response-model-schema.md",
+    "docs/job-balance/30-roster-completion-and-infra-sprint-plan.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/33-mitigation-stack-composition-schema.md",
+    "docs/formula-balance/10-mitigation-and-scaling-policy-v0.md",
+    "docs/formula-balance/11-validated-policy-v0.2.md",
+    "work/sim-inputs-v0.2.1.json"
+  ],
+  "formula_contract": {
+    "normalization": "per_application_per_hit",
+    "base_response": "armor_response[armor_class][damage_type]",
+    "effective_penetration": "clamp(family_penetration + penetration_bonus, 0.0, 1.0)",
+    "penetration_formula": "base + effective_penetration*(penetration_ceiling-base) if base<penetration_ceiling else base",
+    "penetration_ceiling": 1.1,
+    "mitigation_multiplier": "product(active mitigation layer multipliers)",
+    "element_multiplier": "element multiplier or 1.0",
+    "zodiac_multiplier": "zodiac multiplier or 1.0",
+    "combined_response": "penetrated_response * mitigation_multiplier * element_multiplier * zodiac_multiplier",
+    "combined_multiplier_clamp": [
+      0.25,
+      2.5
+    ],
+    "bounded_response": "clamp(combined_response, combined_multiplier_clamp[0], combined_multiplier_clamp[1])",
+    "damage_per_hit": "floor(round(base_pressure_per_hit * bounded_response, 6))",
+    "visible_damage_per_hit": "max(chip_floor, damage_per_hit) if base_pressure_per_hit > 0 else 0",
+    "total_damage": "damage_per_hit * hit_count",
+    "visible_total_damage": "visible_damage_per_hit * hit_count",
+    "single_final_clamp": true,
+    "chip_floor": 1,
+    "numeric_comparison": {
+      "float_decimals": 6
+    }
+  },
+  "armor_response": {
+    "plate": {
+      "swing": 0.65,
+      "thrust": 0.65,
+      "crush": 1.15,
+      "missile": 0.8
+    },
+    "mail": {
+      "swing": 0.75,
+      "thrust": 1.1,
+      "crush": 0.95,
+      "missile": 1.1
+    },
+    "leather": {
+      "swing": 0.95,
+      "thrust": 0.95,
+      "crush": 1.0,
+      "missile": 0.95
+    },
+    "cloth": {
+      "swing": 1.0,
+      "thrust": 1.0,
+      "crush": 1.0,
+      "missile": 1.0
+    }
+  },
+  "family_penetration": {
+    "sword": 0.0,
+    "knight_sword": 0.0,
+    "katana": 0.0,
+    "knife": 0.1,
+    "ninja_blade": 0.0,
+    "longbow": 0.15,
+    "crossbow": 0.35,
+    "gun": 0.7,
+    "spear": 0.1,
+    "staff": 0.0,
+    "rod": 0.0,
+    "pole": 0.0,
+    "axe": 0.0,
+    "flail": 0.0,
+    "fists": 0.15,
+    "instrument": 0.0,
+    "book": 0.0,
+    "cloth_weapon": 0.0,
+    "bag": 0.0
+  },
+  "mitigation_layers": {
+    "protect": 0.667,
+    "shell": 0.667
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t6xps_base_plate_sword_neutral",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [],
+      "element": {
+        "kind": "neutral",
+        "multiplier": 1.0
+      },
+      "zodiac": {
+        "kind": "neutral",
+        "multiplier": 1.0
+      },
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.65,
+        "bounded_response": 0.65,
+        "damage_per_hit": 65,
+        "visible_damage_per_hit": 65,
+        "total_damage": 65,
+        "visible_total_damage": 65
+      }
+    },
+    {
+      "scenario_id": "t6xps_protect_plate_sword",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.43355,
+        "bounded_response": 0.43355,
+        "damage_per_hit": 43,
+        "visible_damage_per_hit": 43,
+        "total_damage": 43,
+        "visible_total_damage": 43
+      }
+    },
+    {
+      "scenario_id": "t6xps_shell_plate_sword",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "shell"
+      ],
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.43355,
+        "bounded_response": 0.43355,
+        "damage_per_hit": 43,
+        "visible_damage_per_hit": 43,
+        "total_damage": 43,
+        "visible_total_damage": 43
+      }
+    },
+    {
+      "scenario_id": "t6xps_wall_both_plate_sword",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect",
+        "shell"
+      ],
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.444889,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.289178,
+        "bounded_response": 0.289178,
+        "damage_per_hit": 28,
+        "visible_damage_per_hit": 28,
+        "total_damage": 28,
+        "visible_total_damage": 28
+      }
+    },
+    {
+      "scenario_id": "t6xps_low_clamp_plate_protect_resist_bad_zodiac",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "element": {
+        "kind": "resist",
+        "multiplier": 0.5
+      },
+      "zodiac": {
+        "kind": "bad",
+        "multiplier": 0.75
+      },
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.162581,
+        "bounded_response": 0.25,
+        "damage_per_hit": 25,
+        "visible_damage_per_hit": 25,
+        "total_damage": 25,
+        "visible_total_damage": 25
+      }
+    },
+    {
+      "scenario_id": "t6xps_single_final_clamp_order_guard",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "element": {
+        "kind": "resist",
+        "multiplier": 0.5
+      },
+      "zodiac": {
+        "kind": "good",
+        "multiplier": 1.5
+      },
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 1.5,
+        "combined_response": 0.325163,
+        "bounded_response": 0.325163,
+        "damage_per_hit": 32,
+        "visible_damage_per_hit": 32,
+        "total_damage": 32,
+        "visible_total_damage": 32
+      }
+    },
+    {
+      "scenario_id": "t6xps_high_clamp_plate_fists_weak_good_zodiac",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "fists",
+        "damage_type": "crush",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "element": {
+        "kind": "weak",
+        "multiplier": 1.5
+      },
+      "zodiac": {
+        "kind": "good",
+        "multiplier": 1.5
+      },
+      "expected": {
+        "base_response": 1.15,
+        "effective_penetration": 0.15,
+        "penetrated_response": 1.15,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.5,
+        "zodiac_multiplier": 1.5,
+        "combined_response": 2.5875,
+        "bounded_response": 2.5,
+        "damage_per_hit": 250,
+        "visible_damage_per_hit": 250,
+        "total_damage": 250,
+        "visible_total_damage": 250
+      }
+    },
+    {
+      "scenario_id": "t6xps_penetration_then_protect_crossbow_plate",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "crossbow",
+        "damage_type": "missile",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "expected": {
+        "base_response": 0.8,
+        "effective_penetration": 0.35,
+        "penetrated_response": 0.905,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.603635,
+        "bounded_response": 0.603635,
+        "damage_per_hit": 60,
+        "visible_damage_per_hit": 60,
+        "total_damage": 60,
+        "visible_total_damage": 60
+      }
+    },
+    {
+      "scenario_id": "t6xps_penetration_bonus_subcap_longbow_plate",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "longbow",
+        "damage_type": "missile",
+        "penetration_bonus": 0.2,
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "expected": {
+        "base_response": 0.8,
+        "effective_penetration": 0.35,
+        "penetrated_response": 0.905,
+        "mitigation_multiplier": 1.0,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.905,
+        "bounded_response": 0.905,
+        "damage_per_hit": 90,
+        "visible_damage_per_hit": 90,
+        "total_damage": 90,
+        "visible_total_damage": 90
+      }
+    },
+    {
+      "scenario_id": "t6xps_penetration_bonus_clamp_gun_plate_protect",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "gun",
+        "damage_type": "missile",
+        "penetration_bonus": 0.5,
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "expected": {
+        "base_response": 0.8,
+        "effective_penetration": 1.0,
+        "penetrated_response": 1.1,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.7337,
+        "bounded_response": 0.7337,
+        "damage_per_hit": 73,
+        "visible_damage_per_hit": 73,
+        "total_damage": 73,
+        "visible_total_damage": 73
+      }
+    },
+    {
+      "scenario_id": "t6xps_multi_hit_chip_floor_wall_resist",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 2,
+        "hit_count": 2
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect",
+        "shell"
+      ],
+      "element": {
+        "kind": "resist",
+        "multiplier": 0.5
+      },
+      "zodiac": {
+        "kind": "bad",
+        "multiplier": 0.75
+      },
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.444889,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.108442,
+        "bounded_response": 0.25,
+        "damage_per_hit": 0,
+        "visible_damage_per_hit": 1,
+        "total_damage": 0,
+        "visible_total_damage": 2
+      }
+    },
+    {
+      "scenario_id": "t6xps_cloth_shell_element_resist",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "cloth"
+      },
+      "mitigation": [
+        "shell"
+      ],
+      "element": {
+        "kind": "resist",
+        "multiplier": 0.5
+      },
+      "expected": {
+        "base_response": 1.0,
+        "effective_penetration": 0.0,
+        "penetrated_response": 1.0,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.3335,
+        "bounded_response": 0.3335,
+        "damage_per_hit": 33,
+        "visible_damage_per_hit": 33,
+        "total_damage": 33,
+        "visible_total_damage": 33
+      }
+    },
+    {
+      "scenario_id": "t6xps_penetration_not_lower_plate_crush_protect",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "fists",
+        "damage_type": "crush",
+        "base_pressure_per_hit": 100,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "expected": {
+        "base_response": 1.15,
+        "effective_penetration": 0.15,
+        "penetrated_response": 1.15,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 1.0,
+        "zodiac_multiplier": 1.0,
+        "combined_response": 0.76705,
+        "bounded_response": 0.76705,
+        "damage_per_hit": 76,
+        "visible_damage_per_hit": 76,
+        "total_damage": 76,
+        "visible_total_damage": 76
+      }
+    },
+    {
+      "scenario_id": "t6xps_zero_pressure_no_chip",
+      "model": "mitigation_stack",
+      "attack": {
+        "weapon_family": "sword",
+        "damage_type": "swing",
+        "base_pressure_per_hit": 0,
+        "hit_count": 1
+      },
+      "target": {
+        "armor_class": "plate"
+      },
+      "mitigation": [
+        "protect"
+      ],
+      "element": {
+        "kind": "resist",
+        "multiplier": 0.5
+      },
+      "zodiac": {
+        "kind": "bad",
+        "multiplier": 0.75
+      },
+      "expected": {
+        "base_response": 0.65,
+        "effective_penetration": 0.0,
+        "penetrated_response": 0.65,
+        "mitigation_multiplier": 0.667,
+        "element_multiplier": 0.5,
+        "zodiac_multiplier": 0.75,
+        "combined_response": 0.162581,
+        "bounded_response": 0.25,
+        "damage_per_hit": 0,
+        "visible_damage_per_hit": 0,
+        "total_damage": 0,
+        "visible_total_damage": 0
+      }
+    }
+  ]
+}
