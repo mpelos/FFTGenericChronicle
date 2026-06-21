@@ -1,0 +1,216 @@
+{
+  "schema_version": "campaign-validation-readiness-v0",
+  "status": "accepted_authoritative_campaign_readiness_map",
+  "date": "2026-06-21",
+  "claude_review": {
+    "verdict": "accepted",
+    "date": "2026-06-21",
+    "required_changes": [],
+    "summary": "Accepted as the authoritative campaign readiness map after R1-R4 and r1-r3 were applied; W2 Campaign Journey Bundle V0 is cleared to draft."
+  },
+  "purpose": "Authoritative readiness map between accepted concrete-provisional job work and the full campaign validation goal.",
+  "milestone_state": {
+    "generic_job_design_roster": "complete",
+    "concrete_provisional_formula_sensitive_clusters": "complete",
+    "final_acceptance": "pending_physical_concrete_values_a2_rsm_t1_formula_v1_f5_t2_1"
+  },
+  "accepted_concrete_clusters": [
+    "docs/job-balance/42-white-black-mage-concrete-v0.md",
+    "docs/job-balance/43-summoner-geomancer-concrete-v0.md",
+    "docs/job-balance/44-time-mystic-concrete-v0.md",
+    "docs/job-balance/45-necromancer-concrete-v0.md",
+    "docs/job-balance/46-bard-dancer-concrete-v0.md"
+  ],
+  "work_package_crosswalk": [
+    {
+      "id": "W1",
+      "name": "Formula-v1 data",
+      "maps_to": ["T1", "formula-v1"],
+      "purpose": "Replace WotL-fallback formula inputs and stress references.",
+      "can_start_now": false
+    },
+    {
+      "id": "W2",
+      "name": "Campaign Journey Bundle V0",
+      "maps_to": ["A1", "A3", "requires_A5"],
+      "purpose": "Pin provisional 4-generics-plus-Ramza rows for P0/P1/P5/P2/P3/P4/P6.",
+      "can_start_now": true,
+      "must_include_encounter_anchor": true,
+      "dual_independent_ceiling_stack_required": true
+    },
+    {
+      "id": "W3",
+      "name": "Progression And Build Input Producers",
+      "maps_to": ["A2", "physical_foundation_concrete_values", "candidate_RSM_values"],
+      "purpose": "Produce prerequisite, JP, equipment, physical action, and RSM data consumed by T2.1/F5.",
+      "can_start_now": true
+    },
+    {
+      "id": "W4",
+      "name": "T2.1 Populated Incidence",
+      "maps_to": ["A2_incidence", "RSM_incidence"],
+      "purpose": "Detect mandatory supports, movement defaults, and cross-job convergence.",
+      "can_start_now": false
+    },
+    {
+      "id": "W5",
+      "name": "Real-Roster F5 Sweep",
+      "maps_to": ["F5"],
+      "purpose": "Test damage, sustain, control, mobility, and safety/risk on actual rows.",
+      "can_start_now": false
+    },
+    {
+      "id": "W6",
+      "name": "Risk And Adjustment Report",
+      "maps_to": ["A4", "risk_register"],
+      "purpose": "Convert W4/W5 evidence into tuning, prerequisite, JP, or skill-change recommendations.",
+      "can_start_now": false
+    }
+  ],
+  "primary_quantified_f5_vector": {
+    "name": "Belief x Oil x fire-weak area damage",
+    "layers": {
+      "Belief": 1.15,
+      "Oil_fire_weakness": 2.0,
+      "combined": 2.3
+    },
+    "constructible_chain": [
+      "Mystic Belief",
+      "Geomancer Magma Surge / Oil terrain setup",
+      "Summoner Ifrit or Salamander"
+    ],
+    "rows": [
+      {
+        "skill": "Ifrit",
+        "neutral_3_target_total": 243,
+        "weak_oil_x2_total": 486,
+        "belief_weak_oil_total": 558,
+        "ratio_vs_415": 1.345
+      },
+      {
+        "skill": "Salamander",
+        "neutral_3_target_total": 297,
+        "weak_oil_x2_total": 594,
+        "belief_weak_oil_total": 681,
+        "ratio_vs_415": 1.641
+      }
+    ],
+    "authorized_first_levers_if_fails": [
+      "per_cast_ceiling",
+      "diminishing_per_target_scaling",
+      "lower_fire_summon_k_values",
+      "stricter_terrain_oil_availability"
+    ]
+  },
+  "other_f5_watch_rows": [
+    {
+      "row": "Bahamut, 3 targets",
+      "value": 405,
+      "ratio": 0.976,
+      "reference": 415
+    },
+    {
+      "row": "Meteor, 3 targets",
+      "value": 402,
+      "ratio": 0.969,
+      "reference": 415
+    },
+    {
+      "row": "Life's Anthem, HP 624 cap 3",
+      "value": 384,
+      "ratio": 0.948,
+      "reference": 405
+    },
+    {
+      "row": "Gravebind area attrition",
+      "value": 315,
+      "ratio": 0.759,
+      "reference": 415,
+      "category": "non_elemental_percent_hp_attrition_not_faith_or_oil_amplified"
+    },
+    {
+      "row": "Undead Mark healing inversion",
+      "value": "state_inversion",
+      "ratio": null,
+      "category": "state_semantics_not_damage_amplification"
+    }
+  ],
+  "risk_register": [
+    {
+      "priority": 1,
+      "risk": "Belief/Oil/fire-weak area compound",
+      "required_proof": "W5 F5 cluster rows"
+    },
+    {
+      "priority": 2,
+      "risk": "JP Boost acceleration",
+      "required_proof": "W2/W3/W4 with and without JP Boost"
+    },
+    {
+      "priority": 3,
+      "risk": "Time Mage systemic compression",
+      "required_proof": "T5/T10/T2.1/F5"
+    },
+    {
+      "priority": 4,
+      "risk": "Caster economy convergence",
+      "required_proof": "T9/T10/F4/T2.1"
+    },
+    {
+      "priority": 5,
+      "risk": "Mitigation stack",
+      "required_proof": "T6xPS plus Band C rows"
+    },
+    {
+      "priority": 6,
+      "risk": "Early physical full-package",
+      "required_proof": "W2 Band B/C ceiling rows and Full-Package Rule checks"
+    },
+    {
+      "priority": 7,
+      "risk": "Late physical support convergence",
+      "required_proof": "T2.1 and F5 physical-heavy rows"
+    },
+    {
+      "priority": 8,
+      "risk": "Equipment-tier breakpoints",
+      "required_proof": "A2/W3 plus F5 real-roster re-sim"
+    },
+    {
+      "priority": 9,
+      "risk": "Mobility convergence",
+      "required_proof": "T2.1 movement incidence"
+    },
+    {
+      "priority": 10,
+      "risk": "Sustain compression",
+      "required_proof": "T3/T3xT5/T3xT5xT11 plus W5 sustain axis"
+    },
+    {
+      "priority": 11,
+      "risk": "Late-job replacement pressure",
+      "required_proof": "Band E W5 comparisons"
+    },
+    {
+      "priority": 12,
+      "risk": "Bard/Dancer global performance",
+      "required_proof": "T11xT5/T3xT5xT11 plus P6 row"
+    }
+  ],
+  "ramza_dominance_rows_required": [
+    "0/A: Ramza flexible but not invalidating Squire/Chemist floor roles",
+    "B: Ramza not beating first specialists in their lanes",
+    "C: Ramza not outclassing midgame branch identity",
+    "D: Ramza not erasing advanced identities",
+    "E: final Ramza top-tier broad but older specialists still rational"
+  ],
+  "next_cleared_step_if_approved": "draft Campaign Journey Bundle V0",
+  "claude_review_request": [
+    "Are R1-R4 fully addressed?",
+    "Does the W-to-A crosswalk avoid forking doc 31?",
+    "Are producer steps for physical concrete values, A2, and RSM explicit?",
+    "Does the risk register restore all accepted doc 31 risks?",
+    "Does the Belief/Oil/fire matrix remain correct?",
+    "Can this become the authoritative readiness map before W2?"
+  ]
+}
