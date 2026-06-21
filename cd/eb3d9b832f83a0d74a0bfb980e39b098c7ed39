@@ -1,0 +1,33 @@
+docs/job-balance/10-healing-attrition-model-schema.md
+  s_fce6b25a5764ca::t_b8a31ea4af0bfd 1-2,4-86,88-96,101-113,115-121,123-127,133-134,136-138,140-141,155,159-172,174-221
+  s_fce6b25a5764ca::t_6e74ca4cb91d53 131-132,135,142-144
+  s_fce6b25a5764ca::t_b5fa6138e00eb6 87,97-100,114,122,128-130,139,145-154,156-158,173
+  s_fce6b25a5764ca::t_217859c0b93ad4 3,222
+tools/check_healing_attrition.py
+  s_fce6b25a5764ca::t_217859c0b93ad4 1-129
+work/gpt-t3-healing-attrition-v0.json
+  s_fce6b25a5764ca::t_f1f24b550a6720 1-139
+work/t3-healing-attrition-scenarios-v0.json
+  s_fce6b25a5764ca::t_6e74ca4cb91d53 34-35,37
+  s_fce6b25a5764ca::t_b8a31ea4af0bfd 1-2,4-29,53-347,382-429
+  s_fce6b25a5764ca::t_217859c0b93ad4 3
+  s_fce6b25a5764ca::t_b5fa6138e00eb6 30-33,36,38-52,348-381
+.gitignore
+  s_fce6b25a5764ca::t_217859c0b93ad4 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "cdeb3d9b832f83a0d74a0bfb980e39b098c7ed39",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
