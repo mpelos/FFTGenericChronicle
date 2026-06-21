@@ -1,0 +1,1231 @@
+{
+  "schema_version": "job-concrete-v0",
+  "date": "2026-06-21",
+  "status": "accepted-concrete-provisional",
+  "acceptance_scope": "action-skill concrete-provisional values only; RSM deferred pending T2.1 populated incidence and formula v1",
+  "formula": {
+    "time_meteor": "floor(round(K * MA * max(0.60, casterFaith * targetFaith / 10000)) * ordinary_layers)",
+    "gravity": "floor(round(percent_of_current_hp * current_hp, 6)); cap after guard; nonlethal at 1 HP",
+    "tempo_window": "turns over a 24-tick window from current_ct=40 using rounded speed multipliers",
+    "status_accuracy": "effective_status = floor(round(base_hit * 0.60, 6)) for hostile default-Faith rows",
+    "faith_window_layers": {
+      "Belief": 1.15,
+      "Disbelief": 0.8
+    },
+    "quick_policy": {
+      "party_grant_cap": 1,
+      "per_target_grant_cap": 1,
+      "block_granted_action_grants": true
+    }
+  },
+  "top_physical_stress_reference": 415,
+  "black_mage_stress_references": {
+    "stress_tier_i_k14": 151,
+    "stress_tier_iv_k22": 238,
+    "stress_flare_k30": 324
+  },
+  "summoner_references": {
+    "bahamut_stress_per_target": 135,
+    "bahamut_three_target_total": 405
+  },
+  "time_actions": [
+    {
+      "skill": "Haste",
+      "kind": "tempo_buff",
+      "speed_multiplier": 1.5,
+      "duration_ticks": 24,
+      "mp": 8,
+      "ct": 2,
+      "jp": 100,
+      "target": "ally",
+      "base_hit": 100,
+      "gate": "T5/T9"
+    },
+    {
+      "skill": "Hasteja",
+      "kind": "tempo_buff_area",
+      "speed_multiplier": 1.5,
+      "duration_ticks": 24,
+      "mp": 26,
+      "ct": 5,
+      "jp": 600,
+      "target": "allies_area",
+      "max_targets": 3,
+      "base_hit": 100,
+      "gate": "T5/T11/T9"
+    },
+    {
+      "skill": "Slow",
+      "kind": "tempo_debuff",
+      "speed_multiplier": 0.67,
+      "duration_ticks": 24,
+      "mp": 8,
+      "ct": 2,
+      "jp": 80,
+      "target": "enemy",
+      "base_hit": 80,
+      "gate": "T4/T5/T9"
+    },
+    {
+      "skill": "Slowja",
+      "kind": "tempo_debuff_area",
+      "speed_multiplier": 0.67,
+      "duration_ticks": 24,
+      "mp": 26,
+      "ct": 5,
+      "jp": 600,
+      "target": "enemies_area",
+      "max_targets": 3,
+      "base_hit": 65,
+      "gate": "T4/T5/T11/T9"
+    },
+    {
+      "skill": "Stop",
+      "kind": "hard_tempo_stop",
+      "ct_freeze_ticks": 12,
+      "mp": 20,
+      "ct": 3,
+      "jp": 350,
+      "target": "enemy",
+      "base_hit": 45,
+      "gate": "T4/T5/T9"
+    },
+    {
+      "skill": "Immobilize",
+      "kind": "movement_lock",
+      "duration_ticks": 24,
+      "mp": 8,
+      "ct": 2,
+      "jp": 100,
+      "target": "enemy",
+      "base_hit": 85,
+      "gate": "T4/T5/T9"
+    },
+    {
+      "skill": "Float",
+      "kind": "terrain_utility",
+      "duration_ticks": 36,
+      "mp": 10,
+      "ct": 1,
+      "jp": 200,
+      "target": "ally",
+      "base_hit": 100,
+      "gate": "T5/T11/T9"
+    },
+    {
+      "skill": "Reflect",
+      "kind": "reflect_routing",
+      "duration_ticks": 24,
+      "mp": 16,
+      "ct": 2,
+      "jp": 300,
+      "target": "unit",
+      "ally_base_hit": 100,
+      "enemy_base_hit": 60,
+      "gate": "T8xSR/T5/T9"
+    },
+    {
+      "skill": "Quick",
+      "kind": "action_grant",
+      "mp": 42,
+      "ct": 4,
+      "jp": 900,
+      "target": "ally_or_self",
+      "base_hit": 100,
+      "party_grant_cap": 1,
+      "per_target_grant_cap": 1,
+      "block_granted_action_grants": true,
+      "gate": "T10/T5/T9"
+    },
+    {
+      "skill": "Gravity",
+      "kind": "percent_current_hp",
+      "percent_current_hp": 0.25,
+      "per_target_cap": 120,
+      "nonlethal": true,
+      "mp": 20,
+      "ct": 3,
+      "jp": 250,
+      "target": "enemy",
+      "gate": "T3/T5/T9"
+    },
+    {
+      "skill": "Graviga",
+      "kind": "percent_current_hp_area",
+      "percent_current_hp": 0.2,
+      "per_target_cap": 90,
+      "nonlethal": true,
+      "mp": 36,
+      "ct": 5,
+      "jp": 550,
+      "target": "enemies_area",
+      "max_targets": 3,
+      "gate": "T3/T5/T11/T9"
+    },
+    {
+      "skill": "Meteor",
+      "kind": "damage_area",
+      "k": 14,
+      "mp": 58,
+      "ct": 10,
+      "jp": 900,
+      "target": "all_units_area_unsafe",
+      "max_targets": 3,
+      "expected_targets": 1.8,
+      "gate": "F4/T5/T11/T9"
+    }
+  ],
+  "time_meteor_phase_rows": [
+    {
+      "skill": "Meteor",
+      "phase": "early",
+      "ma": 6,
+      "k": 14,
+      "per_target": 50,
+      "expected_targets": 1.8,
+      "expected_total": 90.0,
+      "max_targets": 3,
+      "max_total": 150
+    },
+    {
+      "skill": "Meteor",
+      "phase": "mid",
+      "ma": 10,
+      "k": 14,
+      "per_target": 84,
+      "expected_targets": 1.8,
+      "expected_total": 151.2,
+      "max_targets": 3,
+      "max_total": 252
+    },
+    {
+      "skill": "Meteor",
+      "phase": "late",
+      "ma": 13,
+      "k": 14,
+      "per_target": 109,
+      "expected_targets": 1.8,
+      "expected_total": 196.2,
+      "max_targets": 3,
+      "max_total": 327
+    },
+    {
+      "skill": "Meteor",
+      "phase": "stress",
+      "ma": 16,
+      "k": 14,
+      "per_target": 134,
+      "expected_targets": 1.8,
+      "expected_total": 241.2,
+      "max_targets": 3,
+      "max_total": 402,
+      "max_total_to_top_physical": 0.968675,
+      "max_total_to_bahamut_total": 0.992593
+    }
+  ],
+  "time_percent_hp_rows": [
+    {
+      "skill": "Gravity",
+      "current_hp": 180,
+      "raw_percent": 45,
+      "per_target_after_cap": 45,
+      "max_targets": 1,
+      "max_total": 45,
+      "nonlethal": true
+    },
+    {
+      "skill": "Graviga",
+      "current_hp": 180,
+      "raw_percent": 36,
+      "per_target_after_cap": 36,
+      "max_targets": 3,
+      "max_total": 108,
+      "nonlethal": true
+    },
+    {
+      "skill": "Gravity",
+      "current_hp": 390,
+      "raw_percent": 97,
+      "per_target_after_cap": 97,
+      "max_targets": 1,
+      "max_total": 97,
+      "nonlethal": true
+    },
+    {
+      "skill": "Graviga",
+      "current_hp": 390,
+      "raw_percent": 78,
+      "per_target_after_cap": 78,
+      "max_targets": 3,
+      "max_total": 234,
+      "nonlethal": true
+    },
+    {
+      "skill": "Gravity",
+      "current_hp": 624,
+      "raw_percent": 156,
+      "per_target_after_cap": 120,
+      "max_targets": 1,
+      "max_total": 120,
+      "nonlethal": true
+    },
+    {
+      "skill": "Graviga",
+      "current_hp": 624,
+      "raw_percent": 124,
+      "per_target_after_cap": 90,
+      "max_targets": 3,
+      "max_total": 270,
+      "nonlethal": true
+    }
+  ],
+  "time_tempo_window_rows": [
+    {
+      "speed": 6,
+      "current_ct": 40,
+      "window_ticks": 24,
+      "base": {
+        "effective_speed": 6,
+        "turn_count": 1,
+        "turn_ticks": [
+          10
+        ],
+        "ending_ct": 84
+      },
+      "haste": {
+        "effective_speed": 9,
+        "turn_count": 2,
+        "turn_ticks": [
+          7,
+          18
+        ],
+        "ending_ct": 56
+      },
+      "slow": {
+        "effective_speed": 4,
+        "turn_count": 1,
+        "turn_ticks": [
+          15
+        ],
+        "ending_ct": 36
+      },
+      "haste_turn_delta": 1,
+      "slow_turn_delta": 0
+    },
+    {
+      "speed": 8,
+      "current_ct": 40,
+      "window_ticks": 24,
+      "base": {
+        "effective_speed": 8,
+        "turn_count": 2,
+        "turn_ticks": [
+          8,
+          20
+        ],
+        "ending_ct": 32
+      },
+      "haste": {
+        "effective_speed": 12,
+        "turn_count": 3,
+        "turn_ticks": [
+          5,
+          14,
+          22
+        ],
+        "ending_ct": 28
+      },
+      "slow": {
+        "effective_speed": 5,
+        "turn_count": 1,
+        "turn_ticks": [
+          12
+        ],
+        "ending_ct": 60
+      },
+      "haste_turn_delta": 1,
+      "slow_turn_delta": -1
+    },
+    {
+      "speed": 9,
+      "current_ct": 40,
+      "window_ticks": 24,
+      "base": {
+        "effective_speed": 9,
+        "turn_count": 2,
+        "turn_ticks": [
+          7,
+          18
+        ],
+        "ending_ct": 56
+      },
+      "haste": {
+        "effective_speed": 14,
+        "turn_count": 3,
+        "turn_ticks": [
+          5,
+          12,
+          19
+        ],
+        "ending_ct": 76
+      },
+      "slow": {
+        "effective_speed": 6,
+        "turn_count": 1,
+        "turn_ticks": [
+          10
+        ],
+        "ending_ct": 84
+      },
+      "haste_turn_delta": 1,
+      "slow_turn_delta": -1
+    }
+  ],
+  "quick_t10_rows": [
+    {
+      "scenario_id": "quick_normal_one_for_one",
+      "source_action_spent": 1,
+      "target_can_receive": true,
+      "trigger_context": "natural_action",
+      "party_grants_before": 0,
+      "target_grants_before": 0,
+      "success": true,
+      "failure_reason": null,
+      "successful_grants": 1,
+      "total_source_actions_spent": 1,
+      "net_action_delta": 0
+    },
+    {
+      "scenario_id": "quick_target_invalid_still_spends",
+      "source_action_spent": 1,
+      "target_can_receive": false,
+      "trigger_context": "natural_action",
+      "party_grants_before": 0,
+      "target_grants_before": 0,
+      "success": false,
+      "failure_reason": "target_cannot_receive",
+      "successful_grants": 0,
+      "total_source_actions_spent": 1,
+      "net_action_delta": -1
+    },
+    {
+      "scenario_id": "quick_recursion_blocked",
+      "source_action_spent": 1,
+      "target_can_receive": true,
+      "trigger_context": "granted_action",
+      "party_grants_before": 0,
+      "target_grants_before": 0,
+      "success": false,
+      "failure_reason": "recursion_blocked",
+      "successful_grants": 0,
+      "total_source_actions_spent": 1,
+      "net_action_delta": -1
+    },
+    {
+      "scenario_id": "quick_party_cap_blocks_second_grant",
+      "source_action_spent": 1,
+      "target_can_receive": true,
+      "trigger_context": "natural_action",
+      "party_grants_before": 1,
+      "target_grants_before": 0,
+      "success": false,
+      "failure_reason": "party_cap",
+      "successful_grants": 0,
+      "total_source_actions_spent": 1,
+      "net_action_delta": -1
+    }
+  ],
+  "time_mp_sequences": {
+    "time_mid_control_mix": {
+      "max_mp": 90,
+      "event_outcomes": [
+        {
+          "skill": "Haste",
+          "cost": 8,
+          "outcome": "success",
+          "mp_after": 82,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Slow",
+          "cost": 8,
+          "outcome": "success",
+          "mp_after": 74,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Reflect",
+          "cost": 16,
+          "outcome": "success",
+          "mp_after": 58,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Gravity",
+          "cost": 20,
+          "outcome": "success",
+          "mp_after": 38,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Quick",
+          "cost": 42,
+          "outcome": "fail_insufficient_mp",
+          "mp_after": 38,
+          "target_mp_after": null
+        }
+      ],
+      "final_mp": 38,
+      "total_paid": 52,
+      "total_recovered": 0,
+      "target_resource_lost": 0,
+      "successful_casts": 4,
+      "failed_casts": 1
+    },
+    "time_late_premium_pressure": {
+      "max_mp": 120,
+      "event_outcomes": [
+        {
+          "skill": "Quick",
+          "cost": 42,
+          "outcome": "success",
+          "mp_after": 78,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Hasteja",
+          "cost": 26,
+          "outcome": "success",
+          "mp_after": 52,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Meteor",
+          "cost": 58,
+          "outcome": "fail_insufficient_mp",
+          "mp_after": 52,
+          "target_mp_after": null
+        }
+      ],
+      "final_mp": 52,
+      "total_paid": 68,
+      "total_recovered": 0,
+      "target_resource_lost": 0,
+      "successful_casts": 2,
+      "failed_casts": 1
+    }
+  },
+  "time_summary": {
+    "meteor_stress_per_target": 134,
+    "meteor_stress_max_total": 402,
+    "meteor_total_to_top_physical": 0.968675,
+    "meteor_total_to_bahamut": 0.992593,
+    "haste_window_speed8_turn_delta": 1,
+    "slow_window_speed8_turn_delta": -1,
+    "quick_normal_net_action_delta": 0,
+    "slow_effective_default_hit": 48,
+    "slowja_effective_default_hit": 39,
+    "stop_effective_default_hit": 27,
+    "slowja_expected_turn_delta_speed8_three_targets": -1.17,
+    "hasteja_t21_default_cut": {
+      "watch": "Hasteja is the highest mandatory-pick risk in this pass",
+      "current_row": "+3 ally turn delta at max 3 allies, 100% ally hit, CT5, MP26",
+      "trigger": "T2.1 shows Hasteja or Time Magicks as a late-party default rather than committed tempo-controller plan",
+      "first_cut": "reduce Hasteja target cap from 3 allies to 2 allies",
+      "second_cut_if_needed": "shorten the 24-tick window before weakening single-target Haste"
+    },
+    "meteor_bahamut_joint_f5_watch": {
+      "meteor_max_total": 402,
+      "bahamut_max_total": 405,
+      "top_physical_reference": 415,
+      "meteor_ratio": 0.968675,
+      "bahamut_ratio": 0.975904,
+      "watch": "recheck together after T1/formula-v1 because the same ceiling shift can push both capstones over 1.0"
+    }
+  },
+  "mystic_actions": [
+    {
+      "skill": "Chant",
+      "kind": "self_focus",
+      "effect": "next Mystic Art gains +10 base status rate, no stacking",
+      "mp": 0,
+      "ct": 0,
+      "jp": 0,
+      "gate": "T4/T5"
+    },
+    {
+      "skill": "Umbra",
+      "kind": "status",
+      "status": "Blind",
+      "base_hit": 75,
+      "mp": 8,
+      "ct": 2,
+      "jp": 100,
+      "gate": "T4/T5/T9",
+      "duration_ticks": 24
+    },
+    {
+      "skill": "Empowerment",
+      "kind": "mp_drain",
+      "k": 5,
+      "drain_to_caster_ratio": 0.5,
+      "mp": 8,
+      "ct": 2,
+      "jp": 200,
+      "gate": "T9"
+    },
+    {
+      "skill": "Invigoration",
+      "kind": "hp_drain",
+      "k": 10,
+      "drain_to_caster_ratio": 0.5,
+      "mp": 14,
+      "ct": 3,
+      "jp": 350,
+      "gate": "T3/T5/F4/T9"
+    },
+    {
+      "skill": "Belief",
+      "kind": "faith_window",
+      "faith_layer": 1.15,
+      "duration_ticks": 24,
+      "base_hit_enemy": 65,
+      "base_hit_ally": 100,
+      "mp": 12,
+      "ct": 2,
+      "jp": 400,
+      "gate": "F4/F5/T4/T5/T9"
+    },
+    {
+      "skill": "Disbelief",
+      "kind": "faith_window",
+      "faith_layer": 0.8,
+      "duration_ticks": 24,
+      "base_hit_enemy": 75,
+      "base_hit_ally": 100,
+      "mp": 12,
+      "ct": 2,
+      "jp": 400,
+      "gate": "F4/F5/T4/T5/T9"
+    },
+    {
+      "skill": "Corruption",
+      "kind": "undead_mark",
+      "status": "Undead-mark",
+      "base_hit": 65,
+      "duration_ticks": 24,
+      "mp": 14,
+      "ct": 3,
+      "jp": 300,
+      "gate": "T3/T4/T5/T8/T3xT5xT8"
+    },
+    {
+      "skill": "Quiescence",
+      "kind": "status",
+      "status": "Silence",
+      "base_hit": 75,
+      "mp": 10,
+      "ct": 2,
+      "jp": 170,
+      "gate": "T4/T5/T9",
+      "duration_ticks": 24
+    },
+    {
+      "skill": "Fervor",
+      "kind": "status",
+      "status": "Berserk",
+      "base_hit": 60,
+      "mp": 14,
+      "ct": 3,
+      "jp": 400,
+      "gate": "T4/T5/T8/T9",
+      "duration_ticks": 18
+    },
+    {
+      "skill": "Trepidation",
+      "kind": "brave_window",
+      "brave_delta": -15,
+      "duration_ticks": 24,
+      "base_hit": 80,
+      "mp": 8,
+      "ct": 2,
+      "jp": 200,
+      "gate": "T4/T5/F5"
+    },
+    {
+      "skill": "Delirium",
+      "kind": "status",
+      "status": "Confuse",
+      "base_hit": 55,
+      "mp": 18,
+      "ct": 3,
+      "jp": 400,
+      "gate": "T4/T5/T8/T9",
+      "duration_ticks": 12
+    },
+    {
+      "skill": "Harmony",
+      "kind": "status_clear",
+      "clears": [
+        "Belief",
+        "Disbelief",
+        "Berserk",
+        "Confuse",
+        "Silence",
+        "Sleep",
+        "Undead-mark"
+      ],
+      "mp": 16,
+      "ct": 2,
+      "jp": 800,
+      "gate": "T4/T5/T9"
+    },
+    {
+      "skill": "Hesitation",
+      "kind": "status",
+      "status": "Disable",
+      "base_hit": 60,
+      "mp": 12,
+      "ct": 2,
+      "jp": 100,
+      "gate": "T4/T5/T9",
+      "duration_ticks": 12
+    },
+    {
+      "skill": "Repose",
+      "kind": "status",
+      "status": "Sleep",
+      "base_hit": 60,
+      "mp": 18,
+      "ct": 3,
+      "jp": 350,
+      "gate": "T4/T5/T9",
+      "duration_ticks": 12
+    },
+    {
+      "skill": "Induration",
+      "kind": "status",
+      "status": "Stone",
+      "base_hit": 35,
+      "mp": 30,
+      "ct": 5,
+      "jp": 600,
+      "gate": "T4/T5/T9",
+      "duration_ticks": 8
+    }
+  ],
+  "mystic_status_rows": [
+    {
+      "skill": "Umbra",
+      "status": "Blind",
+      "base_hit": 75,
+      "effective_default_faith": 45,
+      "effective_after_chant": 51,
+      "ct": 2,
+      "mp": 8
+    },
+    {
+      "skill": "Belief",
+      "status": "faith_window",
+      "enemy_base_hit": 65,
+      "enemy_effective_default_faith": 39,
+      "ally_base_hit": 100,
+      "ally_effective": 100,
+      "ct": 2,
+      "mp": 12
+    },
+    {
+      "skill": "Disbelief",
+      "status": "faith_window",
+      "enemy_base_hit": 75,
+      "enemy_effective_default_faith": 45,
+      "ally_base_hit": 100,
+      "ally_effective": 100,
+      "ct": 2,
+      "mp": 12
+    },
+    {
+      "skill": "Corruption",
+      "status": "Undead-mark",
+      "base_hit": 65,
+      "effective_default_faith": 39,
+      "effective_after_chant": 45,
+      "ct": 3,
+      "mp": 14
+    },
+    {
+      "skill": "Quiescence",
+      "status": "Silence",
+      "base_hit": 75,
+      "effective_default_faith": 45,
+      "effective_after_chant": 51,
+      "ct": 2,
+      "mp": 10
+    },
+    {
+      "skill": "Fervor",
+      "status": "Berserk",
+      "base_hit": 60,
+      "effective_default_faith": 36,
+      "effective_after_chant": 42,
+      "ct": 3,
+      "mp": 14
+    },
+    {
+      "skill": "Trepidation",
+      "status": "brave_window",
+      "base_hit": 80,
+      "effective_default_faith": 48,
+      "effective_after_chant": 54,
+      "ct": 2,
+      "mp": 8
+    },
+    {
+      "skill": "Delirium",
+      "status": "Confuse",
+      "base_hit": 55,
+      "effective_default_faith": 33,
+      "effective_after_chant": 39,
+      "ct": 3,
+      "mp": 18
+    },
+    {
+      "skill": "Hesitation",
+      "status": "Disable",
+      "base_hit": 60,
+      "effective_default_faith": 36,
+      "effective_after_chant": 42,
+      "ct": 2,
+      "mp": 12
+    },
+    {
+      "skill": "Repose",
+      "status": "Sleep",
+      "base_hit": 60,
+      "effective_default_faith": 36,
+      "effective_after_chant": 42,
+      "ct": 3,
+      "mp": 18
+    },
+    {
+      "skill": "Induration",
+      "status": "Stone",
+      "base_hit": 35,
+      "effective_default_faith": 21,
+      "effective_after_chant": 27,
+      "ct": 5,
+      "mp": 30
+    }
+  ],
+  "mystic_drain_rows": [
+    {
+      "skill": "Empowerment",
+      "phase": "early",
+      "ma": 6,
+      "mp_damage": 18,
+      "caster_mp_recovery": 9
+    },
+    {
+      "skill": "Invigoration",
+      "phase": "early",
+      "ma": 6,
+      "hp_damage": 36,
+      "caster_hp_recovery": 18,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Empowerment",
+      "phase": "mid",
+      "ma": 10,
+      "mp_damage": 30,
+      "caster_mp_recovery": 15
+    },
+    {
+      "skill": "Invigoration",
+      "phase": "mid",
+      "ma": 10,
+      "hp_damage": 60,
+      "caster_hp_recovery": 30,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Empowerment",
+      "phase": "late",
+      "ma": 12,
+      "mp_damage": 36,
+      "caster_mp_recovery": 18
+    },
+    {
+      "skill": "Invigoration",
+      "phase": "late",
+      "ma": 12,
+      "hp_damage": 72,
+      "caster_hp_recovery": 36,
+      "damage_to_black_tier_i_if_stress": null
+    },
+    {
+      "skill": "Empowerment",
+      "phase": "stress",
+      "ma": 14,
+      "mp_damage": 42,
+      "caster_mp_recovery": 21
+    },
+    {
+      "skill": "Invigoration",
+      "phase": "stress",
+      "ma": 14,
+      "hp_damage": 84,
+      "caster_hp_recovery": 42,
+      "damage_to_black_tier_i_if_stress": 0.556291
+    }
+  ],
+  "faith_layer_rows": [
+    {
+      "reference": "Black Mage Flare stress",
+      "base_amount": 324,
+      "belief_1_15": 372,
+      "belief_to_top_physical": 0.896386,
+      "disbelief_0_80": 259
+    },
+    {
+      "reference": "Black Mage tier IV stress",
+      "base_amount": 238,
+      "belief_1_15": 273,
+      "belief_to_top_physical": 0.657831,
+      "disbelief_0_80": 190
+    },
+    {
+      "reference": "White Mage Holy stress",
+      "base_amount": 250,
+      "belief_1_15": 287,
+      "belief_to_top_physical": 0.691566,
+      "disbelief_0_80": 200
+    },
+    {
+      "reference": "Meteor stress per target",
+      "base_amount": 134,
+      "belief_1_15": 154,
+      "belief_to_top_physical": 0.371084,
+      "disbelief_0_80": 107
+    }
+  ],
+  "mystic_mp_sequences": {
+    "mystic_mid_mixed_control": {
+      "max_mp": 80,
+      "event_outcomes": [
+        {
+          "skill": "Quiescence",
+          "cost": 10,
+          "outcome": "success",
+          "mp_after": 70,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Invigoration",
+          "cost": 14,
+          "outcome": "success",
+          "mp_after": 56,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Belief",
+          "cost": 12,
+          "outcome": "success",
+          "mp_after": 44,
+          "target_mp_after": null
+        },
+        {
+          "skill": "Empowerment",
+          "cost": 8,
+          "outcome": "success_target_mp_damage_42_recover_21",
+          "mp_after": 57,
+          "target_mp_after": 38
+        },
+        {
+          "skill": "Induration",
+          "cost": 30,
+          "outcome": "success",
+          "mp_after": 27,
+          "target_mp_after": 38
+        }
+      ],
+      "final_mp": 27,
+      "total_paid": 74,
+      "total_recovered": 21,
+      "target_resource_lost": 42,
+      "successful_casts": 5,
+      "failed_casts": 0
+    },
+    "mystic_empowerment_target_depletion": {
+      "max_mp": 60,
+      "event_outcomes": [
+        {
+          "skill": "Empowerment",
+          "cost": 8,
+          "outcome": "success_target_mp_damage_42_recover_21",
+          "mp_after": 60,
+          "target_mp_after": 38
+        },
+        {
+          "skill": "Empowerment",
+          "cost": 8,
+          "outcome": "success_target_mp_damage_38_recover_19",
+          "mp_after": 60,
+          "target_mp_after": 0
+        },
+        {
+          "skill": "Empowerment",
+          "cost": 8,
+          "outcome": "success_target_mp_damage_0_recover_0",
+          "mp_after": 52,
+          "target_mp_after": 0
+        }
+      ],
+      "final_mp": 52,
+      "total_paid": 24,
+      "total_recovered": 16,
+      "target_resource_lost": 80,
+      "successful_casts": 3,
+      "failed_casts": 0
+    }
+  },
+  "mystic_summary": {
+    "invigoration_stress_damage": 84,
+    "invigoration_stress_to_black_tier_i": 0.556291,
+    "empowerment_stress_mp_damage": 42,
+    "belief_flare_stress": 372,
+    "belief_flare_to_top_physical": 0.896386,
+    "induration_default_effective_hit": 21,
+    "quiescence_default_effective_hit": 45,
+    "hard_control_duration_ticks": {
+      "Delirium_Confuse": 12,
+      "Hesitation_Disable": 12,
+      "Repose_Sleep": 12,
+      "Induration_Stone": 8
+    },
+    "belief_oil_fire_summon_compound_f5_watch": {
+      "stack": "Mystic Belief x Geomancer Magma Surge/Oil x Summoner Ifrit or Salamander area",
+      "belief_layer": 1.15,
+      "oil_fire_weak_layer": 2.0,
+      "combined_layer": 2.3,
+      "doc43_cross_reference": "docs/job-balance/43-summoner-geomancer-concrete-v0.md weak-element three-target summon rows",
+      "status": "not accepted as final; real-roster F5 must test the full three-job compound, not Belief+weakness in isolation"
+    },
+    "hard_control_viability_watch": {
+      "risk": "Mystic hard control is intentionally low-oppression and may be too weak to carry active job value by itself",
+      "hard_control_rows": {
+        "Delirium_Confuse": 12,
+        "Hesitation_Disable": 12,
+        "Repose_Sleep": 12,
+        "Induration_Stone": 8
+      },
+      "viability_sources_to_check": [
+        "Faith windows",
+        "bounded drains",
+        "anti-caster pressure",
+        "spiritual cleanup",
+        "soft debuffs"
+      ]
+    }
+  },
+  "deferred": [
+    "RSM values for Time Mage and Mystic pending T2.1 populated build incidence",
+    "Critical: Quick, Swiftspell, Teleport, Halve MP, Mana Shield, Manafont, Magick Defense Boost values pending RSM/support pass",
+    "final Haste/Slow duration semantics after full T5 turn-queue rows",
+    "Hasteja T2.1/F5 incidence; default first cut is target cap 3 allies -> 2 allies if it becomes mandatory",
+    "final Quick acceptance remains T10 plus real build incidence gated",
+    "Meteor and Bahamut joint real-roster F5 watch against the top physical ceiling",
+    "Faith-window coexistence, especially the full Belief x Magma Surge/Oil x Ifrit/Salamander area stack from doc 43",
+    "Mystic viability if hard-control rows prove too low to carry active job value",
+    "Belief x Magma Surge/Oil x Ifrit or Salamander three-job area compound, cross-referenced with doc 43",
+    "Hasteja incidence default cut: reduce max allies from 3 to 2 if T2.1/F5 shows mandatory uptake",
+    "final status immunity/boss policy and exact durations after T4/T8 rows",
+    "final acceptance until T1 Windows weapon dump and formula-balance v1"
+  ],
+  "time_status_rows": [
+    {
+      "skill": "Haste",
+      "kind": "tempo_buff",
+      "base_hit": 100,
+      "effective_default_faith": 100,
+      "duration_ticks": 24,
+      "ct": 2,
+      "mp": 8
+    },
+    {
+      "skill": "Hasteja",
+      "kind": "tempo_buff_area",
+      "base_hit": 100,
+      "effective_default_faith": 100,
+      "duration_ticks": 24,
+      "ct": 5,
+      "mp": 26
+    },
+    {
+      "skill": "Slow",
+      "kind": "tempo_debuff",
+      "base_hit": 80,
+      "effective_default_faith": 48,
+      "duration_ticks": 24,
+      "ct": 2,
+      "mp": 8
+    },
+    {
+      "skill": "Slowja",
+      "kind": "tempo_debuff_area",
+      "base_hit": 65,
+      "effective_default_faith": 39,
+      "duration_ticks": 24,
+      "ct": 5,
+      "mp": 26
+    },
+    {
+      "skill": "Stop",
+      "kind": "hard_tempo_stop",
+      "base_hit": 45,
+      "effective_default_faith": 27,
+      "duration_ticks": 12,
+      "ct": 3,
+      "mp": 20
+    },
+    {
+      "skill": "Immobilize",
+      "kind": "movement_lock",
+      "base_hit": 85,
+      "effective_default_faith": 51,
+      "duration_ticks": 24,
+      "ct": 2,
+      "mp": 8
+    },
+    {
+      "skill": "Float",
+      "kind": "terrain_utility",
+      "base_hit": 100,
+      "effective_default_faith": 100,
+      "duration_ticks": 36,
+      "ct": 1,
+      "mp": 10
+    },
+    {
+      "skill": "Reflect",
+      "kind": "reflect_routing",
+      "ally_base_hit": 100,
+      "ally_effective": 100,
+      "enemy_base_hit": 60,
+      "enemy_effective_default_faith": 36,
+      "duration_ticks": 24,
+      "ct": 2,
+      "mp": 16
+    },
+    {
+      "skill": "Quick",
+      "kind": "action_grant",
+      "base_hit": 100,
+      "effective_default_faith": 100,
+      "duration_ticks": null,
+      "ct": 4,
+      "mp": 42
+    }
+  ],
+  "time_area_tempo_rows": [
+    {
+      "skill": "Hasteja",
+      "max_targets": 3,
+      "per_target_turn_delta_if_status_lands": 1,
+      "effective_hit": 100,
+      "max_turn_delta": 3,
+      "expected_turn_delta": 3,
+      "ct": 5,
+      "mp": 26
+    },
+    {
+      "skill": "Slowja",
+      "max_targets": 3,
+      "per_target_turn_delta_if_status_lands": -1,
+      "effective_hit": 39,
+      "max_turn_delta": -3,
+      "expected_turn_delta": -1.17,
+      "ct": 5,
+      "mp": 26
+    }
+  ],
+  "cross_job_f5_watch_items": [
+    {
+      "id": "f5-belief-oil-fire-summon-area-compound",
+      "status": "not-final; real-roster F5 dominance investigation",
+      "doc43_cross_reference": "docs/job-balance/43-summoner-geomancer-concrete-v0.md",
+      "stack": "Mystic Belief x Geomancer Magma Surge/Oil x Summoner Ifrit or Salamander area",
+      "belief_layer": 1.15,
+      "oil_fire_weak_layer": 2.0,
+      "combined_layer": 2.3,
+      "rows": [
+        {
+          "skill": "Ifrit",
+          "neutral_per_target": 81,
+          "per_target_after_combined_layer": 186,
+          "three_target_total": 558
+        },
+        {
+          "skill": "Salamander",
+          "neutral_per_target": 99,
+          "per_target_after_combined_layer": 227,
+          "three_target_total": 681
+        }
+      ],
+      "possible_levers": [
+        "per-cast total ceiling",
+        "diminishing value per extra weak target",
+        "lower fire-summon K",
+        "Belief layer reduction",
+        "Oil/area setup constraints"
+      ]
+    },
+    {
+      "id": "f5-hasteja-incidence-default-cut",
+      "status": "T2.1/F5 watch",
+      "current_max_allies": 3,
+      "default_first_cut_if_over_incidence": "reduce max allies from 3 to 2",
+      "second_cut_if_needed": "shorten 24-tick window before changing single-target Haste"
+    },
+    {
+      "id": "f5-meteor-bahamut-joint-ceiling",
+      "status": "T1/formula-v1/F5 watch",
+      "meteor_max_total": 402,
+      "bahamut_max_total_doc43": 405,
+      "meteor_to_bahamut": 0.992593
+    }
+  ],
+  "claude_review": {
+    "reviewer": "claude-opus-4-8",
+    "date": "2026-06-21",
+    "verdict": "accepted as concrete-provisional action-skill values",
+    "numeric_regressions": 0,
+    "recomputed_from_gates": [
+      "T5 tempo CT simulation",
+      "T10 Quick ledger",
+      "percent-HP guard",
+      "T9 MP",
+      "F4 faith routine",
+      "status x0.60"
+    ],
+    "accepted_conditions": [
+      "Quick normal use remains net action delta 0 and recursive grants are blocked",
+      "Hasteja accepted with T2.1/F5 watch and default first cut from 3 allies to 2",
+      "Meteor and Bahamut are joint F5 ceiling watch at 402 vs 405",
+      "Belief x Magma Surge/Oil x Ifrit/Salamander compound recorded with concrete not-final totals",
+      "Mystic hard controls remain low hit and short duration; Mystic viability must also come from non-hard-control value",
+      "Empowerment remains target-resource limited and is not accepted as an infinite MP engine"
+    ],
+    "named_f5_watch_items": [
+      "Hasteja incidence and default cut 3 allies to 2",
+      "Meteor/Bahamut joint ceiling recheck",
+      "Belief x Oil x fire-summon area compound at 2.30 combined layer"
+    ],
+    "remaining_gates": [
+      "T1 Windows weapon dump",
+      "formula-balance v1",
+      "real-roster F5",
+      "T2.1 populated incidence for RSM values"
+    ]
+  }
+}
