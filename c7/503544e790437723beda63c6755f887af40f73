@@ -1,0 +1,23 @@
+docs/job-balance/32-campaign-artifacts-provisional-v0.md
+  s_fce6b25a5764ca::t_914238a87a3666 3,258-272
+  s_fce6b25a5764ca::t_37aceab4ce31ae 27,128,130-138,141-142,144-146,150-160,162,164,166
+  s_fce6b25a5764ca::t_19d18d552a946a 203,205,207
+  s_fce6b25a5764ca::t_5d6f747ff444d0 1-2,4-26,28-99,101-107,109-127,129,139-140,147-149,161,163,165,167-171,173-182,184-202,204,206,208,210-257
+  s_fce6b25a5764ca::t_59b80908189340 100,108,143,172,183,209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "c7503544e790437723beda63c6755f887af40f73",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
