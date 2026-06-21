@@ -650,4 +650,6 @@ Still open:
 - exact implementation format for `work/job-balance/` artifacts;
 - real IVC weapon baseline from the Windows `04` session;
 - formula-balance v1 re-sim after verified IVC weapon data;
+- party/formula-v1 sweeps over the actual in-scope job roster, using each job's real armor class
+  and HP, instead of only the current four representative armor anchors;
 - final job implementation acceptance criteria after data-mod feasibility is confirmed.
