@@ -1,0 +1,24 @@
+docs/job-balance/27-necromancer-v1-proposal.md
+  s_fce6b25a5764ca::t_d170e65d8654a3 148
+  s_fce6b25a5764ca::t_48e97b7945f06a 108-109,116-117,125,131-132,138,141-143,186-190,219-221,238-239,241-245,304-308,372-373,376,415,421,432-433
+  s_fce6b25a5764ca::t_c76cbdbe7378f3 3,438-447
+  s_fce6b25a5764ca::t_64e828947e0706 1-2,4-107,110-115,118-124,126-130,133-137,139-140,144-147,149-185,191-218,222-237,240,246-303,309-371,374-375,377-414,416-420,422-431,434-437
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_5d6f93c486310a 54,206-231,405-407,409,411,413-415,417,423-424,494
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "08ad3d57889fa35757f6d91896cf6ea8b20175c0",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
