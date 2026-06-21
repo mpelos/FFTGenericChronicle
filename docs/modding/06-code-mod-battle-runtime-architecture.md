@@ -224,10 +224,16 @@ Status of the placeholder (FIX PASS 1, 2026-06-21):
   `mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml` forces every weapon
   `Power=1`, so weapon-power attacks become tiny/non-lethal. Removes the death race + flicker for
   human physical attacks.
-- **Ability/spell + monster half PENDING.** Needs an `OverrideAbilityActionData` NXD neuter, which
-  depends on the base per-ability `Formula/X/Y` (exe-hardcoded, not in data) to know which abilities
-  are damaging and which parameter to shrink. Until then, bare-hands/monster/spell damage is not
-  neutered.
+- **Ability/spell + monster half BUILT.** Same generator builds the
+  `OverrideAbilityActionData` NXD neuter. It does NOT need the exe-hardcoded base formulas: it
+  classifies damaging offensive abilities from `AbilityData.xml` `AIBehaviorFlags`
+  (`HP` + `TargetEnemies`, not `TargetAllies`) and forces `X=1, Y=1` on those rows (keeping base
+  `Formula`/element/CT/MP at inherit). Since Test D proved `Y` is read for magnitude, `X=Y=1`
+  collapses stat*Y / stat+X damage to ~one stat (non-lethal) regardless of which parameter the
+  routine uses. 168 abilities neutered (Fire/Bolt/Ice lines, monster skills); heals (Cure =
+  `TargetAllies`) correctly untouched. Residual gap: 32 high-id monster skills (382-413) fall
+  outside the 368-row override table, and the rare formulas that ignore X/Y (e.g. `%`-damage,
+  Gravity) are not shrunk by this lever.
 - **Death after neuter:** since neutered vanilla no longer kills, the runtime must cause death
   itself. `Mod.cs` now has `CaptureStructOnDeath` (find the death/status flag from a live
   alive->dead diff) and `CauseDeathOnZeroHp` + `DeathStateWrites[]` (set that flag once mapped). See

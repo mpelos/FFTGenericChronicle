@@ -218,12 +218,22 @@ Built in response to Test 1b's revised next-gate order. Everything here passed o
 `WP*WP`, `(PA+Sp)/2*WP`, ...) now deals a tiny, non-lethal, but still non-zero delta the reconciler
 can observe and own. This removes the death race and the flicker for human physical attacks.
 
-Coverage / gaps (honest): covers attacks that scale with weapon Power. Does **NOT** cover
-bare-hands / monster innate attacks (no weapon-power term) or spell damage. Those need the
-`OverrideAbilityActionData` NXD neuter, which is a separate pass blocked on having the base
-per-ability `Formula/X/Y` (exe-hardcoded, not in data) so we know which abilities are damaging and
-which parameter to shrink. So the lethal monster hit class from Test 1b (`id=0x1F`) is **not yet**
-neutered; use a player-controlled physical attack for the death experiments below.
+Coverage / gaps (honest): covers attacks that scale with weapon Power. Does NOT cover bare-hands /
+monster innate attacks or spell damage - that is now the ability neuter below.
+
+### 1b. Data-layer ability/spell/monster neuter (gate step 1, magic half) - BUILT (2026-06-21)
+
+Test 2b showed the real killers were enemy **spells** (126/157/170 dmg), which the weapon neuter
+does not touch. `tools/build_neuter_data.py` now also builds the `OverrideAbilityActionData` NXD
+(`mod/.../FFTIVC/data/enhanced/nxd/overrideabilityactiondata.nxd`). It classifies damaging
+offensive abilities from `AbilityData.xml` `AIBehaviorFlags` (`HP` + `TargetEnemies`, not
+`TargetAllies`) and forces `X=1, Y=1` on those 168 rows (base `Formula`/element/CT/MP left at
+inherit). Verified round-trip: Fire/Thunder/Blizzard (16/20/24) -> X=1,Y=1; Cure/Cura (1/2)
+untouched. No exe base formulas needed - Test D proved `Y` drives magnitude, so `X=Y=1` collapses
+damage to ~one stat (non-lethal) whichever parameter the routine reads. Residual gap: 32 high-id
+monster skills (382-413) are beyond the 368-row override table, and `%`-damage / Gravity formulas
+ignore X/Y. With weapon + ability neuter deployed, vanilla can no longer one-shot in the common
+case, so Test 2b (death by HP=0 write) can be re-run cleanly.
 
 ### 2. Death-state capture instrumentation (gate step 2, the measurement) - BUILT
 

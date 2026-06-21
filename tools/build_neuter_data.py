@@ -25,17 +25,25 @@ Output (repo data-mod source, deploy with deploy.ps1):
     mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml
 """
 from __future__ import annotations
+import shutil
+import sqlite3
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-TEMPLATE = Path(
-    r"C:/Reloaded-II/Mods/fftivc.utility.modloader/TableData/ItemWeaponData.xml"
-)
+MODLOADER = Path(r"C:/Reloaded-II/Mods/fftivc.utility.modloader/TableData")
+TEMPLATE = MODLOADER / "ItemWeaponData.xml"
+ABILITY_TEMPLATE = MODLOADER / "AbilityData.xml"
 OUT = REPO / "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml"
 
+# Ability (spell/skill/monster) neuter via the OverrideAbilityActionData NXD.
+BASE_OVERRIDE_SQLITE = REPO / "work/override_ability.sqlite"          # extracted base (sparse, -1=inherit)
+NEUTER_OVERRIDE_SQLITE = REPO / "work/override_ability.neuter.sqlite"  # base + X=1,Y=1 on damaging rows
+ABILITY_NXD_OUT = REPO / "mod/fftivc.generic.chronicle/FFTIVC/data/enhanced/nxd/overrideabilityactiondata.nxd"
+
 NEUTER_POWER = 1  # tiny but non-zero so the reconciler still observes a delta
+NEUTER_XY = 1     # X/Y forced to 1 on damaging abilities -> damage collapses to ~one stat (non-lethal)
 
 
 def build_weapon_neuter() -> str:
@@ -87,12 +95,70 @@ def build_weapon_neuter() -> str:
     return "\n".join(lines), len(edited)
 
 
+def classify_damaging_abilities() -> list[int]:
+    """Offensive HP-damage abilities: AIBehaviorFlags has HP + TargetEnemies, not TargetAllies.
+
+    This is the set that can kill a unit with vanilla damage (Fire/Bolt/Ice lines, monster
+    skills, etc.) - exactly what the weapon neuter does NOT cover. Heals (Cure = TargetAllies)
+    are correctly excluded.
+    """
+    if not ABILITY_TEMPLATE.exists():
+        sys.exit(f"ERROR: ability template not found: {ABILITY_TEMPLATE}")
+    tree = ET.parse(ABILITY_TEMPLATE)
+    root = tree.getroot()
+    entries = root.find("Entries")
+    ids = []
+    for a in entries.findall("Ability"):
+        id_el = a.find("Id")
+        fl_el = a.find("AIBehaviorFlags")
+        if id_el is None or fl_el is None:
+            continue
+        flags = {f.strip() for f in (fl_el.text or "").split(",")}
+        if "HP" in flags and "TargetEnemies" in flags and "TargetAllies" not in flags:
+            ids.append(int(id_el.text))
+    return ids
+
+
+def build_ability_neuter() -> tuple[int, int, list[int]]:
+    """Copy the base override sqlite and force X=1,Y=1 on every damaging ability row that exists
+    in the (sparse, 368-row) table. Returns (neutered, skipped_out_of_range, skipped_ids)."""
+    if not BASE_OVERRIDE_SQLITE.exists():
+        sys.exit(
+            f"ERROR: base override sqlite not found: {BASE_OVERRIDE_SQLITE}\n"
+            "Regenerate it with FF16Tools nxd-to-sqlite from the game's overrideabilityactiondata.nxd."
+        )
+    damaging = set(classify_damaging_abilities())
+    shutil.copyfile(BASE_OVERRIDE_SQLITE, NEUTER_OVERRIDE_SQLITE)
+    con = sqlite3.connect(NEUTER_OVERRIDE_SQLITE)
+    cur = con.cursor()
+    present = {r[0] for r in cur.execute("SELECT Key FROM OverrideAbilityActionData")}
+    to_neuter = sorted(damaging & present)
+    skipped = sorted(damaging - present)  # ids beyond the 368-row table
+    cur.executemany(
+        "UPDATE OverrideAbilityActionData SET X=?, Y=? WHERE Key=?",
+        [(NEUTER_XY, NEUTER_XY, k) for k in to_neuter],
+    )
+    con.commit()
+    con.close()
+    return len(to_neuter), len(skipped), skipped
+
+
 def main() -> None:
     xml, count = build_weapon_neuter()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(xml, encoding="utf-8")
     print(f"[neuter] wrote {OUT}")
     print(f"[neuter] weapons neutered to Power={NEUTER_POWER}: {count}")
+
+    neutered, skipped_n, skipped_ids = build_ability_neuter()
+    ABILITY_NXD_OUT.parent.mkdir(parents=True, exist_ok=True)
+    print(f"[neuter] ability sqlite written: {NEUTER_OVERRIDE_SQLITE}")
+    print(f"[neuter] damaging abilities set X=Y={NEUTER_XY}: {neutered} (skipped {skipped_n} out of table range: {skipped_ids})")
+    print("[neuter] NEXT: build the NXD with FF16Tools, e.g.:")
+    print(
+        '  & "D:/Projects/FFTModNewGame++/tools/FF16Tools.CLI-1.13.2-win-x64/win-x64/FF16Tools.CLI.exe" '
+        f'sqlite-to-nxd -i "{NEUTER_OVERRIDE_SQLITE}" -o "{ABILITY_NXD_OUT.parent}" -g fft -t OverrideAbilityActionData'
+    )
 
 
 if __name__ == "__main__":
