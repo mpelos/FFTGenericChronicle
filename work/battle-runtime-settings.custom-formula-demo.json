@@ -6,7 +6,9 @@
   "AffectFoes": true,
   "MinHpFloor": 1,
   "ResolveAttackerByCt": true,
+  "ResolveCounterFromRecentDamage": true,
   "CtDropWindowMs": 4000,
+  "CounterEventWindowMs": 1500,
   "LogResolvedRuntimeContext": true,
   "LogAttackerCandidates": true,
   "RewriteConditionFormula": "event.isDamage && a.present",
@@ -14,7 +16,11 @@
   "FormulaTraceVariables": [
     { "Name": "trace.attackerPresent", "Formula": "a.present" },
     { "Name": "trace.attackerPa", "Formula": "a.pa" },
+    { "Name": "trace.attackerCt", "Formula": "a.ct" },
+    { "Name": "trace.attackerSourceCt", "Formula": "a.sourceCt" },
+    { "Name": "trace.attackerSourceCounter", "Formula": "a.sourceCounter" },
     { "Name": "trace.targetFaith", "Formula": "t.faith" },
+    { "Name": "trace.targetCt", "Formula": "t.ct" },
     { "Name": "trace.customDamage", "Formula": "max(1, a.pa * 10 - t.faith)" },
     { "Name": "trace.finalDamage", "Formula": "result.finalDamage" },
     { "Name": "trace.desiredHp", "Formula": "result.desiredHp" }

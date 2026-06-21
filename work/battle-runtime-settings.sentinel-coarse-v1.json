@@ -1,0 +1,83 @@
+{
+  "_note": "LIVE-CALIBRATION CANDIDATE for tools/build_neuter_data.py --placeholder-mode sentinel-coarse-v1. It decodes coarse placeholder damage bands into action variables. Use only with deliberately high-HP test targets until the live band ranges are calibrated; the data layer can still let vanilla damage land before the rewrite poll.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "MinHpFloor": 1,
+  "ResolveAttackerByCt": true,
+  "ResolveCounterFromRecentDamage": true,
+  "CtDropWindowMs": 4000,
+  "CounterEventWindowMs": 1500,
+  "LogResolvedRuntimeContext": true,
+  "LogAttackerCandidates": true,
+  "RewriteConditionFormula": "event.isDamage && action.present",
+  "FinalDamageFormula": "if(action.sentinelLow, 11, if(action.sentinelMid, 22, if(action.sentinelHigh, 33, vanillaDamage)))",
+  "ApplyEquipmentDr": false,
+  "ApplyDamageResponseRules": false,
+  "ActionSignalRules": [
+    {
+      "Name": "sentinel-low-swing",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 1,
+      "MaxVanillaDamage": 30,
+      "Signal": 301,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelLow": 1,
+        "swing": 1,
+        "cut": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    },
+    {
+      "Name": "sentinel-mid-thrust-or-missile",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 31,
+      "MaxVanillaDamage": 60,
+      "Signal": 302,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelMid": 1,
+        "thrust": 1,
+        "impale": 1,
+        "missile": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    },
+    {
+      "Name": "sentinel-high-magical",
+      "EventKind": "Damage",
+      "MinVanillaDamage": 61,
+      "MaxVanillaDamage": 90,
+      "Signal": 303,
+      "Variables": {
+        "sentinel": 1,
+        "sentinelHigh": 1,
+        "spell": 1,
+        "magical": 1
+      },
+      "VariableFormulas": {
+        "bandDamage": "vanillaDamageAbs"
+      }
+    }
+  ],
+  "FormulaTraceVariables": [
+    { "Name": "trace.actionSignal", "Formula": "action.signal" },
+    { "Name": "trace.bandDamage", "Formula": "action.bandDamage" },
+    { "Name": "trace.sentinelLow", "Formula": "action.sentinelLow" },
+    { "Name": "trace.sentinelMid", "Formula": "action.sentinelMid" },
+    { "Name": "trace.sentinelHigh", "Formula": "action.sentinelHigh" },
+    { "Name": "trace.swing", "Formula": "action.swing" },
+    { "Name": "trace.thrust", "Formula": "action.thrust" },
+    { "Name": "trace.magical", "Formula": "action.magical" },
+    { "Name": "trace.attackerSourceCt", "Formula": "a.sourceCt" },
+    { "Name": "trace.attackerSourceCounter", "Formula": "a.sourceCounter" },
+    { "Name": "trace.finalDamage", "Formula": "result.finalDamage" },
+    { "Name": "trace.desiredHp", "Formula": "result.desiredHp" }
+  ]
+}

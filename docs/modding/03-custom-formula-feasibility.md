@@ -6,29 +6,28 @@ tagged confirmed vs. inferred.
 
 ## Bottom Line
 
-> **UPDATE (2026-06-20): the optimism below was tempered by a hard finding.** The generic hook
-> *mechanism* is proven on this exe, but the **damage routine itself is Denuvo-virtualized**: its
-> prologue AOB is absent/relocated across launches (we scanned 343 MB; pattern not found), so it
-> **cannot be located by static signature scan**. Arbitrary custom math is therefore **NOT yet
-> proven achievable on this build** - it is blocked at "find the function." It might still be
-> reachable via runtime debugger tracing (HP-write breakpoint -> walk call stack), but until that
-> succeeds, treat LEVEL 2 (our own formula algorithm) as an OPEN RISK, not a solved problem.
-> What IS fully in reach today is LEVEL 1: re-pointing every ability to the hardcoded formula
-> catalog + tuning X/Y/Element/Status via OverrideAbilityActionData (data-only, pipeline proven
-> live). See `00-overview.md` "CENTRAL QUESTION" and `04-re-strategy.md` (Denuvo section).
+> **UPDATE (2026-06-21): direct formula replacement is blocked, but the alternative code-mod path
+> is now implemented as the research baseline.** The generic hook mechanism is proven on this exe,
+> but the **damage routine itself is Denuvo-virtualized**: its prologue AOB is absent/relocated
+> across launches, so it cannot be located by static signature scan. The project therefore no
+> longer tries to replace the virtualized formula dispatcher directly. Instead, the code mod owns
+> the final battle number: data-layer neuter placeholders -> stable HP/MP delta observation ->
+> CT-based attacker resolution -> C# formula engine -> HP/MP reconciliation. Engine-owned death
+> (`MinHpFloor=1`) is the accepted lethal path until a pre-damage/same-hit hook is found.
+> LEVEL 1 remains data-only and fully viable. LEVEL 2 is viable through the reconciler, with
+> remaining live gates for action identity, equipment context, and same-hit death.
 
-Arbitrary custom damage math is **not** available through any existing modding API. In principle
-it requires your **own Reloaded-II C# mod that hooks the damage routine inside
-`FFT_enhanced.exe`** - but on this build the damage routine can't be found by static AOB scan
-(Denuvo), so the practical path is runtime tracing first, and success is unconfirmed.
+Arbitrary custom damage math is **not** available through any existing modding API. It requires a
+Reloaded-II C# code mod. On this build, the practical code-mod route is not static-AOB hooking the
+damage routine; it is the post-damage reconciler described in `06-code-mod-battle-runtime-architecture.md`.
 
 ```text
 Existing API gives custom damage math?   No.
 Achievable via static-AOB CreateHook?    No on this build - damage routine is Denuvo-virtualized.
-Achievable at all?                       Unconfirmed; needs runtime tracing to even locate the fn.
-Reading attacker+target attrs live?      YES - proven via our probe (full unit struct readable).
+Achievable at all?                       YES via post-damage reconciler; direct same-hit hook remains open.
+Reading attacker+target attrs live?      YES - target via HP delta, attacker via CT reset (+0x41).
 LEVEL 1 (catalog re-point + X/Y tune)?   YES - data-only, pipeline proven live.
-Main cost if pursuing LEVEL 2?           Runtime RE of a virtualized routine (debugger, not AOB).
+Main cost if pursuing LEVEL 2?           Action/equipment context calibration + live-safe reconciler QA.
 Vanilla baseline Formula/X/Y dump?        None public; use FFHacktics WotL + IVC rebalances.
 ```
 
@@ -111,7 +110,7 @@ UPDATE: a follow-up research pass changed this section substantially. See
 - Both exes are **Denuvo-protected** - static analysis/debugging is harder; runtime Reloaded-II
   hooking still works (the loader already hooks this exe).
 
-### Practical RE path
+### Historical direct-hook RE path (not the current mainline)
 
 ```text
 1. Known HP address from a cheat table -> hardware breakpoint on write -> walk call stack up to
@@ -120,6 +119,9 @@ UPDATE: a follow-up research pass changed this section substantially. See
 3. Hook via AddMainModuleScan + CreateHook<T>; read attacker/target from RCX/RDX/R8/R9.
 4. Optionally upstream the engine-level enabler into Faith Framework.
 ```
+
+This remains useful only if we resume the same-hit/pre-damage route. The current mainline is the
+post-damage runtime reconciler in `06`.
 
 ## 4. Prior art (proof the exe can be hooked for gameplay)
 

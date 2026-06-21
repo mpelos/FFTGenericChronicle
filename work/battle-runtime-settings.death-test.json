@@ -1,5 +1,5 @@
 {
-  "_note": "DEATH-BY-HP-WRITE TEST, STEP 1 of 2 - HP=0 ALONE (docs/modding/07 Test 1b/2b). REQUIRES the weapon neuter data mod deployed (deploy.ps1) + modloader + data mod enabled, so vanilla physical attacks are non-lethal. Attack an ENEMY with a (neutered) weapon: vanilla deals ~PA, then the reconciler forces that foe's HP to 0 (FinalDamageFormula=9999). WATCH: does the enemy DIE (KO/collapse) or ZOMBIE (keeps standing/acting at 0 HP)? CauseDeathOnZeroHp is OFF here, so this tests whether writing HP=0 ALONE kills. If it ZOMBIES, switch to battle-runtime-settings.death-test-killflag.json (sets the 0x61 KO flag we found) - hot-reloads, no relaunch needed. AffectAllies=false so your own units are never zeroed.",
+  "_note": "LEGACY/REFUTED DEATH-WRITE PROBE - HP=0 ALONE (docs/modding/07 Tests 2b/2c). Live evidence proved this creates a zombie-like state, not real KO. Keep this profile only for reproducing or auditing the historical byte-write result; current custom-formula profiles use MinHpFloor=1 and let the engine own death. REQUIRES neutered vanilla damage if intentionally re-run. AffectAllies=false so your own units are never zeroed.",
   "RewriteObservedDamage": true,
   "RewriteObservedHealing": false,
   "AffectFoes": true,

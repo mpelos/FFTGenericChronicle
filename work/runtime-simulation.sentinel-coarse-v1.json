@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "name": "coarse-v1-low-swing-band",
+      "previousHp": 200,
+      "currentHp": 176,
+      "vanillaDamage": 24,
+      "eventIndex": 401,
+      "eventSeed": 9401,
+      "attackerSource": "ct-reset",
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 11,
+        "desiredHp": 189,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-low-swing:source=vanilla-damage:signal=301",
+          "sentinellow=1",
+          "swing=1",
+          "trace.attackersourcect=1",
+          "final=11:FinalDamageFormula"
+        ]
+      }
+    },
+    {
+      "name": "coarse-v1-mid-thrust-or-missile-band",
+      "previousHp": 200,
+      "currentHp": 155,
+      "vanillaDamage": 45,
+      "eventIndex": 402,
+      "eventSeed": 9402,
+      "attackerSource": "ct-reset",
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 22,
+        "desiredHp": 178,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-mid-thrust-or-missile:source=vanilla-damage:signal=302",
+          "sentinelmid=1",
+          "thrust=1",
+          "trace.attackersourcect=1",
+          "final=22:FinalDamageFormula"
+        ]
+      }
+    },
+    {
+      "name": "coarse-v1-high-magical-band",
+      "previousHp": 200,
+      "currentHp": 125,
+      "vanillaDamage": 75,
+      "eventIndex": 403,
+      "eventSeed": 9403,
+      "attackerSource": "ct-reset",
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 33,
+        "desiredHp": 167,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "action=sentinel-high-magical:source=vanilla-damage:signal=303",
+          "sentinelhigh=1",
+          "magical=1",
+          "trace.attackersourcect=1",
+          "final=33:FinalDamageFormula"
+        ]
+      }
+    },
+    {
+      "name": "coarse-v1-unknown-band-does-not-rewrite",
+      "previousHp": 200,
+      "currentHp": 80,
+      "vanillaDamage": 120,
+      "eventIndex": 404,
+      "eventSeed": 9404,
+      "attackerSource": "ct-reset",
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 80,
+        "ruleName": "RewriteConditionFormula=0"
+      }
+    }
+  ]
+}

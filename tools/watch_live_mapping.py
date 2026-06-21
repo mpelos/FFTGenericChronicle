@@ -12,12 +12,14 @@ from pathlib import Path
 from analyze_battleprobe_log import (
     DEATH_EVENT_RE,
     DEFAULT_LOG,
+    HOOK_REGS_RE,
     MEMTABLE_FOUND_RE,
     MEMTABLE_ROW_RE,
     OLD_UNIT_RE,
     REWRITE_EVENT_RE,
     RUNTIME_RE,
     parse_number,
+    parse_runtime_attacker_source,
     parse_runtime_context,
     parse_rewrite_line,
 )
@@ -42,6 +44,7 @@ class LogState:
     has_old_header: bool
     old_unit_lines: int
     runtime_events: int
+    runtime_attacker_source_counts: tuple[tuple[str, int], ...] = ()
     action_signal_events: int = 0
     action_signal_counts: tuple[tuple[str, int], ...] = ()
     action_var_counts: tuple[tuple[str, int], ...] = ()
@@ -65,6 +68,7 @@ class LogState:
     memory_table_found: int = 0
     memory_table_rows: int = 0
     actor_probe_events: int = 0
+    hook_register_probe_events: int = 0
     ct_actor_resolved: int = 0
     ct_drop_resolved: int = 0
     ct_lowest_resolved: int = 0
@@ -78,6 +82,9 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Wait for fresh Generic Chronicle [RUNTIME] mapping evidence.")
     p.add_argument("log", nargs="?", type=Path, default=DEFAULT_LOG)
     p.add_argument("--runtime-events", type=int, default=1, help="Minimum [RUNTIME] lines to wait for.")
+    p.add_argument("--runtime-attacker-source", action="append", default=[], help="Specific [RUNTIME] attacker source that must appear at least once, e.g. ct-reset or counter-inversion; can be repeated.")
+    p.add_argument("--ct-runtime-attackers", type=int, default=0, help="Minimum [RUNTIME] attacker resolutions with source=ct-reset.")
+    p.add_argument("--counter-runtime-attackers", type=int, default=0, help="Minimum [RUNTIME] attacker resolutions with source=counter-inversion.")
     p.add_argument("--action-signals", type=int, default=0, help="Minimum [RUNTIME] lines with a nonzero action.signal.")
     p.add_argument("--require-action-signal", action="append", default=[], help="Specific action.signal value that must appear at least once; can be repeated.")
     p.add_argument("--require-action-var", action="append", default=[], help="Specific nonzero action variable that must appear at least once; can be repeated.")
@@ -87,6 +94,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--response-events", type=int, default=0, help="Minimum [RUNTIME] events with response rules > 0.")
     p.add_argument("--require-trace-var", action="append", default=[], help="Formula trace variable that must appear with a nonzero value; can be repeated.")
     p.add_argument("--actor-probes", type=int, default=0, help="Minimum [ACTOR-PROBE] events to wait for.")
+    p.add_argument("--hook-regs", type=int, default=0, help="Minimum [HOOK-REGS] register snapshots to wait for.")
     p.add_argument("--ct-attackers", type=int, default=0, help="Minimum [ACTOR-PROBE] events with a resolved CT attacker.")
     p.add_argument("--ct-drop-attackers", type=int, default=0, help="Minimum CT attacker resolutions from a recent CT drop.")
     p.add_argument("--ct-lowest-attackers", type=int, default=0, help="Minimum CT attacker resolutions from lowest absolute CT.")
@@ -126,6 +134,9 @@ def main() -> int:
     start_time = time.time()
     deadline = start_time + max(0.1, args.timeout)
     required_runtime_events = max(0, args.runtime_events)
+    required_runtime_attacker_sources = tuple(normalize_runtime_attacker_source(value) for value in args.runtime_attacker_source)
+    required_ct_runtime_attackers = max(0, args.ct_runtime_attackers)
+    required_counter_runtime_attackers = max(0, args.counter_runtime_attackers)
     required_action_signal_events = max(0, args.action_signals)
     required_action_signals = tuple(normalize_action_signal(value) for value in args.require_action_signal)
     required_action_vars = tuple(normalize_action_var(value) for value in args.require_action_var)
@@ -135,6 +146,7 @@ def main() -> int:
     required_response_events = max(0, args.response_events)
     required_trace_vars = tuple(normalize_trace_var(value) for value in args.require_trace_var)
     required_actor_probes = max(0, args.actor_probes)
+    required_hook_register_probe_events = max(0, args.hook_regs)
     required_ct_attackers = max(0, args.ct_attackers)
     required_ct_drop_attackers = max(0, args.ct_drop_attackers)
     required_ct_lowest_attackers = max(0, args.ct_lowest_attackers)
@@ -160,12 +172,15 @@ def main() -> int:
     print(f"watching {args.log}")
     print(
         f"waiting for current runtime header, {required_runtime_events} [RUNTIME] event(s), "
+        f"{required_ct_runtime_attackers} CT-reset runtime attacker(s), "
+        f"{required_counter_runtime_attackers} counter runtime attacker(s), "
         f"{required_action_signal_events} action signal event(s), "
         f"{required_target_slot_present_events} target slot present event(s), "
         f"{required_attacker_slot_present_events} attacker slot present event(s), "
         f"{required_equipment_dr_events} equipment DR event(s), "
         f"{required_response_events} response event(s), "
         f"{required_actor_probes} [ACTOR-PROBE] event(s), "
+        f"{required_hook_register_probe_events} [HOOK-REGS] event(s), "
         f"{required_ct_attackers} CT attacker resolution(s), "
         f"{required_ct_drop_attackers} CT-drop attacker resolution(s), "
         f"{required_ct_lowest_attackers} CT-lowest attacker resolution(s), "
@@ -225,11 +240,15 @@ def main() -> int:
             required_response_events=required_response_events,
             required_trace_vars=required_trace_vars,
             required_actor_probes=required_actor_probes,
+            required_hook_register_probe_events=required_hook_register_probe_events,
             required_ct_attackers=required_ct_attackers,
             required_ct_drop_attackers=required_ct_drop_attackers,
             required_ct_lowest_attackers=required_ct_lowest_attackers,
             required_memtable_found=required_memtable_found,
             required_memtable_rows=required_memtable_rows,
+            required_runtime_attacker_sources=required_runtime_attacker_sources,
+            required_ct_runtime_attackers=required_ct_runtime_attackers,
+            required_counter_runtime_attackers=required_counter_runtime_attackers,
         )
         if message != last_message:
             print(message)
@@ -240,6 +259,9 @@ def main() -> int:
             and state.is_fresh
             and state.has_current_header
             and state.runtime_events >= required_runtime_events
+            and has_required_runtime_attacker_sources(state, required_runtime_attacker_sources)
+            and runtime_attacker_source_count(state, "ct-reset") >= required_ct_runtime_attackers
+            and runtime_attacker_source_count(state, "counter-inversion") >= required_counter_runtime_attackers
             and state.action_signal_events >= required_action_signal_events
             and has_required_action_signals(state, required_action_signals)
             and has_required_action_vars(state, required_action_vars)
@@ -249,6 +271,7 @@ def main() -> int:
             and state.response_events >= required_response_events
             and has_required_trace_vars(state, required_trace_vars)
             and state.actor_probe_events >= required_actor_probes
+            and state.hook_register_probe_events >= required_hook_register_probe_events
             and state.ct_actor_resolved >= required_ct_attackers
             and state.ct_drop_resolved >= required_ct_drop_attackers
             and state.ct_lowest_resolved >= required_ct_lowest_attackers
@@ -323,11 +346,15 @@ def main() -> int:
         required_response_events=required_response_events,
         required_trace_vars=required_trace_vars,
         required_actor_probes=required_actor_probes,
+        required_hook_register_probe_events=required_hook_register_probe_events,
         required_ct_attackers=required_ct_attackers,
         required_ct_drop_attackers=required_ct_drop_attackers,
         required_ct_lowest_attackers=required_ct_lowest_attackers,
         required_memtable_found=required_memtable_found,
         required_memtable_rows=required_memtable_rows,
+        required_runtime_attacker_sources=required_runtime_attacker_sources,
+        required_ct_runtime_attackers=required_ct_runtime_attackers,
+        required_counter_runtime_attackers=required_counter_runtime_attackers,
     ))
     if not args.skip_analyze and state.exists:
         run_analyzer(args.log, args.analysis_output)
@@ -349,6 +376,7 @@ def inspect_log(
     has_old_header = False
     old_unit_lines = 0
     runtime_events = 0
+    runtime_attacker_source_counts: dict[str, int] = {}
     action_signal_counts: dict[str, int] = {}
     action_var_counts: dict[str, int] = {}
     target_slot_present_events = 0
@@ -371,6 +399,7 @@ def inspect_log(
     memory_table_found = 0
     memory_table_rows = 0
     actor_probe_events = []
+    hook_register_probe_events = 0
 
     for line_no, line in enumerate(log.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
         if "Generic Chronicle Battle Runtime Harness" in line:
@@ -382,6 +411,9 @@ def inspect_log(
         if runtime_match := RUNTIME_RE.search(line):
             runtime_events += 1
             runtime = parse_runtime_context(runtime_match.group(1), runtime_match.group("body"))
+            attacker_source = normalize_runtime_attacker_source(str(runtime.get("attacker_source", "")))
+            if is_present_runtime_attacker_source(attacker_source):
+                runtime_attacker_source_counts[attacker_source] = runtime_attacker_source_counts.get(attacker_source, 0) + 1
             action = runtime.get("action", {})
             if isinstance(action, dict):
                 signal = normalize_action_signal(str(action.get("signal", "")))
@@ -408,6 +440,8 @@ def inspect_log(
                         trace_var_counts[variable] = trace_var_counts.get(variable, 0) + 1
         if actor_probe_event := parse_actor_probe_line(line, line_no):
             actor_probe_events.append(actor_probe_event)
+        if HOOK_REGS_RE.search(line):
+            hook_register_probe_events += 1
         if REWRITE_EVENT_RE.search(line):
             rewrite_events += 1
             rewrite = parse_rewrite_line(line, line_no)
@@ -459,6 +493,7 @@ def inspect_log(
         has_old_header,
         old_unit_lines,
         runtime_events,
+        tuple(sorted(runtime_attacker_source_counts.items(), key=lambda item: (-item[1], item[0]))),
         sum(action_signal_counts.values()),
         tuple(sorted(action_signal_counts.items(), key=lambda item: (-item[1], item[0]))),
         tuple(sorted(action_var_counts.items(), key=lambda item: (-item[1], item[0]))),
@@ -482,6 +517,7 @@ def inspect_log(
         memory_table_found,
         memory_table_rows,
         len(actor_probe_events),
+        hook_register_probe_events,
         ct_actor_resolved,
         ct_drop_resolved,
         ct_lowest_resolved,
@@ -508,11 +544,15 @@ def describe_state(
     required_response_events: int = 0,
     required_trace_vars: tuple[str, ...] = (),
     required_actor_probes: int = 0,
+    required_hook_register_probe_events: int = 0,
     required_ct_attackers: int = 0,
     required_ct_drop_attackers: int = 0,
     required_ct_lowest_attackers: int = 0,
     required_memtable_found: int = 0,
     required_memtable_rows: int = 0,
+    required_runtime_attacker_sources: tuple[str, ...] = (),
+    required_ct_runtime_attackers: int = 0,
+    required_counter_runtime_attackers: int = 0,
 ) -> str:
     if not state.exists:
         return "log not found yet"
@@ -526,6 +566,27 @@ def describe_state(
         return (
             f"current runtime loaded; waiting for [RUNTIME] events "
             f"({state.runtime_events}/{required_runtime_events}){evidence_suffix(state)}"
+        )
+    missing_attacker_sources = missing_required_runtime_attacker_sources(state, required_runtime_attacker_sources)
+    if missing_attacker_sources:
+        return (
+            f"current runtime loaded; waiting for runtime attacker source(s) "
+            f"{', '.join(missing_attacker_sources)}; "
+            f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
+        )
+    ct_runtime_attackers = runtime_attacker_source_count(state, "ct-reset")
+    if ct_runtime_attackers < required_ct_runtime_attackers:
+        return (
+            f"current runtime loaded; waiting for CT-reset runtime attacker evidence "
+            f"({ct_runtime_attackers}/{required_ct_runtime_attackers}); "
+            f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
+        )
+    counter_runtime_attackers = runtime_attacker_source_count(state, "counter-inversion")
+    if counter_runtime_attackers < required_counter_runtime_attackers:
+        return (
+            f"current runtime loaded; waiting for counter-inversion runtime attacker evidence "
+            f"({counter_runtime_attackers}/{required_counter_runtime_attackers}); "
+            f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
         )
     if state.action_signal_events < required_action_signal_events:
         return (
@@ -582,6 +643,12 @@ def describe_state(
         return (
             f"current runtime loaded; waiting for [ACTOR-PROBE] events "
             f"({state.actor_probe_events}/{required_actor_probes}); "
+            f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
+        )
+    if state.hook_register_probe_events < required_hook_register_probe_events:
+        return (
+            f"current runtime loaded; waiting for [HOOK-REGS] events "
+            f"({state.hook_register_probe_events}/{required_hook_register_probe_events}); "
             f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
         )
     if state.ct_actor_resolved < required_ct_attackers:
@@ -679,6 +746,15 @@ def normalize_action_signal(value: str) -> str:
     return value.strip()
 
 
+def normalize_runtime_attacker_source(value: str) -> str:
+    text = (value or "").strip()
+    if not text or text.lower() == "none":
+        return "none"
+    if ":" in text or text.lower().startswith("0x"):
+        text = parse_runtime_attacker_source(text)
+    return text.strip().lower()
+
+
 def normalize_action_var(value: str) -> str:
     return value.strip()
 
@@ -689,6 +765,10 @@ def normalize_trace_var(value: str) -> str:
 
 def is_present_action_signal(signal: str) -> bool:
     return bool(signal) and signal != "0"
+
+
+def is_present_runtime_attacker_source(source: str) -> bool:
+    return bool(source) and source != "none"
 
 
 def is_present_action_var(value: str) -> bool:
@@ -720,6 +800,14 @@ def action_signal_count_map(state: LogState) -> dict[str, int]:
     return dict(state.action_signal_counts)
 
 
+def runtime_attacker_source_count_map(state: LogState) -> dict[str, int]:
+    return dict(state.runtime_attacker_source_counts)
+
+
+def runtime_attacker_source_count(state: LogState, source: str) -> int:
+    return runtime_attacker_source_count_map(state).get(normalize_runtime_attacker_source(source), 0)
+
+
 def action_var_count_map(state: LogState) -> dict[str, int]:
     return dict(state.action_var_counts)
 
@@ -735,6 +823,25 @@ def missing_required_action_signals(state: LogState, required_action_signals: tu
 
 def has_required_action_signals(state: LogState, required_action_signals: tuple[str, ...]) -> bool:
     return not missing_required_action_signals(state, required_action_signals)
+
+
+def missing_required_runtime_attacker_sources(
+    state: LogState,
+    required_runtime_attacker_sources: tuple[str, ...],
+) -> list[str]:
+    counts = runtime_attacker_source_count_map(state)
+    return [
+        source
+        for source in required_runtime_attacker_sources
+        if is_present_runtime_attacker_source(source) and counts.get(source, 0) <= 0
+    ]
+
+
+def has_required_runtime_attacker_sources(
+    state: LogState,
+    required_runtime_attacker_sources: tuple[str, ...],
+) -> bool:
+    return not missing_required_runtime_attacker_sources(state, required_runtime_attacker_sources)
 
 
 def missing_required_action_vars(state: LogState, required_action_vars: tuple[str, ...]) -> list[str]:
@@ -823,6 +930,9 @@ def describe_failure_guard(
 
 def evidence_suffix(state: LogState) -> str:
     parts: list[str] = []
+    if state.runtime_attacker_source_counts:
+        summary = ",".join(f"{source}={count}" for source, count in state.runtime_attacker_source_counts[:6])
+        parts.append(f"attacker sources {summary}")
     if state.action_signal_counts:
         summary = ",".join(f"{signal}={count}" for signal, count in state.action_signal_counts[:6])
         parts.append(f"action signals {summary}")
@@ -842,6 +952,8 @@ def evidence_suffix(state: LogState) -> str:
         parts.append(f"trace vars {summary}")
     if state.actor_probe_events:
         parts.append(f"{state.actor_probe_events} [ACTOR-PROBE]")
+    if state.hook_register_probe_events:
+        parts.append(f"{state.hook_register_probe_events} [HOOK-REGS]")
     if state.ct_actor_resolved:
         parts.append(f"{state.ct_actor_resolved} CT attacker")
     if state.ct_drop_resolved:

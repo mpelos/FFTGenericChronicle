@@ -1,5 +1,5 @@
 {
-  "_note": "DEATH-BY-HP-WRITE TEST (any target) - HP=0 ALONE. Same as death-test.json but AffectAllies=true so our HP=0 write fires on ANY target the player hits (ally OR foe). Used because the tester deliberately attacks their own allies to generate damage faster. REQUIRES a NEUTERED attack (basic weapon Attack) so vanilla is non-lethal and OUR write is what zeroes the target; do NOT use un-neutered specials (Cloud Limit / Fire / ninja Throw) for this test or vanilla may kill first and confound it. CauseDeathOnZeroHp is OFF: this tests whether writing HP=0 ALONE kills or leaves a zombie. If zombie, switch to the killflag variant (sets struct +0x61 |= 0x20).",
+  "_note": "LEGACY/REFUTED DEATH-WRITE PROBE (any target) - HP=0 ALONE. Same as death-test.json but AffectAllies=true so HP=0 can be reproduced on any target. Live evidence proved this creates a zombie-like state, not real KO. Keep only for historical auditing; current custom-formula profiles use MinHpFloor=1 and let the engine own death. If intentionally re-run, use neutered vanilla damage so the byte write is the isolated variable.",
   "RewriteObservedDamage": true,
   "RewriteObservedHealing": false,
   "AffectFoes": true,

@@ -42,6 +42,7 @@ def main() -> int:
     check_charge_aim_xml()
     damaging = set(neuter.classify_damaging_abilities())
     check_ability_classification(damaging)
+    check_sentinel_classification()
     check_override_sqlite(damaging)
     check_nxd_round_trip()
     check_coverage_report()
@@ -100,6 +101,24 @@ def check_ability_classification(damaging: set[int]) -> None:
         check(ability_id in damaging, f"{name} ({ability_id}) should be classified as damaging")
     for ability_id, name in NON_DAMAGING_SAMPLES.items():
         check(ability_id not in damaging, f"{name} ({ability_id}) should not be classified as damaging")
+
+
+def check_sentinel_classification() -> None:
+    bands = neuter.classify_damaging_ability_bands()
+    check(bands[16] == "high", "Fire should classify into the high/magical sentinel band")
+    check(bands[20] == "high", "Thunder should classify into the high/magical sentinel band")
+    check(bands[100] == "mid", "PhysicalAttack sample 100 should classify into the mid sentinel band")
+    check(bands[382] == "low", "Throw high-id fallback currently has only the low generic sentinel band")
+    check(neuter.ability_placeholder_xy(16, bands, "uniform") == neuter.NEUTER_XY, "uniform ability placeholder should stay X/Y=1")
+    check(neuter.ability_placeholder_xy(16, bands, "sentinel-coarse-v1") == neuter.SENTINEL_BAND_VALUES["high"], "high sentinel ability placeholder should use the high band value")
+    check(neuter.ability_placeholder_xy(100, bands, "sentinel-coarse-v1") == neuter.SENTINEL_BAND_VALUES["mid"], "mid sentinel ability placeholder should use the mid band value")
+
+    categories = neuter.load_weapon_categories_by_weapon_data_id()
+    check(neuter.weapon_sentinel_band(19, categories) == "low", "Sword weapon-data id 19 should classify into low/swing band")
+    check(neuter.weapon_sentinel_band(73, categories) == "mid", "Gun weapon-data id 73 should classify into mid/ranged band")
+    check(neuter.weapon_placeholder_power(19, 4, categories, "sentinel-coarse-v1") == neuter.SENTINEL_BAND_VALUES["low"], "low sentinel weapon should use low band power")
+    check(neuter.weapon_placeholder_power(73, 5, categories, "sentinel-coarse-v1") == neuter.SENTINEL_BAND_VALUES["mid"], "mid sentinel weapon should use mid band power")
+    check(neuter.charge_aim_placeholder_power("sentinel-coarse-v1") == neuter.SENTINEL_BAND_VALUES["mid"], "Aim/Charge sentinel fallback should use the mid band")
 
 
 def check_override_sqlite(damaging: set[int]) -> None:

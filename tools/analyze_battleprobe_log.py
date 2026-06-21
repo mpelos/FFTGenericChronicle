@@ -48,6 +48,7 @@ MP_EVENT_RE = re.compile(
 CTX_RE = re.compile(r"\[CTX ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 RUNTIME_RE = re.compile(r"\[RUNTIME ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 RUNTIME_MP_RE = re.compile(r"\[RUNTIME-MP ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
+HOOK_REGS_RE = re.compile(r"\[HOOK-REGS count=(\d+) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 REWRITE_EVENT_RE = re.compile(
     r"\[(?P<tag>(?:MP-)?REWRITE(?:-DRY-RUN|-FAILED|-SKIP|-ECHO-SKIP)?) "
     r"ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)"
@@ -110,6 +111,7 @@ def main() -> int:
     death_events: list[dict[str, object]] = []
     memory_table_events: list[dict[str, object]] = []
     actor_probe_events: list[ActorProbeEvent] = []
+    hook_register_events: list[dict[str, object]] = []
     headers: list[str] = []
     old_unit_lines = 0
     item_catalog = {} if args.no_catalog else load_item_catalog(args.catalog)
@@ -125,6 +127,10 @@ def main() -> int:
 
         if event := parse_actor_probe_line(line, line_no):
             actor_probe_events.append(event)
+            continue
+
+        if event := parse_hook_register_line(line, line_no):
+            hook_register_events.append(event)
             continue
 
         if m := UNIT_RE.search(line):
@@ -185,7 +191,7 @@ def main() -> int:
 
     args.output.parent.mkdir(exist_ok=True)
     args.output.write_text(
-        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, mp_events, contexts, runtime_contexts, rewrites, death_events, memory_table_events, actor_probe_events, old_unit_lines, item_catalog, args.catalog),
+        render(args.log, headers, units, candidates, dumps, diffs, diff_offsets, hp_events, mp_events, contexts, runtime_contexts, rewrites, death_events, memory_table_events, actor_probe_events, hook_register_events, old_unit_lines, item_catalog, args.catalog),
         encoding="utf-8",
     )
     print(f"wrote {args.output}")
@@ -256,6 +262,34 @@ def dump_item_hits(raw: list[int], item_catalog: dict[int, dict[str, str]], star
 
 def parse_runtime_contexts(runtime_contexts: list[tuple[str, str]]) -> list[dict[str, object]]:
     return [parse_runtime_context(ptr, body) for ptr, body in runtime_contexts]
+
+
+def parse_hook_register_line(line: str, line_no: int) -> dict[str, object] | None:
+    m = HOOK_REGS_RE.search(line)
+    if not m:
+        return None
+    return {
+        "line": line_no,
+        "count": parse_int(m.group(1)),
+        "ptr": m.group(2),
+        "id": m.group(3),
+        "body": m.group("body"),
+        "registers": parse_hook_registers(m.group("body")),
+    }
+
+
+def parse_hook_registers(body: str) -> dict[str, dict[str, str]]:
+    registers: dict[str, dict[str, str]] = {}
+    for part in body.split():
+        name, sep, rest = part.partition("=")
+        if not sep:
+            continue
+        value, _, classification = rest.partition(":")
+        registers[name.strip().lower()] = {
+            "value": value.strip(),
+            "classification": classification.strip() or "unknown",
+        }
+    return registers
 
 
 def parse_memory_table_events(lines: list[str]) -> list[dict[str, object]]:
@@ -443,13 +477,26 @@ def rewrite_status(tag: str) -> str:
     return "write"
 
 
+def parse_runtime_attacker_source(attacker: str) -> str:
+    text = (attacker or "").strip()
+    if not text or text.lower() == "none":
+        return "none"
+
+    _, sep, source = text.partition(":")
+    if not sep:
+        return "unknown"
+    return source.strip() or "unknown"
+
+
 def parse_runtime_context(ptr: str, body: str) -> dict[str, object]:
     fields = split_runtime_fields(body)
+    attacker = fields.get("attacker", "")
     return {
         "ptr": ptr,
         "raw": body,
         "event": fields.get("event", ""),
-        "attacker": fields.get("attacker", ""),
+        "attacker": attacker,
+        "attacker_source": parse_runtime_attacker_source(attacker),
         "action": parse_action(fields.get("action", "")),
         "target_slots": parse_slot_list(fields.get("targetSlots", "")),
         "attacker_slots": parse_slot_list(fields.get("attackerSlots", "")),
@@ -602,6 +649,7 @@ def render(
     death_events: list[dict[str, object]],
     memory_table_events: list[dict[str, object]],
     actor_probe_events: list[ActorProbeEvent],
+    hook_register_events: list[dict[str, object]],
     old_unit_lines: int,
     item_catalog: dict[int, dict[str, str]],
     catalog_path: Path,
@@ -720,6 +768,7 @@ def render(
     lines.append("")
 
     lines.extend(render_memory_table_summary(memory_table_events))
+    lines.extend(render_hook_register_summary(hook_register_events))
     lines.extend(render_runtime_summary(runtime_details))
     lines.extend(render_actor_probe_ct_summary(actor_probe_events))
     lines.extend(render_death_summary(death_events))
@@ -1065,6 +1114,44 @@ def death_gate_verdict(
     return "zombie-candidate: HP=0 was written, but no death-state evidence appears in this log"
 
 
+def render_hook_register_summary(hook_register_events: list[dict[str, object]]) -> list[str]:
+    lines: list[str] = []
+    lines.append("## Hook Register Probe")
+    if not hook_register_events:
+        lines.append("No parsed `[HOOK-REGS]` lines.")
+        lines.append("")
+        return lines
+
+    touched = Counter(str(event.get("id", "?")) for event in hook_register_events)
+    classifications: Counter[str] = Counter()
+    for event in hook_register_events:
+        registers = event.get("registers", {})
+        if not isinstance(registers, dict):
+            continue
+        for value in registers.values():
+            if not isinstance(value, dict):
+                continue
+            classification = str(value.get("classification", "")) or "unknown"
+            classifications[classification] += 1
+
+    lines.append(f"- Snapshots: {len(hook_register_events)}")
+    lines.append("- Touched ids: " + ", ".join(f"`{unit_id}`={count}" for unit_id, count in touched.most_common()))
+    lines.append("- Register classifications: " + ", ".join(f"`{name}`={count}" for name, count in classifications.most_common(12)))
+    lines.append("")
+
+    lines.append("### First Snapshots")
+    lines.append("| Hook Count | Ptr | Id | Registers |")
+    lines.append("| ---: | --- | --- | --- |")
+    for event in hook_register_events[:12]:
+        lines.append(
+            "| "
+            f"{event.get('count', '?')} | `{event.get('ptr', '?')}` | `{event.get('id', '?')}` | "
+            f"`{event.get('body', '-')}` |"
+        )
+    lines.append("")
+    return lines
+
+
 def render_memory_table_summary(memory_table_events: list[dict[str, object]]) -> list[str]:
     lines: list[str] = []
     lines.append("## Memory Table Probes")
@@ -1351,9 +1438,11 @@ def render_runtime_summary(runtime_details: list[dict[str, object]]) -> list[str
 
     event_counts = Counter(str(ctx.get("event", "")) or "unknown" for ctx in runtime_details)
     attacker_resolved = sum(1 for ctx in runtime_details if str(ctx.get("attacker", "")) not in ("", "none"))
+    attacker_sources = Counter(str(ctx.get("attacker_source", "")) or "none" for ctx in runtime_details)
     lines.append(f"- Parsed runtime contexts: {len(runtime_details)}")
     lines.append("- Events: " + ", ".join(f"{name}={count}" for name, count in event_counts.items()))
     lines.append(f"- Attackers resolved: {attacker_resolved}/{len(runtime_details)}")
+    lines.append("- Attacker sources: " + ", ".join(f"`{name}`={count}" for name, count in attacker_sources.items()))
     lines.append("")
 
     lines.extend(render_action_summary(runtime_details))

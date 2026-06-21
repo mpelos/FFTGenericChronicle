@@ -24,8 +24,12 @@ attacker, and action context.
 ## Top-Level Variables
 
 - `a.inferred`
+- `a.sourceCounter`
+- `a.sourceCt`
 - `a.sourceRecent`
 - `attacker.inferred`
+- `attacker.sourceCounter`
+- `attacker.sourceCt`
 - `attacker.sourceRecent`
 - `currentHp`
 - `currentMp`
@@ -93,6 +97,7 @@ safe zero/defaults until attacker context is mapped for a live event.
 
 - `brave`
 - `charId`
+- `ct`
 - `faith`
 - `hp`
 - `isAlly`
@@ -111,6 +116,8 @@ safe zero/defaults until attacker context is mapped for a live event.
 
 Additional attacker-source flags:
 
+- `attacker.sourceCt`, `a.sourceCt`
+- `attacker.sourceCounter`, `a.sourceCounter`
 - `attacker.inferred`, `a.inferred`
 - `attacker.sourceRecent`, `a.sourceRecent`
 
@@ -315,5 +322,6 @@ Slot/item suffixes:
 - Slot metadata is implemented, but exact equipment offsets still need live confirmation.
 - Action variables are implemented through sentinel rules now; true ability/action ids still need
   a later live context source.
-- Death/KO ownership has the `+0x61 | 0x20` write path configured, but Test 2b still has to
-  prove the live KO lifecycle.
+- Death/KO ownership is engine-owned for the current runtime path: direct HP=0 and
+  `+0x61 | 0x20` writes are preserved only as historical/refuted probes, while live
+  custom lethal formulas should use `MinHpFloor=1` and let the engine deliver KO.

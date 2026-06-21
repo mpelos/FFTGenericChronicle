@@ -186,21 +186,23 @@ owns the real outcome. Without the placeholder: lethal hits kill before intercep
 non-lethal hits visually flicker (e.g. 567->297->566). Test D already proved the data lever exists
 (OverrideAbilityActionData Formula/X/Y is read), so the placeholder is buildable.
 
-### New focused sub-problem
-If vanilla never kills, **we** must cause death when our formula is lethal: write HP=0 AND set the
-death/status state ourselves (locate that field/flag from the struct dumps). Focused RE task, not a
-blocker for non-lethal mechanics.
+### Historical focused sub-problem (later refuted by Tests 2b/2c)
+At this point in the investigation, the open hypothesis was that if vanilla never killed, **we**
+could cause death when our formula was lethal by writing HP=0 and setting the death/status state
+ourselves. Tests 2b/2c below refuted that hypothesis: HP=0 and `+0x61|=0x20` are effects/signatures
+of death, not triggers. The accepted path now keeps custom HP writes above `MinHpFloor=1` and lets
+the engine perform real KO.
 
 ### Incidental: Mana Shield
 Attacks on a Mana-Shield unit were redirected to MP by the engine; this profile does not rewrite MP
 (`RewriteObservedMpLoss=False`), so the full vanilla damage drained MP. Engine behavior, not a bug.
 MP / Mana Shield is a separate channel to handle later.
 
-### Revised next-gate order
+### Historical next-gate order (pre-Test 2b/2c)
 1. Data-layer **damage-neuter placeholder** (make all damage actions deal a small fixed nonlethal
    value via OverrideAbilityActionData / ItemWeaponData) - removes the death race and the flicker,
    and doubles as the start of the sentinel action-context channel.
-2. Death-causing path (write HP=0 + death state) for when our formula is lethal.
+2. Refuted later: death-causing path by writing HP=0 + death state for lethal custom formulas.
 3. Then context resolution (attacker/action/equipment) on top of the clean placeholder signal.
 
 ---
@@ -238,8 +240,8 @@ the weapon `Power=1` neuter because the formula catalog routes them through WP; 
 secondary table, so the generator now emits `AbilityChargeAimData.xml` with Aim +2..+20
 `Power=1` (Aim +1 is already 1). Remaining risk: Throw/Jump still need a live spot-check, and
 formulas that ignore X/Y/WP/charge Power (`%`-damage / Gravity-style effects) may still need a
-separate lever. With weapon + ability + charge/aim neuter deployed, vanilla can no longer one-shot
-in the common case, so Test 2b (death by HP=0 write) can be re-run cleanly.
+separate lever. With weapon + ability + charge/aim neuter deployed, vanilla could no longer
+one-shot in the common case, making the historical Test 2b byte-write probe clean enough to refute.
 
 ### 2. Death-state capture instrumentation (gate step 2, the measurement) - BUILT
 
@@ -253,16 +255,16 @@ at 0 HP by any cause** (vanilla kill or our own HP=0 write), it logs `[DEATH-DUM
 on the transition event means it fires even when our rewrite sets the tracked HP to 0 and no delta
 re-fires.
 
-### 3. Death-causing write (gate step 2, the action) - BUILT, OFF by default
+### 3. Death-causing write (gate step 2, the action) - BUILT, later refuted
 
 New `Mod.cs` options `CauseDeathOnZeroHp` + `DeathStateWrites[]`. When our formula zeroes a unit's
 HP and `CauseDeathOnZeroHp=true`, each `DeathStateWrite` does a read-modify-write on the unit struct
 (`Offset`, `Width` Byte/Word/DWord, and one of `Value` / `OrMask` / `AndMask`) so a single status
-**bit** can be set without clobbering the field. This is the configurable hook for setting the death
-state ourselves once vanilla is neutered. It stays inert until the offset from step 2 is filled in -
-no rebuild needed, JSON only.
+**bit** can be set without clobbering the field. This was the configurable hook for setting the
+death state ourselves once vanilla was neutered. Live Tests 2b/2c proved this does not cause real
+KO; the setting remains only as legacy/refuted probe infrastructure.
 
-### Live-test plan (run in this order)
+### Historical live-test plan (kept for audit trail, not the active path)
 
 Both runs need the **new DLL** deployed (`codemod\build-deploy.ps1`, Reloaded-II closed). Settings
 hot-reload ~1/s; copy the chosen profile to
@@ -275,10 +277,8 @@ hot-reload ~1/s; copy the chosen profile to
 - **Test 2b - death by HP write.** Deploy the **weapon + ability/spell + charge/aim neuter** data mod
   (`deploy.ps1`, after the `OverrideAbilityActionData` NXD has been built). Profile
   `work/battle-runtime-settings.death-test.json` (`FinalDamageFormula="9999"`, `AffectFoes` only).
-  Attack an enemy with a neutered action: vanilla deals a small placeholder, then the reconciler forces that foe's
-  HP to 0. **Does it DIE or ZOMBIE at 0 HP?** If it dies -> writing HP=0 is sufficient, no
-  death-state write needed. If it zombies -> fill `DeathStateWrites` from Test 2a, set
-  `CauseDeathOnZeroHp=true`, retest.
+  Attack an enemy with a neutered action: vanilla deals a small placeholder, then the reconciler
+  forces that foe's HP to 0. This was the hypothesis test; the result below was zombie, not real KO.
 
 Useful watchers:
 
@@ -298,25 +298,19 @@ codemod\prepare-death-gate.ps1 -KillFlag
 python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --death-writes 1 --max-rewrite-failures 0 --max-death-write-failures 0
 ```
 
-The readiness check is read-only and should be run before deploying/launching. The simulator
+The readiness check is read-only and, if these legacy probes are intentionally re-audited, should
+be run before deploying/launching. The simulator
 commands are also offline-only; they prove both death profiles compute the intended HP result
 (foe -> 0 HP, allies/healing preserved) before any live write is attempted. The optional
 `-NeuterSpotcheck` preparation deploys the same data neuter with a dry-run runtime profile first:
 trigger representative attacks/spells/Throw/Jump/Aim and then run the analyzer to confirm observed
-`vanillaDamage` deltas are placeholder-sized before trying HP=0; the watcher guard fails if a
-large vanilla HP rewrite or rewrite failure appears. The HP-only death gate has two watcher
-branches: one waits for lethal rewrite plus `[DEATH-*]` evidence, proving HP=0 alone may be enough;
-the other waits for the lethal rewrite and requires zero `[DEATH-*]` events during a short settle
-window, which is the expected "zombie at 0 HP" branch before switching to the killflag profile.
-If the unit zombies, rerun the preparation helper with `-KillFlag`; the killflag watcher waits for
-the lethal HP rewrite, `[DEATH-*]` evidence, and the profile's concrete `[DEATH-WRITE]`, while
-failing on HP rewrite failures or death-write failures. `tools/analyze_battleprobe_log.py`
-summarizes `[DEATH-DIFF]`, `[DEATH-WRITE]`, `[DEATH-WRITE-FAILED]`, the `+0x61` KO flag verdict,
-the combined `Death Gate Outcome`, and whether observed `vanillaDamage` deltas during HP rewrites
-are placeholder-sized.
-
-The outcome of 2b decides whether the death-state RE (2a) is even on the critical path, before we
-invest further in it.
+`vanillaDamage` deltas are placeholder-sized before replaying the legacy HP=0 probes; the watcher
+guard fails if a large vanilla HP rewrite or rewrite failure appears. The HP-only death gate originally had two
+watcher branches: one waited for lethal rewrite plus `[DEATH-*]` evidence, and the other waited for
+a lethal rewrite with no `[DEATH-*]` events during a short settle window. The killflag branch then
+added a concrete `[DEATH-WRITE]` for the mapped `+0x61` KO bit. The results below refuted both
+byte-write paths: these commands remain useful only when re-auditing historical probes. Current
+custom-formula/sentinel profiles should use `MinHpFloor=1` and let the engine own real KO.
 
 ---
 
@@ -336,13 +330,13 @@ appeared once = noise) and `[DEATH-FOLLOW]` was empty (no delayed change within 
 0x00..0x17F window). So within the unit struct, death = HP 0 **and** `+0x61 |= 0x20`. This maps the
 first bit of the previously-unknown status region (docs/modding/05 updated).
 
-### What this enables
-`DeathStateWrites` is now configured with `Offset=0x61 (97), Width=Byte, OrMask=0x20 (32)`. Two
-profiles are ready for Test 2b: `death-test.json` (HP=0 alone, `CauseDeathOnZeroHp=false`) and
-`death-test-killflag.json` (HP=0 + set `+0x61` bit, `CauseDeathOnZeroHp=true`). Settings hot-reload,
-so 2b can try HP=0-alone first and, if the unit zombies, swap to the killflag profile without
-relaunching. Open question 2b answers: is `+0x61|=0x20` (plus HP=0) enough, or is death also tracked
-outside the unit struct (turn manager / AI lists)?
+### What this enabled at the time
+`DeathStateWrites` was configured with `Offset=0x61 (97), Width=Byte, OrMask=0x20 (32)`, enabling
+the decisive Test 2b/2c probes: `death-test.json` (HP=0 alone, `CauseDeathOnZeroHp=false`) and
+`death-test-killflag.json` (HP=0 + set `+0x61` bit, `CauseDeathOnZeroHp=true`). The open question was
+whether `+0x61|=0x20` plus HP=0 was enough, or whether death was tracked outside the unit struct.
+Tests 2b/2c answered it decisively: byte writes are not enough and must not be used as the active
+death path.
 
 ---
 
@@ -447,18 +441,31 @@ Team this battle: Ramza `0x01`, Ninja `0x80`, Agrias `0x1E`, Cloud `0x32`, Beowu
   CT=100 ("charged, waiting in the act queue") while Ramza, who had just acted, was at 0 - exactly
   the FFT CT model.
 
-### Rule (now being implemented in the code mod)
-Replace the fragile recency heuristic (`InferAttackerFromRecentUnits` / `ResolveRecentAttacker`) with
-CT-based resolution: track `+0x41` history per unit pointer; at a damage event, attacker = the
-registered unit, != target, with the largest recent CT drop (tiebreak), else lowest absolute CT.
-Faction-agnostic, no action-dispatcher hook required. This unlocks attacker-dependent custom formulas
-(the next deliverable is a real demo, e.g. `damage = attacker.pa*4 - target.faith`).
+### Rule (implemented baseline)
+The code mod now resolves attackers by CT history: track `+0x41` per unit pointer; at a damage event,
+attacker = the registered unit, != target, whose CT recently dropped/reset (`ct-reset`). Ties use the
+drop history rather than raw "recent unit" order. The runtime falls back to the old recent-unit
+heuristic only when configured/needed.
+
+This is faction-agnostic and does not require an action-dispatcher hook. Formula context now exposes
+the attacker and target stats live, including `attacker.ct`/`target.ct`, plus attacker-source flags
+such as `a.sourceCt`. A counter fallback also exists: if a unit immediately damages the unit that
+just attacked it, the resolver can invert the previous resolved HP-damage pair and mark the source
+as `counter-inversion` (`a.sourceCounter`).
+
+This unlocks attacker-dependent custom formulas. Offline and live-profile contracts now include a
+demo-style formula path guarded on `a.present` and preserving engine-owned death via `MinHpFloor=1`.
 
 ### Still open after Test 4 (where deep RE helps most)
 - **Pre-damage window (stat puppeteering, A2):** find a signal that fires BEFORE the HP write (in the
   turn-state around `battle_base_ptr`) so we can overwrite the attacker's stat just before the
   engine's calc -> the engine computes our exact number AND kills same-hit (removes Test 3's 2-hit
   cost). Highest-value RE target.
-- **"currently-acting unit" pointer** directly in the battle struct would be more robust than CT
-  inference - worth a parallel RE look (CT already works, so not blocking).
-- **Neuter gap** for the special skillsets listed in Test 2b/2c.
+- **"currently-acting unit" pointer** directly in the battle/action state would be more robust than
+  CT inference. Offline support now exists through the opt-in `[HOOK-REGS]` probe at the stable
+  `battle_base_ptr` hook; live validation is pending.
+- **Action identity.** Coarse action identity is now implementable through sentinel placeholder
+  bands (`sentinel-coarse-v1`) and `ActionSignalRules`, but live calibration is still pending and
+  the bands may overlap for some formulas.
+- **Neuter gap** for special skillsets/formulas that ignore weapon `Power` or action `X/Y`/Aim
+  `Power`; see `work/neuter_gap_targets.md`.

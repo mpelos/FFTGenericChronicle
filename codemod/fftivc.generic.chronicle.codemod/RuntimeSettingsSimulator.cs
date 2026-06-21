@@ -68,6 +68,7 @@ internal sealed class RuntimeSimulationUnit
     public int? Pa { get; set; }
     public int? Ma { get; set; }
     public int? Speed { get; set; }
+    public int? Ct { get; set; }
     public int? Move { get; set; }
     public int? Jump { get; set; }
     public int? Brave { get; set; }
@@ -88,6 +89,7 @@ internal sealed class RuntimeSimulationUnit
             Pa = 10,
             Ma = 8,
             Speed = 7,
+            Ct = 70,
             Move = 4,
             Jump = 3,
             Brave = 70,
@@ -113,6 +115,7 @@ internal sealed class RuntimeSimulationUnit
             Pa = 12,
             Ma = 7,
             Speed = 8,
+            Ct = 0,
             Move = 5,
             Jump = 4,
             Brave = 75,
@@ -146,7 +149,8 @@ internal sealed class RuntimeSimulationUnit
             Faith ?? 0,
             raw,
             Mp ?? 0,
-            MaxMp ?? Math.Max(Mp ?? 0, 0));
+            MaxMp ?? Math.Max(Mp ?? 0, 0),
+            Ct ?? 0);
     }
 
     private static void WriteRaw(byte[] raw, string offsetText, int value)

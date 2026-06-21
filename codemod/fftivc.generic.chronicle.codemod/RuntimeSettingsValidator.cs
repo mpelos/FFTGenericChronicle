@@ -65,6 +65,8 @@ internal static class RuntimeSettingsValidator
             report.Error("RecentAttackerWindowMs", "RecentAttackerWindowMs must be nonnegative.");
         if (settings.CtDropWindowMs <= 0)
             report.Error("CtDropWindowMs", "CtDropWindowMs must be greater than zero.");
+        if (settings.CounterEventWindowMs <= 0)
+            report.Error("CounterEventWindowMs", "CounterEventWindowMs must be greater than zero.");
         if (settings.UnitPollIntervalMs <= 0)
             report.Error("UnitPollIntervalMs", "UnitPollIntervalMs must be greater than zero.");
         else if (settings.UnitPollIntervalMs > 100)
@@ -75,6 +77,10 @@ internal static class RuntimeSettingsValidator
             report.Warn("MaxTrackedBattleUnits", "values below 16 may skip units in larger battles.");
         if (settings.SuppressOwnRewriteEchoWindowMs < 0)
             report.Error("SuppressOwnRewriteEchoWindowMs", "SuppressOwnRewriteEchoWindowMs must be nonnegative.");
+        if (settings.HookRegisterProbeMaxLogs < 0)
+            report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbe)
+            report.Warn("HookRegisterProbe", "hook register probe is for short RE captures only; keep HookRegisterProbeMaxLogs low.");
         if (settings.UnknownDiffStart < 0 || settings.UnknownDiffStart >= RawSize)
             report.Error("UnknownDiffStart", $"UnknownDiffStart must be within 0..0x{RawSize - 1:X}.");
         if (settings.UnknownDiffEnd < settings.UnknownDiffStart || settings.UnknownDiffEnd >= RawSize)
@@ -509,6 +515,10 @@ internal static class RuntimeSettingsValidator
         context.Set("a.inferred", 1);
         context.Set("attacker.sourceRecent", 1);
         context.Set("a.sourceRecent", 1);
+        context.Set("attacker.sourceCt", 1);
+        context.Set("a.sourceCt", 1);
+        context.Set("attacker.sourceCounter", 1);
+        context.Set("a.sourceCounter", 1);
         AddActionVariables(context, settings);
         AddSlotVariables(context, "slot", settings.EquipmentSlots, catalog, preferWeapon: false);
         AddSlotVariables(context, "targetSlot", settings.EquipmentSlots, catalog, preferWeapon: false);
@@ -650,6 +660,7 @@ internal static class RuntimeSettingsValidator
         context.Set($"{prefix}.pa", unit.Pa);
         context.Set($"{prefix}.ma", unit.Ma);
         context.Set($"{prefix}.speed", unit.Speed);
+        context.Set($"{prefix}.ct", unit.Ct);
         context.Set($"{prefix}.move", unit.Move);
         context.Set($"{prefix}.jump", unit.Jump);
         context.Set($"{prefix}.brave", unit.Brave);

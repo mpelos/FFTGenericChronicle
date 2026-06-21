@@ -17,12 +17,20 @@ tools/*
 !tools/dump_item_catalog.py
 !tools/promote_runtime_offsets.py
 !tools/build_neuter_data.py
+!tools/report_offline_readiness.py
+!tools/report_live_gate_plan.py
+!tools/report_neuter_gap_targets.py
 !tools/report_neuter_coverage.py
+!tools/scan_static_code_patterns.py
 !tools/report_runtime_profiles.py
 !tools/test_actor_probe_ct.py
 !tools/test_memtable_candidates.py
+!tools/test_offline_readiness.py
+!tools/test_live_gate_plan.py
+!tools/test_neuter_gap_targets.py
 !tools/test_neuter_data.py
 !tools/test_runtime_profiles.py
+!tools/test_static_code_patterns.py
 !tools/test_runtime_tooling.py
 !tools/watch_live_mapping.py
 
@@ -34,6 +42,14 @@ work/game-file-backups/
 # === Raw extracted game data (copyrighted) and backups of game files ===
 extracted/
 backups/
+
+# === Extracted sprite/G2D art (copyrighted game asset, regenerated via FF16Tools) ===
+work/sprite-extract/system/
+work/sprite-extract/**/*.dat
+work/sprite-extract/**/*.bin
+work/sprite-extract/**/*.dds
+work/sprite-extract/**/*.png
+# keep work/sprite-extract/g2d_manifest.json (small derived index, safe to track)
 
 # === Large derived data dumps (regenerated from the game) ===
 work/*.sqlite

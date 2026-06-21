@@ -1,5 +1,5 @@
 {
-  "_note": "RE CAPTURE - find the death/status flag offset (docs/modding/07 Test 1b, next-gate step 2). Observe-only: NO HP rewrite, so vanilla kills units normally. Run with NO data neuter deployed (units must be able to die). When any unit is observed at 0 HP, the mod logs [DEATH-DUMP] (full struct), [DEATH-DIFF] (alive->dead byte changes) and [DEATH-FOLLOW] (changes over the next ~1.5s, to catch a delayed flag set). Read the log and look for changed offsets OTHER than 0x30/0x31 (HP). A byte/bit that flips exactly when a unit dies is the death/status field. Then put it in DeathStateWrites (see death-test profile) to cause death ourselves.",
+  "_note": "LEGACY OBSERVE-ONLY RE CAPTURE - mapped the death/status flag offset for docs/modding/07 Test 2a. No HP rewrite: vanilla kills units normally and the mod logs [DEATH-DUMP], [DEATH-DIFF], and [DEATH-FOLLOW]. This proved +0x61 bit 0x20 is set on real death; Tests 2b/2c later proved writing that bit does not cause real KO. Keep for historical auditing only.",
   "RewriteObservedDamage": false,
   "RewriteObservedHealing": false,
   "RewriteObservedMpLoss": false,

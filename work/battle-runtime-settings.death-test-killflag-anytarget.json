@@ -1,5 +1,5 @@
 {
-  "_note": "DEATH-BY-HP-WRITE TEST, STEP 2 (any target) - HP=0 + KO FLAG. Same as death-test-anytarget.json but CauseDeathOnZeroHp=true: after forcing the target's HP to 0, also set the death/status bit found in Test 2a (struct +0x61 |= 0x20). Used because step 1 (HP=0 alone) left a zombie at 0 HP with only +0x30/HP changed. WATCH: does the target die now? Look for [DEATH-WRITE ...] lines confirming the flag write. Requires a NEUTERED basic weapon attack so vanilla is non-lethal. AffectAllies=true so any target works.",
+  "_note": "LEGACY/REFUTED DEATH-WRITE PROBE (any target) - HP=0 + KO FLAG. Same as death-test-anytarget.json but CauseDeathOnZeroHp=true, setting +0x61|=0x20 after HP=0. Live evidence proved this still creates a zombie/partial state, not real KO. Keep only for historical auditing; current custom-formula profiles use MinHpFloor=1 and let the engine own death.",
   "RewriteObservedDamage": true,
   "RewriteObservedHealing": false,
   "AffectFoes": true,

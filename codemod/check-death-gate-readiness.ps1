@@ -8,7 +8,8 @@ param(
     [string]$ProcessName = 'FFT_enhanced'
 )
 
-# Read-only/live-safe readiness check for the death gate (docs/modding/07 Test 2b).
+# Read-only/live-safe readiness check for the legacy/refuted death-write probes
+# (docs/modding/07 Tests 2b/2c).
 # This script validates local artifacts and installed state, but does not deploy, edit AppConfig,
 # remove generated packs, touch saves, or launch the game.
 $ErrorActionPreference = 'Stop'
@@ -65,8 +66,8 @@ $deathKillFlag = Resolve-RepoPath 'work\battle-runtime-settings.death-test-killf
 $runtimeProfiles = @(
     [pscustomobject]@{ Name = 'neuter-spotcheck'; Path = $neuterSpotcheck; Purpose = 'safe placeholder dry-run' }
     [pscustomobject]@{ Name = 'death-flag-capture'; Path = $deathCapture; Purpose = 'observe vanilla deaths only' }
-    [pscustomobject]@{ Name = 'death-test-hp-only'; Path = $deathHpOnly; Purpose = 'force foe HP=0, no KO flag write' }
-    [pscustomobject]@{ Name = 'death-test-killflag'; Path = $deathKillFlag; Purpose = 'force foe HP=0 and write KO flag' }
+    [pscustomobject]@{ Name = 'death-test-hp-only'; Path = $deathHpOnly; Purpose = 'legacy/refuted: force foe HP=0, no KO flag write' }
+    [pscustomobject]@{ Name = 'death-test-killflag'; Path = $deathKillFlag; Purpose = 'legacy/refuted: force foe HP=0 and write KO flag' }
 )
 $neuterSpotcheckScenarios = Resolve-RepoPath 'docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json'
 $deathGateScenarios = Resolve-RepoPath 'docs\modding\examples\runtime-simulation-death-gate.example.json'
@@ -78,7 +79,8 @@ $testNeuterScript = Resolve-RepoPath 'tools\test_neuter_data.py'
 $settingsValidateProject = Resolve-RepoPath 'codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj'
 $settingsSimulateProject = Resolve-RepoPath 'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj'
 
-Write-Host "Generic Chronicle death gate readiness (read-only)" -ForegroundColor Cyan
+Write-Host "Generic Chronicle legacy death-write readiness (read-only)" -ForegroundColor Cyan
+Write-Host "HP=0 and KO-flag writes are refuted as a death path; current profiles use MinHpFloor=1 and engine-owned KO." -ForegroundColor Yellow
 Write-Host "Repo: $repo" -ForegroundColor DarkGray
 
 Write-Host ""
@@ -168,7 +170,7 @@ $hashRows = @(
 )
 $hashRows | Select-Object Status, Source, Destination | Format-Table -AutoSize
 if ($hashRows.Status -contains 'DIFF' -or $hashRows.Status -contains 'missing-installed') {
-    Write-Host "Installed data mod is not identical to repo source; deploy.ps1 is needed before Test 2b." -ForegroundColor Yellow
+    Write-Host "Installed data mod is not identical to repo source; redeploy only if intentionally re-auditing legacy death-write probes." -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -222,7 +224,7 @@ if (Test-Path -LiteralPath $installedSettings) {
     $profileRows | Select-Object Status, Profile, Purpose, Source | Format-Table -AutoSize
     $installedMatches = @($profileRows | Where-Object { $_.Status -eq 'INSTALLED' })
     if ($installedMatches.Count -eq 0) {
-        Write-Host "Installed runtime settings do not match any known death-gate profile; redeploy the intended profile before live testing." -ForegroundColor Yellow
+        Write-Host "Installed runtime settings do not match any known legacy death-write profile." -ForegroundColor Yellow
     }
 
     try {
@@ -261,15 +263,16 @@ else {
 }
 
 Write-Host ""
-Write-Host "Useful live commands" -ForegroundColor Green
+Write-Host "Useful commands" -ForegroundColor Green
 Write-Host "codemod\prepare-death-gate.ps1 -NeuterSpotcheck"
 Write-Host "python tools\watch_live_mapping.py --runtime-events 0 --placeholder-rewrites 3 --max-placeholder-damage 30 --max-large-vanilla-rewrites 0 --max-rewrite-failures 0"
 Write-Host "python tools\analyze_battleprobe_log.py"
 Write-Host "  Review: Neuter Placeholder Check, Runtime Context Summary, Formula Trace Variables."
+Write-Host "Legacy/refuted byte-write probes below. Do not use them as the active custom-formula death path:"
 Write-Host "codemod\prepare-death-gate.ps1"
 Write-Host "python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --max-rewrite-failures 0"
 Write-Host "python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --max-death-events 0 --settle-seconds 2 --max-rewrite-failures 0"
 Write-Host "codemod\prepare-death-gate.ps1 -KillFlag"
 Write-Host "python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --death-writes 1 --max-rewrite-failures 0 --max-death-write-failures 0"
 Write-Host "python tools\analyze_battleprobe_log.py"
-Write-Host "  Review: HP Write Proof Check, Death State, Runtime Context Summary."
+Write-Host "  Review: legacy Death Gate Outcome, HP Write Proof Check, Death State, Runtime Context Summary."

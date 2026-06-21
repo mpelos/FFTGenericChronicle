@@ -46,6 +46,14 @@ public class Mod : ModBase
     private const int DUMP = 0x180;       // copy 0x00..0x17F (stats + wider suspected gear/action region)
     private const int B_PTR = DUMP;       // native pointer-sized: rcx unit pointer
     private const int B_COUNT = DUMP + 8;
+    private const int B_REGS = B_COUNT + 8;
+    private const int REGISTER_COUNT = 16;
+    private const int B_SIZE = B_REGS + (REGISTER_COUNT * 8);
+    private static readonly string[] RegisterNames =
+    [
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+        "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+    ];
     private nint _buf;
     private Reloaded.Hooks.Definitions.IAsmHook? _hook;
     private Thread? _poller;
@@ -70,6 +78,7 @@ public class Mod : ModBase
     private long _battleEventIndex;
     private int _pollErrorCount;
     private int _registryLimitLogCount;
+    private int _hookRegisterProbeLogs;
 
     public Mod(ModContext context)
     {
@@ -97,8 +106,8 @@ public class Mod : ModBase
 
             InstallMemoryTableProbes(scanner, baseAddr);
 
-            _buf = Marshal.AllocHGlobal(B_COUNT + 8);
-            for (int i = 0; i < B_COUNT + 8; i++) Marshal.WriteByte(_buf, i, 0);
+            _buf = Marshal.AllocHGlobal(B_SIZE);
+            for (int i = 0; i < B_SIZE; i++) Marshal.WriteByte(_buf, i, 0);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -133,7 +142,34 @@ public class Mod : ModBase
         try
         {
             string buf = $"0{_buf:X}h";
-            var asm = new List<string> { "use64", "push rax", "push r8", "pushfq", $"mov rax, {buf}", $"mov [rax+{B_PTR}], rcx" };
+            var asm = new List<string>
+            {
+                "use64",
+                "push rax",
+                "push r8",
+                "pushfq",
+                $"mov rax, {buf}",
+                $"mov r8, [rsp+16]",
+                $"mov [rax+{B_REGS + 0 * 8}], r8",
+                $"mov [rax+{B_REGS + 1 * 8}], rbx",
+                $"mov [rax+{B_REGS + 2 * 8}], rcx",
+                $"mov [rax+{B_REGS + 3 * 8}], rdx",
+                $"mov [rax+{B_REGS + 4 * 8}], rsi",
+                $"mov [rax+{B_REGS + 5 * 8}], rdi",
+                $"mov [rax+{B_REGS + 6 * 8}], rbp",
+                "lea r8, [rsp+24]",
+                $"mov [rax+{B_REGS + 7 * 8}], r8",
+                $"mov r8, [rsp+8]",
+                $"mov [rax+{B_REGS + 8 * 8}], r8",
+                $"mov [rax+{B_REGS + 9 * 8}], r9",
+                $"mov [rax+{B_REGS + 10 * 8}], r10",
+                $"mov [rax+{B_REGS + 11 * 8}], r11",
+                $"mov [rax+{B_REGS + 12 * 8}], r12",
+                $"mov [rax+{B_REGS + 13 * 8}], r13",
+                $"mov [rax+{B_REGS + 14 * 8}], r14",
+                $"mov [rax+{B_REGS + 15 * 8}], r15",
+                $"mov [rax+{B_PTR}], rcx",
+            };
             for (int off = 0; off < DUMP; off += 4) { asm.Add($"mov r8d, [rcx+{off}]"); asm.Add($"mov [rax+{off}], r8d"); }
             asm.Add($"mov r8d, [rax+{B_COUNT}]"); asm.Add("add r8d, 1"); asm.Add($"mov [rax+{B_COUNT}], r8d");
             asm.AddRange(new[] { "popfq", "pop r8", "pop rax" });
@@ -183,6 +219,7 @@ public class Mod : ModBase
         byte[] raw = ReadHookDumpBytes();
         if (!TryCreateUnitSnapshot(unitPtr, raw, out var target, out _)) return;
 
+        LogHookRegisterProbeIfEnabled(count, target);
         ProcessObservedUnit(target, nowTick, touchForContext: true, logStructMapping: true);
     }
 
@@ -289,6 +326,7 @@ public class Mod : ModBase
                     Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {attacker.Summary}");
                 }
                 trackingHp = MaybeRewriteHpEvent(new DamageEvent(target, prev, hp, signedDamage, attacker.Unit, attacker.Source, EventIndex: eventIndex, EventSeed: eventSeed));
+                _contextResolver.RememberHpDamageEvent(target, attacker.Unit, attacker.Source, signedDamage, nowTick, eventIndex);
             }
             needsFlush = true;
         }
@@ -657,6 +695,41 @@ public class Mod : ModBase
         return bytes;
     }
 
+    private nint[] ReadHookRegisters()
+    {
+        var registers = new nint[REGISTER_COUNT];
+        for (int i = 0; i < registers.Length; i++)
+            registers[i] = Marshal.ReadIntPtr(_buf, B_REGS + (i * IntPtr.Size));
+        return registers;
+    }
+
+    private void LogHookRegisterProbeIfEnabled(int hookCount, UnitSnapshot touched)
+    {
+        if (!_settings.HookRegisterProbe) return;
+        int maxLogs = Math.Clamp(_settings.HookRegisterProbeMaxLogs, 0, 10000);
+        if (_hookRegisterProbeLogs >= maxLogs) return;
+
+        nint[] registers = ReadHookRegisters();
+        var parts = new List<string>(registers.Length);
+        for (int i = 0; i < registers.Length && i < RegisterNames.Length; i++)
+            parts.Add($"{RegisterNames[i]}=0x{registers[i]:X}:{ClassifyRegisterValue(registers[i], touched)}");
+
+        _hookRegisterProbeLogs++;
+        Line($"[HOOK-REGS count={hookCount} ptr=0x{touched.Ptr:X} id=0x{touched.CharId:X2}] {string.Join(" ", parts)}");
+        Flush();
+    }
+
+    private string ClassifyRegisterValue(nint value, UnitSnapshot touched)
+    {
+        if (value == 0) return "zero";
+        if (value == touched.Ptr) return "unit:touched";
+        if (_unitObservations.TryGetValue(value, out var observation))
+            return $"unit:id=0x{observation.Unit.CharId:X2}:team={observation.Unit.Team}:hp={observation.Unit.Hp}:ct={observation.Unit.Ct}";
+        if (ReadableMemoryRange.IsReadable(value, IntPtr.Size))
+            return "readable";
+        return "unreadable";
+    }
+
     private void LogUnknownDiffs(nint unitPtr, int id, byte[] raw)
     {
         if (!_settings.LogUnknownFieldDiffs) return;
@@ -933,7 +1006,7 @@ internal sealed record UnitSnapshot(
     int Ct = 0)
 {
     public string FactionLabel => IsFoe ? "foe " : "ally";
-    public string StatLine => $"Lv{Level} HP{MaxHp} MP{MaxMp} PA{Pa} MA{Ma} Sp{Speed} Mv{Move} Jp{Jump} Br{Brave} Fa{Faith}";
+    public string StatLine => $"Lv{Level} HP{MaxHp} MP{MaxMp} PA{Pa} MA{Ma} Sp{Speed} CT{Ct} Mv{Move} Jp{Jump} Br{Brave} Fa{Faith}";
 
     public int ReadByte(int offset) => offset >= 0 && offset < Raw.Length ? Raw[offset] : -1;
 
@@ -1506,6 +1579,10 @@ internal sealed class BattleFormulaEngine
         context.Set("a.inferred", e.Attacker is not null && !e.AttackerSource.Equals("none", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("attacker.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("a.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourceCt", e.AttackerSource.Equals("ct-reset", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.sourceCt", e.AttackerSource.Equals("ct-reset", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         AddActionVariables(context, "action", e.Action, e);
         AddActionVariables(context, "act", e.Action, e);
 
@@ -1574,6 +1651,10 @@ internal sealed class BattleFormulaEngine
         context.Set("a.inferred", e.Attacker is not null && !e.AttackerSource.Equals("none", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("attacker.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("a.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourceCt", e.AttackerSource.Equals("ct-reset", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.sourceCt", e.AttackerSource.Equals("ct-reset", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         AddMpActionVariables(context, "action", e.Action, e);
         AddMpActionVariables(context, "act", e.Action, e);
 
@@ -1771,6 +1852,7 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.pa", unit?.Pa ?? 0);
         context.Set($"{prefix}.ma", unit?.Ma ?? 0);
         context.Set($"{prefix}.speed", unit?.Speed ?? 0);
+        context.Set($"{prefix}.ct", unit?.Ct ?? 0);
         context.Set($"{prefix}.move", unit?.Move ?? 0);
         context.Set($"{prefix}.jump", unit?.Jump ?? 0);
         context.Set($"{prefix}.brave", unit?.Brave ?? 0);
@@ -2977,6 +3059,10 @@ internal sealed class RuntimeSettings
     // CT drop must have been observed for it to count.
     public bool ResolveAttackerByCt { get; set; } = true;
     public int CtDropWindowMs { get; set; } = 4000;
+    // Counterattacks do not reset CT. When a target immediately damages the unit that just attacked it,
+    // invert the previous resolved HP-damage pair and treat the previous target as the counter attacker.
+    public bool ResolveCounterFromRecentDamage { get; set; } = true;
+    public int CounterEventWindowMs { get; set; } = 1500;
     public bool PreferOpposingTeamAttacker { get; set; } = true;
     public int MaxAttackerCandidatesToLog { get; set; } = 4;
     public bool LogResolvedRuntimeContext { get; set; } = false;
@@ -2989,6 +3075,11 @@ internal sealed class RuntimeSettings
     // (plus a short follow-up window) to find the death/status flag offset, which is not yet mapped.
     public bool CaptureStructOnDeath { get; set; } = false;
     public int DeathCaptureFollowTicks { get; set; } = 40; // ~1s at 25ms: catch a delayed flag set
+
+    // Hook register probe: opt-in RE aid for the stable battle_base_ptr touchpoint. It logs the x64
+    // register state at the hook and classifies values that look like known battle-unit pointers.
+    public bool HookRegisterProbe { get; set; } = false;
+    public int HookRegisterProbeMaxLogs { get; set; } = 32;
 
     // Actor probe: on each HP damage event, snapshot a small byte window of EVERY registered unit so we can
     // find which unit just acted (the attacker) by its turn-state/CT signature. Window is JSON-tunable (no
@@ -3069,5 +3160,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}";
 }

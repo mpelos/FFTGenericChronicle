@@ -29,16 +29,18 @@ LEVEL 1 - Use ANY attacker/target/equipment variable, by picking from the hardco
 LEVEL 2 - Write an ARBITRARY new math expression of our own (any combination of any attacker +
           target attributes + equipment, any number of terms, any scaling) and inject it as the
           actual damage dealt.
-          STATUS: DIRECT FORMULA HOOK BLOCKED, ALTERNATIVE CODE-MOD PATH OPEN. Reading every
-          attribute of any live unit is already proven via our probe. Replacing the vanilla
-          formula routine directly is blocked because that routine is Denuvo-virtualized and
-          cannot be located by static AOB. However, `06-code-mod-battle-runtime-architecture.md`
-          lays out a viable alternative: use safe data-layer placeholder actions, observe stable
-          unit HP deltas, resolve action/equipment context, then write the final HP result from
-          our own C# formula engine.
+          STATUS: DIRECT FORMULA HOOK BLOCKED, ALTERNATIVE CODE-MOD PATH IMPLEMENTED AS THE
+          RESEARCH BASELINE. Reading live unit stats is proven, HP/MP rewrite infrastructure
+          exists, engine-owned death via `MinHpFloor=1` is the accepted lethal path, and attacker
+          resolution by CT reset (`+0x41`) is live-proven. Replacing the vanilla formula routine
+          directly remains blocked because that routine is Denuvo-virtualized and cannot be
+          located by static AOB. The viable route is the implemented post-damage reconciler:
+          safe data-layer placeholder actions -> stable HP/MP deltas -> CT/action/equipment
+          context -> C# formula engine -> HP/MP reconciliation.
   IMPLICATION: "Hook the formula dispatcher" is not the plan anymore. "Own the final battle
-          outcome through a post-damage runtime reconciler" is now the code-mod research path.
-          It still needs proof gates, but it is not blocked by the missing damage prologue.
+          outcome through a post-damage runtime reconciler" is the code-mod path. Remaining
+          unavoidable live gates are action-identity calibration, exact equipment context,
+          hook-register/pre-damage clues, and any future same-hit death path.
 ```
 
 The rest of this document and `01`-`06` back up both conclusions in detail.
@@ -75,13 +77,14 @@ in-game validation.
   rework weapons/armor/status/skillsets via TableData XML, rebuild encounters via ENTD.
 - **Are we free to write arbitrary math? In data, no.** We pick from a fixed catalog of ~100
   hardcoded formula routines and feed two byte parameters (X, Y) + element/status. Truly free
-  math (new variables, >2 params, new scaling) requires a **Tier-2 code mod** that hooks the
-  damage routine.
-- **Tier 2 is feasible but first-of-its-kind.** No modding API exposes the formula/damage hook
-  (loader managers only patch data tables; Faith Framework is a live Nex editor). You write your
-  own Reloaded-II `CreateHook`. The hook mechanism is proven on this exe; the cost is the
-  reverse-engineering of the damage routine, which is well-scoped now (struct offsets, AOBs, a
-  PSX decomp map, and the formula fingerprint sheet are all in hand).
+  math (new variables, >2 params, new scaling) requires a **Tier-2 code mod**. The current viable
+  Tier-2 path is not a direct damage-routine hook; it is the post-damage runtime reconciler in
+  `06`.
+- **Tier 2 is feasible but first-of-its-kind.** No modding API exposes a battle-formula callback
+  (loader managers only patch data tables; Faith Framework is a live Nex editor). The direct
+  formula routine is Denuvo-virtualized, but Reloaded-II hooks at stable .text touchpoints work.
+  The current code mod uses those touchpoints to read battle units, detect HP/MP deltas, resolve
+  attacker by CT, compute formulas in C#, and reconcile the final number.
 - **The classic FFT/WotL mods help as a knowledge map, not as portable code** (PSX/PSP MIPS vs
   x64 reimplementation). They give the exact math, struct layout, dispatch architecture, and a
   validation oracle - turning the RE from blind to guided.
@@ -106,6 +109,12 @@ in-game validation.
                                    proposed alternative to direct formula hook: data placeholders +
                                    stable unit registry + event detector + context resolver +
                                    C# formula engine + HP reconciler
+07-live-findings.md                canonical live evidence log: HP writes, engine-owned death,
+                                   CT attacker resolution, neuter gaps, and remaining live gates
+08-action-identity-sentinel-plan.md
+                                   sentinel placeholder bands for coarse action identity
+09-hook-register-context-probe.md  observe-only hook-register probe for current-actor/action
+                                   context hunting at the stable unit hook
 ```
 
 ## Tools & generated artifacts (this repo)
@@ -142,10 +151,19 @@ tools/find_memtable_candidates.py
                                RIP-relative table-reference candidates near a configurable
                                stride; emits contextual AOBs and match counts; current use is
                                MemoryTableProbes research)
+tools/scan_static_code_patterns.py
+                            -> work/static_code_pattern_scan.md (read-only PE/AOB scan of the
+                               installed FFT executables; confirms stable `FFT_enhanced.exe`
+                               anchors such as `battle_base_ptr` and records that the volatile
+                               `damage_multiplier` AOB is absent from the static file)
 tools/build_memtable_probe_settings.py
                             -> work/memtable-probe-candidates.disabled.json (turns unique
                                scanner rows into disabled MemoryTableProbes settings using the
                                contextual AOB offsets)
+tools/build_neuter_data.py -> data-layer neuter generator. Default `uniform` mode keeps the
+                              live-proven Power/X/Y=1 placeholder; opt-in
+                              `--placeholder-mode sentinel-coarse-v1` emits low/mid/high
+                              placeholder bands for action-identity calibration.
 docs/modding/examples/battle-runtime-settings.memtable-probe.disabled.example.json
                             -> disabled scaffold for persistent memory-table research; includes
                                the probe shape but no real signature
@@ -167,6 +185,8 @@ tools/analyze_battleprobe_log.py -> work/battleprobe_analysis.md (pointer-keyed 
                                zombie-candidate, and killflag evidence after lethal HP rewrites;
                                includes a DR/Response Proof Check that cross-checks slot,
                                equipment DR, response, final-rule, and formula-trace evidence;
+                               summarizes runtime attacker sources (`ct-reset`,
+                               `counter-inversion`) and `[HOOK-REGS]` register-probe snapshots;
                                warns when the log is from an old harness build)
 tools/promote_runtime_offsets.py
                             -> work/battle-runtime-settings.v0.2.exact-from-log.json (promotes
@@ -177,6 +197,15 @@ tools/test_runtime_tooling.py smoke-tests the runtime log analyzer, memory-table
                               watcher state, and exact-offset promoter
 tools/test_memtable_candidates.py smoke-tests the offline RIP-relative scanner and contextual
                                  AOB/settings conversion
+tools/test_static_code_patterns.py
+                            -> smoke-tests the static AOB parser/matcher and PE raw-offset to RVA
+                               helpers without requiring the Steam executables
+tools/test_offline_readiness.py
+                            -> smoke-tests `work/offline_readiness_audit.md` for staleness and
+                               ensures only explicit live-only gates remain outside offline proof
+tools/test_live_gate_plan.py
+                            -> smoke-tests `work/live_gate_plan.md` for staleness and key live
+                               runbook commands/evidence gates
 tools/test_neuter_data.py    smoke-tests the data-layer neuter placeholder artifacts: weapon
                               Power XML, charge/aim Power XML, damaging ability classification,
                               OverrideAbilityActionData X/Y sqlite edits, high-id fallback
@@ -186,12 +215,24 @@ tools/test_runtime_formula_context.py
                                critical formula/DR/response capabilities
 tools/test_runtime_profiles.py
                             -> smoke-tests `work/runtime_profile_audit.md` for staleness and
-                               critical profile-role invariants: live-noop, dry-run, death gate,
-                               GURPS DR, policy, and MEMTABLE-disabled safety
+                               critical profile-role invariants: live-noop, dry-run, legacy death
+                               probes, GURPS DR, policy, and MEMTABLE-disabled safety
 tools/report_neuter_coverage.py
                             -> work/neuter_coverage.md (human-readable neuter coverage report:
                                weapon count, charge/aim count, ability count, spot checks,
                                high-id fallback actions, and residual runtime risks)
+tools/report_neuter_gap_targets.py
+                            -> work/neuter_gap_targets.md (focused report for Materia Blade+,
+                               Gravity/% damage, Cloud Limit, and other known neuter gap targets)
+tools/report_offline_readiness.py
+                            -> work/offline_readiness_audit.md (generated readiness checklist:
+                               offline evidence, profile/tool coverage, and the remaining
+                               live-only gates before the next controlled game run)
+tools/report_live_gate_plan.py
+                            -> work/live_gate_plan.md (generated ordered runbook for the remaining
+                               live-only gates: custom formula, sentinel action identity,
+                               equipment DR slots, neuter gaps, hook-register clues, and same-hit
+                               KO research boundary)
 tools/report_runtime_formula_context.py
                             -> work/runtime_formula_context.md (generated formula capability
                                catalog: expression operators/functions, top-level HP/MP vars,
@@ -200,8 +241,9 @@ tools/report_runtime_formula_context.py
 tools/report_runtime_profiles.py
                             -> work/runtime_profile_audit.md (generated runtime-settings profile
                                audit: role, live mutation risk, and invariant checks for the
-                               profiles used in live mapping, dry-run evaluation, death gates,
-                               DR/response policy, GURPS proof, and MEMTABLE probing)
+                               profiles used in live mapping, dry-run evaluation, legacy death
+                               probes, DR/response policy, GURPS proof, sentinel coarse
+                               calibration, hook-register probing, and MEMTABLE probing)
 tools/watch_live_mapping.py waits for fresh `[RUNTIME]` live evidence, reports memory-table probe
                             evidence plus optional action-signal/action-variable, `[REWRITE]`,
                             target/attacker slot-present evidence, positive equipment DR,
@@ -212,7 +254,9 @@ tools/watch_live_mapping.py waits for fresh `[RUNTIME]` live evidence, reports m
                             death events, or large vanilla HP rewrites; supports a short settle
                             window for negative death-gate checks;
                             can also wait for `[MEMTABLE-FOUND]`/`[MEMTABLE-ROW]`,
-                            then run analysis and exact-offset promotion
+                            `[HOOK-REGS]`, runtime attacker source (`ct-reset` /
+                            `counter-inversion`), action signals, and action variables, then run
+                            analysis and exact-offset promotion
 codemod/prepare-live-mapping.ps1 builds/deploys the code mod with the scan live-noop profile,
                                validates runtime settings first, archives stale game-side battle
                                logs before a live mapping run, supports `-DryRun`, and prints the
@@ -226,23 +270,39 @@ codemod/check-live-readiness.ps1 read-only diagnostic for app config, loaded pro
                                  settings hash vs known live-mapping profiles, generated `modded`
                                  packs, runtime log, and the next watcher/analyzer commands
 codemod/check-death-gate-readiness.ps1
-                            -> read-only Test 2b diagnostic: validates neuter artifacts, death
-                               runtime settings, AppConfig enabled mods, installed data-mod hashes,
-                               installed code-mod DLL hash vs local build, installed settings
-                               presence, identifies which death-gate runtime profile is installed
-                               by hash, and prints watcher commands
+                            -> read-only legacy/refuted death-write diagnostic: validates neuter
+                               artifacts, historical death runtime settings, AppConfig enabled
+                               mods, installed data-mod hashes, installed code-mod DLL hash vs
+                               local build, installed settings presence, identifies which legacy
+                               death-write runtime profile is installed by hash, and prints
+                               watcher/analyzer commands
 codemod/prepare-dry-run-evaluation.ps1
                             -> explicit live-safe dry-run proof helper: validates/simulates the
                                dry-run HP/MP profile, deploys only the code mod/runtime settings
                                when run without `-DryRun`, archives the old log, refuses to run
                                while Reloaded-II/FFT is open, and prints the HP/MP watcher command;
                                `-DryRun` still runs the read-only validations/simulation
+codemod/prepare-custom-formula-demo.ps1
+                            -> attacker+target formula demo helper: validates/simulates the
+                               CT/counter custom-formula profile, optionally rebuilds the uniform
+                               neuter NXD, deploys data mod + code mod when run without `-DryRun`,
+                               archives the old log, refuses to run while Reloaded-II/FFT is open,
+                               and prints watcher commands that require attacker PA, target Faith,
+                               CT-source, final damage, and optional counter-source traces
 codemod/prepare-death-gate.ps1
-                            -> explicit Test 2b preparation helper: rebuilds neuter NXD, validates
-                               artifacts/settings, deploys data mod + code mod with the selected
-                               death profile, archives the old log, and refuses to run while
-                               Reloaded-II/FFT is open; `-DryRun` runs read-only validations/simulation
-                               and prints the plan without copying/deploying/rebuilding
+                            -> explicit legacy/refuted death-write preparation helper: rebuilds
+                               neuter NXD, validates artifacts/settings, deploys data mod + code
+                               mod with the selected historical HP=0/KO-bit profile, archives the
+                               old log, and refuses to run while Reloaded-II/FFT is open; current
+                               custom-formula profiles use `MinHpFloor=1` instead. `-DryRun` runs
+                               read-only validations/simulation and prints the plan without
+                               copying/deploying/rebuilding
+codemod/prepare-sentinel-coarse.ps1
+                            -> action-identity calibration helper: validates/simulates the
+                               sentinel coarse runtime settings, optionally rebuilds neuter data
+                               with `--placeholder-mode sentinel-coarse-v1`, deploys data/code
+                               mods when run without `-DryRun`, and prints the low/mid/high band
+                               watcher command
 codemod/restore-fft-reloaded-mods.ps1 restores the known FFT Reloaded-II enabled mod list, but
                                       refuses to edit while Reloaded-II or FFT is running
 codemod/fftivc.generic.chronicle.codemod.smoketests
@@ -281,10 +341,13 @@ codemod/run-offline-checks.ps1
                                short + matrix scenario simulation, scan-slot matrix comparison,
                                matrix-response simulation, GURPS-DR proof simulation, MP
                                simulation, static DR proof simulation, sentinel-band action
-                               proof simulation, neuter spot-check simulation, death-gate HP/KO
-                               profile simulation, dry-run HP/MP simulation, live helper dry-runs,
-                               runtime formula-context/profile-audit report staleness, and git
-                               diff whitespace checks
+                               proof simulation, sentinel-coarse calibration simulation,
+                               custom-formula attacker demo simulation, neuter spot-check
+                               simulation, death-gate HP/KO profile simulation, dry-run HP/MP
+                               simulation, static AOB scanner smoke test, optional installed-exe
+                               static scan when `FFT_enhanced.exe` exists, live/sentinel/death
+                               helper dry-runs, runtime formula-context/profile/offline-readiness
+                               report staleness, and git diff whitespace checks
                                without deploying to Reloaded-II or launching the game.
 docs/modding/examples/battle-runtime-settings.gurps-dr.example.json
                             -> subtractive DR proof profile: GURPS-like swing/thrust tables,
@@ -402,9 +465,10 @@ FF16Tools.CLI (extract/convert) is reused from `D:\Projects\FFTModNewGame++\tool
 - Vanilla baseline Formula/X/Y per ability (exe-hardcoded; not in data).
 - The formula-dispatch switch/jump table (downstream of the read-site) - not located.
 - Exact IVC truncation order / damage-variance variant.
-- LEVEL 2 (arbitrary custom math): the damage routine is Denuvo-virtualized and could not be
-  located by static AOB scan. Locating it (if possible) needs runtime debugger tracing. This is
-  the blocker for writing our own formula algorithm. See 03/04.
+- LEVEL 2 direct/same-hit hook: the vanilla damage routine is Denuvo-virtualized and could not be
+  located by static AOB scan. The current custom-math path is the implemented post-damage
+  reconciler; locating the direct routine remains only for a future same-hit/pre-damage upgrade.
+  See 03/04.
 ```
 
 ## Open questions / recommended next steps
@@ -413,22 +477,29 @@ FF16Tools.CLI (extract/convert) is reused from `D:\Projects\FFTModNewGame++\tool
 1. [DONE] Proof patch validating the data pipeline (JobData.xml Move/Jump) - confirmed live.
 2. [DONE] Confirm the EXE reads override Formula/X/Y from OverrideAbilityActionData - Live Test D
    proved damage magnitude changes through the override NXD.
-3. [NEXT - LEVEL 2 death gate] Continue `06`/`07`: with weapon + ability + charge/aim neuter
-   deployed, run
-   Test 2b to prove whether a runtime lethal result can kill by writing HP=0 alone, or whether it
-   must also write the mapped KO flag (`BattleUnit +0x61 |= 0x20`). This decides whether the
-   runtime can own lethal outcomes after vanilla damage is made harmless.
-4. [OFFLINE/LIVE BRIDGE] Continue the independent roster/unit-table research branch suggested by
+3. [DONE] Death/KO ownership for the current architecture - Live Tests 2b/2c proved HP=0 and
+   `+0x61|=0x20` byte writes create zombie-like states, not real KO. Live Test 3 established
+   engine-owned death via `MinHpFloor=1`.
+4. [NEXT LIVE - custom formula demo] Confirm the deployed CT/counter resolver plus neuter data
+   produce attacker+target-dependent real HP outcomes (`a.pa * 10 - t.faith`) while preserving
+   `MinHpFloor=1`.
+5. [NEXT LIVE - action identity] Calibrate `sentinel-coarse-v1` low/mid/high placeholder bands
+   against real attacks/spells and record which families bypass or overlap the bands.
+6. [NEXT LIVE - equipment DR] Confirm exact equipment slots in live unit structs, then verify
+   catalog-backed armor DR and response rules in real HP outcomes.
+7. [NEXT LIVE/RE - pre-damage] Use `[HOOK-REGS]`, debugger callstacks, or another runtime context
+   source to hunt for a true currently-acting/action pointer and any future same-hit death path.
+8. [OFFLINE/LIVE BRIDGE] Continue the independent roster/unit-table research branch suggested by
    community prior art: the configurable `MemoryTableProbes` framework now exists, but it still
    needs an independently discovered/validated pattern and a live correlation pass to connect
    battle-unit pointers with persistent roster/ENTD slots. The analyzer/watcher now understand
    `[MEMTABLE]` evidence, so the next live pass should produce a readable report instead of raw
    log spelunking.
-5. Use `tools/dump_item_catalog.py` + `tools/analyze_battleprobe_log.py` after a restarted
+9. Use `tools/dump_item_catalog.py` + `tools/analyze_battleprobe_log.py` after a restarted
    current-DLL probe session to identify which unknown unit offsets contain equipped item ids.
-6. Run the offline formula smoke test after code changes:
+10. Run the offline formula smoke test after code changes:
    `dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj -c Release`.
-7. Fill the ability design baseline with FFHacktics WotL Formula/X/Y values (the data lacks them).
+11. Fill the ability design baseline with FFHacktics WotL Formula/X/Y values (the data lacks them).
 ```
 
 ## Key paths (this machine)

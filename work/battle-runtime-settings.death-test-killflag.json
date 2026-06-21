@@ -1,5 +1,5 @@
 {
-  "_note": "DEATH-BY-HP-WRITE TEST, STEP 2 of 2 - HP=0 + KO FLAG (docs/modding/07 Test 2b). Use this ONLY if step 1 (death-test.json) left a 'zombie' at 0 HP. Same as step 1 but CauseDeathOnZeroHp=true: after forcing a foe's HP to 0, also set the death/status bit found in Test 2a (struct +0x61 |= 0x20). WATCH: does the enemy die now? Look for [DEATH-WRITE ...] lines confirming the flag write. If it dies -> we can cause death ourselves (gate 2 solved). If still a zombie -> death is also tracked outside the unit struct (turn manager / AI), and we capture more.",
+  "_note": "LEGACY/REFUTED DEATH-WRITE PROBE - HP=0 + KO FLAG (docs/modding/07 Tests 2b/2c). Live evidence proved setting +0x61|=0x20 after forcing HP=0 still creates a zombie/partial state, not real KO; the KO bit is an effect of engine death, not a trigger. Keep this only for reproducing or auditing the historical result. Current custom-formula profiles use MinHpFloor=1 and let the engine own death.",
   "RewriteObservedDamage": true,
   "RewriteObservedHealing": false,
   "AffectFoes": true,

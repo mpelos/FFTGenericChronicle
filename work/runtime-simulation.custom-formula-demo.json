@@ -8,9 +8,22 @@
       "vanillaDamage": 1,
       "eventIndex": 1,
       "eventSeed": 70001,
-      "expect": { "shouldRewrite": true, "finalDamage": 60, "desiredHp": 240, "ruleName": "FinalDamageFormula" },
-      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
-      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 60,
+        "desiredHp": 240,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "attacker=0x4200:ct-reset",
+          "trace.attackerct=5",
+          "trace.attackersourcect=1",
+          "trace.attackersourcecounter=0",
+          "trace.targetct=88"
+        ]
+      },
+      "attackerSource": "ct-reset",
+      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "ct": 88, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
+      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "ct": 5, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
     },
     {
       "name": "low-PA-attacker-vs-faith60 -> 80-60=20 (same target, weaker attacker)",
@@ -20,8 +33,9 @@
       "eventIndex": 2,
       "eventSeed": 70002,
       "expect": { "shouldRewrite": true, "finalDamage": 20, "desiredHp": 280, "ruleName": "FinalDamageFormula" },
-      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
-      "attacker": { "ptr": "0x4300", "charId": 1, "level": 12, "hp": 280, "maxHp": 567, "team": 0, "isFoe": false, "pa": 8, "ma": 7, "speed": 10, "move": 4, "jump": 3, "brave": 75, "faith": 65 }
+      "attackerSource": "ct-reset",
+      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "ct": 64, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
+      "attacker": { "ptr": "0x4300", "charId": 1, "level": 12, "hp": 280, "maxHp": 567, "team": 0, "isFoe": false, "pa": 8, "ma": 7, "speed": 10, "ct": 3, "move": 4, "jump": 3, "brave": 75, "faith": 65 }
     },
     {
       "name": "high-PA-attacker-vs-faith40 -> 120-40=80 (same attacker, lower-faith target)",
@@ -31,8 +45,9 @@
       "eventIndex": 3,
       "eventSeed": 70003,
       "expect": { "shouldRewrite": true, "finalDamage": 80, "desiredHp": 220, "ruleName": "FinalDamageFormula" },
-      "target": { "ptr": "0x4400", "charId": 128, "level": 12, "hp": 299, "maxHp": 360, "team": 3, "isFoe": true, "pa": 9, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 40 },
-      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
+      "attackerSource": "ct-reset",
+      "target": { "ptr": "0x4400", "charId": 128, "level": 12, "hp": 299, "maxHp": 360, "team": 3, "isFoe": true, "pa": 9, "ma": 6, "speed": 9, "ct": 72, "move": 4, "jump": 3, "brave": 70, "faith": 40 },
+      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "ct": 5, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
     },
     {
       "name": "lethal-result-floors-at-1 (engine owns death)",
@@ -42,18 +57,43 @@
       "eventIndex": 4,
       "eventSeed": 70004,
       "expect": { "shouldRewrite": true, "finalDamage": 80, "desiredHp": 1, "ruleName": "FinalDamageFormula" },
-      "target": { "ptr": "0x4400", "charId": 128, "level": 12, "hp": 49, "maxHp": 360, "team": 3, "isFoe": true, "pa": 9, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 40 },
-      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
+      "attackerSource": "ct-reset",
+      "target": { "ptr": "0x4400", "charId": 128, "level": 12, "hp": 49, "maxHp": 360, "team": 3, "isFoe": true, "pa": 9, "ma": 6, "speed": 9, "ct": 72, "move": 4, "jump": 3, "brave": 70, "faith": 40 },
+      "attacker": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 250, "maxHp": 250, "team": 0, "isFoe": false, "pa": 12, "ma": 6, "speed": 9, "ct": 5, "move": 4, "jump": 3, "brave": 70, "faith": 55 }
+    },
+    {
+      "name": "counter-inversion-source-flag -> 100-60=40",
+      "previousHp": 300,
+      "currentHp": 299,
+      "vanillaDamage": 1,
+      "eventIndex": 5,
+      "eventSeed": 70005,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 40,
+        "desiredHp": 260,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "attacker=0x4500:counter-inversion",
+          "trace.attackerct=47",
+          "trace.attackersourcect=0",
+          "trace.attackersourcecounter=1",
+          "trace.targetct=22"
+        ]
+      },
+      "attackerSource": "counter-inversion",
+      "target": { "ptr": "0x4200", "charId": 50, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "ct": 22, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
+      "attacker": { "ptr": "0x4500", "charId": 128, "level": 12, "hp": 200, "maxHp": 300, "team": 3, "isFoe": true, "pa": 10, "ma": 6, "speed": 8, "ct": 47, "move": 4, "jump": 3, "brave": 70, "faith": 45 }
     },
     {
       "name": "no-attacker-resolved -> not rewritten (honest guard)",
       "previousHp": 300,
       "currentHp": 299,
       "vanillaDamage": 1,
-      "eventIndex": 5,
-      "eventSeed": 70005,
+      "eventIndex": 6,
+      "eventSeed": 70006,
       "expect": { "shouldRewrite": false, "finalDamage": 0, "desiredHp": 299, "ruleName": "RewriteConditionFormula=0" },
-      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
+      "target": { "ptr": "0x4100", "charId": 31, "level": 12, "hp": 299, "maxHp": 360, "team": 0, "isFoe": false, "pa": 9, "ma": 6, "speed": 9, "ct": 88, "move": 4, "jump": 3, "brave": 70, "faith": 60 },
       "attacker": null
     }
   ]

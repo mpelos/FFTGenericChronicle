@@ -817,6 +817,22 @@ internal static class Program
         Check(contextFormulaResult.ShouldRewrite, "context source formula should rewrite");
         Check(contextFormulaResult.FinalDamage == 13, $"context source formula expected 13, got {contextFormulaResult.FinalDamage}");
 
+        var ctContextResult = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "t.ct + a.ct + a.sourceCt * 100 + a.sourceCounter * 1000",
+        }, catalog).Evaluate(new DamageEvent(target with { Ct = 70 }, 50, 49, 1, attacker with { Ct = 12 }, "ct-reset"));
+        Check(ctContextResult.ShouldRewrite, "CT context formula should rewrite");
+        Check(ctContextResult.FinalDamage == 182, $"CT context formula expected 182, got {ctContextResult.FinalDamage}");
+
+        var counterContextResult = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "a.sourceCounter * 10 + a.sourceCt",
+        }, catalog).Evaluate(new DamageEvent(target, 50, 49, 1, attacker, "counter-inversion"));
+        Check(counterContextResult.ShouldRewrite, "counter source context formula should rewrite");
+        Check(counterContextResult.FinalDamage == 10, $"counter source context formula expected 10, got {counterContextResult.FinalDamage}");
+
         var actionSignalSettings = new RuntimeSettings
         {
             RewriteObservedDamage = true,
@@ -1777,6 +1793,37 @@ internal static class Program
         var ctStaleResolved = new BattleContextResolver(ctSettings).ResolveRecentAttacker(ctTarget, ctStaleObs, now);
         Check(ctStaleResolved.Unit is null, "CT resolver should ignore a stale CT drop (older than CtDropWindowMs) and fall through");
 
+        // Counterattacks do not reset CT. If B was just damaged by A and then A takes damage, resolve B
+        // by inverting the previous resolved damage pair.
+        var counterResolver = new BattleContextResolver(new RuntimeSettings
+        {
+            ResolveAttackerByCt = true,
+            ResolveCounterFromRecentDamage = true,
+            CounterEventWindowMs = 1500,
+            InferAttackerFromRecentUnits = false,
+        });
+        counterResolver.RememberHpDamageEvent(ctTarget, ctJustActed, "ct-reset", signedDamage: 12, eventTick: TickAgo(100), eventIndex: 700);
+        var counterObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, TickAgo(400)),       // previous victim B, no CT drop
+            [ctJustActed.Ptr] = new UnitObservation(ctJustActed, TickAgo(400)), // now target A, excluded
+        };
+        var counterResolved = counterResolver.ResolveRecentAttacker(ctJustActed, counterObs, now);
+        Check(counterResolved.Unit?.Ptr == ctTarget.Ptr, $"counter inversion should resolve previous target as attacker (0x4100), got 0x{counterResolved.Unit?.Ptr:X}");
+        Check(counterResolved.Source == "counter-inversion", $"counter inversion source expected counter-inversion, got {counterResolved.Source}");
+        Check(counterResolved.Summary.Contains("counterPrevious=event#700"), "counter inversion summary should include previous event id");
+
+        var staleCounterResolver = new BattleContextResolver(new RuntimeSettings
+        {
+            ResolveAttackerByCt = true,
+            ResolveCounterFromRecentDamage = true,
+            CounterEventWindowMs = 50,
+            InferAttackerFromRecentUnits = false,
+        });
+        staleCounterResolver.RememberHpDamageEvent(ctTarget, ctJustActed, "ct-reset", signedDamage: 12, eventTick: TickAgo(100), eventIndex: 701);
+        var staleCounterResolved = staleCounterResolver.ResolveRecentAttacker(ctJustActed, counterObs, now);
+        Check(staleCounterResolved.Unit is null, "counter inversion should ignore an event older than CounterEventWindowMs");
+
         var echoGuard = new ValueRewriteEchoGuard("HP");
         echoGuard.Remember((nint)0x5000, 30, 18, now);
         Check(
@@ -2002,6 +2049,8 @@ internal static class Program
                   "RewriteObservedDamage": true,
                   "UnitPollIntervalMs": 12,
                   "MaxTrackedBattleUnits": 32,
+                  "HookRegisterProbe": true,
+                  "HookRegisterProbeMaxLogs": 7,
                   "RewriteConditionFormula": "action.present",
                   "FormulaPreActionVariables": [
                     { "Name": "pre.weaponBlade", "Formula": "1" }
@@ -2055,8 +2104,11 @@ internal static class Program
             Check(loaded.Describe().Contains("DryRunRewrites=True"), "settings description should include DryRunRewrites");
             Check(loaded.UnitPollIntervalMs == 12, $"loaded settings should preserve UnitPollIntervalMs, got {loaded.UnitPollIntervalMs}");
             Check(loaded.MaxTrackedBattleUnits == 32, $"loaded settings should preserve MaxTrackedBattleUnits, got {loaded.MaxTrackedBattleUnits}");
+            Check(loaded.HookRegisterProbe, "loaded settings should preserve HookRegisterProbe");
+            Check(loaded.HookRegisterProbeMaxLogs == 7, $"loaded settings should preserve HookRegisterProbeMaxLogs, got {loaded.HookRegisterProbeMaxLogs}");
             Check(loaded.Describe().Contains("UnitPollIntervalMs=12"), "settings description should include UnitPollIntervalMs");
             Check(loaded.Describe().Contains("MaxTrackedBattleUnits=32"), "settings description should include MaxTrackedBattleUnits");
+            Check(loaded.Describe().Contains("HookRegisterProbe=True/7"), "settings description should include HookRegisterProbe");
             Check(loaded.RewriteConditionFormula == "action.present", "loaded settings should preserve RewriteConditionFormula");
             Check(loaded.FormulaPreActionVariables.Count == 1, "loaded settings should preserve pre-action variables");
             Check(loaded.FormulaPreResponseVariables.Count == 1, "loaded settings should preserve pre-response variables");
@@ -2243,6 +2295,7 @@ internal static class Program
             RewriteObservedDamage = true,
             UnitPollIntervalMs = 0,
             MaxTrackedBattleUnits = 0,
+            HookRegisterProbeMaxLogs = -1,
             RewriteConditionFormula = "missingGateValue + 1",
             FinalDamageFormula = "missingVariable + 1",
             FormulaPreActionVariables =
@@ -2347,6 +2400,9 @@ internal static class Program
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "MaxTrackedBattleUnits" && finding.Severity == "ERROR"),
             "validator should report invalid max tracked units");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "HookRegisterProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should report invalid hook register probe max logs");
     }
 
     private static void TestRuntimeSettingsSimulator(string root, ItemCatalog catalog)

@@ -51,4 +51,4 @@ Rows still absent from every current fallback:
 
 - Throw/Jump high-id coverage is inferred from the formula catalog and item-power tables; it still needs a live spot-check.
 - Any formula that ignores both `X` and `Y`, such as percent/Gravity-style effects, may still produce a non-placeholder result.
-- The placeholder only makes vanilla non-lethal; the runtime still has to prove Test 2b: HP=0 and KO flag ownership.
+- The placeholder only makes vanilla non-lethal. Custom lethal results must use the engine-owned `MinHpFloor=1` path; HP=0 and KO-flag byte writes are preserved only as historical/refuted probes.

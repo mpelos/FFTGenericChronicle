@@ -10,6 +10,7 @@ from pathlib import Path
 from analyze_battleprobe_log import (
     build_warnings,
     parse_death_line,
+    parse_hook_register_line,
     parse_hp_event_line,
     parse_mp_event_line,
     parse_memory_table_events,
@@ -33,7 +34,7 @@ from watch_live_mapping import describe_failure_guard, describe_state, inspect_l
 
 
 SAMPLE_RUNTIME_1 = (
-    "event=damage | attacker=0x1000:recent-unit | "
+    "event=damage | attacker=0x1000:ct-reset | "
     "action=sword from attacker weapon:source=vanilla-damage:signal=101:"
     "vars=family_sword=1,routine_pa_wp=1,swing=1,wp=16 | "
     "targetSlots=body(present,id=172:Leather Armor,off=0x70,width=Byte,matches=1) | "
@@ -45,7 +46,7 @@ SAMPLE_RUNTIME_1 = (
 )
 
 SAMPLE_RUNTIME_2 = (
-    "event=damage | attacker=0x1100:recent-unit | "
+    "event=damage | attacker=0x1100:counter-inversion | "
     "action=sword from attacker weapon:source=vanilla-damage:signal=101:"
     "vars=family_sword=1,routine_pa_wp=1,swing=1,wp=16 | "
     "targetSlots=body(present,id=175:Chainmail,off=0x70,width=Byte,matches=1) | "
@@ -81,6 +82,8 @@ def main() -> int:
         ]
     )
     check(runtime_details[0]["event"] == "damage", "event should parse")
+    check(runtime_details[0]["attacker_source"] == "ct-reset", "CT runtime attacker source should parse")
+    check(runtime_details[1]["attacker_source"] == "counter-inversion", "counter runtime attacker source should parse")
     check(runtime_details[0]["action"]["signal"] == "101", "action signal should parse")
     check(runtime_details[0]["action"]["variables"]["swing"] == "1", "action variables should parse")
     check(runtime_details[0]["target_slots"][0]["offset_int"] == 112, "target offset should parse")
@@ -93,6 +96,7 @@ def main() -> int:
     check("Candidate exact `Offset=80`, `Width=Byte`" in report, "attacker offset recommendation missing")
     check("DamageResponse(leather swing)" in report, "response summary missing")
     check("Action Variables" in report and "`swing`" in report and "`wp`" in report, "action variable summary missing")
+    check("Attacker sources" in report and "`ct-reset`=1" in report, "attacker source summary missing")
     check("Formula Trace Variables" in report and "`gross`" in report and "192..200" in report, "trace var summary missing")
     dr_response_report = "\n".join(render_dr_response_proof_summary(runtime_details))
     check("DR/Response Proof Check" in dr_response_report, "DR/response proof heading missing")
@@ -158,6 +162,14 @@ def main() -> int:
     failed_rewrite = parse_rewrite_line("[GC-Probe] [REWRITE-FAILED ptr=0x2000 id=0x80] range not writable 0x1234+0x2", 13)
     failed_proof = "\n".join(render_hp_write_proof_summary([hp_event], [hp_rewrite, failed_rewrite]))
     check("rewrite failures" in failed_proof and "failed" in failed_proof, "HP proof should flag rewrite failures")
+
+    hook_regs = parse_hook_register_line(
+        "[GC-Probe] [HOOK-REGS count=7 ptr=0x2000 id=0x80] "
+        "rax=0x0:zero rcx=0x2000:unit:touched rdx=0x3000:readable",
+        14,
+    )
+    check(hook_regs is not None and hook_regs["count"] == 7, "hook register line should parse")
+    check(hook_regs["registers"]["rcx"]["classification"] == "unit:touched", "hook register classification should parse")
 
     mp_loss_event = parse_mp_event_line("[GC-Probe] [MPLOSS ptr=0x2000 id=0x80] 20 -> 12 = 8 sampleAgeMs=25", 20)
     mp_gain_event = parse_mp_event_line("[GC-Probe] [MPGAIN ptr=0x2001 id=0x81] 10 -> 18 = 8 sampleAgeMs=30", 21)
@@ -259,6 +271,7 @@ def main() -> int:
                     "settings: RewriteObservedDamage=True CauseDeathOnZeroHp=False",
                     "[GC-Probe] [UNIT ptr=0x2000 id=0x80 foe  t3] Lv1 HP250 PA4 MA3 Sp6 Mv5 Jp3 Br59 Fa51",
                     "[GC-Probe] [DAMAGE ptr=0x2000 id=0x80] 250 -> 249 = 1 sampleAgeMs=25",
+                    "[GC-Probe] [HOOK-REGS count=7 ptr=0x2000 id=0x80] rax=0x0:zero rcx=0x2000:unit:touched rdx=0x3000:readable",
                     "[GC-Probe] [ACTOR-PROBE tgt=0x1E off=0x40-0x52] 01@0A460000000000000000000000000000000000 80@100C0000000000000000000000000000000000 1E@0C540000000000000000000000000000000000",
                     "[GC-Probe] [ACTOR-PROBE tgt=0x1F off=0x40-0x52] 01@0A5A0000000000000000000000000000000000 80@10400000000000000000000000000000000000 1E@0C080000000000000000000000000000000000 1F@09510000000000000000000000000000000000",
                     "[GC-Probe] [RUNTIME ptr=0x2000 id=0x80] " + SAMPLE_RUNTIME_1,
@@ -286,6 +299,7 @@ def main() -> int:
         check("HP-only branch evidence" in report, "full analyzer report should classify HP-only death gate evidence")
         check("### Neuter Placeholder Check" in report, "full analyzer report should keep neuter placeholder check")
         check("## Actor Probe CT Summary" in report, "full analyzer report should include actor probe CT summary")
+        check("## Hook Register Probe" in report and "Snapshots: 1" in report, "full analyzer report should include hook register summary")
         check("Resolved actor probes: 2/2" in report, "full analyzer report should resolve actor probes")
         check("`ct-drop`" in report and "0x1E" in report, "full analyzer report should include CT-drop attacker evidence")
 
@@ -321,6 +335,22 @@ def main() -> int:
         check("[MEMTABLE-FOUND]" in describe_state(memory_state, 1), "watcher message should mention memory tables")
         check("ready: 0 [RUNTIME]" in describe_state(memory_state, 0, required_memtable_found=1, required_memtable_rows=1), "watcher should accept required memory-table evidence")
         check("waiting for [MEMTABLE-ROW]" in describe_state(memory_state, 0, required_memtable_found=1, required_memtable_rows=2), "watcher should wait for enough memory-table rows")
+
+        hook_log = (
+            fresh_log
+            + "[GC-Probe] [HOOK-REGS count=7 ptr=0x2000 id=0x80] rax=0x0:zero rcx=0x2000:unit:touched rdx=0x3000:readable\n"
+        )
+        log_path.write_text(hook_log, encoding="utf-8")
+        hook_state = inspect_log(log_path, start_time=0.0, allow_existing=True)
+        check(hook_state.hook_register_probe_events == 1, "watcher should count hook register snapshots")
+        check(
+            "ready: 0 [RUNTIME]" in describe_state(hook_state, 0, required_hook_register_probe_events=1),
+            "watcher should accept hook register evidence",
+        )
+        check(
+            "waiting for [HOOK-REGS]" in describe_state(hook_state, 0, required_hook_register_probe_events=2),
+            "watcher should wait for enough hook register evidence",
+        )
 
         actor_probe_log = (
             fresh_log
@@ -359,7 +389,9 @@ def main() -> int:
         check(ready_state.attacker_slot_present_events == 1, "watcher should count present attacker slots")
         check(ready_state.response_events == 1, "watcher should count response-rule runtime events")
         check(dict(ready_state.trace_var_counts).get("gross") == 1, "watcher should count nonzero trace vars")
+        check(dict(ready_state.runtime_attacker_source_counts).get("ct-reset") == 1, "watcher should count CT-reset runtime attackers")
         check("ready: 1 [RUNTIME]" in describe_state(ready_state, 1), "ready watcher message should mention runtime count")
+        check("attacker sources ct-reset=1" in describe_state(ready_state, 1), "watcher message should summarize attacker sources")
         check("action signals 101=1" in describe_state(ready_state, 1), "watcher message should summarize action signals")
         check("action vars" in describe_state(ready_state, 1) and "swing=1" in describe_state(ready_state, 1), "watcher message should summarize action vars")
         check("target slot present" in describe_state(ready_state, 1), "watcher message should summarize target slot evidence")
@@ -386,6 +418,24 @@ def main() -> int:
             "watcher should accept required trace variable evidence",
         )
         check(
+            "ready: 1 [RUNTIME]" in describe_state(ready_state, 0, required_runtime_attacker_sources=("ct-reset",)),
+            "watcher should accept required runtime attacker source",
+        )
+        check(
+            "ready: 1 [RUNTIME]" in describe_state(ready_state, 0, required_ct_runtime_attackers=1),
+            "watcher should accept CT-reset runtime attacker evidence",
+        )
+        check(
+            "waiting for runtime attacker source(s) counter-inversion"
+            in describe_state(ready_state, 0, required_runtime_attacker_sources=("counter-inversion",)),
+            "watcher should wait for missing runtime attacker source",
+        )
+        check(
+            "waiting for counter-inversion runtime attacker evidence"
+            in describe_state(ready_state, 0, required_counter_runtime_attackers=1),
+            "watcher should wait for counter-inversion runtime attacker evidence",
+        )
+        check(
             "waiting for equipment DR evidence" in describe_state(ready_state, 0, required_equipment_dr_events=1),
             "watcher should wait for positive equipment DR evidence",
         )
@@ -394,6 +444,23 @@ def main() -> int:
             "watcher should wait for missing required trace variables",
         )
         check("waiting for [REWRITE]" in describe_state(ready_state, 0, 1), "watcher should wait for rewrite evidence when requested")
+
+        counter_log = memory_log + "[GC-Probe] [RUNTIME ptr=0x2100 id=0x81] " + SAMPLE_RUNTIME_2 + "\n"
+        log_path.write_text(counter_log, encoding="utf-8")
+        counter_state = inspect_log(log_path, start_time=0.0, allow_existing=True)
+        check(
+            dict(counter_state.runtime_attacker_source_counts).get("counter-inversion") == 1,
+            "watcher should count counter-inversion runtime attackers",
+        )
+        check(
+            "ready: 1 [RUNTIME]" in describe_state(counter_state, 0, required_counter_runtime_attackers=1),
+            "watcher should accept counter-inversion runtime attacker evidence",
+        )
+        check(
+            "waiting for CT-reset runtime attacker evidence"
+            in describe_state(counter_state, 0, required_ct_runtime_attackers=1),
+            "watcher should wait for CT-reset runtime attacker evidence",
+        )
 
         dr_log = memory_log + "[GC-Probe] [RUNTIME ptr=0x2000 id=0x80] " + SAMPLE_RUNTIME_1.replace(
             "equipmentDr=0:NoEquipmentDR",

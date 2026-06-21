@@ -153,6 +153,33 @@ main-module AOB cannot reliably find or hook it (its address changes per launch)
 - The formula-dispatch RE (Tier 2 custom math) will need runtime tracing in a debugger (HW
   breakpoint -> callstack while Denuvo code is live), not static AOB - or we stay data-only.
 
+### Offline static scan helper (2026-06-21)
+
+`tools/scan_static_code_patterns.py` now makes the AOB check reproducible without launching the
+game:
+
+```powershell
+python tools\scan_static_code_patterns.py --strict-enhanced
+```
+
+Current report: `work/static_code_pattern_scan.md`.
+
+On this install, the scanner maps raw file offsets through the PE section table and confirms that
+the expected `FFT_enhanced.exe` stable anchors still exist at the same RVAs observed live:
+
+```text
+battle_base_ptr  0x226D98
+damage_mult_2    0x30A685
+jp_multiplier    0x283754
+xp_multiplier    0x283767
+min_spd_jmp_mov  0x36027F
+```
+
+It also confirms `damage_multiplier` has **zero static-file matches**. That is useful negative
+evidence: the direct damage application site is still not a static AOB target in the checked-in
+Steam executable, so the same-hit/pre-damage route must come from live/runtime evidence (for
+example `[HOOK-REGS]`, debugger callstacks, or a newly discovered stable context pointer).
+
 Probe iteration 3 implements the stable-anchor unit dump + HP-delta damage logging.
 
 ### CONFIRMED (probe iteration 3)
@@ -203,14 +230,19 @@ Arbitrary custom damage math via hooking the formula is blocked by Denuvo by des
 Remaining options for a damage overhaul:
 1. **Data layer (Tier 1, Denuvo-proof):** re-point every ability's `Formula/X/Y/Element/CT/MP` in
    `OverrideAbilityActionData` + weapon `Formula/Power` + `JobData` stats. Limited to the ~100
-   existing formula shapes, but total coverage of which/where/how-much. THE realistic overhaul path.
-2. **Stable .text touchpoint:** hook a real-.text instruction the damage flows through (e.g.
-   `damage_mult_2` @ module+0x30A685, NOT virtualized) and transform/replace the final damage using
-   variables we can read live. Viable only if attacker+target+damage are available there.
-3. **Hardware breakpoint (VEH + DRx) on HP write:** robust to relocation but lands inside the
+   existing formula shapes, but total coverage of which/where/how-much.
+2. **Post-damage runtime reconciler (current Tier 2 mainline):** use the data layer to neuter
+   vanilla damage into safe placeholders, observe HP/MP deltas through `battle_base_ptr`, resolve
+   attacker by CT reset, decode coarse action identity through sentinels or later action context,
+   compute custom C# formulas, and rewrite the final HP/MP value. This avoids the virtualized
+   formula routine entirely; see `06-code-mod-battle-runtime-architecture.md`.
+3. **Stable .text touchpoint/pre-damage clue:** hook non-virtualized instructions such as
+   `battle_base_ptr`, UI/preview, or future action-state sites and use register/context probes to
+   find currently-acting unit/action data before HP changes.
+4. **Hardware breakpoint (VEH + DRx) on HP write:** robust to relocation but lands inside the
    Denuvo VM dispatch - messy, registers won't cleanly map to game state. Last resort.
 
-## Recommended attack path (concrete)
+## Historical direct-hook attack path (not current mainline)
 
 ```text
 1. Stand up a minimal Reloaded-II C# mod (template: loader's Hooks/FFTOResourceManagerHooks.cs).
@@ -229,8 +261,9 @@ Remaining options for a damage overhaul:
 8. Optionally confirm field->behavior live via FaithFramework's Nex Runtime Interface.
 ```
 
-Two pieces genuinely left to us: the **formula-dispatch switch** and verifying
-**truncation/variance** order. Everything feeding into them is now mapped.
+This direct-dispatch route remains useful only if we resume same-hit/pre-damage replacement work.
+The current mainline is the post-damage reconciler, with focused RE on action identity, equipment
+context, hook-register clues, and eventually a pre-damage window.
 
 ## Caveats
 

@@ -28,6 +28,7 @@ Coverage / gaps (documented honestly):
 
 Usage:
     python tools/build_neuter_data.py
+    python tools/build_neuter_data.py --placeholder-mode sentinel-coarse-v1
     python tools/build_neuter_data.py --build-nxd
 Outputs/prepares (repo data-mod source, deploy with deploy.ps1 after the NXD step):
     mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml
@@ -35,6 +36,11 @@ Outputs/prepares (repo data-mod source, deploy with deploy.ps1 after the NXD ste
     work/override_ability.neuter.sqlite
 Then run the printed FF16Tools command to rebuild:
     mod/fftivc.generic.chronicle/FFTIVC/data/enhanced/nxd/overrideabilityactiondata.nxd
+
+The default `uniform` mode is the live-proven neuter. `sentinel-coarse-v1` is an opt-in
+calibration mode: it emits distinct low/mid/high placeholder magnitudes so the runtime can
+decode `vanillaDamage` bands into action variables. That mode is intentionally coarse and must
+be live-calibrated before use in a serious balance pass.
 """
 from __future__ import annotations
 import argparse
@@ -47,6 +53,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 MODLOADER = Path(r"C:/Reloaded-II/Mods/fftivc.utility.modloader/TableData")
+ITEM_TEMPLATE = MODLOADER / "ItemData.xml"
 TEMPLATE = MODLOADER / "ItemWeaponData.xml"
 ABILITY_TEMPLATE = MODLOADER / "AbilityData.xml"
 CHARGE_AIM_TEMPLATE = MODLOADER / "AbilityChargeAimData.xml"
@@ -63,6 +70,37 @@ NEUTER_POWER = 1  # tiny but non-zero so the reconciler still observes a delta
 NEUTER_XY = 1     # X/Y forced to 1 on damaging abilities -> damage collapses to ~one stat (non-lethal)
 NEUTER_CHARGE_AIM_POWER = 1
 
+PLACEHOLDER_MODES = ("uniform", "sentinel-coarse-v1")
+SENTINEL_BAND_VALUES = {
+    "low": 1,
+    "mid": 4,
+    "high": 7,
+}
+SENTINEL_WEAPON_CATEGORY_BANDS = {
+    # GURPS-oriented first pass: blades/blunt hand weapons are swing/cut placeholders.
+    "Knife": "low",
+    "NinjaBlade": "low",
+    "Sword": "low",
+    "KnightSword": "low",
+    "FellSword": "low",
+    "Katana": "low",
+    "Axe": "low",
+    "Flail": "low",
+    "Rod": "low",
+    "Staff": "low",
+    "Bag": "low",
+    "Cloth": "low",
+    # Thrust/reach/ranged weapons need a different placeholder family.
+    "Pole": "mid",
+    "Polearm": "mid",
+    "Crossbow": "mid",
+    "Bow": "mid",
+    "Gun": "mid",
+    "Book": "mid",
+    "Instrument": "mid",
+}
+SENTINEL_AIM_CHARGE_BAND = "mid"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build Generic Chronicle data-layer neuter placeholder artifacts.")
@@ -77,10 +115,68 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_FF16TOOLS,
         help=f"Path to FF16Tools.CLI.exe. Default: {DEFAULT_FF16TOOLS}",
     )
+    parser.add_argument(
+        "--placeholder-mode",
+        choices=PLACEHOLDER_MODES,
+        default="uniform",
+        help=(
+            "uniform keeps the proven Power/X/Y=1 neuter. sentinel-coarse-v1 emits distinct "
+            "low/mid/high placeholder magnitudes for action-identity live calibration."
+        ),
+    )
     return parser.parse_args()
 
 
-def build_weapon_neuter() -> tuple[str, int]:
+def load_weapon_categories_by_weapon_data_id() -> dict[int, str]:
+    if not ITEM_TEMPLATE.exists():
+        sys.exit(f"ERROR: item template not found: {ITEM_TEMPLATE}")
+    tree = ET.parse(ITEM_TEMPLATE)
+    root = tree.getroot()
+    entries = root.find("Entries")
+    if entries is None:
+        sys.exit("ERROR: <Entries> not found in item template")
+
+    categories: dict[int, str] = {}
+    for item in entries.findall("Item"):
+        flags = item.findtext("TypeFlags", "")
+        if "Weapon" not in {part.strip() for part in flags.split(",")}:
+            continue
+        add_id_text = item.findtext("AdditionalDataId")
+        category = item.findtext("ItemCategory", "None")
+        if add_id_text is None:
+            continue
+        add_id = int(add_id_text)
+        if add_id not in categories or categories[add_id] == "None":
+            categories[add_id] = category
+    return categories
+
+
+def weapon_sentinel_band(weapon_data_id: int, categories_by_weapon_data_id: dict[int, str]) -> str:
+    category = categories_by_weapon_data_id.get(weapon_data_id, "None")
+    return SENTINEL_WEAPON_CATEGORY_BANDS.get(category, "low")
+
+
+def weapon_placeholder_power(
+    weapon_data_id: int,
+    vanilla_power: int,
+    categories_by_weapon_data_id: dict[int, str],
+    placeholder_mode: str,
+) -> int | None:
+    if vanilla_power <= 0:
+        return None
+    if placeholder_mode == "uniform":
+        return NEUTER_POWER if vanilla_power > NEUTER_POWER else None
+    band = weapon_sentinel_band(weapon_data_id, categories_by_weapon_data_id)
+    return SENTINEL_BAND_VALUES[band]
+
+
+def charge_aim_placeholder_power(placeholder_mode: str) -> int:
+    if placeholder_mode == "uniform":
+        return NEUTER_CHARGE_AIM_POWER
+    return SENTINEL_BAND_VALUES[SENTINEL_AIM_CHARGE_BAND]
+
+
+def build_weapon_neuter(placeholder_mode: str = "uniform") -> tuple[str, int]:
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: weapon template not found: {TEMPLATE}")
     tree = ET.parse(TEMPLATE)
@@ -89,7 +185,8 @@ def build_weapon_neuter() -> tuple[str, int]:
     if entries is None:
         sys.exit("ERROR: <Entries> not found in weapon template")
 
-    edited = []
+    categories_by_weapon_data_id = load_weapon_categories_by_weapon_data_id() if placeholder_mode != "uniform" else {}
+    edited: list[tuple[int, int, str]] = []
     for w in entries.findall("ItemWeapon"):
         wid_el = w.find("Id")
         pow_el = w.find("Power")
@@ -97,9 +194,10 @@ def build_weapon_neuter() -> tuple[str, int]:
             continue
         wid = int(wid_el.text)
         power = int(pow_el.text)
-        if power <= NEUTER_POWER:
-            continue  # already tiny / "nothing equipped" (Power 0) - leave as inherited
-        edited.append(wid)
+        target_power = weapon_placeholder_power(wid, power, categories_by_weapon_data_id, placeholder_mode)
+        if target_power is None or power == target_power:
+            continue
+        edited.append((wid, target_power, weapon_sentinel_band(wid, categories_by_weapon_data_id)))
 
     lines = [
         '<?xml version="1.0" encoding="utf-8"?>',
@@ -107,10 +205,12 @@ def build_weapon_neuter() -> tuple[str, int]:
         "<!--",
         "  GENERATED by tools/build_neuter_data.py - do not hand-edit.",
         "  Data-layer NEUTER PLACEHOLDER (docs/modding/06 section 1, docs/modding/07 Test 1b).",
-        "  Every weapon Power is forced to 1 so vanilla physical attacks are tiny and non-lethal;",
+        f"  Placeholder mode: {placeholder_mode}.",
+        "  Uniform mode forces every weapon Power to 1 so vanilla physical attacks are tiny and non-lethal;",
+        "  sentinel-coarse-v1 uses low/mid placeholder bands for action-identity calibration;",
         "  the code-mod reconciler owns the real damage result. Only <Id> + <Power> are shipped so",
         "  the loader merges per-property and nothing else is disturbed.",
-        f"  Weapons neutered: {len(edited)} (Power>1 in vanilla). Ability/spell/monster placeholders",
+        f"  Weapons emitted: {len(edited)}. Ability/spell/monster placeholders",
         "  are handled by sibling OverrideAbilityActionData NXD and AbilityChargeAimData XML neuters.",
         "-->",
         "",
@@ -118,10 +218,10 @@ def build_weapon_neuter() -> tuple[str, int]:
         "  <Version>1</Version>",
         "  <Entries>",
     ]
-    for wid in edited:
+    for wid, target_power, _band in edited:
         lines.append("    <ItemWeapon>")
         lines.append(f"      <Id>{wid}</Id>")
-        lines.append(f"      <Power>{NEUTER_POWER}</Power>")
+        lines.append(f"      <Power>{target_power}</Power>")
         lines.append("    </ItemWeapon>")
     lines.append("  </Entries>")
     lines.append("</ItemWeaponTable>")
@@ -129,7 +229,7 @@ def build_weapon_neuter() -> tuple[str, int]:
     return "\n".join(lines), len(edited)
 
 
-def build_charge_aim_neuter() -> tuple[str, int]:
+def build_charge_aim_neuter(placeholder_mode: str = "uniform") -> tuple[str, int]:
     if not CHARGE_AIM_TEMPLATE.exists():
         sys.exit(f"ERROR: charge/aim template not found: {CHARGE_AIM_TEMPLATE}")
     tree = ET.parse(CHARGE_AIM_TEMPLATE)
@@ -138,6 +238,7 @@ def build_charge_aim_neuter() -> tuple[str, int]:
     if entries is None:
         sys.exit("ERROR: <Entries> not found in charge/aim template")
 
+    target_power = charge_aim_placeholder_power(placeholder_mode)
     edited = []
     for ability in entries.findall("AbilityChargeAim"):
         id_el = ability.find("Id")
@@ -146,7 +247,7 @@ def build_charge_aim_neuter() -> tuple[str, int]:
             continue
         ability_id = int(id_el.text)
         power = int(power_el.text)
-        if power <= NEUTER_CHARGE_AIM_POWER:
+        if power <= 0 or power == target_power:
             continue
         edited.append(ability_id)
 
@@ -156,8 +257,9 @@ def build_charge_aim_neuter() -> tuple[str, int]:
         "<!--",
         "  GENERATED by tools/build_neuter_data.py - do not hand-edit.",
         "  Data-layer NEUTER PLACEHOLDER for high-id Aim/Charge actions.",
+        f"  Placeholder mode: {placeholder_mode}.",
         "  OverrideAbilityActionData only has rows through ability 367; Aim +2..+20 live in this",
-        "  hardcoded secondary table instead. Force only Power=1 so charge/aim attacks stay as",
+        "  hardcoded secondary table instead. Force only Power so charge/aim attacks stay as",
         "  placeholder deltas while keeping CT/Ticks inherited from vanilla.",
         f"  Aim/Charge abilities neutered: {len(edited)} (Power>1 in vanilla).",
         "-->",
@@ -169,7 +271,7 @@ def build_charge_aim_neuter() -> tuple[str, int]:
     for ability_id in edited:
         lines.append("    <AbilityChargeAim>")
         lines.append(f"      <Id>{ability_id}</Id>")
-        lines.append(f"      <Power>{NEUTER_CHARGE_AIM_POWER}</Power>")
+        lines.append(f"      <Power>{target_power}</Power>")
         lines.append("    </AbilityChargeAim>")
     lines.append("  </Entries>")
     lines.append("</AbilityChargeAimTable>")
@@ -177,7 +279,7 @@ def build_charge_aim_neuter() -> tuple[str, int]:
     return "\n".join(lines), len(edited)
 
 
-def classify_damaging_abilities() -> list[int]:
+def classify_damaging_ability_bands() -> dict[int, str]:
     """Offensive HP-damage abilities: AIBehaviorFlags has HP + TargetEnemies, not TargetAllies.
 
     This is the set that can kill a unit with vanilla damage (Fire/Bolt/Ice lines, monster
@@ -189,7 +291,7 @@ def classify_damaging_abilities() -> list[int]:
     tree = ET.parse(ABILITY_TEMPLATE)
     root = tree.getroot()
     entries = root.find("Entries")
-    ids = []
+    ids: dict[int, str] = {}
     for a in entries.findall("Ability"):
         id_el = a.find("Id")
         fl_el = a.find("AIBehaviorFlags")
@@ -197,11 +299,29 @@ def classify_damaging_abilities() -> list[int]:
             continue
         flags = {f.strip() for f in (fl_el.text or "").split(",")}
         if "HP" in flags and "TargetEnemies" in flags and "TargetAllies" not in flags:
-            ids.append(int(id_el.text))
+            ids[int(id_el.text)] = ability_sentinel_band(flags)
     return ids
 
 
-def build_ability_neuter() -> tuple[int, int, list[int]]:
+def classify_damaging_abilities() -> list[int]:
+    return sorted(classify_damaging_ability_bands())
+
+
+def ability_sentinel_band(flags: set[str]) -> str:
+    if "MagicalAttack" in flags or "AffectedByFaith" in flags or "Reflectable" in flags:
+        return "high"
+    if "PhysicalAttack" in flags or "Melee3Directions" in flags or "Ranged3Directions" in flags or "NonSpearAttack" in flags:
+        return "mid"
+    return "low"
+
+
+def ability_placeholder_xy(ability_id: int, ability_bands: dict[int, str], placeholder_mode: str) -> int:
+    if placeholder_mode == "uniform":
+        return NEUTER_XY
+    return SENTINEL_BAND_VALUES[ability_bands.get(ability_id, "low")]
+
+
+def build_ability_neuter(placeholder_mode: str = "uniform") -> tuple[int, int, list[int]]:
     """Copy the base override sqlite and force X=1,Y=1 on every damaging ability row that exists
     in the (sparse, 368-row) table. Returns (neutered, skipped_out_of_range, skipped_ids)."""
     if not BASE_OVERRIDE_SQLITE.exists():
@@ -209,7 +329,8 @@ def build_ability_neuter() -> tuple[int, int, list[int]]:
             f"ERROR: base override sqlite not found: {BASE_OVERRIDE_SQLITE}\n"
             "Regenerate it with FF16Tools nxd-to-sqlite from the game's overrideabilityactiondata.nxd."
         )
-    damaging = set(classify_damaging_abilities())
+    ability_bands = classify_damaging_ability_bands()
+    damaging = set(ability_bands)
     shutil.copyfile(BASE_OVERRIDE_SQLITE, NEUTER_OVERRIDE_SQLITE)
     con = sqlite3.connect(NEUTER_OVERRIDE_SQLITE)
     cur = con.cursor()
@@ -218,7 +339,7 @@ def build_ability_neuter() -> tuple[int, int, list[int]]:
     skipped = sorted(damaging - present)  # ids beyond the 368-row table
     cur.executemany(
         "UPDATE OverrideAbilityActionData SET X=?, Y=? WHERE Key=?",
-        [(NEUTER_XY, NEUTER_XY, k) for k in to_neuter],
+        [(xy := ability_placeholder_xy(k, ability_bands, placeholder_mode), xy, k) for k in to_neuter],
     )
     con.commit()
     con.close()
@@ -258,22 +379,23 @@ def build_ability_nxd(ff16tools: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    xml, count = build_weapon_neuter()
+    print(f"[neuter] placeholder mode: {args.placeholder_mode}")
+    xml, count = build_weapon_neuter(args.placeholder_mode)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(xml, encoding="utf-8")
     print(f"[neuter] wrote {OUT}")
-    print(f"[neuter] weapons neutered to Power={NEUTER_POWER}: {count}")
+    print(f"[neuter] weapons emitted: {count}")
 
-    charge_xml, charge_count = build_charge_aim_neuter()
+    charge_xml, charge_count = build_charge_aim_neuter(args.placeholder_mode)
     CHARGE_AIM_OUT.parent.mkdir(parents=True, exist_ok=True)
     CHARGE_AIM_OUT.write_text(charge_xml, encoding="utf-8")
     print(f"[neuter] wrote {CHARGE_AIM_OUT}")
-    print(f"[neuter] Aim/Charge abilities neutered to Power={NEUTER_CHARGE_AIM_POWER}: {charge_count}")
+    print(f"[neuter] Aim/Charge abilities emitted: {charge_count}")
 
-    neutered, skipped_n, skipped_ids = build_ability_neuter()
+    neutered, skipped_n, skipped_ids = build_ability_neuter(args.placeholder_mode)
     ABILITY_NXD_OUT.parent.mkdir(parents=True, exist_ok=True)
     print(f"[neuter] ability sqlite written: {NEUTER_OVERRIDE_SQLITE}")
-    print(f"[neuter] damaging abilities set X=Y={NEUTER_XY}: {neutered} (skipped {skipped_n} out of table range: {skipped_ids})")
+    print(f"[neuter] damaging abilities emitted: {neutered} (skipped {skipped_n} out of table range: {skipped_ids})")
     if args.build_nxd:
         build_ability_nxd(args.ff16tools)
     else:

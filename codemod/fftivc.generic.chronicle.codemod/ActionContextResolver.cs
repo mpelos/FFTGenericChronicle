@@ -10,6 +10,7 @@ internal sealed record ResolvedAttacker(UnitSnapshot? Unit, string Source, strin
 internal sealed class BattleContextResolver
 {
     private readonly RuntimeSettings _settings;
+    private RecentHpDamageEvent? _lastHpDamageEvent;
 
     public BattleContextResolver(RuntimeSettings settings)
     {
@@ -28,6 +29,15 @@ internal sealed class BattleContextResolver
             if (byCt is not null) return byCt;
         }
 
+        // Counterattacks do not spend/reset CT, so the CT path has no fresh drop to pick.
+        // Pattern: A damaged B, then B immediately damages A. If current target is the previous
+        // attacker, resolve the counter attacker as the previous target.
+        if (_settings.ResolveCounterFromRecentDamage)
+        {
+            var byCounter = ResolveByCounterInversion(target, observations, nowTick);
+            if (byCounter is not null) return byCounter;
+        }
+
         // Fallback: legacy recency heuristic (hook-touch order). Off by default.
         var candidates = BuildCandidates(target, observations, nowTick);
         string summary = FormatCandidates(candidates);
@@ -36,6 +46,20 @@ internal sealed class BattleContextResolver
 
         var best = candidates[0];
         return new ResolvedAttacker(best.Unit, "recent-unit", summary);
+    }
+
+    public void RememberHpDamageEvent(
+        UnitSnapshot target,
+        UnitSnapshot? attacker,
+        string attackerSource,
+        int signedDamage,
+        long eventTick,
+        long eventIndex)
+    {
+        if (signedDamage <= 0 || attacker is null) return;
+        if (attacker.Ptr == target.Ptr) return;
+
+        _lastHpDamageEvent = new RecentHpDamageEvent(target, attacker, attackerSource, signedDamage, eventTick, eventIndex);
     }
 
     // Attacker = the registered unit (!= target) whose CT (+0x41) most recently reset (dropped).
@@ -76,6 +100,33 @@ internal sealed class BattleContextResolver
 
         var best = list[0];
         return new ResolvedAttacker(best.Unit, "ct-reset", FormatCtCandidates(list));
+    }
+
+    private ResolvedAttacker? ResolveByCounterInversion(
+        UnitSnapshot target,
+        IReadOnlyDictionary<nint, UnitObservation> observations,
+        long nowTick)
+    {
+        var previous = _lastHpDamageEvent;
+        if (previous is null) return null;
+
+        int windowMs = Math.Clamp(_settings.CounterEventWindowMs, 1, 10_000);
+        int ageMs = AgeMs(nowTick, previous.EventTick);
+        if (ageMs < 0 || ageMs > windowMs) return null;
+        if (previous.Attacker.Ptr != target.Ptr) return null;
+        if (previous.Target.Ptr == target.Ptr) return null;
+
+        UnitSnapshot counterAttacker = previous.Target;
+        if (observations.TryGetValue(counterAttacker.Ptr, out var observation))
+            counterAttacker = observation.Unit;
+        if (counterAttacker.Hp <= 0) return null;
+
+        string summary =
+            $"counterPrevious=event#{previous.EventIndex}/age={ageMs}ms/" +
+            $"prevTarget=0x{previous.Target.Ptr:X}/id=0x{previous.Target.CharId:X2}/" +
+            $"prevAttacker=0x{previous.Attacker.Ptr:X}/id=0x{previous.Attacker.CharId:X2}/" +
+            $"prevSource={previous.AttackerSource}/damage={previous.SignedDamage}";
+        return new ResolvedAttacker(counterAttacker, "counter-inversion", summary);
     }
 
     private List<AttackerCandidate> BuildCandidates(
@@ -152,4 +203,12 @@ internal sealed class BattleContextResolver
     private sealed record AttackerCandidate(UnitSnapshot Unit, int AgeMs, bool Opposing, int Score);
 
     private sealed record CtCandidate(UnitSnapshot Unit, int Ct, long CtDropTick, int CtDropAmount, int DropAgeMs);
+
+    private sealed record RecentHpDamageEvent(
+        UnitSnapshot Target,
+        UnitSnapshot Attacker,
+        string AttackerSource,
+        int SignedDamage,
+        long EventTick,
+        long EventIndex);
 }

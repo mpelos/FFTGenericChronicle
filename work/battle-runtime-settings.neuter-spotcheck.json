@@ -1,5 +1,5 @@
 {
-  "_note": "SAFE DRY-RUN profile for validating the data-layer neuter placeholder before Test 2b. Deploy the weapon + ability + charge/aim neuter data mod, use this runtime profile, then trigger representative attacks/spells/Throw/Jump/Aim. It never writes HP because DryRunRewrites=true, but it logs [REWRITE-DRY-RUN] with vanillaDamage so tools/analyze_battleprobe_log.py can flag whether vanilla deltas are placeholder-sized.",
+  "_note": "SAFE DRY-RUN profile for validating the data-layer neuter placeholder before any live custom-formula/sentinel run. Deploy the weapon + ability + charge/aim neuter data mod, use this runtime profile, then trigger representative attacks/spells/Throw/Jump/Aim. It never writes HP because DryRunRewrites=true, but it logs [REWRITE-DRY-RUN] with vanillaDamage so tools/analyze_battleprobe_log.py can flag whether vanilla deltas are placeholder-sized.",
   "DryRunRewrites": true,
   "RewriteObservedDamage": true,
   "RewriteObservedHealing": false,

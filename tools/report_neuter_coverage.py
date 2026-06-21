@@ -112,7 +112,7 @@ def build_report() -> str:
     lines.append("")
     lines.append("- Throw/Jump high-id coverage is inferred from the formula catalog and item-power tables; it still needs a live spot-check.")
     lines.append("- Any formula that ignores both `X` and `Y`, such as percent/Gravity-style effects, may still produce a non-placeholder result.")
-    lines.append("- The placeholder only makes vanilla non-lethal; the runtime still has to prove Test 2b: HP=0 and KO flag ownership.")
+    lines.append("- The placeholder only makes vanilla non-lethal. Custom lethal results must use the engine-owned `MinHpFloor=1` path; HP=0 and KO-flag byte writes are preserved only as historical/refuted probes.")
     lines.append("")
     return "\n".join(lines)
 

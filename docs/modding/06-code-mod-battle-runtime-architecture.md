@@ -1,6 +1,8 @@
 # Code-Mod Battle Runtime Architecture
 
-Status: proposed viable path after the direct formula hook was blocked.
+Status: implemented offline/runtime architecture, with live-proven HP rewrite, engine-owned death,
+and CT-based attacker resolution. Remaining live gates are action-identity calibration, exact
+equipment mapping, hook-register context clues, and any future same-hit/pre-damage path.
 
 ## Verdict
 
@@ -11,14 +13,15 @@ this build, that function is not a stable x64 target. The viable route is:
 Own the final battle result, not the virtualized formula routine.
 ```
 
-Generic Chronicle can still become a flexible battle-mechanics code mod if we build a runtime
-layer that:
+Generic Chronicle can still become a flexible battle-mechanics code mod through the runtime layer
+now in this repo:
 
-1. uses the data mod to make vanilla actions safe and predictable;
-2. observes real battle events through stable, non-virtualized unit touchpoints;
-3. resolves enough action context to know attacker, target, action family/ability, and equipment;
-4. computes our own formula in C#;
-5. reconciles HP/MP/status after vanilla applies its placeholder result.
+1. use the data mod to make vanilla actions safe and predictable;
+2. observe real battle events through stable, non-virtualized unit touchpoints;
+3. resolve attacker/target/action/equipment context as far as current evidence allows;
+4. compute custom formulas in C#;
+5. reconcile HP/MP after vanilla applies its placeholder result, while leaving true death/KO to
+   the engine (`MinHpFloor=1`) until a pre-damage/same-hit path is found.
 
 This is still a code mod. The custom math lives in our Reloaded-II C# runtime. The difference is
 that we avoid the Denuvo-virtualized formula dispatcher and use stable data/runtime boundaries.
@@ -28,9 +31,18 @@ that we avoid the Denuvo-virtualized formula dispatcher and use stable data/runt
 Confirmed locally:
 
 - `battle_base_ptr` at `module+0x226D98` is stable and hookable. `rcx` is a live battle-unit
-  pointer. The current harness reads HP, MaxHP, MP, PA, MA, Speed, Move, Jump, Brave, Faith,
+  pointer. The current harness reads HP, MaxHP, MP, PA, MA, Speed, CT, Move, Jump, Brave, Faith,
   level, team, and foe bit from that pointer.
 - HP deltas are observable without touching the damage routine.
+- HP rewrites work, but direct HP=0/KO-flag writes do **not** trigger real death. The accepted
+  architecture is "engine owns death, runtime owns the number": custom lethal results floor at
+  1 HP and a later vanilla chip lets the engine perform KO.
+- The attacker is resolved live by CT reset (`+0x41`), with a counter-inversion fallback for
+  reaction attacks that do not consume CT.
+- Coarse action identity is implemented offline through an opt-in sentinel data mode and
+  `ActionSignalRules`; live calibration is pending.
+- A short observe-only hook-register probe can log x64 register snapshots at `battle_base_ptr`
+  to look for a current actor/action-context pointer without touching virtualized damage code.
 - The mod loader publishes table managers as Reloaded-II controllers. Our code mod can fetch
   modded item/job/weapon/armor tables instead of duplicating all static data.
 - `ItemData` exposes `ItemCategory`, `AdditionalDataId`, and `EquipBonusId`; `ItemArmorData`
@@ -239,10 +251,11 @@ Status of the placeholder (FIX PASS 1, 2026-06-21):
   also emits `AbilityChargeAimData.xml` forcing Aim +2..+20 to `Power=1` while leaving CT/Ticks
   inherited. Residual risk: Throw/Jump still need a live spot-check, and formulas that ignore
   X/Y/WP/charge Power (e.g. `%`-damage, Gravity) are not shrunk by these levers.
-- **Death after neuter:** since neutered vanilla no longer kills, the runtime must cause death
-  itself. `Mod.cs` now has `CaptureStructOnDeath` (find the death/status flag from a live
-  alive->dead diff) and `CauseDeathOnZeroHp` + `DeathStateWrites[]` (set that flag once mapped). See
-  `07-live-findings.md` FIX PASS 1 for the live-test plan.
+- **Death after neuter:** Tests 2b/2c proved direct byte writes do **not** cause real KO. HP=0
+  alone creates a zombie-like state, and HP=0 plus `+0x61|=0x20` still creates a zombie-like state.
+  The accepted runtime architecture is engine-owned death: custom lethal formulas clamp to
+  `MinHpFloor=1`, never write 0, and let the engine's own neutered chip deliver the real KO on a
+  later hit. `CauseDeathOnZeroHp` + `DeathStateWrites[]` remain only as historical/refuted probes.
 
 ### 2. Runtime unit registry
 
@@ -301,39 +314,74 @@ Then we harden it:
 
 ### 4. Context resolver
 
-This is the central unresolved piece. We do not need all context on day one, but full custom
-formulas need it eventually.
+The resolver is no longer a single missing piece. It is a set of context dimensions with different
+evidence levels:
+
+```text
+target unit      solved: the HP/MP delta unit pointer
+target stats     solved: unit struct +0x00..+0x43
+attacker unit    live-proven: CT reset at +0x41 (`ct-reset`)
+counters         offline-implemented fallback: invert the previous resolved HP-damage pair
+action family    offline-implemented bridge: sentinel bands -> ActionSignalRules
+true action id   still open: needs a stable action/pre-damage/preview context source
+equipment ids    partially implemented: scan/exact slot probes + item catalog; live offset proof pending
+same-hit death   still open: engine-owned death works, direct KO writes are refuted
+```
 
 Candidate context sources, in preferred order:
 
-1. **Current action state in normal memory.** Use pointer-stable dumps plus controlled battles to
-   find active unit pointer, selected ability id, target list, and queued action data outside the
-   virtualized formula dispatcher.
-2. **Stable UI/preview/action-selection sites.** Damage preview and action-menu code may hold
-   attacker, target, and ability before the virtualized damage routine runs. These hooks would
-   also solve preview mismatch later.
-3. **Data sentinel channel.** If direct ability id capture stays hard, use
-   `OverrideAbilityActionData` to make groups of actions produce distinguishable low placeholder
-   deltas or harmless side effects. The runtime side is now implemented as `ActionSignalRules`:
-   a vanilla delta can set integer variables such as `action.swing=1` or `action.thrust=1`.
-   This may not identify all 512 abilities by itself, but it can classify action families enough
-   for early mechanics.
-4. **Controlled encounter inference.** For early tests, ENTD can make attacker/weapon/ability
-   known. This proves the HP reconciler and DR math before full generic action context exists.
-5. **Persistent roster/unit-table correlation.** Community prior art (`FFT_Egg_Control`) has a
-   persistent unit table lead with 55 entries and a `0x258` stride. An independently found or
-   configurable probe for this table could let us correlate a live `BattleUnit*` to roster/ENTD
-   identity, job, and equipment. This is not implemented yet, but it is now a high-value offline
-   research branch because it may solve target/attacker equipment before true action id capture.
-6. **Recent-unit heuristic.** The current harness records every unit snapshot it observes. On a
-   damage event it can list recently seen non-target units in `[CTX]` lines and, when explicitly
-   enabled, use the most plausible recent unit as attacker context. This can prove attacker-aware
-   formulas in simple controlled battles while we continue hunting a stable action/preview hook.
+1. **CT reset attacker resolution.** Track `+0x41` history per registered unit pointer. At a damage
+   event, attacker = non-target unit with a recent CT drop/reset. Formula context exposes
+   `a.present`, `a.ct`, `a.sourceCt`, plus target equivalents. This is the current primary path.
+2. **Counter inversion.** Reaction attacks do not necessarily reset CT. If unit B was just damaged
+   by unit A and then A immediately loses HP, infer B as the counter attacker and expose
+   `a.sourceCounter`.
+3. **Current action state in normal memory.** Use pointer-stable dumps, `[HOOK-REGS]` snapshots,
+   controlled battles, and future probes to find active unit pointer, selected ability id, target
+   list, and queued action data outside the virtualized formula dispatcher.
+4. **Stable UI/preview/action-selection sites.** Damage preview and action-menu code may hold
+   attacker, target, and ability before the virtualized damage routine runs. These hooks would also
+   solve preview mismatch later.
+5. **Data sentinel channel.** If direct ability id capture stays hard, use the data layer to make
+   groups of actions produce distinguishable placeholder deltas. Runtime `ActionSignalRules` decode
+   vanilla deltas into variables such as `action.swing`, `action.thrust`, `action.missile`, or
+   `action.magical`. `sentinel-coarse-v1` is the checked-in live calibration candidate.
+6. **Controlled encounter inference.** For early tests, ENTD can make attacker/weapon/ability known.
+   This proves the HP reconciler and DR math before full generic action context exists.
+7. **Persistent roster/unit-table correlation.** Community prior art (`FFT_Egg_Control`) has a
+   persistent unit table lead with 55 entries and a `0x258` stride. The project now has independent,
+   disabled-by-default `MemoryTableProbes` so reviewed candidates can be tested without embedding
+   third-party signatures.
+8. **Recent-unit heuristic.** Kept as a fallback/debug source (`sourceRecent`), not the primary
+   attacker model.
 
 The first flexible runtime does not need perfect UI/AI. It needs true final outcomes. Preview/AI
 can be patched after the result engine is proven.
 
-### 4.1. Persistent memory-table probes
+### 4.1. Hook-register probe
+
+`HookRegisterProbe` is an observe-only RE aid for the stable `battle_base_ptr` hook. The assembly
+hook stores a short x64 register snapshot in the existing native buffer; the polling thread logs it
+later as `[HOOK-REGS]`, with classifications such as `unit:touched`, `unit:id=...`, `readable`, or
+`unreadable`.
+
+Profile:
+
+```text
+work/battle-runtime-settings.hook-register-probe.json
+```
+
+Watch command:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --hook-regs 12 --skip-analyze
+```
+
+Use this to hunt for a current actor/action-context pointer at the non-virtualized hook. It does not
+rewrite HP/MP and intentionally caps log count through `HookRegisterProbeMaxLogs`. See
+`09-hook-register-context-probe.md`.
+
+### 4.2. Persistent memory-table probes
 
 `MemoryTableProbes` are a new offline-prepared/live-observed tool for context hunting. They are
 not required for the current HP reconciler, and they are disabled unless explicitly configured in
@@ -468,12 +516,13 @@ The engine can be arbitrary C# math:
 Important: keep the formula engine pure and deterministic. Feed it snapshots and static table
 data, return a result. The runtime layer handles memory reads/writes.
 
-Current live expression layer is target-side by default because full attacker/action context is not
-mapped yet. The engine itself accepts optional attacker context: offline smoke tests prove
-attacker-aware formulas work when an attacker snapshot is supplied. Live formulas can use
-`a.present`, `a.inferred`, and `a.sourceRecent` as gates when the experimental recent-unit resolver
-is enabled. Action family context can also be supplied now through `ActionSignalRules`, which
-map controlled vanilla deltas to `action.*` variables.
+Current live expression layer can read target stats, resolved attacker stats, optional action signal
+variables, equipment slot probes, item-catalog metadata, response variables, and raw bytes/words.
+Live formulas should still guard optional context, but the primary attacker path is now CT-based:
+use `a.present`, `a.sourceCt`, and `a.ct` for normal actions, and `a.sourceCounter` for the
+counter-inversion fallback. `a.sourceRecent` remains only a legacy/debug fallback. Action family
+context can be supplied through `ActionSignalRules`, which map controlled vanilla deltas to
+`action.*` variables.
 
 Global formula example:
 
@@ -659,6 +708,24 @@ Keep `InferAttackerFromRecentUnits=false` while mapping. The harness will still 
 `[CTX ...] resolved=none attackerCandidates=...`. Turn it on only for controlled battles where a
 wrong attacker candidate is acceptable risk. When enabled, formulas can require the heuristic with
 `a.sourceRecent`, for example `if(a.sourceRecent, a.pa * 2, vanillaDamage)`.
+
+Current CT/counter settings:
+
+```json
+{
+  "ResolveAttackerByCt": true,
+  "CtDropWindowMs": 4000,
+  "ResolveCounterFromRecentDamage": true,
+  "CounterEventWindowMs": 1500
+}
+```
+
+Formula examples:
+
+```text
+if(a.sourceCt, max(1, a.pa * 10 - t.faith), vanillaDamage)
+if(a.sourceCounter, a.pa * 3, if(a.sourceCt, a.pa * 4, vanillaDamage))
+```
 
 Resolved runtime-context logging:
 
@@ -1179,10 +1246,11 @@ sentinel signals, or the normalized action variables that appear in the log:
 python tools\watch_live_mapping.py --runtime-events 0 --action-signals 3 --require-action-signal 301 --require-action-signal 302 --require-action-signal 303 --require-action-var sentinellow --require-action-var sentinelmid --require-action-var sentinelhigh
 ```
 
-The neuter spot-check fixture is the safe pre-Test-2b profile. It uses `DryRunRewrites=true` and
-`FinalDamageFormula="vanillaDamage"` so live damage events produce `[REWRITE-DRY-RUN]` lines with
-the observed vanilla delta, but no HP write. Use this before forcing HP to 0 if the installed data
-mod needs a quick sanity check across attack/spell/Throw/Jump/Aim families:
+The neuter spot-check fixture is the safe placeholder sanity profile. It uses
+`DryRunRewrites=true` and `FinalDamageFormula="vanillaDamage"` so live damage events produce
+`[REWRITE-DRY-RUN]` lines with the observed vanilla delta, but no HP write. Use this before a
+custom-formula, sentinel, or engine-owned-death run if the installed data mod needs a quick sanity
+check across attack/spell/Throw/Jump/Aim families:
 
 ```powershell
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.neuter-spotcheck.json docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json
@@ -1194,16 +1262,18 @@ For the matching live pass, the watcher can wait for placeholder-sized HP rewrit
 python tools\watch_live_mapping.py --runtime-events 0 --placeholder-rewrites 3 --max-placeholder-damage 30 --max-large-vanilla-rewrites 0 --max-rewrite-failures 0
 ```
 
-The death-gate fixture asserts the offline-computable part of Test 2b for both runtime profiles:
-placeholder damage against foes is rewritten to HP 0, allies are preserved, and healing stays
-ignored. It does not prove the live KO animation/state transition; that remains the live gate.
+The death-gate fixtures are preserved as historical/refuted diagnostics. They assert the
+offline-computable setup for the old HP=0 and HP=0+KO-bit probes: placeholder damage against foes
+is rewritten to HP 0, allies are preserved, and healing stays ignored. Live tests already proved
+those writes create zombie-like states, so these profiles are **not** the mainline success path.
 
 ```powershell
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test.json docs\modding\examples\runtime-simulation-death-gate.example.json
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.death-test-killflag.json docs\modding\examples\runtime-simulation-death-gate.example.json
 ```
 
-For the matching live pass, wait for the stronger Death Gate evidence instead of just any rewrite:
+If re-auditing the refuted byte-write path, wait for the stronger Death Gate evidence instead of
+just any rewrite:
 
 ```powershell
 python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --max-rewrite-failures 0
@@ -1211,13 +1281,10 @@ python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --m
 python tools\watch_live_mapping.py --runtime-events 0 --lethal-hp-rewrites 1 --death-events 1 --death-writes 1 --max-rewrite-failures 0 --max-death-write-failures 0
 ```
 
-The two HP-only commands represent the two possible outcomes of the same gate. The first passes if
-writing HP=0 alone produces death evidence. The second is the negative proof aid: it passes only
-after a lethal HP rewrite is observed and no `[DEATH-*]` evidence appears during a short settle
-window, which is the expected "zombie at 0 HP" branch before switching to the killflag profile.
-After either branch, `tools/analyze_battleprobe_log.py` emits `Death Gate Outcome`, a cross-check
-that classifies the log as HP-only evidence, zombie-candidate evidence, killflag-branch evidence,
-or a failed/ambiguous run.
+`tools/analyze_battleprobe_log.py` emits `Death Gate Outcome`, a cross-check that classifies logs
+as HP-only evidence, zombie-candidate evidence, killflag-branch evidence, or failed/ambiguous
+runs. Current balance/live profiles should instead use `MinHpFloor=1` and avoid byte-level KO
+ownership.
 
 As with the dry-run evaluation helper, `prepare-death-gate.ps1 -DryRun` still runs the neuter
 artifact tests plus settings validation/simulation; it skips the NXD rebuild, data/code deploy, and
@@ -2250,13 +2317,10 @@ Those are follow-up layers, not reasons to abandon the code-mod path.
    neuter placeholder when the expected custom result can be lethal. The analyzer's
    `HP Write Proof Check` still verifies concrete rewrites, rewrite failures, and fresh
    `sampleAgeMs` baselines for non-lethal proof logs.
-5. **Death-causing proof.** Current next live gate. With weapon + ability + charge/aim neuter
-   deployed, run Test 2b from `07-live-findings.md`: first force foe HP to 0 without
-   `CauseDeathOnZeroHp`; if the unit remains standing at 0 HP, hot-swap to the killflag profile that writes
-   `BattleUnit +0x61 |= 0x20`. The watcher now supports both HP-only branches: require
-   `[DEATH-*]` when HP=0 alone kills, or require no `[DEATH-*]` after a short settle window when
-   the unit zombies. The analyzer summarizes `[DEATH-DIFF]`, `[DEATH-WRITE]`, write failures, the
-   mapped `+0x61` KO flag, and the combined `Death Gate Outcome` verdict.
+5. **Death/KO ownership.** Completed for the current architecture: byte writes are refuted and
+   engine-owned death via `MinHpFloor=1` is the accepted path. The remaining live check is no
+   longer "can HP=0/KO-bit writes kill?", but whether each real custom-formula/sentinel profile
+   preserves this floor and lets the engine deliver KO cleanly on a later vanilla chip.
 6. **Healing write proof.** Implemented in code, unverified live. Enable
    `RewriteObservedHealing=true` with `ProofFinalHealing` or a negative `FinalDamageFormula`, then
    verify a vanilla heal can be corrected by the runtime.
@@ -2296,9 +2360,9 @@ Those are follow-up layers, not reasons to abandon the code-mod path.
    full proof is to feed it live attacker PA/weapon class/action type after step 8 maps that
    context.
 
-If steps 1-8 pass, the answer to "can we put DR in armor?" is yes for real HP outcomes, including
-lethal outcomes owned by the runtime. Steps 9-11 determine how complete and elegant the final
-battle system can become.
+If equipment-slot confirmation and the live DR/response checks pass, the answer to "can we put DR
+in armor?" is yes for real HP outcomes. Lethal outcomes remain engine-owned through
+`MinHpFloor=1` until a future pre-damage/same-hit hook is found.
 
 ## Sources
 

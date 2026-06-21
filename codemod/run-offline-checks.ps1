@@ -8,6 +8,8 @@ param(
     [string]$SentinelBandsSettings = 'docs\modding\examples\battle-runtime-settings.sentinel-bands.example.json',
     [string]$DryRunSettings = 'docs\modding\examples\battle-runtime-settings.dry-run.example.json',
     [string]$NeuterSpotcheckSettings = 'work\battle-runtime-settings.neuter-spotcheck.json',
+    [string]$CustomFormulaDemoSettings = 'work\battle-runtime-settings.custom-formula-demo.json',
+    [string]$SentinelCoarseSettings = 'work\battle-runtime-settings.sentinel-coarse-v1.json',
     [string]$DeathHpSettings = 'work\battle-runtime-settings.death-test.json',
     [string]$DeathKillFlagSettings = 'work\battle-runtime-settings.death-test-killflag.json',
     [string]$Scenarios = 'docs\modding\examples\runtime-simulation-scenarios.example.json',
@@ -19,9 +21,12 @@ param(
     [string]$SentinelBandsScenarios = 'docs\modding\examples\runtime-simulation-sentinel-bands.example.json',
     [string]$DryRunScenarios = 'docs\modding\examples\runtime-simulation-dry-run.example.json',
     [string]$NeuterSpotcheckScenarios = 'docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json',
+    [string]$CustomFormulaDemoScenarios = 'work\runtime-simulation.custom-formula-demo.json',
+    [string]$SentinelCoarseScenarios = 'work\runtime-simulation.sentinel-coarse-v1.json',
     [string]$DeathGateScenarios = 'docs\modding\examples\runtime-simulation-death-gate.example.json',
     [switch]$SkipPython,
     [switch]$SkipDotNet,
+    [switch]$SkipInstalledExeScan,
     [switch]$SkipGitDiffCheck
 )
 
@@ -104,8 +109,10 @@ try {
             Invoke-Native 'python' @('tools\test_actor_probe_ct.py')
             Invoke-Native 'python' @('tools\test_memtable_candidates.py')
             Invoke-Native 'python' @('tools\test_neuter_data.py')
+            Invoke-Native 'python' @('tools\test_neuter_gap_targets.py')
             Invoke-Native 'python' @('tools\test_runtime_formula_context.py')
             Invoke-Native 'python' @('tools\test_runtime_profiles.py')
+            Invoke-Native 'python' @('tools\test_static_code_patterns.py')
         }
 
         Invoke-Step "JSON files" {
@@ -139,10 +146,15 @@ try {
                 'work\battle-runtime-settings.death-flag-capture.json',
                 'work\battle-runtime-settings.actor-probe.json',
                 'work\battle-runtime-settings.engine-death-test.json',
+                'work\battle-runtime-settings.hook-register-probe.json',
+                'work\battle-runtime-settings.custom-formula-demo.json',
+                'work\battle-runtime-settings.sentinel-coarse-v1.json',
                 'work\battle-runtime-settings.death-test.json',
                 'work\battle-runtime-settings.death-test-killflag.json',
                 'work\memtable-probe-candidates.disabled.json',
-                'work\runtime-simulation.v0.2.generated.sample.json'
+                'work\runtime-simulation.v0.2.generated.sample.json',
+                'work\runtime-simulation.custom-formula-demo.json',
+                'work\runtime-simulation.sentinel-coarse-v1.json'
             )
             foreach ($jsonFile in $jsonFiles) {
                 $fullPath = Resolve-RepoPath $jsonFile
@@ -150,6 +162,28 @@ try {
                     Get-Content -Raw -LiteralPath $fullPath | ConvertFrom-Json | Out-Null
                 }
             }
+        }
+
+        if (-not $SkipInstalledExeScan) {
+            Invoke-Step "Installed executable static scan" {
+                $enhancedExe = 'D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe'
+                if (Test-Path -LiteralPath $enhancedExe) {
+                    Invoke-Native 'python' @('tools\scan_static_code_patterns.py', '--strict-enhanced')
+                }
+                else {
+                    Write-Host "Skipping: $enhancedExe not found." -ForegroundColor DarkGray
+                }
+            }
+        }
+
+        Invoke-Step "Live gate plan" {
+            Invoke-Native 'python' @('tools\report_live_gate_plan.py')
+            Invoke-Native 'python' @('tools\test_live_gate_plan.py')
+        }
+
+        Invoke-Step "Offline readiness audit" {
+            Invoke-Native 'python' @('tools\report_offline_readiness.py')
+            Invoke-Native 'python' @('tools\test_offline_readiness.py')
         }
     }
 
@@ -355,11 +389,47 @@ try {
                 )
             }
 
+            $customFormulaDemoScenariosPath = Resolve-RepoPath $CustomFormulaDemoScenarios
+            $customFormulaDemoSettingsPath = Resolve-RepoPath $CustomFormulaDemoSettings
+            if ((Test-Path -LiteralPath $customFormulaDemoScenariosPath) -and
+                (Test-Path -LiteralPath $customFormulaDemoSettingsPath)) {
+                Write-Host "custom formula demo fixture -> $CustomFormulaDemoSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $customFormulaDemoSettingsPath,
+                    $customFormulaDemoScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $sentinelCoarseScenariosPath = Resolve-RepoPath $SentinelCoarseScenarios
+            $sentinelCoarseSettingsPath = Resolve-RepoPath $SentinelCoarseSettings
+            if ((Test-Path -LiteralPath $sentinelCoarseScenariosPath) -and
+                (Test-Path -LiteralPath $sentinelCoarseSettingsPath)) {
+                Write-Host "sentinel coarse fixture -> $SentinelCoarseSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $sentinelCoarseSettingsPath,
+                    $sentinelCoarseScenariosPath,
+                    '--no-trace'
+                )
+            }
+
             $deathGateScenariosPath = Resolve-RepoPath $DeathGateScenarios
             $deathHpSettingsPath = Resolve-RepoPath $DeathHpSettings
             if ((Test-Path -LiteralPath $deathGateScenariosPath) -and
                 (Test-Path -LiteralPath $deathHpSettingsPath)) {
-                Write-Host "death gate HP-only fixture -> $DeathHpSettings" -ForegroundColor DarkGray
+                Write-Host "legacy/refuted death-write HP-only fixture -> $DeathHpSettings" -ForegroundColor DarkGray
                 Invoke-Native 'dotnet' @(
                     'run',
                     '--project',
@@ -376,7 +446,7 @@ try {
             $deathKillFlagSettingsPath = Resolve-RepoPath $DeathKillFlagSettings
             if ((Test-Path -LiteralPath $deathGateScenariosPath) -and
                 (Test-Path -LiteralPath $deathKillFlagSettingsPath)) {
-                Write-Host "death gate KO-flag fixture -> $DeathKillFlagSettings" -ForegroundColor DarkGray
+                Write-Host "legacy/refuted death-write KO-flag fixture -> $DeathKillFlagSettings" -ForegroundColor DarkGray
                 Invoke-Native 'dotnet' @(
                     'run',
                     '--project',
@@ -411,7 +481,27 @@ try {
             )
         }
 
-        Invoke-Step "Death gate helper dry-runs" {
+        Invoke-Step "Custom formula demo helper dry-run" {
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-custom-formula-demo.ps1',
+                '-DryRun'
+            )
+        }
+
+        Invoke-Step "Sentinel coarse helper dry-run" {
+            Invoke-Native 'powershell' @(
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                'codemod\prepare-sentinel-coarse.ps1',
+                '-DryRun'
+            )
+        }
+
+        Invoke-Step "Legacy death-write helper dry-runs" {
             Invoke-Native 'powershell' @(
                 '-ExecutionPolicy',
                 'Bypass',

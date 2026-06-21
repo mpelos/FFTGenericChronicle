@@ -94,12 +94,28 @@ PROFILES: tuple[ProfileSpec, ...] = (
         ("actor_probe_observe_only",),
     ),
     ProfileSpec(
+        "hook-register-probe",
+        REPO / "work/battle-runtime-settings.hook-register-probe.json",
+        "observe-only hook register RE capture",
+        "Log a short burst of x64 register snapshots at the stable battle_base_ptr hook.",
+        "no HP/MP rewrites",
+        ("hook_register_probe_observe_only",),
+    ),
+    ProfileSpec(
         "engine-death-test",
         REPO / "work/battle-runtime-settings.engine-death-test.json",
         "live architecture proof",
         "Prove engine-owned death with MinHpFloor=1: custom lethal results leave at 1 HP, then vanilla kills.",
         "rewrites HP, but never below MinHpFloor",
         ("engine_owned_death",),
+    ),
+    ProfileSpec(
+        "custom-formula-demo",
+        REPO / "work/battle-runtime-settings.custom-formula-demo.json",
+        "live/offline attacker+target proof",
+        "Compute damage from resolved attacker PA and target Faith while preserving engine-owned death.",
+        "rewrites HP when CT attacker context is present, never below MinHpFloor",
+        ("custom_formula_demo",),
     ),
     ProfileSpec(
         "death-test-hp-only",
@@ -140,6 +156,14 @@ PROFILES: tuple[ProfileSpec, ...] = (
         "Classify placeholder-sized vanilla damage bands into action variables.",
         "rewrites HP if deployed",
         ("sentinel_bands", "no_response_or_dr"),
+    ),
+    ProfileSpec(
+        "sentinel-coarse-v1",
+        REPO / "work/battle-runtime-settings.sentinel-coarse-v1.json",
+        "live calibration action-signal candidate",
+        "Decode the opt-in sentinel-coarse-v1 data placeholders into swing/thrust/magical action variables.",
+        "rewrites HP after action band decode, never below MinHpFloor",
+        ("sentinel_bands", "sentinel_live_candidate", "no_response_or_dr"),
     ),
     ProfileSpec(
         "mp-example",
@@ -257,6 +281,18 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("CauseDeathOnZeroHp must be false")
         if int(settings.get("MinHpFloor", 0)) != 0:
             errors.append("MinHpFloor must remain 0 in observe-only actor probe")
+    elif invariant == "hook_register_probe_observe_only":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "HookRegisterProbe"):
+            errors.append("HookRegisterProbe must be true")
+        if int(settings.get("HookRegisterProbeMaxLogs", 0)) <= 0:
+            errors.append("HookRegisterProbeMaxLogs must be positive")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only hook register probe")
     elif invariant == "engine_owned_death":
         if not truthy(settings, "RewriteObservedDamage"):
             errors.append("RewriteObservedDamage must be true")
@@ -274,6 +310,36 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("DryRunRewrites must be false")
         if not truthy(settings, "AffectFoes") or not truthy(settings, "AffectAllies"):
             errors.append("AffectFoes and AffectAllies must both be true for any-target testing")
+    elif invariant == "custom_formula_demo":
+        if not truthy(settings, "RewriteObservedDamage"):
+            errors.append("RewriteObservedDamage must be true")
+        if not truthy(settings, "ResolveAttackerByCt"):
+            errors.append("ResolveAttackerByCt must be true")
+        if int(settings.get("CtDropWindowMs", 0)) <= 0:
+            errors.append("CtDropWindowMs must be positive")
+        if int(settings.get("MinHpFloor", 0)) != 1:
+            errors.append("MinHpFloor must be 1")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if not truthy(settings, "LogResolvedRuntimeContext"):
+            errors.append("LogResolvedRuntimeContext must be true")
+        if not truthy(settings, "AffectFoes") or not truthy(settings, "AffectAllies"):
+            errors.append("AffectFoes and AffectAllies must both be true for any-target testing")
+        condition = str(settings.get("RewriteConditionFormula", ""))
+        if "event.isDamage" not in condition or "a.present" not in condition:
+            errors.append("RewriteConditionFormula must guard on event.isDamage and a.present")
+        formula = str(settings.get("FinalDamageFormula", ""))
+        for name in ["a.pa", "t.faith", "vanillaDamage"]:
+            if name not in formula:
+                errors.append(f"FinalDamageFormula should mention {name}")
+        trace_names = {
+            str(item.get("Name", "")).lower()
+            for item in settings.get("FormulaTraceVariables", [])
+            if isinstance(item, dict)
+        }
+        for name in ["trace.attackerpa", "trace.targetfaith", "trace.finaldamage", "trace.desiredhp"]:
+            if name not in trace_names:
+                errors.append(f"FormulaTraceVariables should include {name}")
     elif invariant == "legacy_death_hp_only":
         if settings.get("FinalDamageFormula") != "9999":
             errors.append("FinalDamageFormula must be 9999")
@@ -324,6 +390,18 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
         for name in ["sentinelLow", "sentinelMid", "sentinelHigh", "vanillaDamage"]:
             if name not in formula:
                 errors.append(f"FinalDamageFormula should mention {name}")
+    elif invariant == "sentinel_live_candidate":
+        if int(settings.get("MinHpFloor", 0)) != 1:
+            errors.append("MinHpFloor must be 1 for live sentinel calibration")
+        if not truthy(settings, "ResolveAttackerByCt"):
+            errors.append("ResolveAttackerByCt must be true")
+        if not truthy(settings, "ResolveCounterFromRecentDamage"):
+            errors.append("ResolveCounterFromRecentDamage must be true")
+        if not truthy(settings, "LogResolvedRuntimeContext"):
+            errors.append("LogResolvedRuntimeContext must be true")
+        condition = str(settings.get("RewriteConditionFormula", ""))
+        if "action.present" not in condition:
+            errors.append("RewriteConditionFormula must require action.present")
     elif invariant == "mp_rewrite":
         if not truthy(settings, "RewriteObservedMpLoss") or not truthy(settings, "RewriteObservedMpGain"):
             errors.append("MP profile must rewrite both MP loss and MP gain")
@@ -357,6 +435,9 @@ def summarize_profile(settings: dict[str, Any]) -> str:
         f"deathWrite={truthy(settings, 'CauseDeathOnZeroHp')}/{count(settings, 'DeathStateWrites')}",
         f"minHpFloor={int(settings.get('MinHpFloor', 0))}",
         f"actorProbe={truthy(settings, 'ActorProbeOnEvent')}",
+        f"ctResolver={truthy(settings, 'ResolveAttackerByCt')}/{int(settings.get('CtDropWindowMs', 0))}ms",
+        f"counterResolver={truthy(settings, 'ResolveCounterFromRecentDamage')}/{int(settings.get('CounterEventWindowMs', 0))}ms",
+        f"hookRegs={truthy(settings, 'HookRegisterProbe')}/{int(settings.get('HookRegisterProbeMaxLogs', 0))}",
     ]
     return ", ".join(flags)
 
