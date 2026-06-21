@@ -1,0 +1,20 @@
+docs/job-balance/25-ninja-v1-proposal.md
+  s_fce6b25a5764ca::t_5800edfcecb59c 1-2,4-43,47-76,79-89,92-109,111-155,159-176,193,199-201,206-208,210-221,225-240,246-262,264-265,267-278,283-304,306,314-373,377-388,390-418,420-435,445
+  s_fce6b25a5764ca::t_630f924ade5d74 3,44-46,77-78,90-91,110,156-158,177-192,194-198,202-205,209,222-224,241-245,263,266,279-282,305,307-313,374-376,389,419,436-444,446-450
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8b234e0abf7ba754b059da131bbad9b319a7c522",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
