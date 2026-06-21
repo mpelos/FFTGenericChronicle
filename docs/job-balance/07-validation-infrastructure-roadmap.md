@@ -51,6 +51,7 @@ Accepted/provisional job documents now refer to checks in these categories:
 - action grants and turn-economy recursion;
 - area, multi-target, and terrain availability.
 - sustained area throughput across target count and duration.
+- KO/corpse/undead state composition for battle-scoped corpse manipulation.
 
 Only the damage-family side is currently represented by the existing formula harness. Several other
 categories are design-required but not yet executable.
@@ -201,6 +202,32 @@ Notes:
 - this may be an implementation feasibility track, not only a math track;
 - if robust targeting changes are not data-moddable, the design should use zone, CT, movement, or
   counter-pressure alternatives.
+
+### T3xT5xT8 - KO/Corpse/Undead State Composition
+
+Goal: model effects that depend on KO bodies, corpse windows, raised bodies, temporary undead
+states, control ownership, and targetability over time.
+
+Unblocks:
+
+- Necromancer `Corpse Puppet` if it manipulates a KO body;
+- Necromancer `Command Undead` if it controls a raised or undead-marked body;
+- any future battle-scoped raise, corpse, spirit, or undead-state action that changes target
+  legality, control, healing/revive behavior, or expiry.
+
+Notes:
+
+- this gate is scoped to optional corpse/raise sub-kits, not to every Necromancer dark spell;
+- T3 supplies HP, KO, revive, Reraise, healing inversion, drain, and attrition behavior;
+- T5 supplies death-clock timing, status duration, corpse windows, expiration, and tick ordering;
+- T8 supplies target eligibility, allegiance/control, AI handling, targetability, and immunity
+  policy;
+- T3/T5/T8 are not sufficient independently when an effect asks whether a KO body can become a
+  target, whether that target can act or be acted upon, who controls it, and when it expires;
+- the first bundle should include a KO body before death-clock expiry, a body becoming chest/crystal,
+  undead-marked living target, undead KO target, raised non-acting corpse object, invalid boss/guest
+  row, and an attempted action-recursion row;
+- if the raised object can act, grant actions, or trigger turns, the affected rows also require T10.
 
 ### T5xT8 - Timed Untargetability And Airborne Exclusion Composition
 
@@ -375,24 +402,26 @@ Recommended order before more concrete skill-number work:
 5. Build `T6 - Dynamic Armor Response` and `T7 - Enemy-Offense/Disarm` before concrete Knight,
    Monk anti-plate, Archer piercing, Thief disruption, or similar values.
 6. Evaluate `T8 - AI Targeting/Challenge` separately; if not feasible, redesign those skills early.
-7. Build `T5xT8 - Timed Untargetability/Airborne Exclusion` before concrete Jump untargetability
+7. Build `T3xT5xT8 - KO/Corpse/Undead State Composition` before concrete Necromancer corpse,
+   raise-body, or undead-control values.
+8. Build `T5xT8 - Timed Untargetability/Airborne Exclusion` before concrete Jump untargetability
    or timed self-exclusion values.
-8. Build `T6xPS - Protect/Shell Mitigation Stacking` before concrete Protect, Shell, Wall, or
+9. Build `T6xPS - Protect/Shell Mitigation Stacking` before concrete Protect, Shell, Wall, or
    broad defensive status values.
-9. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
+10. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
    loops.
-10. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
-11. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
-12. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
+11. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
+12. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
+13. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
     Bard/Dancer global values.
-13. Build `T11xT5 - Sustained Area Throughput` before concrete repeated mapwide or large-area
+14. Build `T11xT5 - Sustained Area Throughput` before concrete repeated mapwide or large-area
     performance, aura, terrain, zone, or duration-based area values.
 
 ## Acceptance Gate Per Track
 
 Each new validation model from T3 through T11, including composition tracks such as T3xT5, T6xT7,
-T5xT8, T6xPS, T8xSR, T11xT5, and T3xT5xT11, must inherit the same dual-independent discipline that
-made formula-balance v0.2 trustworthy.
+T3xT5xT8, T5xT8, T6xPS, T8xSR, T11xT5, and T3xT5xT11, must inherit the same
+dual-independent discipline that made formula-balance v0.2 trustworthy.
 
 Before a track output can be used to accept concrete skill data:
 
@@ -462,3 +491,4 @@ Later accepted job proposals extended this roadmap with additional gates:
 - T11, with T11A and T11B sub-contracts, from Summoner/Geomancer review.
 - T5xT8 from Dragoon/Samurai review.
 - T11xT5 and T3xT5xT11 from Bard/Dancer review.
+- T3xT5xT8 from Necromancer review.
