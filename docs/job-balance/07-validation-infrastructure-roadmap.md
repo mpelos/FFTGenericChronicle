@@ -45,7 +45,9 @@ Accepted/provisional job documents now refer to checks in these categories:
 - CT, delayed actions, overwatch, and interrupts;
 - AI targeting or challenge behavior;
 - mitigation stacking across armor response, Protect/Shell, element, zodiac, and clamps;
-- resource and MP economy beyond per-action recovery plumbing.
+- resource and MP economy beyond per-action recovery plumbing;
+- spell routing/Reflect composition;
+- action grants and turn-economy recursion.
 
 Only the damage-family side is currently represented by the existing formula harness. Several other
 categories are design-required but not yet executable.
@@ -146,6 +148,8 @@ Notes:
 
 - this can be scenario-based rather than a full battle simulator at first;
 - delayed attacks must be evaluated for player predictability, not only average damage.
+- T5.0 does not model action grants such as Quick. Effects that grant an immediate action or change
+  post-action recursion require T10.
 
 ### T6 - Dynamic Armor Response And Guard-Break Model
 
@@ -238,6 +242,44 @@ Notes:
 - T9 should distinguish tactical MP pressure from campaign economy so resource scarcity does not
   become hidden difficulty inflation.
 
+### T8xSR - Spell Routing And Reflect Composition
+
+Goal: model how reflected or rerouted spells choose targets after the original spell target is
+changed.
+
+Unblocks:
+
+- Time Mage `Reflect`;
+- future spell-routing, redirect, decoy, or target-redirection effects;
+- any controller design that relies on a spell bouncing to a different legal target.
+
+Notes:
+
+- this composes with T8 because reflected single-target magic changes targeting, not only damage;
+- rows should include beneficial spell backfire, hostile spell bounce, no-legal-target cases, and
+  player-legible routing risk;
+- Reflect should stay a tactical routing decision, not a pure anti-magic immunity layer.
+
+### T10 - Turn-Grant And Action-Economy Model
+
+Goal: model effects that grant immediate actions, alter post-action CT recursion, or create
+additional turns outside normal speed/CT progression.
+
+Unblocks:
+
+- Time Mage `Quick`;
+- `Critical: Quick`;
+- any later reaction, support, or job action that grants an action now, refunds a turn, repeats an
+  action, or bypasses normal post-turn CT costs.
+
+Notes:
+
+- Haste and Slow are speed-state effects and can use T5;
+- Swiftspell and similar cast-time reductions can use T5;
+- Quick-class action grants are not covered by T5 and require T10 before numeric acceptance;
+- the first T10 bundle must include anti-recursion rows, including Quick on a unit that can also
+  Quick, reaction-triggered Quick chains, and party turn-economy caps.
+
 ## Recommended Sequence
 
 Recommended order before more concrete skill-number work:
@@ -257,11 +299,14 @@ Recommended order before more concrete skill-number work:
    broad defensive status values.
 8. Build `T9 - Resource/MP Economy` before concrete MP restore, MP discount, or spell-availability
    loops.
+9. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
+10. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
 
 ## Acceptance Gate Per Track
 
-Each new validation model from T3 through T9, including composition tracks such as T3xT5, T6xT7, and
-T6xPS, must inherit the same dual-independent discipline that made formula-balance v0.2 trustworthy.
+Each new validation model from T3 through T10, including composition tracks such as T3xT5, T6xT7,
+T6xPS, and T8xSR, must inherit the same dual-independent discipline that made formula-balance v0.2
+trustworthy.
 
 Before a track output can be used to accept concrete skill data:
 
