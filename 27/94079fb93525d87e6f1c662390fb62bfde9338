@@ -1,0 +1,24 @@
+docs/job-balance/19-white-black-mage-v1-proposal.md
+  s_fce6b25a5764ca::t_b0d183d2fb1342 3,11,33-35,78-80,83-92,97,135-136,160-162,166-169,268,326-330,337-341,449-450,455-458,473-475,491,506-507,509-510
+  s_fce6b25a5764ca::t_c2b1f9803717df 514,516-517,519-525
+  s_fce6b25a5764ca::t_891098bd60215e 187,360-361,513,515,518
+  s_fce6b25a5764ca::t_18101562f2966a 1-2,4-10,12-32,36-77,81-82,93-96,98-134,137-159,163-165,170-186,188-267,269-325,331-336,342-359,362-448,451-454,459-472,476-490,492-505,508,511-512
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_126708352a2bfb 46-48,98-99,113-115,198-240,256-259,263-264
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "2794079fb93525d87e6f1c662390fb62bfde9338",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
