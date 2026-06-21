@@ -202,3 +202,66 @@ MP / Mana Shield is a separate channel to handle later.
    and doubles as the start of the sentinel action-context channel.
 2. Death-causing path (write HP=0 + death state) for when our formula is lethal.
 3. Then context resolution (attacker/action/equipment) on top of the clean placeholder signal.
+
+---
+
+## FIX PASS 1 - neuter + death-state instrumentation (2026-06-21)
+
+Built in response to Test 1b's revised next-gate order. Everything here passed offline checks
+(`codemod\run-offline-checks.ps1`) but is **not yet live-validated**.
+
+### 1. Data-layer weapon neuter (gate step 1, physical half) - BUILT
+
+`tools/build_neuter_data.py` generates
+`mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml`, forcing every weapon's
+`Power` to 1 (126 weapons; Power 0/1 left untouched). Any weapon-power-based attack (`PA*WP`,
+`WP*WP`, `(PA+Sp)/2*WP`, ...) now deals a tiny, non-lethal, but still non-zero delta the reconciler
+can observe and own. This removes the death race and the flicker for human physical attacks.
+
+Coverage / gaps (honest): covers attacks that scale with weapon Power. Does **NOT** cover
+bare-hands / monster innate attacks (no weapon-power term) or spell damage. Those need the
+`OverrideAbilityActionData` NXD neuter, which is a separate pass blocked on having the base
+per-ability `Formula/X/Y` (exe-hardcoded, not in data) so we know which abilities are damaging and
+which parameter to shrink. So the lethal monster hit class from Test 1b (`id=0x1F`) is **not yet**
+neutered; use a player-controlled physical attack for the death experiments below.
+
+### 2. Death-state capture instrumentation (gate step 2, the measurement) - BUILT
+
+The death/status flag offset is unmapped (docs/modding/05) and was **not** in any prior log
+(diffs were off in the hp-write-proof profile). The continuous poller also never emitted
+`[DUMP]`/`[DIFF]` (it ran with `logStructMapping:false`), so a unit dying on another unit's turn was
+never struct-diffed. New `Mod.cs` option `CaptureStructOnDeath`: the first tick a unit is **observed
+at 0 HP by any cause** (vanilla kill or our own HP=0 write), it logs `[DEATH-DUMP]` (full struct),
+`[DEATH-DIFF]` (alive->dead byte changes) and `[DEATH-FOLLOW]` (changes over the next
+`DeathCaptureFollowTicks` polls, to catch a flag set a few ms later). Observing at 0 HP rather than
+on the transition event means it fires even when our rewrite sets the tracked HP to 0 and no delta
+re-fires.
+
+### 3. Death-causing write (gate step 2, the action) - BUILT, OFF by default
+
+New `Mod.cs` options `CauseDeathOnZeroHp` + `DeathStateWrites[]`. When our formula zeroes a unit's
+HP and `CauseDeathOnZeroHp=true`, each `DeathStateWrite` does a read-modify-write on the unit struct
+(`Offset`, `Width` Byte/Word/DWord, and one of `Value` / `OrMask` / `AndMask`) so a single status
+**bit** can be set without clobbering the field. This is the configurable hook for setting the death
+state ourselves once vanilla is neutered. It stays inert until the offset from step 2 is filled in -
+no rebuild needed, JSON only.
+
+### Live-test plan (run in this order)
+
+Both runs need the **new DLL** deployed (`codemod\build-deploy.ps1`, Reloaded-II closed). Settings
+hot-reload ~1/s; copy the chosen profile to
+`C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`.
+
+- **Test 2a - death-flag capture.** Profile `work/battle-runtime-settings.death-flag-capture.json`.
+  **No data neuter deployed** (units must die normally). Observe-only. Let enemies die from vanilla
+  damage. Then read the log for `[DEATH-DIFF]`/`[DEATH-FOLLOW]` offsets other than `0x30/0x31` (HP).
+  A byte/bit that flips exactly at death is the death/status field.
+- **Test 2b - death by HP write.** Deploy the **weapon neuter** data mod (`deploy.ps1`). Profile
+  `work/battle-runtime-settings.death-test.json` (`FinalDamageFormula="9999"`, `AffectFoes` only).
+  Attack an enemy with a (neutered) weapon: vanilla deals ~PA, then the reconciler forces that foe's
+  HP to 0. **Does it DIE or ZOMBIE at 0 HP?** If it dies -> writing HP=0 is sufficient, no
+  death-state write needed. If it zombies -> fill `DeathStateWrites` from Test 2a, set
+  `CauseDeathOnZeroHp=true`, retest.
+
+The outcome of 2b decides whether the death-state RE (2a) is even on the critical path, before we
+invest further in it.

@@ -1,0 +1,25 @@
+{
+  "_note": "DEATH-BY-HP-WRITE TEST (docs/modding/07 Test 1b, next-gate step 2). Decides whether writing HP=0 alone kills, or leaves a 'zombie' at 0 HP. REQUIRES the weapon neuter data mod deployed (mod/fftivc.generic.chronicle, deploy.ps1) so vanilla physical attacks are non-lethal. Steps: control a unit holding a (now neutered) weapon and attack an ENEMY. Vanilla deals ~PA (tiny); the reconciler then forces that foe's HP to 0 (FinalDamageFormula=9999 -> desiredHp clamps to 0). WATCH THE ENEMY: does it DIE (KO/collapse/removed) or ZOMBIE (keeps standing/acting at 0 HP)? AffectAllies=false so your own units are never zeroed. If it ZOMBIES, we need DeathStateWrites from the capture profile; set CauseDeathOnZeroHp=true and fill DeathStateWrites, then retest.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": false,
+  "FinalDamageFormula": "9999",
+  "ApplyDamageResponseRules": false,
+  "ApplyEquipmentDr": false,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "CaptureStructOnDeath": true,
+  "DeathCaptureFollowTicks": 60,
+  "LogUnknownFieldDiffs": true,
+  "CauseDeathOnZeroHp": false,
+  "DeathStateWrites": [
+    {
+      "_comment": "EXAMPLE ONLY - disabled until the offset is found via the capture profile. Once known, e.g. set the KO status bit: { \"Name\": \"KO\", \"Offset\": 144, \"Width\": \"Byte\", \"OrMask\": 1 }, and set CauseDeathOnZeroHp=true.",
+      "Name": "example-disabled",
+      "Offset": -1,
+      "Width": "Byte",
+      "OrMask": 1
+    }
+  ]
+}

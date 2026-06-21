@@ -15,6 +15,7 @@ tools/*
 !tools/analyze_battleprobe_log.py
 !tools/dump_item_catalog.py
 !tools/promote_runtime_offsets.py
+!tools/build_neuter_data.py
 !tools/test_memtable_candidates.py
 !tools/test_runtime_tooling.py
 !tools/watch_live_mapping.py

@@ -214,8 +214,24 @@ Reason: if vanilla can kill, crystallize, trigger reaction chains, or apply the 
 before our code corrects HP, the post-damage engine will be fighting state that already changed.
 A placeholder result gives us a clean event signal and leaves the real outcome to our runtime.
 
-Open gate: confirm `OverrideAbilityActionData.Formula/X/Y` changes are actually read by the game
-for damage/heal, not only CT/MP. The data pipeline itself is already proven.
+Open gate: CLOSED. Live Test D (2026-06-21) proved the exe reads `OverrideAbilityActionData
+Formula/X/Y` for damage magnitude, not only CT/MP (see `07-live-findings.md`). The data lever for
+the placeholder exists end to end.
+
+Status of the placeholder (FIX PASS 1, 2026-06-21):
+
+- **Weapon half BUILT.** `tools/build_neuter_data.py` ->
+  `mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml` forces every weapon
+  `Power=1`, so weapon-power attacks become tiny/non-lethal. Removes the death race + flicker for
+  human physical attacks.
+- **Ability/spell + monster half PENDING.** Needs an `OverrideAbilityActionData` NXD neuter, which
+  depends on the base per-ability `Formula/X/Y` (exe-hardcoded, not in data) to know which abilities
+  are damaging and which parameter to shrink. Until then, bare-hands/monster/spell damage is not
+  neutered.
+- **Death after neuter:** since neutered vanilla no longer kills, the runtime must cause death
+  itself. `Mod.cs` now has `CaptureStructOnDeath` (find the death/status flag from a live
+  alive->dead diff) and `CauseDeathOnZeroHp` + `DeathStateWrites[]` (set that flag once mapped). See
+  `07-live-findings.md` FIX PASS 1 for the live-test plan.
 
 ### 2. Runtime unit registry
 

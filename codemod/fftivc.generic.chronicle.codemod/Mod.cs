@@ -61,6 +61,10 @@ public class Mod : ModBase
     private readonly Dictionary<nint, int> _diffCounts = new();
     private readonly HashSet<nint> _unitRegistry = new();
     private readonly Dictionary<nint, UnitObservation> _unitObservations = new();
+    private readonly Dictionary<nint, byte[]> _recentAliveRaw = new();   // unit -> last raw seen while HP>0 (death capture baseline)
+    private readonly Dictionary<nint, byte[]> _deathCaptureRaw = new();  // unit -> raw at last death/follow tick (delayed-flag diff)
+    private readonly Dictionary<nint, int> _deathCaptureFollow = new();  // unit -> remaining post-death follow-up dump ticks
+    private readonly HashSet<nint> _deathCaptured = new();               // unit -> already captured this death (until revived)
     private readonly ValueRewriteEchoGuard _hpRewriteEchoGuard = new("HP");
     private readonly ValueRewriteEchoGuard _mpRewriteEchoGuard = new("MP");
     private long _battleEventIndex;
@@ -221,6 +225,8 @@ public class Mod : ModBase
             _unitObservations[unitPtr] = new UnitObservation(target, nowTick);
         else if (_unitObservations.TryGetValue(unitPtr, out var previousObservation))
             _unitObservations[unitPtr] = previousObservation with { Unit = target };
+
+        if (_settings.CaptureStructOnDeath) DeathCaptureTick(target);
 
         string lineStats = target.StatLine;
         if (!_seen.TryGetValue(unitPtr, out var prevStats) || prevStats != lineStats)
@@ -389,6 +395,10 @@ public class Mod : ModBase
         _lastRaw.Remove(unitPtr);
         _diffCounts.Remove(unitPtr);
         _unitObservations.Remove(unitPtr);
+        _recentAliveRaw.Remove(unitPtr);
+        _deathCaptureRaw.Remove(unitPtr);
+        _deathCaptureFollow.Remove(unitPtr);
+        _deathCaptured.Remove(unitPtr);
         Line($"[UNIT-LOST ptr=0x{unitPtr:X}] {reason}");
         Flush();
     }
@@ -554,6 +564,8 @@ public class Mod : ModBase
             }
             _hpRewriteEchoGuard.Remember(damageEvent.Target.Ptr, damageEvent.CurrentHp, result.DesiredHp, Stopwatch.GetTimestamp());
             Line($"[REWRITE ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] rule={result.RuleName} vanillaDamage={damageEvent.VanillaDamage} finalDamage={result.FinalDamage} HP {damageEvent.CurrentHp}->{result.DesiredHp}");
+            if (result.DesiredHp == 0 && _settings.CauseDeathOnZeroHp)
+                ApplyDeathStateWrites(damageEvent.Target);
             return decision.TrackingValue;
         }
         catch (Exception ex)
@@ -631,6 +643,95 @@ public class Mod : ModBase
 
         _diffCounts[unitPtr] = emitted + diffs.Count;
         Line($"[DIFF ptr=0x{unitPtr:X} id=0x{id:X2}] {string.Join(" ", diffs)}");
+        Flush();
+    }
+
+    // Death-state RE capture. While a unit is alive, keep its most recent raw snapshot. The first tick
+    // it is OBSERVED at 0 HP (by any cause - vanilla kill OR our own HP=0 write), dump the full struct
+    // and diff alive->dead, then keep diffing for a short window to catch the engine setting the
+    // death/status flag a few ticks later. The changed offsets are the candidate death/status field,
+    // which is currently unmapped (see docs/modding/05, 07). Observing at 0 HP (not the transition
+    // event) means this works even when our own rewrite sets _lastHp to 0 and no delta re-fires.
+    private void DeathCaptureTick(UnitSnapshot target)
+    {
+        nint ptr = target.Ptr;
+
+        if (_deathCaptureFollow.TryGetValue(ptr, out int remaining) && remaining > 0)
+        {
+            if (_deathCaptureRaw.TryGetValue(ptr, out var prevRaw))
+            {
+                var diffs = StructByteDiffs(prevRaw, target.Raw, 0, DUMP - 1, 24);
+                if (diffs.Count > 0)
+                {
+                    Line($"[DEATH-FOLLOW ptr=0x{ptr:X} id=0x{target.CharId:X2} hp={target.Hp}] {string.Join(" ", diffs)}");
+                    Flush();
+                }
+            }
+            _deathCaptureRaw[ptr] = target.Raw;
+            _deathCaptureFollow[ptr] = remaining - 1;
+            return;
+        }
+
+        if (target.Hp > 0)
+        {
+            _recentAliveRaw[ptr] = target.Raw;
+            _deathCaptured.Remove(ptr); // revived/refreshed unit can be captured on a later death
+            return;
+        }
+
+        // hp == 0, not already captured: a fresh death by any cause. Capture once.
+        if (!_deathCaptured.Add(ptr)) return;
+
+        int prevHp = _recentAliveRaw.TryGetValue(ptr, out var aliveRaw)
+            ? aliveRaw[0x30] | (aliveRaw[0x31] << 8)
+            : -1;
+        Line($"[DEATH-DUMP ptr=0x{ptr:X} id=0x{target.CharId:X2} prevHp={prevHp}] {HexDump(target.Raw)}");
+        if (aliveRaw is not null)
+        {
+            var diffs = StructByteDiffs(aliveRaw, target.Raw, 0, DUMP - 1, 24);
+            Line($"[DEATH-DIFF ptr=0x{ptr:X} id=0x{target.CharId:X2}] alive->dead {(diffs.Count == 0 ? "none" : string.Join(" ", diffs))}");
+        }
+        else
+        {
+            Line($"[DEATH-DIFF ptr=0x{ptr:X} id=0x{target.CharId:X2}] alive->dead no-alive-baseline (unit first seen already dead)");
+        }
+        _deathCaptureRaw[ptr] = target.Raw;
+        _deathCaptureFollow[ptr] = Math.Clamp(_settings.DeathCaptureFollowTicks, 0, 4000);
+        Flush();
+    }
+
+    private static List<string> StructByteDiffs(byte[] a, byte[] b, int start, int end, int max)
+    {
+        var diffs = new List<string>();
+        int limit = Math.Min(a.Length, b.Length);
+        if (limit == 0) return diffs;
+        start = Math.Clamp(start, 0, limit - 1);
+        end = Math.Clamp(end, start, limit - 1);
+        for (int i = start; i <= end; i++)
+        {
+            if (a[i] == b[i]) continue;
+            diffs.Add($"+0x{i:X2}:{a[i]:X2}->{b[i]:X2}");
+            if (diffs.Count >= max) break;
+        }
+        return diffs;
+    }
+
+    private void ApplyDeathStateWrites(UnitSnapshot target)
+    {
+        if (_settings.DeathStateWrites.Count == 0)
+        {
+            Line($"[DEATH-WRITE-SKIP ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] CauseDeathOnZeroHp is on but no DeathStateWrites are configured");
+            Flush();
+            return;
+        }
+        foreach (var write in _settings.DeathStateWrites)
+        {
+            if (write is null || write.Offset < 0) continue;
+            if (!write.TryApply(target.Ptr, out string desc, out string error))
+                Line($"[DEATH-WRITE-FAILED ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] {(string.IsNullOrWhiteSpace(write.Name) ? "death" : write.Name)}: {error}");
+            else
+                Line($"[DEATH-WRITE ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] {desc}");
+        }
         Flush();
     }
 
@@ -724,6 +825,26 @@ internal static class CurrentProcessMemory
         }
 
         byte[] bytes = BitConverter.GetBytes(value);
+        if (!WriteProcessMemory(GetCurrentProcess(), address, bytes, (nuint)bytes.Length, out nuint bytesWritten) ||
+            bytesWritten != (nuint)bytes.Length)
+        {
+            error = $"WriteProcessMemory failed bytes={bytesWritten}/{bytes.Length} win32={Marshal.GetLastWin32Error()}";
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryWriteBytes(nint address, byte[] bytes, out string error)
+    {
+        error = "";
+        if (bytes.Length == 0) return true;
+        if (!ReadableMemoryRange.IsWritable(address, bytes.Length))
+        {
+            error = $"range not writable 0x{address:X}+0x{bytes.Length:X}";
+            return false;
+        }
+
         if (!WriteProcessMemory(GetCurrentProcess(), address, bytes, (nuint)bytes.Length, out nuint bytesWritten) ||
             bytesWritten != (nuint)bytes.Length)
         {
@@ -2671,6 +2792,53 @@ internal sealed class FormulaDerivedVariable
     }
 }
 
+// One write applied to a unit's struct when our formula kills it (HP forced to 0), used to set the
+// death/status state the engine would normally set itself. Read-modify-write so a single status BIT
+// can be set without clobbering the rest of the field. Configured in JSON once the offset is mapped.
+internal sealed class DeathStateWrite
+{
+    public string Name { get; set; } = "";
+    public int Offset { get; set; } = -1;
+    public string Width { get; set; } = "Byte";   // Byte | Word | DWord
+    public int? Value { get; set; }                // overwrite the field with this value
+    public int? OrMask { get; set; }               // field |= OrMask  (set status bit(s))
+    public int? AndMask { get; set; }              // field &= AndMask (clear bit(s))
+
+    private int WidthBytes => (Width ?? "Byte").Trim().ToLowerInvariant() switch
+    {
+        "word" or "short" or "uint16" or "int16" => 2,
+        "dword" or "int" or "uint32" or "int32" => 4,
+        _ => 1,
+    };
+
+    public bool TryApply(nint basePtr, out string desc, out string error)
+    {
+        desc = "";
+        error = "";
+        if (Offset < 0) { error = "negative offset"; return false; }
+        if (Value is null && OrMask is null && AndMask is null) { error = "no Value/OrMask/AndMask"; return false; }
+
+        int width = WidthBytes;
+        nint addr = basePtr + Offset;
+        var cur = new byte[width];
+        if (!CurrentProcessMemory.TryRead(addr, cur, out error)) return false;
+
+        long current = 0;
+        for (int i = 0; i < width; i++) current |= (long)cur[i] << (8 * i);
+        long next = Value ?? current;
+        if (OrMask.HasValue) next |= (uint)OrMask.Value;
+        if (AndMask.HasValue) next &= (uint)AndMask.Value;
+
+        var bytes = new byte[width];
+        for (int i = 0; i < width; i++) bytes[i] = (byte)((next >> (8 * i)) & 0xFF);
+        if (!CurrentProcessMemory.TryWriteBytes(addr, bytes, out error)) return false;
+
+        long mask = (1L << (8 * width)) - 1;
+        desc = $"{(string.IsNullOrWhiteSpace(Name) ? "death" : Name)} +0x{Offset:X2} w{width} {current & mask:X}->{next & mask:X}";
+        return true;
+    }
+}
+
 internal sealed class RuntimeSettings
 {
     public bool RewriteObservedDamage { get; set; } = false;
@@ -2724,6 +2892,17 @@ internal sealed class RuntimeSettings
     public int MaxTrackedBattleUnits { get; set; } = 64;
     public int SuppressOwnRewriteEchoWindowMs { get; set; } = 1000;
     public List<MemoryTableProbe> MemoryTableProbes { get; set; } = new();
+
+    // Death-state RE capture: when a unit's HP transitions to 0, dump its struct and diff alive->dead
+    // (plus a short follow-up window) to find the death/status flag offset, which is not yet mapped.
+    public bool CaptureStructOnDeath { get; set; } = false;
+    public int DeathCaptureFollowTicks { get; set; } = 40; // ~1s at 25ms: catch a delayed flag set
+
+    // Death-causing write: once vanilla damage is neutered, the engine no longer kills, so when OUR
+    // formula zeroes a unit's HP we must set the death state ourselves. Off until the offset is mapped;
+    // then list DeathStateWrites in JSON (no rebuild needed) and set CauseDeathOnZeroHp=true.
+    public bool CauseDeathOnZeroHp { get; set; } = false;
+    public List<DeathStateWrite> DeathStateWrites { get; set; } = new();
 
     public static RuntimeSettings Load(string path)
         => TryLoad(path, out var settings, out _) ? settings : new RuntimeSettings();
@@ -2781,8 +2960,9 @@ internal sealed class RuntimeSettings
         MemoryTableProbes ??= new List<MemoryTableProbe>();
         foreach (var probe in MemoryTableProbes)
             probe.Normalize();
+        DeathStateWrites ??= new List<DeathStateWrite>();
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}";
 }
