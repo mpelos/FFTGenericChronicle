@@ -1,0 +1,32 @@
+work/t11x-t5-sustained-area-throughput-scenarios-v0.json
+  s_fce6b25a5764ca::t_4e5e24d51f0bbf 1-2,4-38,106-123,198-220,274-296,348-366,405-423,444-461,511-529,595-612,649-666,687-706,712-716,1147-1149
+  s_fce6b25a5764ca::t_0d45dbed52b94f 3
+  s_fce6b25a5764ca::t_beb5d0e2699f83 778-795,831-848,898-921,965-979,985-989,1036-1053,1087-1105
+  s_fce6b25a5764ca::t_6bfb049f4d3a36 39-105,124-197,221-273,297-347,367-404,424-443,462-510,530-594,613-648,667-686,707-711,717-777
+  s_fce6b25a5764ca::t_04b2d2137a3657 796-830,849-897,922-964,980-984,990-1035,1054-1086,1106-1146
+tools/check_sustained_area_throughput.py
+  s_fce6b25a5764ca::t_dbf8d27a808747 1-219
+docs/job-balance/40-sustained-area-throughput-composition-schema.md
+  s_fce6b25a5764ca::t_8cd81eca22571f 100-103,200-205
+  s_fce6b25a5764ca::t_9165a1bba24a93 3,252-262
+  s_fce6b25a5764ca::t_ee278984bb6f7d 1-2,4-99,104-199,206-251
+work/gpt-t11x-t5-sustained-area-throughput-v0.json
+  s_fce6b25a5764ca::t_04b2d2137a3657 3,391-576
+  s_fce6b25a5764ca::t_6bfb049f4d3a36 1-2,4-390,577-581
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "74a7ec97ad2ef24388624a1d46159186f2510c81",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
