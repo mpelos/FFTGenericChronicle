@@ -221,10 +221,21 @@ public class Mod : ModBase
         }
 
         _unitRegistry.Add(unitPtr);
-        if (touchForContext)
-            _unitObservations[unitPtr] = new UnitObservation(target, nowTick);
-        else if (_unitObservations.TryGetValue(unitPtr, out var previousObservation))
-            _unitObservations[unitPtr] = previousObservation with { Unit = target };
+        // Track CT (+0x41) per unit so the attacker resolver can identify who just acted: a unit
+        // whose CT dropped between polls just took its turn (classic FFT charge-time reset).
+        _unitObservations.TryGetValue(unitPtr, out var previousObservation);
+        long ctDropTick = previousObservation?.CtDropTick ?? 0;
+        int ctDropAmount = previousObservation?.CtDropAmount ?? 0;
+        if (previousObservation is not null && target.Ct < previousObservation.Unit.Ct)
+        {
+            ctDropTick = nowTick;
+            ctDropAmount = previousObservation.Unit.Ct - target.Ct;
+        }
+        // Hook touches set a fresh SeenTick (legacy recency signal); polls keep the prior SeenTick
+        // (0 until first hook-touched, so poll-discovered units stay out of the recency window while
+        // still accumulating CT history).
+        long seenTick = touchForContext ? nowTick : (previousObservation?.SeenTick ?? 0);
+        _unitObservations[unitPtr] = new UnitObservation(target, seenTick, ctDropTick, ctDropAmount);
 
         if (_settings.CaptureStructOnDeath) DeathCaptureTick(target);
 
@@ -266,6 +277,7 @@ public class Mod : ModBase
                 int signedDamage = prev - hp;
                 string eventTag = signedDamage > 0 ? "DAMAGE" : "HEALING";
                 Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prev} -> {hp} = {Math.Abs(signedDamage)} sampleAgeMs={hpSampleAgeMs}");
+                if (_settings.ActorProbeOnEvent) LogActorProbe(id);
                 long eventIndex = Interlocked.Increment(ref _battleEventIndex);
                 long eventSeed = ComputeEventSeed(target, eventIndex, prev, hp, signedDamage);
                 var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
@@ -375,11 +387,12 @@ public class Mod : ModBase
         int pa = rb(0x3E);
         int ma = rb(0x3F);
         int spd = rb(0x40);
+        int ct = rb(0x41);
         int mov = rb(0x42);
         int jmp = rb(0x43);
         int br = rb(0x2B);
         int fa = rb(0x2D);
-        target = new UnitSnapshot(unitPtr, id, lvl, hp, maxhp, team, foe != 0, pa, ma, spd, mov, jmp, br, fa, raw, mp, maxmp);
+        target = new UnitSnapshot(unitPtr, id, lvl, hp, maxhp, team, foe != 0, pa, ma, spd, mov, jmp, br, fa, raw, mp, maxmp, ct);
         return true;
     }
 
@@ -581,6 +594,22 @@ public class Mod : ModBase
             Line($"[REWRITE-FAILED ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] {ex.GetType().Name}: {ex.Message}");
             return damageEvent.CurrentHp;
         }
+    }
+
+    // Snapshot a small byte window of every registered unit at a damage event, so we can correlate which
+    // unit just acted (the attacker) with the target taking damage. The window is JSON-tunable.
+    private void LogActorProbe(int targetId)
+    {
+        int start = Math.Clamp(_settings.ActorProbeStart, 0, DUMP - 1);
+        int end = Math.Clamp(_settings.ActorProbeEnd, start, DUMP - 1);
+        var parts = new List<string>();
+        foreach (var ptr in _unitRegistry.ToArray())
+        {
+            byte[] raw = new byte[DUMP];
+            if (!CurrentProcessMemory.TryRead(ptr, raw, out _)) continue;
+            parts.Add($"{raw[0]:X2}@{Convert.ToHexString(raw, start, end - start + 1)}");
+        }
+        Line($"[ACTOR-PROBE tgt=0x{targetId:X2} off=0x{start:X2}-0x{end:X2}] {string.Join(" ", parts)}");
     }
 
     private int MaybeRewriteMpEvent(MpEvent mpEvent)
@@ -900,7 +929,8 @@ internal sealed record UnitSnapshot(
     int Faith,
     byte[] Raw,
     int Mp = 0,
-    int MaxMp = 0)
+    int MaxMp = 0,
+    int Ct = 0)
 {
     public string FactionLabel => IsFoe ? "foe " : "ally";
     public string StatLine => $"Lv{Level} HP{MaxHp} MP{MaxMp} PA{Pa} MA{Ma} Sp{Speed} Mv{Move} Jp{Jump} Br{Brave} Fa{Faith}";
@@ -2942,6 +2972,11 @@ internal sealed class RuntimeSettings
     public bool InferAttackerFromRecentUnits { get; set; } = false;
     public bool LogAttackerCandidates { get; set; } = true;
     public int RecentAttackerWindowMs { get; set; } = 1500;
+    // Attacker resolution by CT (+0x41): the attacker is the registered unit whose CT just reset
+    // (the unit that just acted). Live-proven; primary path. CtDropWindowMs bounds how recently the
+    // CT drop must have been observed for it to count.
+    public bool ResolveAttackerByCt { get; set; } = true;
+    public int CtDropWindowMs { get; set; } = 4000;
     public bool PreferOpposingTeamAttacker { get; set; } = true;
     public int MaxAttackerCandidatesToLog { get; set; } = 4;
     public bool LogResolvedRuntimeContext { get; set; } = false;
@@ -2954,6 +2989,13 @@ internal sealed class RuntimeSettings
     // (plus a short follow-up window) to find the death/status flag offset, which is not yet mapped.
     public bool CaptureStructOnDeath { get; set; } = false;
     public int DeathCaptureFollowTicks { get; set; } = 40; // ~1s at 25ms: catch a delayed flag set
+
+    // Actor probe: on each HP damage event, snapshot a small byte window of EVERY registered unit so we can
+    // find which unit just acted (the attacker) by its turn-state/CT signature. Window is JSON-tunable (no
+    // rebuild) so we can widen/narrow the search. Goal: map reliable attacker resolution + a pre-damage signal.
+    public bool ActorProbeOnEvent { get; set; } = false;
+    public int ActorProbeStart { get; set; } = 0x40;
+    public int ActorProbeEnd { get; set; } = 0x44;
 
     // Death-causing write: once vanilla damage is neutered, the engine no longer kills, so when OUR
     // formula zeroes a unit's HP we must set the death state ourselves. Off until the offset is mapped;
@@ -3027,5 +3069,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}";
 }

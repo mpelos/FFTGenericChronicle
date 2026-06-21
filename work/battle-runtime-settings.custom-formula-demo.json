@@ -1,0 +1,22 @@
+{
+  "_note": "REAL CUSTOM-FORMULA DEMO (attacker + target dependent). damage = max(1, attacker.PA*10 - target.Faith), computed LIVE from BOTH units. The attacker is resolved by CT (+0x41 reset = the unit that just acted); the target is the unit whose HP changed. Engine owns death (MinHpFloor=1: lethal results leave the unit at 1 HP and the engine's own next chip kills it). Requires: (a) the CT-resolution DLL deployed, (b) the neuter data mod deployed (so vanilla damage is a small placeholder our formula overrides). Rewrite is GUARDED by a.present, so a hit only shows our number when the attacker was resolved -- proving the number is attacker-derived. TEST: 1) attack the SAME target with TWO different attackers (different PA) -> damage must differ. 2) attack TWO different targets (different Faith) with the SAME attacker -> damage must differ. Any target (ally via friendly-fire, or foe) works.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "MinHpFloor": 1,
+  "ResolveAttackerByCt": true,
+  "CtDropWindowMs": 4000,
+  "LogResolvedRuntimeContext": true,
+  "LogAttackerCandidates": true,
+  "RewriteConditionFormula": "event.isDamage && a.present",
+  "FinalDamageFormula": "if(a.present, max(1, a.pa * 10 - t.faith), vanillaDamage)",
+  "FormulaTraceVariables": [
+    { "Name": "trace.attackerPresent", "Formula": "a.present" },
+    { "Name": "trace.attackerPa", "Formula": "a.pa" },
+    { "Name": "trace.targetFaith", "Formula": "t.faith" },
+    { "Name": "trace.customDamage", "Formula": "max(1, a.pa * 10 - t.faith)" },
+    { "Name": "trace.finalDamage", "Formula": "result.finalDamage" },
+    { "Name": "trace.desiredHp", "Formula": "result.desiredHp" }
+  ]
+}

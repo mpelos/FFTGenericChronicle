@@ -1,0 +1,14 @@
+{
+  "_note": "ATTACKER-RESOLUTION RE CAPTURE. Observe-only (no HP rewrite). On every damage event, [ACTOR-PROBE] snapshots a byte window (ActorProbeStart..End, JSON-tunable, no rebuild) of EVERY registered unit, so we can find which unit just acted (the attacker) by its CT/turn-state signature. Window 0x40-0x52 covers Speed(0x40), the CT candidate (0x41, seen drop 57->05 on a turn) and the 0x4F-0x51 movers. LogAttackerCandidates=true also logs the current recency heuristic's guess for comparison. TEST: do CONTROLLED single attacks (unit A hits unit B with a basic attack) and tell me which unit attacked; repeat with 2-3 different attackers. I correlate the probe to find the attacker field. If the field isn't in this window, I widen it via JSON.",
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "ActorProbeOnEvent": true,
+  "ActorProbeStart": 64,
+  "ActorProbeEnd": 82,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": false,
+  "CaptureStructOnDeath": false,
+  "MinHpFloor": 0
+}

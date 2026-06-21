@@ -1739,6 +1739,44 @@ internal static class Program
         Check(activeResolver.Unit?.Ptr == attacker.Ptr, "active resolver should prefer opposing recent unit over same-team unit");
         Check(activeResolver.Source == "recent-unit", $"active resolver source expected recent-unit, got {activeResolver.Source}");
 
+        // CT-based attacker resolution (live-proven: attacker = the unit whose CT (+0x41) just reset).
+        var ctTarget = new UnitSnapshot((nint)0x4100, 0x1E, 12, 322, 360, 0, false, 12, 8, 12, 4, 3, 70, 60, new byte[0x180], Ct: 84);
+        var ctJustActed = new UnitSnapshot((nint)0x4200, 0x80, 12, 250, 250, 0, false, 16, 6, 16, 4, 3, 70, 60, new byte[0x180], Ct: 12);
+        var ctCharging = new UnitSnapshot((nint)0x4300, 0x01, 14, 297, 567, 0, false, 18, 7, 10, 4, 3, 75, 65, new byte[0x180], Ct: 70);
+        var ctSettings = new RuntimeSettings { ResolveAttackerByCt = true, CtDropWindowMs = 4000, InferAttackerFromRecentUnits = false };
+        var ctObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, now),
+            [ctJustActed.Ptr] = new UnitObservation(ctJustActed, TickAgo(300), CtDropTick: TickAgo(40), CtDropAmount: 95),
+            [ctCharging.Ptr] = new UnitObservation(ctCharging, TickAgo(300)), // still charging, no CT drop
+        };
+        var ctResolved = new BattleContextResolver(ctSettings).ResolveRecentAttacker(ctTarget, ctObs, now);
+        Check(ctResolved.Unit?.Ptr == ctJustActed.Ptr, $"CT resolver should pick the unit whose CT just reset (0x4200), got 0x{ctResolved.Unit?.Ptr:X}");
+        Check(ctResolved.Source == "ct-reset", $"CT resolver source expected ct-reset, got {ctResolved.Source}");
+        Check(ctResolved.Summary.Contains("CT="), "CT resolver summary should list ctCandidates with CT values");
+
+        // Tiebreak: two units both at CT 0 (queue drain) -> the one that dropped most recently wins
+        // (mirrors the live Cloud-vs-Ramza case where both read CT=0 but Cloud had just acted).
+        var ctActedEarlier = new UnitSnapshot((nint)0x4400, 0x01, 14, 280, 567, 0, false, 18, 7, 10, 4, 3, 75, 65, new byte[0x180], Ct: 0);
+        var ctActedNow = new UnitSnapshot((nint)0x4500, 0x32, 12, 304, 360, 0, false, 9, 6, 9, 4, 3, 70, 60, new byte[0x180], Ct: 0);
+        var ctTieObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, now),
+            [ctActedEarlier.Ptr] = new UnitObservation(ctActedEarlier, TickAgo(300), CtDropTick: TickAgo(220), CtDropAmount: 100),
+            [ctActedNow.Ptr] = new UnitObservation(ctActedNow, TickAgo(300), CtDropTick: TickAgo(30), CtDropAmount: 100),
+        };
+        var ctTieResolved = new BattleContextResolver(ctSettings).ResolveRecentAttacker(ctTarget, ctTieObs, now);
+        Check(ctTieResolved.Unit?.Ptr == ctActedNow.Ptr, $"CT resolver tiebreak should pick the most recent CT drop (0x4500), got 0x{ctTieResolved.Unit?.Ptr:X}");
+
+        // A CT drop older than the window must be ignored, falling through to the legacy path (none here).
+        var ctStaleObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, now),
+            [ctActedNow.Ptr] = new UnitObservation(ctActedNow, TickAgo(9000), CtDropTick: TickAgo(9000), CtDropAmount: 100),
+        };
+        var ctStaleResolved = new BattleContextResolver(ctSettings).ResolveRecentAttacker(ctTarget, ctStaleObs, now);
+        Check(ctStaleResolved.Unit is null, "CT resolver should ignore a stale CT drop (older than CtDropWindowMs) and fall through");
+
         var echoGuard = new ValueRewriteEchoGuard("HP");
         echoGuard.Remember((nint)0x5000, 30, 18, now);
         Check(

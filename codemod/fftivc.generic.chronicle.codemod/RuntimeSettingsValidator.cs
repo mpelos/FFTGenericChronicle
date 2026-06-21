@@ -63,6 +63,8 @@ internal static class RuntimeSettingsValidator
             report.Error("ProofFinalMpGain", "ProofFinalMpGain must be nonnegative.");
         if (settings.RecentAttackerWindowMs < 0)
             report.Error("RecentAttackerWindowMs", "RecentAttackerWindowMs must be nonnegative.");
+        if (settings.CtDropWindowMs <= 0)
+            report.Error("CtDropWindowMs", "CtDropWindowMs must be greater than zero.");
         if (settings.UnitPollIntervalMs <= 0)
             report.Error("UnitPollIntervalMs", "UnitPollIntervalMs must be greater than zero.");
         else if (settings.UnitPollIntervalMs > 100)

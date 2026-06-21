@@ -31,7 +31,7 @@ describes.
 +0x00 char id (byte)          +0x30 HP    (word)   +0x32 MaxHP (word)
 +0x04 team/group id (byte)    +0x34 MP    (word)   +0x36 MaxMP (word)
 +0x05 friend/foe (bit 0x10)   +0x3E PA    (byte)   +0x3F MA    (byte)
-+0x28 EXP (byte)              +0x40 Speed (byte)
++0x28 EXP (byte)              +0x40 Speed (byte)   +0x41 CT (byte, charge time)
 +0x29 Level (byte)            +0x42 Move  (byte)   +0x43 Jump  (byte)
 +0x2A MaxBrave (byte)         +0x2B Brave (byte)
 +0x2C MaxFaith (byte)         +0x2D Faith (byte)
@@ -52,6 +52,16 @@ follow-up change. This is the first mapped bit of the status bitfield region. Th
 read it (`hasBit(targetByte(0x61), 5)` for KO checks) and write it (`DeathStateWrites` with
 `Offset=0x61, OrMask=0x20`) to set the death state when our formula is lethal. Whether setting this
 bit (plus HP=0) is *sufficient* to make the engine treat the unit as dead is the Test 2b question.
+
+**CONFIRMED LIVE (2026-06-21, actor-probe attacker resolution):** `+0x41` is **CT (charge time)**.
+It rises each tick proportional to `+0x40` Speed and **resets to a low value when the unit acts**
+(classic FFT CT model: charge to 100, act, subtract). Across 6 controlled attacks the attacker was
+always the registered unit (≠ target) whose CT was lowest / had just dropped at the damage event
+(5/6 by absolute-lowest CT; the one tie resolved by largest recent CT drop -> 6/6). This is how the
+code mod now resolves the **attacker** for attacker-dependent formulas, faction-agnostic, without
+hooking the (Denuvo-virtualized) action dispatcher. `+0x40` Speed was simultaneously re-confirmed as
+the stable per-unit speed value (distinct, unchanging across the snapshots). Full evidence table in
+`07-live-findings.md` (LIVE TEST 4) and `work/handoff-to-gpt-2026-06-21.md`.
 
 Current harness support for this mapping: `Mod.cs` copies `0x00..0x17F`, logs `[DUMP]` plus
 `[CANDIDATES]` for non-zero bytes/plausible 16-bit ids in `0x44..0x17F`, and logs `[DIFF]` when

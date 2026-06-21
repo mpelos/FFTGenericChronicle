@@ -3,7 +3,7 @@ using System.Text;
 
 namespace fftivc.generic.chronicle.codemod;
 
-internal sealed record UnitObservation(UnitSnapshot Unit, long SeenTick);
+internal sealed record UnitObservation(UnitSnapshot Unit, long SeenTick, long CtDropTick = 0, int CtDropAmount = 0);
 
 internal sealed record ResolvedAttacker(UnitSnapshot? Unit, string Source, string Summary);
 
@@ -21,6 +21,14 @@ internal sealed class BattleContextResolver
         IReadOnlyDictionary<nint, UnitObservation> observations,
         long nowTick)
     {
+        // Primary path (live-proven): the attacker is the unit whose CT (+0x41) just reset.
+        if (_settings.ResolveAttackerByCt)
+        {
+            var byCt = ResolveByCt(target, observations, nowTick);
+            if (byCt is not null) return byCt;
+        }
+
+        // Fallback: legacy recency heuristic (hook-touch order). Off by default.
         var candidates = BuildCandidates(target, observations, nowTick);
         string summary = FormatCandidates(candidates);
         if (!_settings.InferAttackerFromRecentUnits || candidates.Count == 0)
@@ -28,6 +36,46 @@ internal sealed class BattleContextResolver
 
         var best = candidates[0];
         return new ResolvedAttacker(best.Unit, "recent-unit", summary);
+    }
+
+    // Attacker = the registered unit (!= target) whose CT (+0x41) most recently reset (dropped).
+    // Proven live across 6 controlled attacks: the attacker always had the most recent CT drop
+    // (5/6 also had the lowest absolute CT; the one tie resolved by most-recent drop -> 6/6).
+    // Requires having observed the drop within CtDropWindowMs; otherwise returns null so the caller
+    // falls through to the legacy heuristic instead of guessing.
+    private ResolvedAttacker? ResolveByCt(
+        UnitSnapshot target,
+        IReadOnlyDictionary<nint, UnitObservation> observations,
+        long nowTick)
+    {
+        int dropWindowMs = Math.Clamp(_settings.CtDropWindowMs, 1, 60_000);
+        var list = new List<CtCandidate>();
+        foreach (var observation in observations.Values)
+        {
+            var unit = observation.Unit;
+            if (unit.Ptr == target.Ptr) continue;
+            if (unit.Hp <= 0) continue;
+            if (observation.CtDropTick <= 0) continue;
+            int dropAgeMs = AgeMs(nowTick, observation.CtDropTick);
+            if (dropAgeMs < 0 || dropAgeMs > dropWindowMs) continue;
+            list.Add(new CtCandidate(unit, unit.Ct, observation.CtDropTick, observation.CtDropAmount, dropAgeMs));
+        }
+
+        if (list.Count == 0) return null;
+
+        list.Sort((a, b) =>
+        {
+            int cmp = b.CtDropTick.CompareTo(a.CtDropTick);   // most recent CT drop first
+            if (cmp != 0) return cmp;
+            cmp = a.Ct.CompareTo(b.Ct);                       // tiebreak: lowest absolute CT
+            if (cmp != 0) return cmp;
+            cmp = b.CtDropAmount.CompareTo(a.CtDropAmount);    // tiebreak: largest drop
+            if (cmp != 0) return cmp;
+            return a.Unit.Ptr.ToInt64().CompareTo(b.Unit.Ptr.ToInt64());
+        });
+
+        var best = list[0];
+        return new ResolvedAttacker(best.Unit, "ct-reset", FormatCtCandidates(list));
     }
 
     private List<AttackerCandidate> BuildCandidates(
@@ -82,8 +130,26 @@ internal sealed class BattleContextResolver
         return sb.ToString();
     }
 
+    private string FormatCtCandidates(List<CtCandidate> candidates)
+    {
+        int max = Math.Clamp(_settings.MaxAttackerCandidatesToLog, 1, 12);
+        var sb = new StringBuilder("ctCandidates=");
+        for (int i = 0; i < candidates.Count && i < max; i++)
+        {
+            if (i > 0) sb.Append(' ');
+            var c = candidates[i];
+            sb.Append($"ptr=0x{c.Unit.Ptr:X}/id=0x{c.Unit.CharId:X2}/{c.Unit.FactionLabel.Trim()}/t{c.Unit.Team}/CT={c.Ct}/dropped{c.CtDropAmount}@{c.DropAgeMs}ms/PA={c.Unit.Pa}");
+        }
+
+        if (candidates.Count > max)
+            sb.Append($" ... +{candidates.Count - max} more");
+        return sb.ToString();
+    }
+
     private static int AgeMs(long nowTick, long seenTick)
         => (int)Math.Round((nowTick - seenTick) * 1000.0 / Stopwatch.Frequency);
 
     private sealed record AttackerCandidate(UnitSnapshot Unit, int AgeMs, bool Opposing, int Score);
+
+    private sealed record CtCandidate(UnitSnapshot Unit, int Ct, long CtDropTick, int CtDropAmount, int DropAgeMs);
 }

@@ -343,3 +343,122 @@ profiles are ready for Test 2b: `death-test.json` (HP=0 alone, `CauseDeathOnZero
 so 2b can try HP=0-alone first and, if the unit zombies, swap to the killflag profile without
 relaunching. Open question 2b answers: is `+0x61|=0x20` (plus HP=0) enough, or is death also tracked
 outside the unit struct (turn manager / AI lists)?
+
+---
+
+## LIVE TEST 2b/2c - death by struct-write (2026-06-21) - DECISIVE: IMPOSSIBLE
+
+Full neuter (weapon + ability) deployed, clean per-target HP-write (any-target profiles in `work/`).
+The question from 2a: does replicating death's struct signature (`HP=0` + `+0x61|=0x20`) make the
+engine treat the unit as dead? **Answer: no. Two outcomes, both proven live:**
+
+- **HP=0 alone -> zombie.** `[REWRITE …HP 304->0]`, `[DEATH-DIFF +0x30:30->00]` only. The unit
+  stands at 0/HP, its CT keeps ticking, it takes turns. (Screenshot: Beowulf 0/314, alive.)
+- **HP=0 + `+0x61|=0x20` (`CauseDeathOnZeroHp`) -> STILL zombie.** Log:
+  `[DEATH-WRITE +0x61 0->20]`, `[DEATH-DIFF +0x30->00 +0x61:00->20]`, then `[HEALING 0->27->61]` -
+  **Regen healed the unit back to life.** Regen does not tick on dead units, so the engine still
+  considers it ALIVE. Setting the bit produced a buggy partial state (unit went immune, attacks
+  passed through) the engine never expects to see.
+
+### CONCLUSION: death cannot be caused by a memory write - definitive
+`+0x61 0x20` is an **effect** of death, not a **trigger**. A real death changes exactly the same
+bytes we write (`+0x30->00`, `+0x61:00->20`), yet real deaths die and our writes zombie. Therefore
+death is an internal engine **routine** (almost certainly inside the Denuvo-virtualized damage path)
+that updates state **outside** the unit struct (turn manager / active-unit list), keyed on the
+engine's own damage reaching 0. We can replicate the symptoms but not invoke the routine.
+
+### Implication (locks the architecture)
+**DEATH must be owned by vanilla.** Our runtime HP-write owns the *number* (non-lethal custom damage
+works - the core custom-formula goal is essentially proven); it cannot own *death*. So lethal
+results must be delivered by letting the engine's own (neutered) damage reach 0 - see Test 3.
+
+### Neuter gap surfaced here (real-mod TODO)
+Special skillsets bypass the X/Y ability neuter: Cloud's **Materia Blade+** *basic* attack (its
+weapon formula ignores the neutered WP) one-shots; **Cloud Limit** and some magic (likely
+`%`-damage / Gravity, which ignore X/Y/WP) also slip through; and the classifier
+(`HP`+`TargetEnemies` & not `TargetAllies`) is too strict, skipping offensive AoE skills that also
+hit allies. Does not block the architecture (these still fall into Test 3's leave-at-1), but needs a
+dedicated data/formula route before shipping.
+
+---
+
+## LIVE TEST 3 - engine-owned death via "leave-at-1" (2026-06-21) - PASSED
+
+The architecture turn after 2b/2c. New `Mod.cs` lever **`MinHpFloor`** (default 0):
+
+- every HP write clamps to **>= MinHpFloor**, so we NEVER write 0 -> can never create a zombie;
+- `MaybeRewriteHpEvent` **skips** when observed HP is already `<= 0` (`[REWRITE-SKIP-DEATH]`), so we
+  never resurrect a kill the engine made.
+
+Flow: **neuter vanilla -> observe hit -> write HP = max(MinHpFloor, hp - customDamage)**. A lethal
+result leaves the unit at the floor (1 HP); the engine's **own neutered chip on the next hit** takes
+1->0 and the **engine kills it for real** (its real death routine sets `+0x61`, and the unit stays
+dead - no Regen revive).
+
+### Log evidence (profile `engine-death-test.json`, `MinHpFloor=1`, `FinalDamageFormula=9999`)
+```
+hit 1:  [REWRITE …HP 304->1]                              <- our write floors at 1
+hit 2:  [DEATH-DIFF +0x30:01->00 +0x61:00->20]            <- ENGINE took 1->0 and killed it
+```
+Unit died and STAYED dead. **Proves the architecture end-to-end: we own the damage number (arbitrary,
+non-lethal HP-write), the engine owns death (let its own damage reach 0).** Cost: death is a **2-hit
+kill** (our write floors at 1, the engine chip finishes on the next hit). Clean same-hit death needs
+the pre-damage window (stat puppeteering, item A2 below).
+
+### ARCHITECTURE LOCKED
+`neuter vanilla -> observe hit -> write HP = max(MinHpFloor, hp - customDamage)`; lethal results
+leave the unit at the floor and the engine delivers the real kill. The custom-formula goal
+(attacker + target + equipment) is proven viable.
+
+---
+
+## LIVE TEST 4 - attacker resolution by CT (2026-06-21) - PASSED
+
+Until now every `[RUNTIME]` line showed `attacker=none action=none`: we knew the **target** (whose
+HP changed) but not the **attacker**, so attacker-dependent formulas could not be computed. Solved by
+struct RE.
+
+### Method
+Observe-only profile `actor-probe.json`: on every damage event it snapshots the `0x40-0x52` byte
+window of **all** registered units (`[ACTOR-PROBE]`). The player ran **6 controlled attacks** and
+reported who hit whom; correlating the windows to the attacks identified the field.
+
+### Result: `+0x41` = CT (charge time); attacker = unit whose CT just reset
+Team this battle: Ramza `0x01`, Ninja `0x80`, Agrias `0x1E`, Cloud `0x32`, Beowulf `0x1F`.
+`+0x40` Speed (stable per unit): 10 / 16 / 12 / 9 / 9. CT `+0x41` per damage event:
+
+```
+#  attack (reported)              attacker  HP event        CT  R / Ni / Ag / Cl / Be   lowest
+1  Ninja->Agrias (dual, hit 1)    Ninja     0x1E 322->310   70 / 12 / 84 / 63 / 63      Ninja
+1  Ninja->Agrias (hit 2)          Ninja     0x1E 310->298   70 / 12 / 84 / 63 / 63      Ninja
+2  Agrias->Beowulf                Agrias    0x1F 314->304   90 / 64 /  8 / 81 / 81      Agrias
+3  Ramza->Cloud (Mana Shield)     Ramza     -- (MP, no HP event)                        --
+4  Beowulf->Agrias                Beowulf   0x1E 298->295   20 / 52 / 64 / 28 /  8      Beowulf
+5  Ramza->Agrias                  Ramza     0x1E 295->281    0 / 60 /100 /100 /100      Ramza
+6  Cloud->Beowulf (lethal)        Cloud     0x1F 304->0      0 / 60 / 40 /  0 /100      tie->delta
+```
+
+- **5/6 resolve by absolute-lowest CT.** #3 (Mana Shield) produced no HP event (engine redirected to
+  MP) - consistent, not a miss.
+- #6 is the only tie (Ramza=0, Cloud=0). **Delta tiebreak:** Cloud dropped 100(#5)->0(#6) = just
+  acted; Ramza was already 0 at #5 and stayed 0. -> attacker = Cloud. **6/6 with the largest-recent-
+  drop tiebreak.**
+- Corroboration: at #5 the three units that had not yet acted (Agrias/Cloud/Beowulf) were all at
+  CT=100 ("charged, waiting in the act queue") while Ramza, who had just acted, was at 0 - exactly
+  the FFT CT model.
+
+### Rule (now being implemented in the code mod)
+Replace the fragile recency heuristic (`InferAttackerFromRecentUnits` / `ResolveRecentAttacker`) with
+CT-based resolution: track `+0x41` history per unit pointer; at a damage event, attacker = the
+registered unit, != target, with the largest recent CT drop (tiebreak), else lowest absolute CT.
+Faction-agnostic, no action-dispatcher hook required. This unlocks attacker-dependent custom formulas
+(the next deliverable is a real demo, e.g. `damage = attacker.pa*4 - target.faith`).
+
+### Still open after Test 4 (where deep RE helps most)
+- **Pre-damage window (stat puppeteering, A2):** find a signal that fires BEFORE the HP write (in the
+  turn-state around `battle_base_ptr`) so we can overwrite the attacker's stat just before the
+  engine's calc -> the engine computes our exact number AND kills same-hit (removes Test 3's 2-hit
+  cost). Highest-value RE target.
+- **"currently-acting unit" pointer** directly in the battle struct would be more robust than CT
+  inference - worth a parallel RE look (CT already works, so not blocking).
+- **Neuter gap** for the special skillsets listed in Test 2b/2c.
