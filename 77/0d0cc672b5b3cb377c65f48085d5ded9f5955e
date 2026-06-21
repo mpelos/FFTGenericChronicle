@@ -1,0 +1,27 @@
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_cf65f73045c25e 53,338-362,388-389,394-395,464
+docs/job-balance/26-bard-dancer-v1-proposal.md
+  s_fce6b25a5764ca::t_6c409f078842a2 487-488
+  s_fce6b25a5764ca::t_cc55dbc5b5056e 95-96,113-115,152-162
+  s_fce6b25a5764ca::t_21a73fb229826b 3,38-40,167,302,514-515,520-530,532-535
+  s_fce6b25a5764ca::t_2783ed117be896 231,233,235-245,368-379,381
+  s_fce6b25a5764ca::t_5a6e4a61a92318 1-2,4-37,41-94,97-112,116-151,163-166,168-230,232,234,246-301,303-367,380,382-442,445,454,456-463,465-486,489-499,502-512,516-519,531
+  s_fce6b25a5764ca::t_9cf0733782a3eb 443-444,446-453,455,464,500-501
+  s_fce6b25a5764ca::t_0839488b229bad 513
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "770d0cc672b5b3cb377c65f48085d5ded9f5955e",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
