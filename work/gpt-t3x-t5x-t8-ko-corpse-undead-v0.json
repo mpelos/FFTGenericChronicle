@@ -1,0 +1,431 @@
+{
+  "schema_version": "t3x-t5x-t8-ko-corpse-undead-scenarios-v0",
+  "scenario_count": 21,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t3x5x8_corpse_puppet_before_clock_consumes",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "consumed",
+      "target_consumed": true,
+      "consumed_count": 1,
+      "created_objects": [
+        "corpse_puppet:corpse_puppet:player:can_act=false:targetable=true:expiry=6"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_same_tick_death_clock_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 1,
+      "death_clock_miss_count": 1,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "late_puppet:fail:death_clock_expired"
+      ],
+      "failure_reasons": [
+        "late_puppet:death_clock_expired"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_after_death_clock_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 1,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "too_late_puppet:fail:death_clock_expired"
+      ],
+      "failure_reasons": [
+        "too_late_puppet:death_clock_expired"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_gravebind_anchor_preserves_corpse",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [
+        "gravebind_anchor:gravebind_zone:none:can_act=false:targetable=true:expiry=4"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "gravebind_anchor:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_consumed_corpse_blocks_second_action",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 1,
+      "final_target_state": "consumed",
+      "target_consumed": true,
+      "consumed_count": 1,
+      "created_objects": [
+        "corpse_puppet_first:corpse_puppet:player:can_act=false:targetable=true:expiry=6"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_first:success",
+        "corpse_puppet_second:fail:target_consumed"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_second:target_consumed"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_boss_immunity_blocks_corpse_action",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_boss:fail:immune"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_boss:immune"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_wrong_state_living_target_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "alive",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_living:fail:wrong_state"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_living:wrong_state"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_command_undead_mark_success",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "undead_marked",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [
+        "command_marked:command_window:player:can_act=false:targetable=false:expiry=1"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "command_marked:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_command_natural_undead_success",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "raised_undead",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [
+        "command_undead:command_window:player:can_act=false:targetable=false:expiry=1"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "command_undead:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_untargetable_corpse_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "untargetable_puppet:fail:target_ineligible"
+      ],
+      "failure_reasons": [
+        "untargetable_puppet:target_ineligible"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_unreachable_corpse_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "unreachable_puppet:fail:target_unreachable"
+      ],
+      "failure_reasons": [
+        "unreachable_puppet:target_unreachable"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_line_blocked_corpse_fails",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "line_blocked_puppet:fail:line_blocked"
+      ],
+      "failure_reasons": [
+        "line_blocked_puppet:line_blocked"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_requested_acting_body_suppressed",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "consumed",
+      "target_consumed": true,
+      "consumed_count": 1,
+      "created_objects": [
+        "raise_body_suppressed:raised_body:player:can_act=false:targetable=true:expiry=3"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 1,
+      "event_outcomes": [
+        "raise_body_suppressed:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_no_death_clock_object_success",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "corpse_object",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [
+        "bind_object:gravebind_zone:none:can_act=false:targetable=true:expiry=4"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "bind_object:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_allow_acting_body_diagnostic",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "consumed",
+      "target_consumed": true,
+      "consumed_count": 1,
+      "created_objects": [
+        "raise_body_diagnostic:raised_body:player:can_act=true:targetable=true:expiry=3"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "raise_body_diagnostic:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_wrong_state_precedes_targeting",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "alive",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_bad_state_and_targeting:fail:wrong_state"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_bad_state_and_targeting:wrong_state"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_targetable_precedes_reach_line",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_bad_targeting:fail:target_ineligible"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_bad_targeting:target_ineligible"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_reach_precedes_line_block",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_bad_reach_line:fail:target_unreachable"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_bad_reach_line:target_unreachable"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_immunity_precedes_death_clock",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 0,
+      "failed_actions": 1,
+      "final_target_state": "ko_body",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "corpse_puppet_immune_and_late:fail:immune"
+      ],
+      "failure_reasons": [
+        "corpse_puppet_immune_and_late:immune"
+      ],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_success_without_created_object",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 1,
+      "failed_actions": 0,
+      "final_target_state": "undead_marked",
+      "target_consumed": false,
+      "consumed_count": 0,
+      "created_objects": [],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "dark_state_touch:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3x5x8_multi_success_preserve_then_consume",
+      "model": "ko_corpse_undead_state",
+      "successful_actions": 2,
+      "failed_actions": 0,
+      "final_target_state": "consumed",
+      "target_consumed": true,
+      "consumed_count": 1,
+      "created_objects": [
+        "gravebind_first:gravebind_zone:none:can_act=false:targetable=true:expiry=4",
+        "puppet_then_consume:corpse_puppet:player:can_act=false:targetable=true:expiry=6"
+      ],
+      "same_tick_unsafe_count": 0,
+      "death_clock_miss_count": 0,
+      "acting_body_suppressed_count": 0,
+      "event_outcomes": [
+        "gravebind_first:success",
+        "puppet_then_consume:success"
+      ],
+      "failure_reasons": [],
+      "validation_errors": []
+    }
+  ]
+}
