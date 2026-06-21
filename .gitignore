@@ -33,6 +33,7 @@ tools/*
 !tools/test_static_code_patterns.py
 !tools/test_runtime_tooling.py
 !tools/watch_live_mapping.py
+!tools/check_build_incidence.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/
