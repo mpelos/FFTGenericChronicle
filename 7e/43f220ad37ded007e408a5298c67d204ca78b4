@@ -1,0 +1,31 @@
+work/gpt-time-mystic-concrete-v0.json
+  s_fce6b25a5764ca::t_c54d22c80a1b6f 4,1197-1230
+  s_fce6b25a5764ca::t_8d32a92bd0edef 1-3,5-524,545-563,566-619,621-629,632-640,643-662,665-690,693-701,704-712,715-998,1030-1034,1036,1042-1043,1231
+  s_fce6b25a5764ca::t_d62b1dd8d0ce6e 525-528,564-565,620,630-631,641-642,663-664,691-692,702-703,713-714,999-1004,1029,1044-1058,1060-1149,1196
+  s_fce6b25a5764ca::t_76bd44f21ed964 1040-1041,1150-1195
+  s_fce6b25a5764ca::t_c54cb16f0e3bcf 1059
+  s_fce6b25a5764ca::t_af994d6ff00449 529-544,1005-1028,1035,1037-1039
+docs/job-balance/44-time-mystic-concrete-v0.md
+  s_fce6b25a5764ca::t_8a926833b4bd92 162-170
+  s_fce6b25a5764ca::t_2c960f9540aa6d 262
+  s_fce6b25a5764ca::t_0a69a8517758c5 1-2,4-117,122-156,161,171-238,257-261,263-276,280-291,295-310
+  s_fce6b25a5764ca::t_174628cc641d9f 3,311-327
+  s_fce6b25a5764ca::t_0190a52607b217 118-121,157-160,239-248,277-279,292-294
+  s_fce6b25a5764ca::t_f7441a4bb14a87 249-256
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "7e43f220ad37ded007e408a5298c67d204ca78b4",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
