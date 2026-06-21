@@ -1,0 +1,38 @@
+work/t9-resource-economy-scenarios-v0.json
+  s_fce6b25a5764ca::t_0db7da3aca71c1 759-776,791-808,823-840,856-874
+  s_fce6b25a5764ca::t_a3ad18a3f197e4 739-758,777-790,809-822,841-855
+  s_fce6b25a5764ca::t_4209b040527fee 576-599,619-632,651-658,675-688,707-720
+  s_fce6b25a5764ca::t_b99a6f1d1a3bac 1-2,4-19,22-53,74-91,111-132,153-173,193-214,234-254,274-286,305-317,336-348,367-380,399-411,430-444,464-478,497-522,544-559,575,875-877
+  s_fce6b25a5764ca::t_96a7ef8f79413c 3
+  s_fce6b25a5764ca::t_b22c9cecf44a72 20-21
+  s_fce6b25a5764ca::t_e6b51a9bf2b58e 600-618,633-650,659-674,689-706,721-738
+  s_fce6b25a5764ca::t_540ccc8c2b375b 54-73,92-110,133-152,174-192,215-233,255-273,287-304,318-335,349-366,381-398,412-429,445-463,479-496,523-543,560-574
+tools/check_resource_economy.py
+  s_fce6b25a5764ca::t_b22c9cecf44a72 30
+  s_fce6b25a5764ca::t_b99a6f1d1a3bac 1-29,31-219
+work/gpt-t9-resource-economy-v0.json
+  s_fce6b25a5764ca::t_540ccc8c2b375b 1-2,4-314,495-498
+  s_fce6b25a5764ca::t_0db7da3aca71c1 3,411-491
+  s_fce6b25a5764ca::t_e6b51a9bf2b58e 315-410,492-494
+docs/job-balance/35-resource-economy-model-schema.md
+  s_fce6b25a5764ca::t_96a7ef8f79413c 3,228-242
+  s_fce6b25a5764ca::t_4209b040527fee 170,172,174
+  s_fce6b25a5764ca::t_b99a6f1d1a3bac 1-2,4-76,78-82,86-169,173,175,177-178,180-227
+  s_fce6b25a5764ca::t_b22c9cecf44a72 77,83-85,171,176,179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "6ad1e43a906237194789ed01e58f9caffd29cfd7",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
