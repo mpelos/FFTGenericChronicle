@@ -6,9 +6,23 @@ tools/*
 !tools/dump_weapons.py
 !tools/map_battle_data.py
 !tools/sim_damage.py
+!tools/build_memtable_probe_settings.py
+!tools/build_runtime_settings_from_sim.py
+!tools/build_runtime_simulation_matrix.py
+!tools/build_verified_wp_bundle.py
+!tools/find_memtable_candidates.py
+!tools/summarize_weapon_baseline.py
+!tools/analyze_battleprobe_log.py
+!tools/dump_item_catalog.py
+!tools/promote_runtime_offsets.py
+!tools/test_memtable_candidates.py
+!tools/test_runtime_tooling.py
+!tools/watch_live_mapping.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/
+work/external/
+work/game-file-backups/
 
 # === Raw extracted game data (copyrighted) and backups of game files ===
 extracted/
@@ -16,6 +30,7 @@ backups/
 
 # === Large derived data dumps (regenerated from the game) ===
 work/*.sqlite
+work/battleprobe_analysis.md
 work/nxd_extract/
 work/ability_en/
 work/nxd_more/
@@ -24,6 +39,7 @@ work/nxd_out/
 # === .NET build output (Reloaded-II code mod) ===
 codemod/**/bin/
 codemod/**/obj/
+codemod/_build/
 
 # === OS / editor cruft ===
 Thumbs.db

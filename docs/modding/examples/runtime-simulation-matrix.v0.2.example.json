@@ -1,0 +1,1084 @@
+{
+  "scenarios": [
+    {
+      "name": "matrix-swing-sword-vs-plate",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 100,
+      "eventSeed": 20100,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 124,
+        "desiredHp": 176,
+        "ruleName": "FinalDamageFormula+DamageResponse(plate swing)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-swing-sword-vs-mail",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 101,
+      "eventSeed": 20101,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 144,
+        "desiredHp": 156,
+        "ruleName": "FinalDamageFormula+DamageResponse(mail swing)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 175
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-swing-sword-vs-leather",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 102,
+      "eventSeed": 20102,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 182,
+        "desiredHp": 118,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather swing)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-swing-sword-vs-cloth",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 103,
+      "eventSeed": 20103,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 192,
+        "desiredHp": 108,
+        "ruleName": "FinalDamageFormula+DamageResponse(cloth swing)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 200
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-thrust-spear-vs-plate",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 104,
+      "eventSeed": 20104,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 125,
+        "desiredHp": 175,
+        "ruleName": "FinalDamageFormula+DamageResponse(plate thrust)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-thrust-spear-vs-mail",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 105,
+      "eventSeed": 20105,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 198,
+        "desiredHp": 102,
+        "ruleName": "FinalDamageFormula+DamageResponse(mail thrust)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 175
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-thrust-spear-vs-leather",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 106,
+      "eventSeed": 20106,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 173,
+        "desiredHp": 127,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather thrust)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-thrust-spear-vs-cloth",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 107,
+      "eventSeed": 20107,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 181,
+        "desiredHp": 119,
+        "ruleName": "FinalDamageFormula+DamageResponse(cloth thrust)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 200
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-staff-vs-plate",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 108,
+      "eventSeed": 20108,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 112,
+        "desiredHp": 188,
+        "ruleName": "FinalDamageFormula+DamageResponse(plate crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 59
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-staff-vs-mail",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 109,
+      "eventSeed": 20109,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 93,
+        "desiredHp": 207,
+        "ruleName": "FinalDamageFormula+DamageResponse(mail crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 175
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 59
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-staff-vs-leather",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 110,
+      "eventSeed": 20110,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 98,
+        "desiredHp": 202,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 59
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-staff-vs-cloth",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 111,
+      "eventSeed": 20111,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 98,
+        "desiredHp": 202,
+        "ruleName": "FinalDamageFormula+DamageResponse(cloth crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 200
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 59
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-missile-crossbow-vs-plate",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 112,
+      "eventSeed": 20112,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 152,
+        "desiredHp": 148,
+        "ruleName": "FinalDamageFormula+DamageResponse(plate missile)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 77
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-missile-crossbow-vs-mail",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 113,
+      "eventSeed": 20113,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 184,
+        "desiredHp": 116,
+        "ruleName": "FinalDamageFormula+DamageResponse(mail missile)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 175
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 77
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-missile-crossbow-vs-leather",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 114,
+      "eventSeed": 20114,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 168,
+        "desiredHp": 132,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather missile)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 77
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-missile-crossbow-vs-cloth",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 115,
+      "eventSeed": 20115,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 173,
+        "desiredHp": 127,
+        "ruleName": "FinalDamageFormula+DamageResponse(cloth missile)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 200
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 77
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-fists-vs-plate",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 116,
+      "eventSeed": 20116,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 124,
+        "desiredHp": 176,
+        "ruleName": "FinalDamageFormula+DamageResponse(plate crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 0
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-fists-vs-mail",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 117,
+      "eventSeed": 20117,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 104,
+        "desiredHp": 196,
+        "ruleName": "FinalDamageFormula+DamageResponse(mail crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 175
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 0
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-fists-vs-leather",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 118,
+      "eventSeed": 20118,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 109,
+        "desiredHp": 191,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 0
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "matrix-crush-fists-vs-cloth",
+      "previousHp": 300,
+      "currentHp": 280,
+      "vanillaDamage": 20,
+      "eventIndex": 119,
+      "eventSeed": 20119,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 109,
+        "desiredHp": 191,
+        "ruleName": "FinalDamageFormula+DamageResponse(cloth crush)",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 280,
+        "maxHp": 300,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 200
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 0
+        }
+      },
+      "attackerSource": "scenario"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "scenarios": [
+    {
+      "name": "sword-vs-leather-default",
+      "previousHp": 250,
+      "currentHp": 230,
+      "vanillaDamage": 20,
+      "eventIndex": 1,
+      "eventSeed": 12345,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 182,
+        "desiredHp": 68,
+        "ruleName": "FinalDamageFormula+DamageResponse(leather swing)",
+        "traceContains": [
+          "action=sword from attacker weapon",
+          "targetSlots=body(present,id=172:Leather Armor",
+          "attackerSlots=weapon(present,id=19:Broadsword"
+        ]
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 230,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      }
+    },
+    {
+      "name": "damage-without-attacker-preserves-vanilla",
+      "previousHp": 250,
+      "currentHp": 230,
+      "vanillaDamage": 20,
+      "eventIndex": 3,
+      "eventSeed": 12347,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 20,
+        "desiredHp": 230,
+        "ruleName": "FinalDamageFormula"
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 230,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": null
+    },
+    {
+      "name": "simple-heal-signed-event",
+      "previousHp": 180,
+      "currentHp": 190,
+      "vanillaDamage": -10,
+      "eventIndex": 2,
+      "eventSeed": 12346,
+      "expect": {
+        "shouldRewrite": false,
+        "finalDamage": 0,
+        "desiredHp": 190,
+        "ruleName": "off"
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 190,
+        "maxHp": 250,
+        "team": 2,
+        "isFoe": true,
+        "ma": 8,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": null
+    }
+  ]
+}

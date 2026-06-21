@@ -1,0 +1,274 @@
+{
+  "scenarios": [
+    {
+      "name": "gurps-sword-swing-vs-leather",
+      "previousHp": 100,
+      "currentHp": 80,
+      "vanillaDamage": 20,
+      "eventIndex": 301,
+      "eventSeed": 40301,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 13,
+        "desiredHp": 87,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "gurps-sword-swing-vs-plate",
+      "previousHp": 100,
+      "currentHp": 80,
+      "vanillaDamage": 20,
+      "eventIndex": 302,
+      "eventSeed": 40302,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 6,
+        "desiredHp": 94,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 19
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "gurps-spear-thrust-vs-leather",
+      "previousHp": 100,
+      "currentHp": 80,
+      "vanillaDamage": 20,
+      "eventIndex": 303,
+      "eventSeed": 40303,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 20,
+        "desiredHp": 80,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 172
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "gurps-spear-thrust-vs-plate",
+      "previousHp": 100,
+      "currentHp": 80,
+      "vanillaDamage": 20,
+      "eventIndex": 304,
+      "eventSeed": 40304,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 10,
+        "desiredHp": 90,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 99
+        }
+      },
+      "attackerSource": "scenario"
+    },
+    {
+      "name": "gurps-fists-thrust-vs-plate",
+      "previousHp": 100,
+      "currentHp": 80,
+      "vanillaDamage": 20,
+      "eventIndex": 305,
+      "eventSeed": 40305,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 0,
+        "desiredHp": 100,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": []
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 80,
+        "maxHp": 100,
+        "team": 2,
+        "isFoe": true,
+        "pa": 10,
+        "ma": 8,
+        "speed": 7,
+        "move": 4,
+        "jump": 3,
+        "brave": 70,
+        "faith": 60,
+        "raw": {
+          "0x70": 177
+        }
+      },
+      "attacker": {
+        "ptr": "0x1000",
+        "charId": 1,
+        "level": 14,
+        "hp": 40,
+        "maxHp": 40,
+        "team": 1,
+        "isFoe": false,
+        "pa": 12,
+        "ma": 7,
+        "speed": 8,
+        "move": 5,
+        "jump": 4,
+        "brave": 75,
+        "faith": 65,
+        "raw": {
+          "0x50": 0
+        }
+      },
+      "attackerSource": "scenario"
+    }
+  ]
+}

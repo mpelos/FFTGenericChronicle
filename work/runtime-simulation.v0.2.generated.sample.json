@@ -1,0 +1,30 @@
+[
+  {
+    "Name": "sword-vs-leather-default",
+    "ShouldRewrite": true,
+    "PreviousHp": 250,
+    "CurrentHp": 230,
+    "VanillaDamage": 20,
+    "DesiredHp": 68,
+    "FinalDamage": 182,
+    "RuleName": "FinalDamageFormula+DamageResponse(leather swing)",
+    "Trace": "event=damage | attacker=0x1000:scenario | action=sword from attacker weapon:source=vanilla-damage:signal=101:vars=family_sword=1,routine_pa_wp=1,swing=1,vanillawp=4,wp=16 | targetSlots=body(present,id=172:Leather Armor,off=0x70,width=Byte,matches=1) | attackerSlots=weapon(present,id=19:Broadsword,off=0x50,width=Byte,matches=1) | equipmentDr=0:NoEquipmentDR | response=raw950/permille950/rules1/clamped0:DamageResponse(leather swing) | final=182:FinalDamageFormula+DamageResponse(leather swing)",
+    "HasExpectations": true,
+    "ExpectationFailures": [],
+    "ExpectationsPassed": true
+  },
+  {
+    "Name": "simple-heal-signed-event",
+    "ShouldRewrite": false,
+    "PreviousHp": 180,
+    "CurrentHp": 190,
+    "VanillaDamage": -10,
+    "DesiredHp": 190,
+    "FinalDamage": 0,
+    "RuleName": "off",
+    "Trace": "",
+    "HasExpectations": true,
+    "ExpectationFailures": [],
+    "ExpectationsPassed": true
+  }
+]

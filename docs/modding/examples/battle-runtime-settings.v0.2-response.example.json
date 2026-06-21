@@ -1,0 +1,120 @@
+{
+  "_note": "Example only. Body offset 112 and vanilla-damage action sentinels are placeholders until live mapping confirms them.",
+  "RewriteObservedDamage": true,
+  "FinalDamageFormula": "basePressure",
+  "FormulaVariables": {
+    "basePressure": 100
+  },
+  "ApplyDamageResponseRules": true,
+  "MinDamageResponsePermille": 250,
+  "MaxDamageResponsePermille": 2500,
+  "DamageResponseChipFloor": 1,
+  "ActionSignalRules": [
+    {
+      "VanillaDamage": 7,
+      "Variables": {
+        "swing": 1
+      }
+    },
+    {
+      "VanillaDamage": 8,
+      "Variables": {
+        "thrust": 1
+      }
+    },
+    {
+      "VanillaDamage": 9,
+      "Variables": {
+        "crush": 1
+      }
+    },
+    {
+      "VanillaDamage": 10,
+      "Variables": {
+        "missile": 1
+      }
+    }
+  ],
+  "EquipmentSlots": [
+    {
+      "Name": "Body",
+      "Offset": 112,
+      "Width": "Byte"
+    }
+  ],
+  "FormulaPreResponseVariables": [
+    {
+      "Name": "armor.plate",
+      "Formula": "slot.body.category_armor && slot.body.armorHpBonus >= 60"
+    },
+    {
+      "Name": "armor.mail",
+      "Formula": "slot.body.category_armor && slot.body.armorHpBonus >= 40 && slot.body.armorHpBonus < 60"
+    },
+    {
+      "Name": "armor.light",
+      "Formula": "slot.body.category_clothing || (slot.body.category_armor && slot.body.armorHpBonus < 40)"
+    },
+    {
+      "Name": "armor.cloth",
+      "Formula": "slot.body.category_robe"
+    }
+  ],
+  "DamageResponseRules": [
+    {
+      "Name": "plate swing",
+      "ConditionFormula": "armor.plate && action.swing",
+      "MultiplierPermille": 650
+    },
+    {
+      "Name": "plate thrust",
+      "ConditionFormula": "armor.plate && action.thrust",
+      "MultiplierPermille": 650
+    },
+    {
+      "Name": "plate crush",
+      "ConditionFormula": "armor.plate && action.crush",
+      "MultiplierPermille": 1150
+    },
+    {
+      "Name": "plate missile",
+      "ConditionFormula": "armor.plate && action.missile",
+      "MultiplierPermille": 800
+    },
+    {
+      "Name": "mail swing",
+      "ConditionFormula": "armor.mail && action.swing",
+      "MultiplierPermille": 750
+    },
+    {
+      "Name": "mail thrust",
+      "ConditionFormula": "armor.mail && action.thrust",
+      "MultiplierPermille": 1100
+    },
+    {
+      "Name": "mail crush",
+      "ConditionFormula": "armor.mail && action.crush",
+      "MultiplierPermille": 950
+    },
+    {
+      "Name": "mail missile",
+      "ConditionFormula": "armor.mail && action.missile",
+      "MultiplierPermille": 1100
+    },
+    {
+      "Name": "light swing",
+      "ConditionFormula": "armor.light && action.swing",
+      "MultiplierPermille": 950
+    },
+    {
+      "Name": "light thrust",
+      "ConditionFormula": "armor.light && action.thrust",
+      "MultiplierPermille": 950
+    },
+    {
+      "Name": "light missile",
+      "ConditionFormula": "armor.light && action.missile",
+      "MultiplierPermille": 950
+    }
+  ]
+}

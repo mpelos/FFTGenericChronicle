@@ -1,0 +1,259 @@
+{
+  "_note": "Offline proof fixture for a GURPS-like subtractive DR model. Uses real item catalog metadata and exact test offsets, but the numeric tables are illustrative and not final balance.",
+  "RewriteObservedDamage": true,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "LogResolvedRuntimeContext": true,
+  "ItemCatalogPath": "item_catalog.csv",
+  "RewriteConditionFormula": "event.isDamage && action.present && a.present",
+  "FinalDamageFormula": "if(action.present && a.present, finalDamage, vanillaDamage)",
+  "FormulaTables": {
+    "gurps.thrustDice": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      2
+    ],
+    "gurps.thrustAdds": [
+      0,
+      -6,
+      -6,
+      -5,
+      -5,
+      -4,
+      -4,
+      -3,
+      -3,
+      -2,
+      -2,
+      -1,
+      -1,
+      0,
+      0,
+      1,
+      1,
+      -1,
+      0,
+      1,
+      2
+    ],
+    "gurps.swingDice": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+    ],
+    "gurps.swingAdds": [
+      0,
+      -5,
+      -5,
+      -4,
+      -4,
+      -3,
+      -3,
+      -2,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      -1,
+      0,
+      1,
+      2,
+      -1,
+      0,
+      1,
+      2
+    ]
+  },
+  "FormulaPreActionVariables": [
+    {
+      "Name": "pre.weaponBlade",
+      "Formula": "a.present && (aslot.weapon.category_sword || aslot.weapon.category_knightsword || aslot.weapon.category_katana)"
+    },
+    {
+      "Name": "pre.weaponPole",
+      "Formula": "a.present && aslot.weapon.category_polearm"
+    },
+    {
+      "Name": "pre.unarmed",
+      "Formula": "a.present && (aslot.weapon.category_none || aslot.weapon.id == 0)"
+    },
+    {
+      "Name": "pre.targetBodyArmor",
+      "Formula": "slot.body.isArmor"
+    }
+  ],
+  "FormulaDerivedVariables": [
+    {
+      "Name": "st.index",
+      "Formula": "clamp(a.pa, 0, 20)"
+    },
+    {
+      "Name": "baseDiceDamage",
+      "Formula": "if(action.swing, diceAvgRound(tableClamp(\"gurps.swingDice\", st.index), 6, tableClamp(\"gurps.swingAdds\", st.index)), diceAvgRound(tableClamp(\"gurps.thrustDice\", st.index), 6, tableClamp(\"gurps.thrustAdds\", st.index)))"
+    },
+    {
+      "Name": "grossDamage",
+      "Formula": "max(0, baseDiceDamage + action.weaponBonus)"
+    },
+    {
+      "Name": "penetratingDamage",
+      "Formula": "max(0, grossDamage - equipmentDr)"
+    },
+    {
+      "Name": "wound.num",
+      "Formula": "if(action.cut, 3, if(action.impale, 2, 1))"
+    },
+    {
+      "Name": "wound.den",
+      "Formula": "if(action.cut, 2, 1)"
+    },
+    {
+      "Name": "finalDamage",
+      "Formula": "mulDiv(penetratingDamage, wound.num, wound.den)"
+    }
+  ],
+  "FormulaTraceVariables": [
+    {
+      "Name": "trace.baseDiceDamage",
+      "Formula": "baseDiceDamage"
+    },
+    {
+      "Name": "trace.weaponBonus",
+      "Formula": "action.weaponBonus"
+    },
+    {
+      "Name": "trace.preWeaponBlade",
+      "Formula": "pre.weaponBlade"
+    },
+    {
+      "Name": "trace.preWeaponPole",
+      "Formula": "pre.weaponPole"
+    },
+    {
+      "Name": "trace.preUnarmed",
+      "Formula": "pre.unarmed"
+    },
+    {
+      "Name": "trace.grossDamage",
+      "Formula": "grossDamage"
+    },
+    {
+      "Name": "trace.equipmentDr",
+      "Formula": "equipmentDr"
+    },
+    {
+      "Name": "trace.penetratingDamage",
+      "Formula": "penetratingDamage"
+    },
+    {
+      "Name": "trace.woundNum",
+      "Formula": "wound.num"
+    },
+    {
+      "Name": "trace.woundDen",
+      "Formula": "wound.den"
+    },
+    {
+      "Name": "trace.finalDamage",
+      "Formula": "result.finalDamage"
+    },
+    {
+      "Name": "trace.desiredHp",
+      "Formula": "result.desiredHp"
+    }
+  ],
+  "AttackerEquipmentSlots": [
+    {
+      "Name": "Weapon",
+      "Offset": 80,
+      "Width": "Byte"
+    }
+  ],
+  "EquipmentSlots": [
+    {
+      "Name": "Body",
+      "Offset": 112,
+      "Width": "Byte"
+    }
+  ],
+  "ActionSignalRules": [
+    {
+      "Name": "sword swing/cut",
+      "ConditionFormula": "pre.weaponBlade && pre.targetBodyArmor",
+      "Variables": {
+        "swing": 1,
+        "cut": 1
+      },
+      "VariableFormulas": {
+        "weaponBonus": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "spear thrust/impale",
+      "ConditionFormula": "pre.weaponPole && pre.targetBodyArmor",
+      "Variables": {
+        "thrust": 1,
+        "impale": 1
+      },
+      "VariableFormulas": {
+        "weaponBonus": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "fists thrust/crush",
+      "ConditionFormula": "pre.unarmed && pre.targetBodyArmor",
+      "Variables": {
+        "thrust": 1,
+        "crush": 1,
+        "weaponBonus": 0
+      }
+    }
+  ],
+  "ApplyEquipmentDr": false,
+  "EquipmentDrRules": [
+    {
+      "Name": "Body armor DR",
+      "Slot": "Body",
+      "SecondaryKind": "armor",
+      "DamageReductionFormula": "if(item.category_robe, max(0, floorDiv(item.armorHpBonus, 20)), max(1, floorDiv(item.armorHpBonus, 10)))"
+    }
+  ],
+  "ApplyDamageResponseRules": false
+}

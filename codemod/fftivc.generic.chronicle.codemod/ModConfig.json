@@ -3,7 +3,7 @@
   "ModName": "Generic Chronicle (Battle Probe)",
   "ModAuthor": "mmpel",
   "ModVersion": "1.0.0",
-  "ModDescription": "Diagnostic code mod: AOB-scan + log to confirm battle hooks for FFT IVC Enhanced.",
+  "ModDescription": "",
   "ModDll": "fftivc.generic.chronicle.codemod.dll",
   "ModIcon": "Preview.png",
   "ModR2RManagedDll32": "x86/fftivc.generic.chronicle.codemod.dll",

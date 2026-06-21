@@ -1,0 +1,43 @@
+{
+  "_note": "Disabled scaffold for persistent memory-table research. Do not enable this until Pattern is independently discovered and validated for this local executable build.",
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "LogResolvedRuntimeContext": true,
+  "MemoryTableProbes": [
+    {
+      "Name": "RosterUnitTableCandidate",
+      "Enabled": false,
+      "Pattern": "PUT INDEPENDENTLY DISCOVERED AOB HERE",
+      "RipRelativeOffset": 3,
+      "InstructionLength": 7,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    }
+  ]
+}

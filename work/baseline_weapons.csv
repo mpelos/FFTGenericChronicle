@@ -1,0 +1,129 @@
+Id,Name,Range,AttackFlags,Formula,Unused_0x03,Power,Evasion,Elements,OptionsAbilityId
+0,Nothing Equipped,1,"TwoSwords, Striking",1,255,0,0,None,0
+1,Dagger,1,"Throwable, TwoSwords, Striking",1,255,3,5,None,0
+2,Mythril Knife,1,"Throwable, TwoSwords, Striking",1,255,4,5,None,0
+3,Blind Knife,1,"Throwable, TwoSwords, Striking",1,255,4,5,None,9
+4,Mage Masher,1,"Throwable, TwoSwords, Striking",1,255,4,5,None,10
+5,Platinum Dagger,1,"Throwable, TwoSwords, Striking",1,255,5,10,None,0
+6,Main Gauche,1,"Throwable, TwoSwords, Striking",1,255,6,40,None,0
+7,Orichalcum Dirk,1,"Throwable, TwoSwords, Striking",1,255,7,5,None,0
+8,Assassin's Dagger,1,"Throwable, TwoSwords, Striking",1,255,7,5,None,11
+9,Air Knife,1,"Throwable, TwoSwords, Striking",1,255,10,5,Wind,0
+10,Zwill Straightblade,1,"Throwable, TwoSwords, Striking",1,255,12,10,None,12
+11,Ninja Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,8,5,None,0
+12,Kunai,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,9,5,None,0
+13,Kodachi,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,10,5,None,0
+14,Ninja Longblade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,12,5,None,0
+15,Spellbinder,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,13,5,None,13
+16,Sasuke's Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,14,15,None,0
+17,Iga Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,15,10,None,0
+18,Koga Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,15,5,None,0
+19,Broadsword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,4,5,None,0
+20,Longsword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,5,10,None,0
+21,Iron Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,6,5,None,0
+22,Mythril Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,7,8,None,0
+23,Blood Sword,1,"Throwable, TwoHands, TwoSwords, Striking",6,255,8,5,None,0
+24,Coral Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,8,5,Lightning,0
+25,Ancient Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,9,5,None,14
+26,Sleep Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,9,5,None,15
+27,Platinum Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,12,10,None,0
+28,Diamond Sword,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,10,10,None,0
+29,Icebrand,1,"Throwable, TwoHands, TwoSwords, Striking",2,255,13,10,Ice,25
+30,Runeblade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,14,15,None,0
+31,Nagnarok,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,1,50,None,16
+32,Materia Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,10,10,None,0
+33,Defender,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,16,60,None,0
+34,Save the Queen,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,18,30,None,0
+35,Excalibur,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,21,35,None,0
+36,Ragnarok,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,24,20,None,0
+37,Chaos Blade,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,40,20,None,17
+38,Ashura,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,7,15,None,0
+39,Kotetsu,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,8,15,None,0
+40,Bizen Osafune,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,9,15,None,0
+41,Murasame,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,10,15,None,0
+42,Ame-no-Murakumo,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,11,15,None,0
+43,Kiyomori,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,12,15,None,0
+44,Muramasa,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,14,15,None,0
+45,Kiku-ichimonji,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,15,15,None,0
+46,Masamune,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,18,15,None,0
+47,Chirijiraden,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,25,15,None,0
+48,Battle Axe,1,"ForcedTwoHands, Throwable, TwoHands, Striking",1,255,9,0,None,0
+49,Giant's Axe,1,"ForcedTwoHands, Throwable, TwoHands, Striking",1,255,12,0,None,0
+50,Slasher,1,"ForcedTwoHands, Throwable, TwoHands, Striking",1,255,16,0,None,18
+51,Rod,1,"TwoHands, TwoSwords, Striking",1,255,3,20,None,0
+52,Thunder Rod,1,"TwoHands, TwoSwords, Striking",2,255,3,20,Lightning,20
+53,Flame Rod,1,"TwoHands, TwoSwords, Striking",2,255,3,20,Fire,16
+54,Ice Rod,1,"TwoHands, TwoSwords, Striking",2,255,3,20,Ice,24
+55,Poison Rod,1,"TwoHands, TwoSwords, Striking",1,255,3,20,None,19
+56,Wizard's Rod,1,"TwoHands, TwoSwords, Striking",1,255,4,20,None,0
+57,Dragon Rod,1,"TwoHands, TwoSwords, Striking",1,255,5,20,None,0
+58,Rod of Faith,1,"TwoHands, TwoSwords, Striking",1,255,5,20,None,20
+59,Oak Staff,1,"TwoHands, TwoSwords, Striking",1,255,3,15,None,0
+60,White Staff,1,"TwoHands, TwoSwords, Striking",1,255,3,15,None,28
+61,Healing Staff,1,"TwoHands, TwoSwords, Striking",7,255,4,15,None,0
+62,Serpent Staff,1,"TwoHands, TwoSwords, Striking",1,255,5,15,None,0
+63,Mage's Staff,1,"TwoHands, TwoSwords, Striking",1,255,4,15,None,0
+64,Golden Staff,1,"TwoHands, TwoSwords, Striking",1,255,6,15,None,0
+65,Zeus Mace,1,"TwoHands, TwoSwords, Striking",1,255,6,15,None,0
+66,Staff of the Magi,1,"TwoHands, TwoSwords, Striking",1,255,7,15,None,0
+67,Iron Flail,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,9,0,None,0
+68,Flail of Flame,1,"Throwable, TwoHands, TwoSwords, Striking",2,255,11,0,Fire,17
+69,Morning Star,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,16,0,None,0
+70,Scorpion Tail,1,"Throwable, TwoHands, TwoSwords, Striking",1,255,23,0,None,0
+71,Romandan Pistol,8,Direct,3,255,6,5,None,0
+72,Mythril Gun,8,Direct,3,255,8,5,None,0
+73,Stoneshooter,8,Direct,3,255,16,5,None,0
+74,Glacial Gun,8,Direct,4,255,20,5,Ice,0
+75,Blaze Gun,8,Direct,4,255,21,5,Fire,0
+76,Blaster,8,Direct,4,255,22,5,Lightning,0
+77,Bowgun,4,Direct,1,255,3,5,None,0
+78,Knightslayer,4,Direct,1,255,3,5,None,21
+79,Crossbow,4,Direct,1,255,4,5,None,0
+80,Poison Crossbow,4,Direct,1,255,4,5,None,22
+81,Hunting Crossbow,4,Direct,1,255,6,5,None,0
+82,Gastrophetes,4,Direct,1,255,10,5,None,0
+83,Longbow,5,"ForcedTwoHands, TwoHands, Arc",1,255,4,0,None,0
+84,Silver Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,5,0,None,0
+85,Ice Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,5,0,Ice,0
+86,Lightning Bow,5,"ForcedTwoHands, TwoHands, Arc",2,255,6,0,Lightning,21
+87,Windslash Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,8,0,Wind,0
+88,Mythril Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,7,0,None,0
+89,Artemis Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,10,0,None,0
+90,Yoichi Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,12,0,None,0
+91,Perseus Bow,5,"ForcedTwoHands, TwoHands, Arc",1,255,16,0,None,0
+92,Lamia's Harp,3,Direct,1,255,10,10,None,23
+93,Bloodstring Harp,3,Direct,6,255,13,10,None,0
+94,Faerie Harp,3,Direct,1,255,15,10,None,24
+95,Battle Folio,3,"Throwable, Direct",1,255,7,15,None,0
+96,Bestiary,3,"Throwable, Direct",1,255,8,15,None,0
+97,Papyrus Codex,3,"Throwable, Direct",1,255,9,15,None,0
+98,Omnilex,3,"Throwable, Direct",1,255,11,15,None,0
+99,Javelin,2,"Throwable, TwoHands, Lunging",1,255,8,10,None,0
+100,Spear,2,"Throwable, TwoHands, Lunging",1,255,9,10,None,0
+101,Mythril Spear,2,"Throwable, TwoHands, Lunging",1,255,10,10,None,0
+102,Partisan,2,"Throwable, TwoHands, Lunging",1,255,11,10,None,0
+103,Obelisk,2,"Throwable, TwoHands, Lunging",1,255,12,10,None,0
+104,Holy Lance,2,"Throwable, TwoHands, Lunging",2,255,14,10,Holy,15
+105,Dragon Whisker,2,"Throwable, TwoHands, Lunging",1,255,17,10,None,0
+106,Javelin,2,"Throwable, TwoHands, Lunging",1,255,30,10,None,0
+107,Cypress Pole,2,"Throwable, TwoHands, Lunging",1,255,6,20,None,0
+108,Battle Bamboo,2,"Throwable, TwoHands, Lunging",1,255,7,20,None,0
+109,Musk Pole,2,"Throwable, TwoHands, Lunging",1,255,8,20,None,0
+110,Iron Fan,2,"Throwable, TwoHands, Lunging",1,255,9,20,None,0
+111,Gokuu's Pole,2,"Throwable, TwoHands, Lunging",1,255,10,20,None,25
+112,Ivory Pole,2,"Throwable, TwoHands, Lunging",1,255,11,20,None,0
+113,Eight-fluted Pole,2,"Throwable, TwoHands, Lunging",1,255,12,20,None,26
+114,Whale Whisker,2,"Throwable, TwoHands, Lunging",1,255,16,20,None,0
+115,Catskin Bag,1,Striking,1,255,10,0,None,0
+116,Fallingstar Bag,1,Striking,1,255,20,0,None,0
+117,Proudhide Bag,1,Striking,1,255,12,0,None,0
+118,Hardscale Bag,1,Striking,1,255,14,0,None,0
+119,Damask Cloth,2,Lunging,1,255,8,50,None,0
+120,Cashmere,2,Lunging,1,255,10,50,None,0
+121,Wyrmweave Silk,2,Lunging,1,255,15,50,None,0
+122,Shuriken,0,"Throwable, Direct",1,255,4,0,None,0
+123,Fuma Shuriken,0,"Throwable, Direct",1,255,7,0,None,0
+124,Yagyu Darkrood,0,"Throwable, Direct",1,255,10,0,None,0
+125,Flameburst Bomb,0,"Throwable, Direct",1,255,8,0,Fire,0
+126,Snowmelt Bomb,0,"Throwable, Direct",1,255,8,0,Water,0
+127,Spark Bomb,0,"Throwable, Direct",1,255,8,0,Lightning,0

@@ -2,21 +2,23 @@
 
 Status: First validated formula-policy candidate
 Date: 2026-06-20
-Result class: Conceptually viable, pending verified-baseline re-sim
+Result class: Conceptually viable, superseded for weapon-WP proof by verified-baseline audit
 Depends on:
 - `docs/formula-balance/05-formula-proposal-protocol.md`
 - `docs/formula-balance/08-scenario-set-v0.md`
 - `docs/formula-balance/10-mitigation-and-scaling-policy-v0.md`
 - `work/sim-inputs-v0.2.json`
 - `work/gpt-sim-v0.2-results.json`
+- `docs/formula-balance/12-verified-weapon-baseline-audit.md`
 
 ## Purpose
 
 This milestone records the first formula-policy candidate that passed the shared simulation gate.
 
-It is not final implementation data. Weapon WP values are still WotL-fallback / design
-provisional because `work/baseline_weapons.csv` is empty. The result must be re-simulated after
-the Windows `04-proof-and-baseline-plan.md` session captures real IVC weapon data.
+It is not final implementation data. The original v0.2 pass used design-provisional WP values.
+`work/baseline_weapons.csv` now exists, and `12-verified-weapon-baseline-audit.md` shows that
+using raw verified family max WP breaks the v0.2 scorecard. V0.2 remains useful as a conceptual
+policy, but v1 requires verified-WP retuning.
 
 ## Locked Combat Model
 
@@ -188,10 +190,11 @@ V0.2 is the first candidate where the policy behaves like the mod's stated goal:
 
 This milestone does not close implementation or final balance.
 
-Still open:
+Still open / updated by `12-verified-weapon-baseline-audit.md`:
 
-- Run the Windows `04` session and capture real IVC `work/baseline_weapons.csv`.
-- Re-simulate v0.2 after replacing WotL-fallback WP with verified IVC weapon values.
+- `work/baseline_weapons.csv` has been captured from the local IVC mod-loader tables.
+- A raw `wp_max` stress re-sim has been run and failed the scorecard; this is now a v1 retune
+  requirement, not a missing-data blocker.
 - Improve accuracy and evasion modeling. V0.2 only uses one coarse `0.75` evasive row.
 - Exercise status, element, Shell/Protect, and Zodiac layers beyond neutral/default cases.
 - Simulate per-family identity beyond damage, including range, CT, status, job-lock payoff, and
@@ -200,16 +203,15 @@ Still open:
 
 ## Next Track
 
-The natural next track is the Windows proof/baseline session from
-`04-proof-and-baseline-plan.md`.
+The natural next track is a v1 verified-baseline retune using
+`12-verified-weapon-baseline-audit.md`.
 
-After real weapon values are captured, the project should produce:
+After choosing a verified equipment sampling policy, the project should produce:
 
 ```text
-work/baseline_weapons.csv
 work/sim-inputs-v1.json
-docs/formula-balance/12-validated-policy-v1.md
+docs/formula-balance/13-validated-policy-v1.md
 ```
 
 Only after that re-simulation should any formula be promoted beyond
-`Conceptually viable, pending verified-baseline re-sim`.
+`Conceptually viable`.

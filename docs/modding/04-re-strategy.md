@@ -112,6 +112,104 @@ after the XA chain, gated on the 12x12 table. SPECULATIVE: which damage-variance
 remaster uses (`Dam/10 +- ` vs `*rand(100..150)/100`) and exact truncation order - verify in
 the binary.
 
+## CONFIRMED on this install (probe iteration 1)
+
+Battle Probe code mod ran on the live game (Steam, base 0x140000000, module size 0x190EB000).
+All 7 signatures matched -> the cheat-table AOBs are valid on THIS build. Confirmed RVAs (offset
+from module base; stable across ASLR):
+
+```text
+battle_base_ptr     module+0x226D98    movzx eax, word [rcx+0x30]   -> +0x30 HP (word) CONFIRMED
+damage_multiplier   module+0x7ED4A52   movzx eax,[rdi+0x30]; sub eax,edx -> applies damage; rdi=target, edx=damage
+damage_mult_2       module+0x30A685
+jp_multiplier       module+0x283754
+xp_multiplier       module+0x283767
+min_brave_faith     module+0x8D9D0E0   movzx ebx, byte [r10+0x2B]   -> +0x2B Brave (byte) CONFIRMED
+min_spd_jmp_mov     module+0x36027F    movzx eax, byte [rdi+0x42]   -> +0x42 Move (byte) CONFIRMED
+override read-site  RVA 0xEEA6E50       WITHIN module (VA 0x14EEA6E50) -> valid lead, not bad
+```
+
+Bonus: the matched instruction bytes themselves statically confirm struct offsets (+0x30 HP
+word, +0x2B Brave byte, +0x42 Move byte) - matching the map in `05`.
+
+### IMPORTANT: stability across runs (Denuvo) - probe iteration 2
+
+Re-running the probe showed the matches split into two groups:
+
+```text
+STABLE (byte-identical across runs; RVA < 0x400000 = real .text):
+  battle_base_ptr 0x226D98 | damage_mult_2 0x30A685 | jp 0x283754 | xp 0x283767 | min_spd_jmp_mov 0x36027F
+UNSTABLE (move or vanish between runs; RVA in the 130-280 MB range):
+  damage_multiplier (16-byte): run1 0x7ED4A52, run2 NOTFOUND
+  min_brave_faith (5-byte): run1 0x8D9D0E0, run2 0x10885C7D  (too short -> coincidental)
+```
+
+Conclusion: the damage routine lives in a **Denuvo runtime-decrypted/relocated region** - a static
+main-module AOB cannot reliably find or hook it (its address changes per launch). So:
+
+- Hook only the **stable .text anchors** (e.g. `battle_base_ptr`, rcx = a unit) for live reads.
+- Get damage numbers the **Denuvo-proof** way: sample a unit's HP via the stable anchor and log
+  **HP deltas** (HP drop = damage taken) instead of hooking the damage routine.
+- The formula-dispatch RE (Tier 2 custom math) will need runtime tracing in a debugger (HW
+  breakpoint -> callstack while Denuvo code is live), not static AOB - or we stay data-only.
+
+Probe iteration 3 implements the stable-anchor unit dump + HP-delta damage logging.
+
+### CONFIRMED (probe iteration 3)
+
+Hooked `battle_base_ptr` (rcx = unit). Read EVERY struct field live with sane values, e.g.
+`Lv55 HP458/458 MP81/81 PA15 MA11 Sp9 Mv7 Jp3 Br97 Fa70` (ally), a monster at `MA39`, allies
+team=0 / foes team=3 with foe bit +0x05&0x10. The full runtime struct map (section A of `05`) is
+verified. HP-delta damage capture works (e.g. friendly-fire 473->290 = 183; lethal 298->0 = 298),
+giving real damage numbers without touching the Denuvo-locked damage routine.
+
+What this harness does NOT yet capture: the **attacker + ability/weapon** per hit (those live in
+registers at the damage routine, which is Denuvo-relocated). So full back-computation of a
+formula needs either (a) controlled data-layer experiments (known attacker/weapon via ENTD/data,
+read damage via HP delta), or (b) runtime debugger tracing of the relocated damage code.
+
+### Probe iter 5: stable sites are UI, not the formula
+
+Register-dumped the stable `damage_mult_2` (module+0x30A685). Only `rdi` = one unit; `edx` =
+MaxHP, `eax` = MaxHP-currentHP. So that "secondary damage-mult" match is **HP-bar/UI math**, not
+the damage formula - no attacker, no ability. Confirms: the stable .text sites are display code;
+the real damage routine is only in the **Denuvo-relocated region** (present during battle).
+
+### Probe iter 6: locate the relocated damage routine in-battle
+
+Approach: at runtime, walk committed EXECUTABLE regions (VirtualQuery; never touch unmapped/guard
+pages) and scan for the specific 16-byte damage-apply pattern
+`0F B7 47 30 2B C2 85 C0 41 0F 4E CE 8A D1 E8 F2`. Retry every 3s until a battle makes the code
+resident; then install a read-only register-dump hook there. The dump shows every register that
+points at a unit (attacker + target) plus the damage value - the full formula context for path 2.
+Address is session-specific (re-scan each launch). Risk: hooking Denuvo-region code may crash or
+be integrity-checked; experimental.
+
+### CONCLUSIVE: the damage routine is Denuvo-VIRTUALIZED (probe iter 6)
+
+An in-battle full-memory scan (ReadProcessMemory, AV-safe) over all executable-readable regions
+found the damage routine's 16-byte pattern **nowhere**:
+
+```text
+exec regions: 0x140001000 +0x610000 (.text, 0x20) ; 0x143F9E000 +0x14779000 (~340MB, 0x80 Denuvo) ; +others
+total scanned: 343 MB exec-readable, 0 execute-only, pattern NOT FOUND across ~55 passes (~2 min)
+```
+
+Since nothing was execute-only (so nothing was hidden from reading) yet the x86 pattern is absent,
+the damage code is **virtualized by Denuvo** (translated to a private VM bytecode). The one run-1
+match was transient/coincidental. **Implication: the formula routine cannot be AOB-hooked.**
+Arbitrary custom damage math via hooking the formula is blocked by Denuvo by design.
+
+Remaining options for a damage overhaul:
+1. **Data layer (Tier 1, Denuvo-proof):** re-point every ability's `Formula/X/Y/Element/CT/MP` in
+   `OverrideAbilityActionData` + weapon `Formula/Power` + `JobData` stats. Limited to the ~100
+   existing formula shapes, but total coverage of which/where/how-much. THE realistic overhaul path.
+2. **Stable .text touchpoint:** hook a real-.text instruction the damage flows through (e.g.
+   `damage_mult_2` @ module+0x30A685, NOT virtualized) and transform/replace the final damage using
+   variables we can read live. Viable only if attacker+target+damage are available there.
+3. **Hardware breakpoint (VEH + DRx) on HP write:** robust to relocation but lands inside the
+   Denuvo VM dispatch - messy, registers won't cleanly map to game state. Last resort.
+
 ## Recommended attack path (concrete)
 
 ```text

@@ -1,0 +1,361 @@
+{
+  "_note": "Generated disabled MEMTABLE probe candidates. Review each row and keep Enabled=false until the candidate is independently validated live.",
+  "_source": "D:\\Projects\\FFTGenericChronicle\\work\\memtable_rip_candidates.csv",
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "LogResolvedRuntimeContext": true,
+  "MemoryTableProbes": [
+    {
+      "Name": "Candidate_0x7277_rodata",
+      "Enabled": false,
+      "Pattern": "83 C3 FF 75 F2 41 8B C3 48 8D 15 ?? ?? ?? ?? 41 B8 07 00 00 00 48 8D",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0x7277",
+        "targetRva": "0x659CA8",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0x733C_rodata",
+      "Enabled": false,
+      "Pattern": "F8 AF 77 00 85 DB 74 11 48 8D 0D ?? ?? ?? ?? E8 78 F5 FF FF 4C 8B F8",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0x733C",
+        "targetRva": "0x659C90",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0x734D_rodata",
+      "Enabled": false,
+      "Pattern": "F5 FF FF 4C 8B F8 EB 07 4C 8D 3D ?? ?? ?? ?? 44 8B C6 33 D2 49 8B CF",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0x734D",
+        "targetRva": "0x659C90",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0x1D40C_rodata",
+      "Enabled": false,
+      "Pattern": "00 83 A3 10 0B 00 00 00 48 8D 05 ?? ?? ?? ?? 48 89 03 48 8B C3 C7 83",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0x1D40C",
+        "targetRva": "0x6FA2E8",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0x20038_rodata",
+      "Enabled": false,
+      "Pattern": "00 00 89 83 54 02 00 00 48 8D 05 ?? ?? ?? ?? 48 89 03 48 8B C3 C7 83",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0x20038",
+        "targetRva": "0x6FA1E0",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0xA168D_rodata",
+      "Enabled": false,
+      "Pattern": "FF 48 8B 1D BB 85 C3 03 48 8D 05 ?? ?? ?? ?? 48 89 87 E8 01 00 00 8D",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0xA168D",
+        "targetRva": "0x700770",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0xA169E_rodata",
+      "Enabled": false,
+      "Pattern": "87 E8 01 00 00 8D 55 10 48 8D 05 ?? ?? ?? ?? 48 89 87 40 02 00 00 48",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0xA169E",
+        "targetRva": "0x700170",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    },
+    {
+      "Name": "Candidate_0xA1722_rodata",
+      "Enabled": false,
+      "Pattern": "FF 48 8B 1D 26 85 C3 03 48 8D 05 ?? ?? ?? ?? 48 89 87 40 02 00 00 8D",
+      "RipRelativeOffset": 11,
+      "InstructionLength": 15,
+      "TargetAddend": 0,
+      "DereferenceCount": 0,
+      "Count": 55,
+      "Stride": 600,
+      "LogRows": true,
+      "LogEmptyRows": false,
+      "MaxRowsToLog": 16,
+      "MinPresenceScore": 1,
+      "_candidate": {
+        "score": 11,
+        "contextMatches": 1,
+        "instrRva": "0xA1722",
+        "targetRva": "0x7007C0",
+        "sourceSection": ".xcode",
+        "targetSection": ".rodata",
+        "reasons": "source-.xcode;target-.rodata;lea;target-aligned;near-stride-0x258"
+      },
+      "Fields": [
+        {
+          "Name": "UnitIndex",
+          "Offset": 1,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Job",
+          "Offset": 2,
+          "Width": "Byte",
+          "EmptyValue": 255
+        },
+        {
+          "Name": "Index2",
+          "Offset": 44,
+          "Width": "Byte",
+          "EmptyValue": 255
+        }
+      ]
+    }
+  ]
+}

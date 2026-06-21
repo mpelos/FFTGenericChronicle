@@ -6,16 +6,29 @@ tagged confirmed vs. inferred.
 
 ## Bottom Line
 
-Arbitrary custom damage math **is achievable**, but **not** through any existing modding API.
-You must write your **own Reloaded-II C# mod that sig-scans and hooks the damage routine inside
-`FFT_enhanced.exe`**. The hooking *mechanism* is proven on this exact exe today; the *target
-function* is not publicly reverse-engineered, so the real cost is the RE work, not the plumbing.
+> **UPDATE (2026-06-20): the optimism below was tempered by a hard finding.** The generic hook
+> *mechanism* is proven on this exe, but the **damage routine itself is Denuvo-virtualized**: its
+> prologue AOB is absent/relocated across launches (we scanned 343 MB; pattern not found), so it
+> **cannot be located by static signature scan**. Arbitrary custom math is therefore **NOT yet
+> proven achievable on this build** - it is blocked at "find the function." It might still be
+> reachable via runtime debugger tracing (HP-write breakpoint -> walk call stack), but until that
+> succeeds, treat LEVEL 2 (our own formula algorithm) as an OPEN RISK, not a solved problem.
+> What IS fully in reach today is LEVEL 1: re-pointing every ability to the hardcoded formula
+> catalog + tuning X/Y/Element/Status via OverrideAbilityActionData (data-only, pipeline proven
+> live). See `00-overview.md` "CENTRAL QUESTION" and `04-re-strategy.md` (Denuvo section).
+
+Arbitrary custom damage math is **not** available through any existing modding API. In principle
+it requires your **own Reloaded-II C# mod that hooks the damage routine inside
+`FFT_enhanced.exe`** - but on this build the damage routine can't be found by static AOB scan
+(Denuvo), so the practical path is runtime tracing first, and success is unconfirmed.
 
 ```text
 Existing API gives custom damage math?   No.
-Achievable at all?                       Yes, via your own CreateHook on the damage routine.
-Main cost?                               Reverse-engineering the damage fn + battle-stats struct.
-Anyone done it in IVC?                    No - would be first gameplay-logic code mod.
+Achievable via static-AOB CreateHook?    No on this build - damage routine is Denuvo-virtualized.
+Achievable at all?                       Unconfirmed; needs runtime tracing to even locate the fn.
+Reading attacker+target attrs live?      YES - proven via our probe (full unit struct readable).
+LEVEL 1 (catalog re-point + X/Y tune)?   YES - data-only, pipeline proven live.
+Main cost if pursuing LEVEL 2?           Runtime RE of a virtualized routine (debugger, not AOB).
 Vanilla baseline Formula/X/Y dump?        None public; use FFHacktics WotL + IVC rebalances.
 ```
 

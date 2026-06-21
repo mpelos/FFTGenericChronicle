@@ -4,6 +4,7 @@ Complete map of the battle system's accessible variables, *before* any design de
 know the full toolbox. Generated/validated from the installed game + mod loader on this machine.
 Raw field dump: `work/battle_data_inventory.md` (regenerate with `tools/map_battle_data.py`).
 Baseline values: `work/baseline_jobs.csv`, `work/baseline_abilities.csv` (`tools/dump_baseline.py`).
+Joined item catalog for equipment mapping: `work/item_catalog.csv` (`tools/dump_item_catalog.py`).
 
 ## Access tiers (how to reach each variable)
 
@@ -22,8 +23,8 @@ overhaul is B+C; A is for math the formula catalog can't express (see `03`/`04`)
 ## A. Live battle-unit variables (runtime struct)
 
 These are the per-unit values in memory during battle - everything a Tier-2 damage hook can read
-or rewrite. Offsets verified from the public `FFT_enhanced.exe` cheat table (Steam v1.0, Oct
-2025; re-scan after patches). Base pointer = the unit; same layout the classic `Battle_Stats`
+or rewrite. **CONFIRMED LIVE on this install** (probe iter 3 read every field below with sane,
+internally-consistent values). Base pointer = the unit; same layout the classic `Battle_Stats`
 describes.
 
 ```text
@@ -34,8 +35,24 @@ describes.
 +0x29 Level (byte)            +0x42 Move  (byte)   +0x43 Jump  (byte)
 +0x2A MaxBrave (byte)         +0x2B Brave (byte)
 +0x2C MaxFaith (byte)         +0x2D Faith (byte)
-+0x4F X  +0x50 Y  +0x51 Dir (map position, byte)
 ```
+
+All of the above verified live across 4 distinct units (probe iter 4 full-struct hex dump). The
+0x28-0x43 block is the solid combat-stat region. Not yet anchored (need units with known
+equipment/status to map): ~0x14-0x1F (likely raw/derived stats, 16-bit words), 0x38-0x3B &
+0x44-0x47 (base/derived stats?), and 0x70-0x8F (looks like object pointers). Equipment ids,
+status bitfields, and R/S/M ability ids weren't locatable from full-HP/no-status samples - map
+them later from controlled units or at the formula hook. The current harness now captures through
+0x17F so the next controlled battle can test whether those fields live later in the unit object.
+
+Current harness support for this mapping: `Mod.cs` copies `0x00..0x17F`, logs `[DUMP]` plus
+`[CANDIDATES]` for non-zero bytes/plausible 16-bit ids in `0x44..0x17F`, and logs `[DIFF]` when
+those unknown bytes change. Use controlled units with deliberately different gear/status to
+identify stable equipment slots and volatile action/status fields. Run
+`python tools\analyze_battleprobe_log.py` after a test battle to generate
+`work\battleprobe_analysis.md` with diff offset frequencies and per-unit candidate summaries. If
+`work\item_catalog.csv` exists, the analyzer also emits "Candidate Item Hits" by
+cross-referencing full dump byte/word values against global item ids.
 
 Also reachable at the hook sites (from AOBs in `04`): the computed **damage** value (in `edx`
 before the `[rax+0x06]` store), the player/enemy tag, and the damage/JP/XP multiplier sites.
@@ -119,8 +136,31 @@ ItemShopsData.xml   (256)  Shops (availability)
 ```
 
 Note `EquipBonus` has `StrongElements` and `BoostJP` - levers jobs don't expose. Weapon `Formula`
-is its own small set (1-7) separate from the ability formula catalog. Limits: weapon id <= 127,
-armor <= 63, item <= 260, Power <= 40.
+is its own small set (1-7) separate from the ability formula catalog. Limits: global item id <=
+260; secondary weapon data id <= 127; secondary armor data id <= 63; shield <= 15; accessory <=
+31; weapon Power <= 40.
+
+`tools/dump_item_catalog.py` joins the installed modloader tables into `work/item_catalog.csv`.
+The useful DR/memory-mapping columns are:
+
+```text
+item_id, name, type_flags, item_category, additional_data_id, equip_bonus_id, secondary_kind
+weapon_formula, weapon_power, weapon_evasion
+armor_hp_bonus, armor_mp_bonus
+shield_physical_evasion, shield_magical_evasion
+accessory_physical_evasion, accessory_magical_evasion
+bonus_pa, bonus_ma, bonus_speed, bonus_move, bonus_jump, bonus_*status, bonus_*elements
+```
+
+For DR design, treat `item_id` as the likely runtime equipment key until proven otherwise. The
+secondary ids (`AdditionalDataId`) are not globally unique across weapon/armor/shield/accessory
+tables, so a raw candidate matching `item_id` is much stronger evidence than a raw candidate
+matching only a secondary id.
+
+The code mod build copies `work/item_catalog.csv` to the installed Reloaded-II code-mod folder as
+`item_catalog.csv` when the file exists. Runtime settings can then match DR rules by `ItemId`,
+`ItemCategory`, `TypeFlag`, `SecondaryKind`, and simple item stat thresholds without hardcoding
+every armor one by one.
 
 ---
 

@@ -1,0 +1,456 @@
+{
+  "_note": "Generated from sim inputs. slot_mode=scan. profile=policy. response_mode=rules. Exact offsets and/or scan ranges must be confirmed in live memory before trust. Action classification is weapon-family based and should be replaced or gated once true action/ability context is mapped.",
+  "RewriteObservedDamage": true,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "ItemCatalogPath": "item_catalog.csv",
+  "FinalDamageFormula": "if(action.present && a.present, basePressure, vanillaDamage)",
+  "FormulaPreResponseVariables": [
+    {
+      "Name": "armor.plate",
+      "Formula": "slot.body.category_armor && slot.body.armorHpBonus >= 60"
+    },
+    {
+      "Name": "armor.mail",
+      "Formula": "slot.body.category_armor && slot.body.armorHpBonus >= 40 && slot.body.armorHpBonus < 60"
+    },
+    {
+      "Name": "armor.leather",
+      "Formula": "slot.body.category_clothing || (slot.body.category_armor && slot.body.armorHpBonus < 40)"
+    },
+    {
+      "Name": "armor.light",
+      "Formula": "armor.leather"
+    },
+    {
+      "Name": "armor.cloth",
+      "Formula": "slot.body.category_robe"
+    }
+  ],
+  "FormulaDerivedVariables": [
+    {
+      "Name": "basePressure",
+      "Formula": "if(action.routine_pa_wp, a.pa * action.wp, if(action.routine_br_pa_wp, floorDiv(a.pa * a.brave, 100) * action.wp, if(action.routine_spd_pa_wp, floorDiv(a.pa + a.speed, 2) * action.wp, if(action.routine_ma_wp, a.ma * action.wp, if(action.routine_rdm_pa_wp, rand(1, max(1, a.pa)) * action.wp, if(action.routine_wp_wp, action.wp * action.wp, if(action.routine_br_pa_pa, floorDiv(a.pa * a.brave, 100) * a.pa, if(action.routine_pampa_wp, floorDiv(a.pa + a.ma, 2) * action.wp, vanillaDamage))))))))"
+    }
+  ],
+  "FormulaTraceVariables": [
+    {
+      "Name": "trace.basePressure",
+      "Formula": "basePressure"
+    },
+    {
+      "Name": "trace.responsePermille",
+      "Formula": "boundedResponse.permille"
+    },
+    {
+      "Name": "trace.finalDamage",
+      "Formula": "result.finalDamage"
+    },
+    {
+      "Name": "trace.desiredHp",
+      "Formula": "result.desiredHp"
+    },
+    {
+      "Name": "trace.shouldRewrite",
+      "Formula": "result.shouldRewrite"
+    }
+  ],
+  "FormulaMatrices": {},
+  "AttackerEquipmentSlots": [
+    {
+      "Name": "Weapon",
+      "SearchStart": 68,
+      "SearchEnd": 383,
+      "SearchWidth": "Byte",
+      "SecondaryKind": "weapon",
+      "TypeFlag": "Weapon",
+      "AllowAmbiguousSearchMatch": false
+    }
+  ],
+  "EquipmentSlots": [
+    {
+      "Name": "Body",
+      "SearchStart": 68,
+      "SearchEnd": 383,
+      "SearchWidth": "Byte",
+      "SecondaryKind": "armor",
+      "TypeFlag": "Armor",
+      "AllowAmbiguousSearchMatch": false
+    }
+  ],
+  "ActionSignalRules": [
+    {
+      "Name": "sword from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_sword",
+      "Signal": 101,
+      "Variables": {
+        "family_sword": 1,
+        "routine_pa_wp": 1,
+        "swing": 1,
+        "wp": 16,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "knight_sword from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_knightsword",
+      "Signal": 102,
+      "Variables": {
+        "family_knight_sword": 1,
+        "routine_br_pa_wp": 1,
+        "swing": 1,
+        "wp": 20,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "katana from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_katana",
+      "Signal": 103,
+      "Variables": {
+        "family_katana": 1,
+        "routine_br_pa_wp": 1,
+        "swing": 1,
+        "wp": 18,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "knife from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_knife",
+      "Signal": 104,
+      "Variables": {
+        "family_knife": 1,
+        "routine_spd_pa_wp": 1,
+        "thrust": 1,
+        "wp": 12,
+        "penetrationPermille": 100
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "ninja_blade from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_ninjablade",
+      "Signal": 105,
+      "Variables": {
+        "family_ninja_blade": 1,
+        "routine_spd_pa_wp": 1,
+        "swing": 1,
+        "wp": 13,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "longbow from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_bow",
+      "Signal": 106,
+      "Variables": {
+        "family_longbow": 1,
+        "routine_spd_pa_wp": 1,
+        "missile": 1,
+        "wp": 15,
+        "penetrationPermille": 150
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "crossbow from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_crossbow",
+      "Signal": 107,
+      "Variables": {
+        "family_crossbow": 1,
+        "routine_pa_wp": 1,
+        "missile": 1,
+        "wp": 14,
+        "penetrationPermille": 350
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "gun from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_gun",
+      "Signal": 108,
+      "Variables": {
+        "family_gun": 1,
+        "routine_wp_wp": 1,
+        "missile": 1,
+        "wp": 12,
+        "penetrationPermille": 700
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "spear from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_polearm",
+      "Signal": 109,
+      "Variables": {
+        "family_spear": 1,
+        "routine_pa_wp": 1,
+        "thrust": 1,
+        "wp": 15,
+        "penetrationPermille": 100
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "staff from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_staff",
+      "Signal": 110,
+      "Variables": {
+        "family_staff": 1,
+        "routine_ma_wp": 1,
+        "crush": 1,
+        "wp": 14,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "rod from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_rod",
+      "Signal": 111,
+      "Variables": {
+        "family_rod": 1,
+        "routine_ma_wp": 1,
+        "crush": 1,
+        "wp": 10,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "pole from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_pole",
+      "Signal": 112,
+      "Variables": {
+        "family_pole": 1,
+        "routine_ma_wp": 1,
+        "crush": 1,
+        "wp": 13,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "axe from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_axe",
+      "Signal": 113,
+      "Variables": {
+        "family_axe": 1,
+        "routine_rdm_pa_wp": 1,
+        "crush": 1,
+        "wp": 20,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "flail from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_flail",
+      "Signal": 114,
+      "Variables": {
+        "family_flail": 1,
+        "routine_rdm_pa_wp": 1,
+        "crush": 1,
+        "wp": 24,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "fists from attacker weapon",
+      "ConditionFormula": "a.present && (aslot.weapon.category_none || aslot.weapon.id == 0)",
+      "Signal": 115,
+      "Variables": {
+        "family_fists": 1,
+        "routine_br_pa_pa": 1,
+        "crush": 1,
+        "wp": 0,
+        "penetrationPermille": 150
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "instrument from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_instrument",
+      "Signal": 116,
+      "Variables": {
+        "family_instrument": 1,
+        "routine_pampa_wp": 1,
+        "missile": 1,
+        "wp": 10,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "book from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_book",
+      "Signal": 117,
+      "Variables": {
+        "family_book": 1,
+        "routine_pampa_wp": 1,
+        "crush": 1,
+        "wp": 15,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "cloth_weapon from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_cloth",
+      "Signal": 118,
+      "Variables": {
+        "family_cloth_weapon": 1,
+        "routine_pampa_wp": 1,
+        "swing": 1,
+        "wp": 14,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    },
+    {
+      "Name": "bag from attacker weapon",
+      "ConditionFormula": "a.present && aslot.weapon.category_bag",
+      "Signal": 119,
+      "Variables": {
+        "family_bag": 1,
+        "routine_rdm_pa_wp": 1,
+        "crush": 1,
+        "wp": 20,
+        "penetrationPermille": 0
+      },
+      "VariableFormulas": {
+        "vanillaWp": "aslot.weapon.weaponPower"
+      }
+    }
+  ],
+  "ApplyDamageResponseRules": true,
+  "MinDamageResponsePermille": 250,
+  "MaxDamageResponsePermille": 2500,
+  "DamageResponseChipFloor": 1,
+  "DamageResponseRules": [
+    {
+      "Name": "plate swing",
+      "ConditionFormula": "armor.plate && action.swing",
+      "MultiplierFormula": "650 + mulDiv(action.penetrationPermille, 450, 1000)"
+    },
+    {
+      "Name": "plate thrust",
+      "ConditionFormula": "armor.plate && action.thrust",
+      "MultiplierFormula": "650 + mulDiv(action.penetrationPermille, 450, 1000)"
+    },
+    {
+      "Name": "plate crush",
+      "ConditionFormula": "armor.plate && action.crush",
+      "MultiplierFormula": "1150"
+    },
+    {
+      "Name": "plate missile",
+      "ConditionFormula": "armor.plate && action.missile",
+      "MultiplierFormula": "800 + mulDiv(action.penetrationPermille, 300, 1000)"
+    },
+    {
+      "Name": "mail swing",
+      "ConditionFormula": "armor.mail && action.swing",
+      "MultiplierFormula": "750 + mulDiv(action.penetrationPermille, 350, 1000)"
+    },
+    {
+      "Name": "mail thrust",
+      "ConditionFormula": "armor.mail && action.thrust",
+      "MultiplierFormula": "1100"
+    },
+    {
+      "Name": "mail crush",
+      "ConditionFormula": "armor.mail && action.crush",
+      "MultiplierFormula": "950 + mulDiv(action.penetrationPermille, 150, 1000)"
+    },
+    {
+      "Name": "mail missile",
+      "ConditionFormula": "armor.mail && action.missile",
+      "MultiplierFormula": "1100"
+    },
+    {
+      "Name": "leather swing",
+      "ConditionFormula": "armor.leather && action.swing",
+      "MultiplierFormula": "950 + mulDiv(action.penetrationPermille, 150, 1000)"
+    },
+    {
+      "Name": "leather thrust",
+      "ConditionFormula": "armor.leather && action.thrust",
+      "MultiplierFormula": "950 + mulDiv(action.penetrationPermille, 150, 1000)"
+    },
+    {
+      "Name": "leather crush",
+      "ConditionFormula": "armor.leather && action.crush",
+      "MultiplierFormula": "1000 + mulDiv(action.penetrationPermille, 100, 1000)"
+    },
+    {
+      "Name": "leather missile",
+      "ConditionFormula": "armor.leather && action.missile",
+      "MultiplierFormula": "950 + mulDiv(action.penetrationPermille, 150, 1000)"
+    },
+    {
+      "Name": "cloth swing",
+      "ConditionFormula": "armor.cloth && action.swing",
+      "MultiplierFormula": "1000 + mulDiv(action.penetrationPermille, 100, 1000)"
+    },
+    {
+      "Name": "cloth thrust",
+      "ConditionFormula": "armor.cloth && action.thrust",
+      "MultiplierFormula": "1000 + mulDiv(action.penetrationPermille, 100, 1000)"
+    },
+    {
+      "Name": "cloth crush",
+      "ConditionFormula": "armor.cloth && action.crush",
+      "MultiplierFormula": "1000 + mulDiv(action.penetrationPermille, 100, 1000)"
+    },
+    {
+      "Name": "cloth missile",
+      "ConditionFormula": "armor.cloth && action.missile",
+      "MultiplierFormula": "1000 + mulDiv(action.penetrationPermille, 100, 1000)"
+    }
+  ]
+}
