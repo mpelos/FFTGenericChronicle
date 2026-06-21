@@ -47,7 +47,8 @@ Accepted/provisional job documents now refer to checks in these categories:
 - mitigation stacking across armor response, Protect/Shell, element, zodiac, and clamps;
 - resource and MP economy beyond per-action recovery plumbing;
 - spell routing/Reflect composition;
-- action grants and turn-economy recursion.
+- action grants and turn-economy recursion;
+- area, multi-target, and terrain availability.
 
 Only the damage-family side is currently represented by the existing formula harness. Several other
 categories are design-required but not yet executable.
@@ -280,6 +281,35 @@ Notes:
 - the first T10 bundle must include anti-recursion rows, including Quick on a unit that can also
   Quick, reaction-triggered Quick chains, and party turn-economy caps.
 
+### T11 - Area, Multi-Target, And Terrain Model
+
+Goal: model area shape, expected target count, ally-safe versus friendly-fire targeting, terrain
+availability, and terrain-dependent action access.
+
+Unblocks:
+
+- Summoner delayed area spells, healing summons, and defensive summons;
+- Geomancer terrain-dependent actions;
+- Time Mage `Meteor` once area hit count matters;
+- Bard/Dancer global or mapwide performance checks;
+- any later job whose value depends on clustered enemies, terrain type, or whole-map targeting.
+
+Notes:
+
+- T11 has two independently gated sub-contracts:
+  - T11A area geometry and multi-target output;
+  - T11B terrain availability and terrain-dependent access;
+- T5 can say whether a delayed action resolves before a target moves, but it does not decide how
+  many targets a large area catches;
+- T8 can model targeting/challenge choices, but it does not by itself model area geometry or terrain
+  availability;
+- the first T11 bundle should include small, medium, and large area shapes, ally-safe and
+  friendly-fire modes, representative map terrain mixes, and low/high cluster scenarios;
+- terrain-dependent skills must be checked for dead-map risk and for universal-map dominance.
+- T11A expected target count must feed coexistence and no-dominance checks the same way hit count
+  does for multi-hit engines: total effective output is per-target output multiplied by expected
+  target count.
+
 ## Recommended Sequence
 
 Recommended order before more concrete skill-number work:
@@ -301,10 +331,12 @@ Recommended order before more concrete skill-number work:
    loops.
 9. Build `T8xSR - Spell Routing/Reflect Composition` before concrete Reflect routing values.
 10. Build `T10 - Turn-Grant/Action-Economy` before Quick-class or action-refund values.
+11. Build `T11 - Area/Terrain/Multi-Target` before concrete Summoner, Geomancer, Meteor, or
+    Bard/Dancer global values.
 
 ## Acceptance Gate Per Track
 
-Each new validation model from T3 through T10, including composition tracks such as T3xT5, T6xT7,
+Each new validation model from T3 through T11, including composition tracks such as T3xT5, T6xT7,
 T6xPS, and T8xSR, must inherit the same dual-independent discipline that made formula-balance v0.2
 trustworthy.
 
@@ -357,9 +389,9 @@ Prioritize accuracy/evasion and healing/attrition models together after the buil
 This keeps momentum without pretending the current damage harness can answer questions it does not
 model.
 
-## Claude Review Request
+## Claude Review Notes
 
-Claude should review whether this roadmap:
+Initial Claude review checked whether this roadmap:
 
 - accurately captures the validation gaps surfaced by documents 05 and 06;
 - orders the validation tracks correctly;
@@ -368,3 +400,9 @@ Claude should review whether this roadmap:
 - should be accepted, revised, or blocked.
 
 Claude review verdict: Accepted (claude-opus-4-8, 2026-06-20).
+
+Later accepted job proposals extended this roadmap with additional gates:
+
+- T6xPS and T9 from White Mage/Black Mage review;
+- T8xSR and T10 from Time Mage/Mystic review;
+- T11, with T11A and T11B sub-contracts, from Summoner/Geomancer review.
