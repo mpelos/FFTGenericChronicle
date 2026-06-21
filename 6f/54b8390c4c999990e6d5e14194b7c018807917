@@ -1,0 +1,32 @@
+docs/job-balance/11-ct-delay-model-schema.md
+  s_fce6b25a5764ca::t_cab5db56ff1671 112,114-117
+  s_fce6b25a5764ca::t_be3e1803223e7a 1-2,4-111,113,118-171
+  s_fce6b25a5764ca::t_75bd6b70d5e5cc 3,172-179
+work/t5-ct-delay-scenarios-v0.json
+  s_fce6b25a5764ca::t_cab5db56ff1671 38
+  s_fce6b25a5764ca::t_75bd6b70d5e5cc 3
+  s_fce6b25a5764ca::t_be3e1803223e7a 1-2,4-37,40-238
+  s_fce6b25a5764ca::t_7648a4df082132 39
+.gitignore
+  s_fce6b25a5764ca::t_75bd6b70d5e5cc 12
+tools/check_ct_delay.py
+  s_fce6b25a5764ca::t_75bd6b70d5e5cc 1-133
+work/gpt-t5-ct-delay-v0.json
+  s_fce6b25a5764ca::t_eba38b22b7470e 1-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "6f54b8390c4c999990e6d5e14194b7c018807917",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
