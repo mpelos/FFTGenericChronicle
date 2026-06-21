@@ -1,0 +1,69 @@
+{
+  "scenarios": [
+    {
+      "name": "mp-loss-ma-tax",
+      "eventKind": "mp",
+      "previousMp": 20,
+      "currentMp": 12,
+      "eventIndex": 11,
+      "eventSeed": 10101,
+      "expect": {
+        "shouldRewrite": true,
+        "finalMpChange": -11,
+        "desiredMp": 9,
+        "ruleName": "Spell MP loss rule",
+        "traceContains": [
+          "event=mpLoss",
+          "action=MP cost sentinel:source=mp-change:signal=201:vars=mpcost=8,spell=1",
+          "trace.finalmpchange=-11",
+          "finalMpChange=-11:Spell MP loss rule"
+        ]
+      },
+      "target": {
+        "ptr": "0x2000",
+        "charId": 128,
+        "level": 12,
+        "hp": 230,
+        "maxHp": 250,
+        "mp": 12,
+        "maxMp": 30,
+        "team": 2,
+        "isFoe": true,
+        "ma": 3
+      },
+      "attacker": null
+    },
+    {
+      "name": "mp-gain-ma-bonus",
+      "eventKind": "mp",
+      "previousMp": 10,
+      "currentMp": 18,
+      "eventIndex": 12,
+      "eventSeed": 10102,
+      "expect": {
+        "shouldRewrite": true,
+        "finalMpChange": 11,
+        "desiredMp": 21,
+        "ruleName": "FinalMpChangeFormula",
+        "traceContains": [
+          "event=mpGain",
+          "trace.finalmpchange=11",
+          "finalMpChange=11:FinalMpChangeFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x2001",
+        "charId": 129,
+        "level": 12,
+        "hp": 230,
+        "maxHp": 250,
+        "mp": 18,
+        "maxMp": 30,
+        "team": 2,
+        "isFoe": true,
+        "ma": 3
+      },
+      "attacker": null
+    }
+  ]
+}

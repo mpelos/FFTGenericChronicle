@@ -3,10 +3,12 @@ param(
     [string]$MatrixResponseSettings = 'work\battle-runtime-settings.v0.2.matrix.generated.json',
     [string]$ScanSettings = 'work\battle-runtime-settings.v0.2.scan.generated.json',
     [string]$GurpsDrSettings = 'docs\modding\examples\battle-runtime-settings.gurps-dr.example.json',
+    [string]$MpSettings = 'docs\modding\examples\battle-runtime-settings.mp.example.json',
     [string]$Scenarios = 'docs\modding\examples\runtime-simulation-scenarios.example.json',
     [string]$MatrixScenarios = 'docs\modding\examples\runtime-simulation-matrix.v0.2.example.json',
     [string]$MatrixResponseScenarios = 'docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json',
     [string]$GurpsDrScenarios = 'docs\modding\examples\runtime-simulation-gurps-dr.example.json',
+    [string]$MpScenarios = 'docs\modding\examples\runtime-simulation-mp.example.json',
     [switch]$SkipPython,
     [switch]$SkipDotNet,
     [switch]$SkipGitDiffCheck
@@ -76,12 +78,15 @@ try {
                 'docs\modding\examples\runtime-simulation-matrix.v0.2.example.json',
                 'docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json',
                 'docs\modding\examples\runtime-simulation-gurps-dr.example.json',
+                'docs\modding\examples\runtime-simulation-mp.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2-response.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.matrix.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.scan.generated.example.json',
                 'docs\modding\examples\battle-runtime-settings.v0.2.scan.live-noop.example.json',
                 'docs\modding\examples\battle-runtime-settings.gurps-dr.example.json',
+                'docs\modding\examples\battle-runtime-settings.mp.example.json',
+                'docs\modding\examples\battle-runtime-settings.dry-run.example.json',
                 'docs\modding\examples\battle-runtime-settings.memtable-probe.disabled.example.json',
                 'work\battle-runtime-settings.v0.2.generated.json',
                 'work\battle-runtime-settings.v0.2.matrix.generated.json',
@@ -207,6 +212,24 @@ try {
                     '--',
                     $gurpsDrSettingsPath,
                     $gurpsDrScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $mpScenariosPath = Resolve-RepoPath $MpScenarios
+            $mpSettingsPath = Resolve-RepoPath $MpSettings
+            if ((Test-Path -LiteralPath $mpScenariosPath) -and
+                (Test-Path -LiteralPath $mpSettingsPath)) {
+                Write-Host "MP fixture -> $MpSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $mpSettingsPath,
+                    $mpScenariosPath,
                     '--no-trace'
                 )
             }

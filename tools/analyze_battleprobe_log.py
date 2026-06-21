@@ -3,8 +3,8 @@
 Summarize Generic Chronicle battleprobe_log.txt.
 
 The current harness emits pointer-keyed unit lines plus [CANDIDATES], [DIFF], [DAMAGE],
-[HEALING], [CTX], [RUNTIME], and [REWRITE] records. This script turns that noisy log into a compact report that is
-easier to use when mapping equipment/status/action fields.
+[HEALING], [CTX], [RUNTIME], and [REWRITE] records. This script turns that noisy log into a
+compact report for mapping equipment/status/action fields and checking HP-write proof evidence.
 
 Run from the project root:
     python tools/analyze_battleprobe_log.py
@@ -34,10 +34,24 @@ OLD_UNIT_RE = re.compile(r"\[UNIT id=(0x[0-9A-F]{2}) (?P<faction>ally|foe ) t(?P
 CAND_RE = re.compile(r"\[CANDIDATES ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 DUMP_RE = re.compile(r"\[DUMP ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 DIFF_RE = re.compile(r"\[DIFF ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
-HP_EVENT_RE = re.compile(r"\[(?P<kind>DAMAGE|HEALING) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<prev>\d+) -> (?P<hp>\d+) = (?P<amount>\d+)")
+HP_EVENT_RE = re.compile(
+    r"\[(?P<kind>DAMAGE|HEALING) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] "
+    r"(?P<prev>\d+) -> (?P<hp>\d+) = (?P<amount>\d+)(?: sampleAgeMs=(?P<sample_age>-?\d+))?"
+)
 CTX_RE = re.compile(r"\[CTX ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 RUNTIME_RE = re.compile(r"\[RUNTIME ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
-REWRITE_RE = re.compile(r"\[REWRITE ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
+REWRITE_EVENT_RE = re.compile(
+    r"\[(?P<tag>(?:MP-)?REWRITE(?:-DRY-RUN|-FAILED|-SKIP|-ECHO-SKIP)?) "
+    r"ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)"
+)
+HP_REWRITE_BODY_RE = re.compile(
+    r"rule=(?P<rule>.*?) vanillaDamage=(?P<vanilla>-?\d+) finalDamage=(?P<final>-?\d+) "
+    r"HP (?P<from>\d+)->(?P<to>\d+)"
+)
+MP_REWRITE_BODY_RE = re.compile(
+    r"rule=(?P<rule>.*?) vanillaMpChange=(?P<vanilla>-?\d+) finalMpChange=(?P<final>-?\d+) "
+    r"MP (?P<from>\d+)->(?P<to>\d+)"
+)
 MEMTABLE_CONFIG_RE = re.compile(r"\[MEMTABLE\] configured=(?P<configured>\d+) enabled=(?P<enabled>\d+)")
 MEMTABLE_EVENT_RE = re.compile(r"\[(?P<tag>MEMTABLE(?:-[A-Z]+)*) (?P<name>[^\]]+)\] (?P<body>.*)")
 MEMTABLE_FOUND_RE = re.compile(r"\[MEMTABLE-FOUND (?P<name>[^\]]+)\] (?P<body>.*)")
@@ -72,16 +86,16 @@ def main() -> int:
     dumps: dict[str, list[int]] = {}
     diffs: dict[str, list[str]] = defaultdict(list)
     diff_offsets: Counter[str] = Counter()
-    hp_events: list[tuple[str, str, str, int]] = []
+    hp_events: list[dict[str, object]] = []
     contexts: list[tuple[str, str]] = []
     runtime_contexts: list[tuple[str, str]] = []
-    rewrites: list[tuple[str, str]] = []
+    rewrites: list[dict[str, object]] = []
     memory_table_events: list[dict[str, object]] = []
     headers: list[str] = []
     old_unit_lines = 0
     item_catalog = {} if args.no_catalog else load_item_catalog(args.catalog)
 
-    for line in args.log.read_text(encoding="utf-8", errors="replace").splitlines():
+    for line_no, line in enumerate(args.log.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
         stripped = line.strip()
         if "==== Generic Chronicle" in line or stripped.startswith("settings"):
             headers.append(line)
@@ -119,8 +133,8 @@ def main() -> int:
             diff_offsets.update(OFFSET_RE.findall(body))
             continue
 
-        if m := HP_EVENT_RE.search(line):
-            hp_events.append((m.group("kind"), m.group(2), m.group(3), int(m.group("amount"))))
+        if event := parse_hp_event_line(line, line_no):
+            hp_events.append(event)
             continue
 
         if m := CTX_RE.search(line):
@@ -131,8 +145,8 @@ def main() -> int:
             runtime_contexts.append((m.group(1), m.group("body")))
             continue
 
-        if m := REWRITE_RE.search(line):
-            rewrites.append((m.group(1), m.group("body")))
+        if rewrite := parse_rewrite_line(line, line_no):
+            rewrites.append(rewrite)
 
     args.output.parent.mkdir(exist_ok=True)
     args.output.write_text(
@@ -262,6 +276,68 @@ def parse_memory_table_line(line: str) -> dict[str, object] | None:
 
 def parse_memory_table_kv(body: str) -> dict[str, str]:
     return {m.group("key"): m.group("value") for m in MEMTABLE_KV_RE.finditer(body)}
+
+
+def parse_hp_event_line(line: str, line_no: int = 0) -> dict[str, object] | None:
+    m = HP_EVENT_RE.search(line)
+    if not m:
+        return None
+
+    sample_age = m.group("sample_age")
+    return {
+        "line": line_no,
+        "kind": m.group("kind"),
+        "ptr": m.group(2),
+        "id": m.group(3),
+        "previous": parse_int(m.group("prev")),
+        "current": parse_int(m.group("hp")),
+        "amount": parse_int(m.group("amount")),
+        "sample_age_ms": parse_int(sample_age) if sample_age is not None else None,
+    }
+
+
+def parse_rewrite_line(line: str, line_no: int = 0) -> dict[str, object] | None:
+    m = REWRITE_EVENT_RE.search(line)
+    if not m:
+        return None
+
+    tag = m.group("tag")
+    body = m.group("body")
+    rewrite: dict[str, object] = {
+        "line": line_no,
+        "tag": tag,
+        "ptr": m.group(2),
+        "id": m.group(3),
+        "body": body,
+        "resource": "mp" if tag.startswith("MP-") else "hp",
+        "status": rewrite_status(tag),
+    }
+
+    body_re = MP_REWRITE_BODY_RE if rewrite["resource"] == "mp" else HP_REWRITE_BODY_RE
+    if body_match := body_re.search(body):
+        rewrite.update(
+            {
+                "rule": body_match.group("rule"),
+                "vanilla": parse_int(body_match.group("vanilla")),
+                "final": parse_int(body_match.group("final")),
+                "from_value": parse_int(body_match.group("from")),
+                "to_value": parse_int(body_match.group("to")),
+            }
+        )
+
+    return rewrite
+
+
+def rewrite_status(tag: str) -> str:
+    if tag.endswith("-DRY-RUN"):
+        return "dry-run"
+    if tag.endswith("-FAILED"):
+        return "failed"
+    if tag.endswith("-ECHO-SKIP"):
+        return "echo-skip"
+    if tag.endswith("-SKIP"):
+        return "skip"
+    return "write"
 
 
 def parse_runtime_context(ptr: str, body: str) -> dict[str, object]:
@@ -398,10 +474,10 @@ def render(
     dumps: dict[str, list[int]],
     diffs: dict[str, list[str]],
     diff_offsets: Counter[str],
-    hp_events: list[tuple[str, str, str, int]],
+    hp_events: list[dict[str, object]],
     contexts: list[tuple[str, str]],
     runtime_contexts: list[tuple[str, str]],
-    rewrites: list[tuple[str, str]],
+    rewrites: list[dict[str, object]],
     memory_table_events: list[dict[str, object]],
     old_unit_lines: int,
     item_catalog: dict[int, dict[str, str]],
@@ -524,15 +600,18 @@ def render(
     lines.extend(render_runtime_summary(runtime_details))
 
     lines.append("## HP Events / Rewrite")
-    damage = [event for event in hp_events if event[0] == "DAMAGE"]
-    healing = [event for event in hp_events if event[0] == "HEALING"]
+    damage = [event for event in hp_events if event.get("kind") == "DAMAGE"]
+    healing = [event for event in hp_events if event.get("kind") == "HEALING"]
     lines.append(f"- Damage events: {len(damage)}")
     lines.append(f"- Healing events: {len(healing)}")
+    sample_ages = [int(event["sample_age_ms"]) for event in hp_events if isinstance(event.get("sample_age_ms"), int) and int(event["sample_age_ms"]) >= 0]
+    if sample_ages:
+        lines.append(f"- HP sample age: min={min(sample_ages)}ms max={max(sample_ages)}ms")
     if damage:
-        dmg_counts = Counter(ptr for _, ptr, _, _ in damage)
+        dmg_counts = Counter(str(event.get("ptr", "")) for event in damage)
         lines.append("- Damage by unit: " + ", ".join(f"`{ptr}`={count}" for ptr, count in dmg_counts.items()))
     if healing:
-        heal_counts = Counter(ptr for _, ptr, _, _ in healing)
+        heal_counts = Counter(str(event.get("ptr", "")) for event in healing)
         lines.append("- Healing by unit: " + ", ".join(f"`{ptr}`={count}" for ptr, count in heal_counts.items()))
     lines.append(f"- Context events: {len(contexts)}")
     if contexts:
@@ -544,8 +623,16 @@ def render(
     for ptr, body in runtime_contexts[:20]:
         lines.append(f"  - `{ptr}` {body}")
     lines.append(f"- Rewrite events: {len(rewrites)}")
-    for ptr, body in rewrites[:20]:
-        lines.append(f"  - `{ptr}` {body}")
+    if rewrites:
+        status_counts = Counter(str(rewrite.get("status", "?")) for rewrite in rewrites)
+        lines.append("- Rewrite status: " + ", ".join(f"{status}={count}" for status, count in status_counts.items()))
+    for rewrite in rewrites[:20]:
+        parsed = ""
+        if "final" in rewrite:
+            parsed = f" final={rewrite.get('final')} {rewrite.get('from_value')}->{rewrite.get('to_value')}"
+        lines.append(f"  - `{rewrite.get('ptr')}` `{rewrite.get('tag')}`{parsed} {rewrite.get('body')}")
+    lines.append("")
+    lines.extend(render_hp_write_proof_summary(hp_events, rewrites))
     lines.append("")
 
     return "\n".join(lines)
@@ -616,6 +703,118 @@ def render_memory_table_summary(memory_table_events: list[dict[str, object]]) ->
             lines.append(f"- _Truncated: {len(issues) - 80} more probe issue(s)._")
     lines.append("")
     return lines
+
+
+def render_hp_write_proof_summary(hp_events: list[dict[str, object]], rewrites: list[dict[str, object]]) -> list[str]:
+    lines = ["### HP Write Proof Check"]
+    hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp" and rewrite.get("status") in {"write", "dry-run"}
+    ]
+    concrete_rewrites = [rewrite for rewrite in hp_rewrites if rewrite.get("status") == "write"]
+    failed_hp_rewrites = [
+        rewrite for rewrite in rewrites
+        if rewrite.get("resource") == "hp" and rewrite.get("status") == "failed"
+    ]
+    final_one = [rewrite for rewrite in concrete_rewrites if rewrite.get("final") == 1]
+    correlations = correlate_hp_rewrites(hp_events, concrete_rewrites)
+    mismatches = [row for row in correlations if not row.get("matches_previous_minus_final", False)]
+    sample_ages = [
+        int(event["sample_age_ms"])
+        for event in hp_events
+        if isinstance(event.get("sample_age_ms"), int) and int(event["sample_age_ms"]) >= 0
+    ]
+
+    lines.append(f"- Concrete HP rewrites: {len(concrete_rewrites)}")
+    lines.append(f"- Concrete `finalDamage=1` rewrites: {len(final_one)}/{len(concrete_rewrites)}")
+    lines.append(f"- HP rewrite failures: {len(failed_hp_rewrites)}")
+    if sample_ages:
+        lines.append(f"- Baseline sample age: min={min(sample_ages)}ms max={max(sample_ages)}ms")
+    else:
+        lines.append("- Baseline sample age: missing")
+
+    if correlations:
+        matched = len(correlations) - len(mismatches)
+        lines.append(f"- Rewrite/event correlation: {matched}/{len(correlations)} desired HP values match `previousHp - finalDamage`")
+
+    verdict = hp_write_proof_verdict(concrete_rewrites, failed_hp_rewrites, final_one, sample_ages, mismatches)
+    lines.append(f"- Verdict: **{verdict}**")
+
+    if failed_hp_rewrites:
+        for rewrite in failed_hp_rewrites[:8]:
+            lines.append(f"  - failure line {rewrite.get('line')}: `{rewrite.get('body')}`")
+    if mismatches:
+        for row in mismatches[:8]:
+            rewrite = row["rewrite"]
+            event = row.get("event")
+            event_line = event.get("line") if isinstance(event, dict) else "?"
+            lines.append(
+                "  - mismatch "
+                f"rewrite line {rewrite.get('line')} vs event line {event_line}: "
+                f"desired={rewrite.get('to_value')} expected={row.get('expected_to')}"
+            )
+    lines.append("")
+    return lines
+
+
+def hp_write_proof_verdict(
+    concrete_rewrites: list[dict[str, object]],
+    failed_hp_rewrites: list[dict[str, object]],
+    final_one: list[dict[str, object]],
+    sample_ages: list[int],
+    mismatches: list[dict[str, object]],
+) -> str:
+    if not concrete_rewrites:
+        return "no concrete HP rewrites found"
+    if failed_hp_rewrites:
+        return "failed: HP rewrite failures logged"
+    if len(final_one) != len(concrete_rewrites):
+        return "inconclusive: not all concrete HP rewrites have finalDamage=1"
+    if mismatches:
+        return "failed: at least one rewrite does not match previousHp - finalDamage"
+    if not sample_ages:
+        return "inconclusive: log does not include sampleAgeMs; rebuild/retest with the current DLL"
+    if max(sample_ages) > 150:
+        return "failed: stale HP baseline sample age above 150ms"
+    return "pass-candidate: HP rewrites are finalDamage=1 with fresh baselines"
+
+
+def correlate_hp_rewrites(
+    hp_events: list[dict[str, object]],
+    hp_rewrites: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    by_ptr: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for event in hp_events:
+        by_ptr[str(event.get("ptr", ""))].append(event)
+
+    correlations: list[dict[str, object]] = []
+    for rewrite in hp_rewrites:
+        ptr = str(rewrite.get("ptr", ""))
+        line = int(rewrite.get("line", 0) or 0)
+        candidates = [
+            event for event in by_ptr.get(ptr, [])
+            if int(event.get("line", 0) or 0) <= line
+        ]
+        if not candidates:
+            continue
+
+        event = candidates[-1]
+        final_damage = rewrite.get("final")
+        expected_to = None
+        matches = False
+        if isinstance(final_damage, int):
+            expected_to = int(event.get("previous", 0)) - final_damage
+            matches = rewrite.get("from_value") == event.get("current") and rewrite.get("to_value") == expected_to
+        correlations.append(
+            {
+                "rewrite": rewrite,
+                "event": event,
+                "expected_to": expected_to,
+                "matches_previous_minus_final": matches,
+            }
+        )
+
+    return correlations
 
 
 def memory_table_fields(event: dict[str, object]) -> dict[str, str]:

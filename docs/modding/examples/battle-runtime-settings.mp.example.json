@@ -1,0 +1,34 @@
+{
+  "RewriteObservedMpLoss": true,
+  "RewriteObservedMpGain": true,
+  "FinalMpChangeFormula": "if(event.isMpLoss, -min(previousMp, vanillaMpLoss + t.ma), min(t.maxMp - previousMp, vanillaMpGain + t.ma))",
+  "MpRewriteConditionFormula": "event.isMpChange",
+  "LogResolvedRuntimeContext": true,
+  "ActionSignalRules": [
+    {
+      "Name": "MP cost sentinel",
+      "EventKind": "MpLoss",
+      "VanillaMpChange": -8,
+      "Signal": 201,
+      "Variables": {
+        "spell": 1
+      },
+      "VariableFormulas": {
+        "mpCost": "vanillaMpLoss"
+      }
+    }
+  ],
+  "MpRules": [
+    {
+      "Name": "Spell MP loss rule",
+      "EventKind": "Loss",
+      "RequiredActionVariable": "spell",
+      "FinalMpChangeFormula": "-min(previousMp, vanillaMpLoss + t.ma)"
+    }
+  ],
+  "FormulaTraceVariables": [
+    { "Name": "trace.vanillaMpLoss", "Formula": "vanillaMpLoss" },
+    { "Name": "trace.vanillaMpGain", "Formula": "vanillaMpGain" },
+    { "Name": "trace.finalMpChange", "Formula": "result.finalMpChange" }
+  ]
+}

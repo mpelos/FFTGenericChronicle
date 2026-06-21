@@ -52,13 +52,20 @@ public class Mod : ModBase
     private volatile bool _running = true;
 
     private readonly Dictionary<nint, int> _lastHp = new();   // unit pointer -> last HP (damage deltas)
+    private readonly Dictionary<nint, int> _lastMp = new();   // unit pointer -> last MP (resource deltas)
+    private readonly Dictionary<nint, long> _lastHpSampleTick = new();
+    private readonly Dictionary<nint, long> _lastMpSampleTick = new();
     private readonly Dictionary<nint, string> _seen = new();  // unit pointer -> last stat line (re-log if it changes)
     private readonly HashSet<nint> _dumped = new();           // unit pointer -> emitted full struct dump
     private readonly Dictionary<nint, byte[]> _lastRaw = new();
     private readonly Dictionary<nint, int> _diffCounts = new();
+    private readonly HashSet<nint> _unitRegistry = new();
     private readonly Dictionary<nint, UnitObservation> _unitObservations = new();
-    private readonly HpRewriteEchoGuard _rewriteEchoGuard = new();
-    private long _damageEventIndex;
+    private readonly ValueRewriteEchoGuard _hpRewriteEchoGuard = new("HP");
+    private readonly ValueRewriteEchoGuard _mpRewriteEchoGuard = new("MP");
+    private long _battleEventIndex;
+    private int _pollErrorCount;
+    private int _registryLimitLogCount;
 
     public Mod(ModContext context)
     {
@@ -136,87 +143,260 @@ public class Mod : ModBase
         catch (Exception ex) { Line("HOOK FAILED: " + ex); Flush(); }
     }
 
-    private byte RB(int o) => Marshal.ReadByte(_buf, o);
-    private int RW(int o) => (ushort)Marshal.ReadInt16(_buf, o);
-
     private void Poll()
     {
-        int last = 0;
+        int lastHookCount = 0;
         while (_running)
         {
             try
             {
                 ReloadRuntime(force: false);
-                int count = Marshal.ReadInt32(_buf, B_COUNT);
-                if (count != last)
+                long nowTick = Stopwatch.GetTimestamp();
+                CaptureHookObservation(ref lastHookCount, nowTick);
+                PollRegisteredUnits(nowTick);
+            }
+            catch (Exception ex)
+            {
+                if (_pollErrorCount++ < 5)
                 {
-                    last = count;
-                    long nowTick = Stopwatch.GetTimestamp();
-                    nint unitPtr = Marshal.ReadIntPtr(_buf, B_PTR);
-                    byte[] raw = ReadDumpBytes();
-                    int id = RB(0), lvl = RB(0x29), hp = RW(0x30), maxhp = RW(0x32);
-                    int mp = RW(0x34), maxmp = RW(0x36);
-                    if (lvl is < 1 or > 99 || maxhp is < 1 or > 9999 || hp > maxhp) continue;
-
-                    int team = RB(4), foe = RB(5) & 0x10;
-                    int pa = RB(0x3E), ma = RB(0x3F), spd = RB(0x40), mov = RB(0x42), jmp = RB(0x43);
-                    int br = RB(0x2B), fa = RB(0x2D);
-                    var target = new UnitSnapshot(unitPtr, id, lvl, hp, maxhp, team, foe != 0, pa, ma, spd, mov, jmp, br, fa, raw, mp, maxmp);
-                    _unitObservations[unitPtr] = new UnitObservation(target, nowTick);
-                    string lineStats = target.StatLine;
-
-                    if (!_seen.TryGetValue(unitPtr, out var prevStats) || prevStats != lineStats)
-                    {
-                        _seen[unitPtr] = lineStats;
-                        Line($"[UNIT ptr=0x{unitPtr:X} id=0x{id:X2} {target.FactionLabel} t{team}] {lineStats}");
-                        Flush();
-                    }
-                    if (_dumped.Add(unitPtr))
-                    {
-                        Line($"[DUMP ptr=0x{unitPtr:X} id=0x{id:X2}] {HexDump(raw)}");
-                        Line($"[CANDIDATES ptr=0x{unitPtr:X} id=0x{id:X2}] {CandidateSummary(raw)}");
-                        Flush();
-                    }
-                    else
-                    {
-                        LogUnknownDiffs(unitPtr, id, raw);
-                    }
-                    _lastRaw[unitPtr] = raw;
-
-                    int trackingHp = hp;
-                    if (_lastHp.TryGetValue(unitPtr, out int prev) && hp != prev)
-                    {
-                        if (_rewriteEchoGuard.TrySuppress(unitPtr, prev, hp, nowTick, _settings.SuppressOwnRewriteEchoWindowMs, out string echoReason))
-                        {
-                            Line($"[REWRITE-ECHO-SKIP ptr=0x{unitPtr:X} id=0x{id:X2}] {echoReason}");
-                            _lastHp[unitPtr] = hp;
-                            Flush();
-                            continue;
-                        }
-
-                        int signedDamage = prev - hp;
-                        string eventTag = signedDamage > 0 ? "DAMAGE" : "HEALING";
-                        Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prev} -> {hp} = {Math.Abs(signedDamage)}");
-                        long eventIndex = Interlocked.Increment(ref _damageEventIndex);
-                        long eventSeed = ComputeEventSeed(target, eventIndex, prev, hp, signedDamage);
-                        var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
-                        if (_settings.LogAttackerCandidates)
-                        {
-                            string resolved = attacker.Unit is null
-                                ? "resolved=none"
-                                : $"resolved=0x{attacker.Unit.Ptr:X} source={attacker.Source}";
-                            Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {attacker.Summary}");
-                        }
-                        trackingHp = MaybeRewriteHpEvent(new DamageEvent(target, prev, hp, signedDamage, attacker.Unit, attacker.Source, EventIndex: eventIndex, EventSeed: eventSeed));
-                        Flush();
-                    }
-                    _lastHp[unitPtr] = trackingHp;
+                    Line($"[POLL-ERROR] {ex.GetType().Name}: {ex.Message}");
+                    Flush();
                 }
             }
-            catch { }
-            Thread.Sleep(25);
+            Thread.Sleep(PollIntervalMs);
         }
     }
+
+    private int PollIntervalMs => Math.Clamp(_settings.UnitPollIntervalMs, 1, 1000);
+
+    private void CaptureHookObservation(ref int lastHookCount, long nowTick)
+    {
+        int count = Marshal.ReadInt32(_buf, B_COUNT);
+        if (count == lastHookCount) return;
+
+        lastHookCount = count;
+        nint unitPtr = Marshal.ReadIntPtr(_buf, B_PTR);
+        byte[] raw = ReadHookDumpBytes();
+        if (!TryCreateUnitSnapshot(unitPtr, raw, out var target, out _)) return;
+
+        ProcessObservedUnit(target, nowTick, touchForContext: true, logStructMapping: true);
+    }
+
+    private void PollRegisteredUnits(long nowTick)
+    {
+        if (_unitRegistry.Count == 0) return;
+
+        foreach (var unitPtr in _unitRegistry.ToArray())
+        {
+            if (!TryReadLiveUnitSnapshot(unitPtr, out var target, out string error))
+            {
+                ForgetRegisteredUnit(unitPtr, error);
+                continue;
+            }
+
+            ProcessObservedUnit(target, nowTick, touchForContext: false, logStructMapping: false);
+        }
+    }
+
+    private void ProcessObservedUnit(UnitSnapshot target, long nowTick, bool touchForContext, bool logStructMapping)
+    {
+        nint unitPtr = target.Ptr;
+        int id = target.CharId;
+        int hp = target.Hp;
+        int mp = target.Mp;
+        bool needsFlush = false;
+
+        if (!_unitRegistry.Contains(unitPtr) && _unitRegistry.Count >= MaxTrackedBattleUnits)
+        {
+            if (_registryLimitLogCount++ < 8)
+            {
+                Line($"[UNIT-SKIP ptr=0x{unitPtr:X} id=0x{id:X2}] registry full {_unitRegistry.Count}/{MaxTrackedBattleUnits}");
+                Flush();
+            }
+            return;
+        }
+
+        _unitRegistry.Add(unitPtr);
+        if (touchForContext)
+            _unitObservations[unitPtr] = new UnitObservation(target, nowTick);
+        else if (_unitObservations.TryGetValue(unitPtr, out var previousObservation))
+            _unitObservations[unitPtr] = previousObservation with { Unit = target };
+
+        string lineStats = target.StatLine;
+        if (!_seen.TryGetValue(unitPtr, out var prevStats) || prevStats != lineStats)
+        {
+            _seen[unitPtr] = lineStats;
+            Line($"[UNIT ptr=0x{unitPtr:X} id=0x{id:X2} {target.FactionLabel} t{target.Team}] {lineStats}");
+            needsFlush = true;
+        }
+
+        if (logStructMapping)
+        {
+            if (_dumped.Add(unitPtr))
+            {
+                Line($"[DUMP ptr=0x{unitPtr:X} id=0x{id:X2}] {HexDump(target.Raw)}");
+                Line($"[CANDIDATES ptr=0x{unitPtr:X} id=0x{id:X2}] {CandidateSummary(target.Raw)}");
+                needsFlush = true;
+            }
+            else
+            {
+                LogUnknownDiffs(unitPtr, id, target.Raw);
+            }
+            _lastRaw[unitPtr] = target.Raw;
+        }
+
+        int trackingHp = hp;
+        int hpSampleAgeMs = _lastHpSampleTick.TryGetValue(unitPtr, out long hpSampleTick)
+            ? ElapsedMs(nowTick, hpSampleTick)
+            : -1;
+        if (_lastHp.TryGetValue(unitPtr, out int prev) && hp != prev)
+        {
+            if (_hpRewriteEchoGuard.TrySuppress(unitPtr, prev, hp, nowTick, _settings.SuppressOwnRewriteEchoWindowMs, out string echoReason))
+            {
+                Line($"[REWRITE-ECHO-SKIP ptr=0x{unitPtr:X} id=0x{id:X2}] {echoReason}");
+            }
+            else
+            {
+                int signedDamage = prev - hp;
+                string eventTag = signedDamage > 0 ? "DAMAGE" : "HEALING";
+                Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prev} -> {hp} = {Math.Abs(signedDamage)} sampleAgeMs={hpSampleAgeMs}");
+                long eventIndex = Interlocked.Increment(ref _battleEventIndex);
+                long eventSeed = ComputeEventSeed(target, eventIndex, prev, hp, signedDamage);
+                var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
+                if (_settings.LogAttackerCandidates)
+                {
+                    string resolved = attacker.Unit is null
+                        ? "resolved=none"
+                        : $"resolved=0x{attacker.Unit.Ptr:X} source={attacker.Source}";
+                    Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {attacker.Summary}");
+                }
+                trackingHp = MaybeRewriteHpEvent(new DamageEvent(target, prev, hp, signedDamage, attacker.Unit, attacker.Source, EventIndex: eventIndex, EventSeed: eventSeed));
+            }
+            needsFlush = true;
+        }
+        _lastHp[unitPtr] = trackingHp;
+        _lastHpSampleTick[unitPtr] = nowTick;
+
+        int trackingMp = mp;
+        int mpSampleAgeMs = _lastMpSampleTick.TryGetValue(unitPtr, out long mpSampleTick)
+            ? ElapsedMs(nowTick, mpSampleTick)
+            : -1;
+        if (_lastMp.TryGetValue(unitPtr, out int prevMp) && mp != prevMp)
+        {
+            if (_mpRewriteEchoGuard.TrySuppress(unitPtr, prevMp, mp, nowTick, _settings.SuppressOwnRewriteEchoWindowMs, out string echoReason))
+            {
+                Line($"[MP-REWRITE-ECHO-SKIP ptr=0x{unitPtr:X} id=0x{id:X2}] {echoReason}");
+            }
+            else
+            {
+                int signedMpChange = mp - prevMp;
+                string eventTag = signedMpChange < 0 ? "MPLOSS" : "MPGAIN";
+                Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prevMp} -> {mp} = {Math.Abs(signedMpChange)} sampleAgeMs={mpSampleAgeMs}");
+                long eventIndex = Interlocked.Increment(ref _battleEventIndex);
+                long eventSeed = ComputeEventSeed(target, eventIndex, prevMp, mp, signedMpChange);
+                var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
+                if (_settings.LogAttackerCandidates)
+                {
+                    string resolved = attacker.Unit is null
+                        ? "resolved=none"
+                        : $"resolved=0x{attacker.Unit.Ptr:X} source={attacker.Source}";
+                    Line($"[MP-CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {attacker.Summary}");
+                }
+                trackingMp = MaybeRewriteMpEvent(new MpEvent(target, prevMp, mp, signedMpChange, attacker.Unit, attacker.Source, EventIndex: eventIndex, EventSeed: eventSeed));
+            }
+            needsFlush = true;
+        }
+        _lastMp[unitPtr] = trackingMp;
+        _lastMpSampleTick[unitPtr] = nowTick;
+
+        if (needsFlush) Flush();
+    }
+
+    private bool TryReadLiveUnitSnapshot(nint unitPtr, out UnitSnapshot target, out string error)
+    {
+        target = null!;
+        var raw = new byte[DUMP];
+        if (!CurrentProcessMemory.TryRead(unitPtr, raw, out error))
+            return false;
+
+        return TryCreateUnitSnapshot(unitPtr, raw, out target, out error);
+    }
+
+    private static bool TryCreateUnitSnapshot(nint unitPtr, byte[] raw, out UnitSnapshot target, out string error)
+    {
+        target = null!;
+        error = "";
+
+        if (unitPtr == 0)
+        {
+            error = "null unit pointer";
+            return false;
+        }
+        if (raw.Length < DUMP)
+        {
+            error = $"short unit snapshot {raw.Length}/0x{DUMP:X}";
+            return false;
+        }
+
+        int rb(int o) => raw[o];
+        int rw(int o) => raw[o] | (raw[o + 1] << 8);
+
+        int id = rb(0);
+        int lvl = rb(0x29);
+        int hp = rw(0x30);
+        int maxhp = rw(0x32);
+        int mp = rw(0x34);
+        int maxmp = rw(0x36);
+
+        if (lvl is < 1 or > 99)
+        {
+            error = $"invalid level {lvl}";
+            return false;
+        }
+        if (maxhp is < 1 or > 9999 || hp > maxhp)
+        {
+            error = $"invalid HP {hp}/{maxhp}";
+            return false;
+        }
+        if (maxmp is < 0 or > 9999 || mp > maxmp)
+        {
+            error = $"invalid MP {mp}/{maxmp}";
+            return false;
+        }
+
+        int team = rb(4);
+        int foe = rb(5) & 0x10;
+        int pa = rb(0x3E);
+        int ma = rb(0x3F);
+        int spd = rb(0x40);
+        int mov = rb(0x42);
+        int jmp = rb(0x43);
+        int br = rb(0x2B);
+        int fa = rb(0x2D);
+        target = new UnitSnapshot(unitPtr, id, lvl, hp, maxhp, team, foe != 0, pa, ma, spd, mov, jmp, br, fa, raw, mp, maxmp);
+        return true;
+    }
+
+    private void ForgetRegisteredUnit(nint unitPtr, string reason)
+    {
+        _unitRegistry.Remove(unitPtr);
+        _lastHp.Remove(unitPtr);
+        _lastMp.Remove(unitPtr);
+        _lastHpSampleTick.Remove(unitPtr);
+        _lastMpSampleTick.Remove(unitPtr);
+        _seen.Remove(unitPtr);
+        _dumped.Remove(unitPtr);
+        _lastRaw.Remove(unitPtr);
+        _diffCounts.Remove(unitPtr);
+        _unitObservations.Remove(unitPtr);
+        Line($"[UNIT-LOST ptr=0x{unitPtr:X}] {reason}");
+        Flush();
+    }
+
+    private int MaxTrackedBattleUnits => Math.Clamp(_settings.MaxTrackedBattleUnits, 1, 512);
+
+    private static int ElapsedMs(long nowTick, long previousTick)
+        => (int)Math.Round((nowTick - previousTick) * 1000.0 / Stopwatch.Frequency);
 
     // Reflection-based: log which mods are actually LOADED in this process + the app's EnabledMods.
     private void LogEnv()
@@ -357,14 +537,24 @@ public class Mod : ModBase
                 Line($"[REWRITE-SKIP ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] reason={result.RuleName}");
             return damageEvent.CurrentHp;
         }
-        if (result.DesiredHp == damageEvent.CurrentHp) return damageEvent.CurrentHp;
+        var decision = RewriteApplication.Decide(_settings.DryRunRewrites, damageEvent.CurrentHp, result.DesiredHp);
+        if (decision.ShouldLogDryRun)
+        {
+            Line($"[REWRITE-DRY-RUN ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] rule={result.RuleName} vanillaDamage={damageEvent.VanillaDamage} finalDamage={result.FinalDamage} HP {damageEvent.CurrentHp}->{result.DesiredHp}");
+            return decision.TrackingValue;
+        }
+        if (!decision.ShouldWrite) return decision.TrackingValue;
 
         try
         {
-            Marshal.WriteInt16(damageEvent.Target.Ptr + 0x30, (short)result.DesiredHp);
-            _rewriteEchoGuard.Remember(damageEvent.Target.Ptr, damageEvent.CurrentHp, result.DesiredHp, Stopwatch.GetTimestamp());
+            if (!CurrentProcessMemory.TryWriteInt16(damageEvent.Target.Ptr + 0x30, (short)result.DesiredHp, out string writeError))
+            {
+                Line($"[REWRITE-FAILED ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] {writeError}");
+                return damageEvent.CurrentHp;
+            }
+            _hpRewriteEchoGuard.Remember(damageEvent.Target.Ptr, damageEvent.CurrentHp, result.DesiredHp, Stopwatch.GetTimestamp());
             Line($"[REWRITE ptr=0x{damageEvent.Target.Ptr:X} id=0x{damageEvent.Target.CharId:X2}] rule={result.RuleName} vanillaDamage={damageEvent.VanillaDamage} finalDamage={result.FinalDamage} HP {damageEvent.CurrentHp}->{result.DesiredHp}");
-            return result.DesiredHp;
+            return decision.TrackingValue;
         }
         catch (Exception ex)
         {
@@ -373,7 +563,45 @@ public class Mod : ModBase
         }
     }
 
-    private byte[] ReadDumpBytes()
+    private int MaybeRewriteMpEvent(MpEvent mpEvent)
+    {
+        var result = _formulaEngine.EvaluateMp(mpEvent);
+        if (_settings.LogResolvedRuntimeContext && !string.IsNullOrWhiteSpace(result.Trace))
+            Line($"[RUNTIME-MP ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] {result.Trace}");
+
+        if (!result.ShouldRewrite)
+        {
+            if (!result.RuleName.Equals("off", StringComparison.OrdinalIgnoreCase))
+                Line($"[MP-REWRITE-SKIP ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] reason={result.RuleName}");
+            return mpEvent.CurrentMp;
+        }
+        var decision = RewriteApplication.Decide(_settings.DryRunRewrites, mpEvent.CurrentMp, result.DesiredMp);
+        if (decision.ShouldLogDryRun)
+        {
+            Line($"[MP-REWRITE-DRY-RUN ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] rule={result.RuleName} vanillaMpChange={mpEvent.VanillaMpChange} finalMpChange={result.FinalMpChange} MP {mpEvent.CurrentMp}->{result.DesiredMp}");
+            return decision.TrackingValue;
+        }
+        if (!decision.ShouldWrite) return decision.TrackingValue;
+
+        try
+        {
+            if (!CurrentProcessMemory.TryWriteInt16(mpEvent.Target.Ptr + 0x34, (short)result.DesiredMp, out string writeError))
+            {
+                Line($"[MP-REWRITE-FAILED ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] {writeError}");
+                return mpEvent.CurrentMp;
+            }
+            _mpRewriteEchoGuard.Remember(mpEvent.Target.Ptr, mpEvent.CurrentMp, result.DesiredMp, Stopwatch.GetTimestamp());
+            Line($"[MP-REWRITE ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] rule={result.RuleName} vanillaMpChange={mpEvent.VanillaMpChange} finalMpChange={result.FinalMpChange} MP {mpEvent.CurrentMp}->{result.DesiredMp}");
+            return decision.TrackingValue;
+        }
+        catch (Exception ex)
+        {
+            Line($"[MP-REWRITE-FAILED ptr=0x{mpEvent.Target.Ptr:X} id=0x{mpEvent.Target.CharId:X2}] {ex.GetType().Name}: {ex.Message}");
+            return mpEvent.CurrentMp;
+        }
+    }
+
+    private byte[] ReadHookDumpBytes()
     {
         var bytes = new byte[DUMP];
         Marshal.Copy(_buf, bytes, 0, DUMP);
@@ -464,6 +692,68 @@ public class Mod : ModBase
     #endregion
 }
 
+internal static class CurrentProcessMemory
+{
+    public static bool TryRead(nint address, byte[] buffer, out string error)
+    {
+        error = "";
+        if (buffer.Length == 0) return true;
+        if (!ReadableMemoryRange.IsReadable(address, buffer.Length))
+        {
+            error = $"range not readable 0x{address:X}+0x{buffer.Length:X}";
+            return false;
+        }
+
+        if (!ReadProcessMemory(GetCurrentProcess(), address, buffer, (nuint)buffer.Length, out nuint bytesRead) ||
+            bytesRead != (nuint)buffer.Length)
+        {
+            error = $"ReadProcessMemory failed bytes={bytesRead}/{buffer.Length} win32={Marshal.GetLastWin32Error()}";
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryWriteInt16(nint address, short value, out string error)
+    {
+        error = "";
+        if (!ReadableMemoryRange.IsWritable(address, sizeof(short)))
+        {
+            error = $"range not writable 0x{address:X}+0x{sizeof(short):X}";
+            return false;
+        }
+
+        byte[] bytes = BitConverter.GetBytes(value);
+        if (!WriteProcessMemory(GetCurrentProcess(), address, bytes, (nuint)bytes.Length, out nuint bytesWritten) ||
+            bytesWritten != (nuint)bytes.Length)
+        {
+            error = $"WriteProcessMemory failed bytes={bytesWritten}/{bytes.Length} win32={Marshal.GetLastWin32Error()}";
+            return false;
+        }
+
+        return true;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern nint GetCurrentProcess();
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool ReadProcessMemory(
+        nint hProcess,
+        nint lpBaseAddress,
+        [Out] byte[] lpBuffer,
+        nuint nSize,
+        out nuint lpNumberOfBytesRead);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool WriteProcessMemory(
+        nint hProcess,
+        nint lpBaseAddress,
+        byte[] lpBuffer,
+        nuint nSize,
+        out nuint lpNumberOfBytesWritten);
+}
+
 internal sealed record UnitSnapshot(
     nint Ptr,
     int CharId,
@@ -517,6 +807,30 @@ internal sealed record DamageEvent(
     public int ObservedHpDelta => CurrentHp - PreviousHp;
 }
 
+internal sealed record MpEvent(
+    UnitSnapshot Target,
+    int PreviousMp,
+    int CurrentMp,
+    int VanillaMpChange,
+    UnitSnapshot? Attacker = null,
+    string AttackerSource = "none",
+    ActionSignal? Action = null,
+    long EventIndex = 0,
+    long EventSeed = 0)
+{
+    public bool IsMpLoss => VanillaMpChange < 0;
+
+    public bool IsMpGain => VanillaMpChange > 0;
+
+    public int VanillaMpLoss => Math.Max(0, -VanillaMpChange);
+
+    public int VanillaMpGain => Math.Max(0, VanillaMpChange);
+
+    public int VanillaMpChangeAbs => Math.Abs(VanillaMpChange);
+
+    public int ObservedMpDelta => CurrentMp - PreviousMp;
+}
+
 internal sealed record ActionSignal(string Name, string Source, Dictionary<string, int> Variables)
 {
     public int Get(string name)
@@ -530,18 +844,45 @@ internal sealed record DamageResult(bool ShouldRewrite, int DesiredHp, int Final
     public static DamageResult NoRewrite(int currentHp, string reason = "off") => new(false, currentHp, 0, reason);
 }
 
-internal sealed class HpRewriteEchoGuard
+internal sealed record MpResult(bool ShouldRewrite, int DesiredMp, int FinalMpChange, string RuleName)
+{
+    public string Trace { get; init; } = "";
+
+    public static MpResult NoRewrite(int currentMp, string reason = "off") => new(false, currentMp, 0, reason);
+}
+
+internal sealed record RewriteApplicationDecision(bool ShouldWrite, bool ShouldLogDryRun, int TrackingValue);
+
+internal static class RewriteApplication
+{
+    public static RewriteApplicationDecision Decide(bool dryRun, int currentValue, int desiredValue)
+    {
+        if (dryRun)
+            return new RewriteApplicationDecision(false, true, currentValue);
+        if (currentValue == desiredValue)
+            return new RewriteApplicationDecision(false, false, currentValue);
+        return new RewriteApplicationDecision(true, false, desiredValue);
+    }
+}
+
+internal sealed class ValueRewriteEchoGuard
 {
     private readonly Dictionary<nint, PendingRewrite> _pending = new();
+    private readonly string _label;
 
-    public void Remember(nint unitPtr, int fromHp, int toHp, long nowTick)
+    public ValueRewriteEchoGuard(string label)
     {
-        if (fromHp == toHp)
-            return;
-        _pending[unitPtr] = new PendingRewrite(fromHp, toHp, nowTick);
+        _label = string.IsNullOrWhiteSpace(label) ? "value" : label;
     }
 
-    public bool TrySuppress(nint unitPtr, int previousTrackedHp, int currentHp, long nowTick, int windowMs, out string reason)
+    public void Remember(nint unitPtr, int fromValue, int toValue, long nowTick)
+    {
+        if (fromValue == toValue)
+            return;
+        _pending[unitPtr] = new PendingRewrite(fromValue, toValue, nowTick);
+    }
+
+    public bool TrySuppress(nint unitPtr, int previousTrackedValue, int currentValue, long nowTick, int windowMs, out string reason)
     {
         reason = "";
         if (!_pending.TryGetValue(unitPtr, out var pending))
@@ -555,20 +896,20 @@ internal sealed class HpRewriteEchoGuard
             return false;
         }
 
-        if (pending.FromHp == previousTrackedHp && pending.ToHp == currentHp)
+        if (pending.FromValue == previousTrackedValue && pending.ToValue == currentValue)
         {
             _pending.Remove(unitPtr);
-            reason = $"expected rewrite echo HP {previousTrackedHp}->{currentHp} ageMs={elapsedMs}";
+            reason = $"expected rewrite echo {_label} {previousTrackedValue}->{currentValue} ageMs={elapsedMs}";
             return true;
         }
 
-        if (pending.ToHp == previousTrackedHp || pending.FromHp != previousTrackedHp)
+        if (pending.ToValue == previousTrackedValue || pending.FromValue != previousTrackedValue)
             _pending.Remove(unitPtr);
 
         return false;
     }
 
-    private sealed record PendingRewrite(int FromHp, int ToHp, long Tick);
+    private sealed record PendingRewrite(int FromValue, int ToValue, long Tick);
 }
 
 internal sealed record DamageResponse(int RawPermille, int Permille, int RuleCount, bool Clamped, string RuleName)
@@ -650,6 +991,46 @@ internal sealed class BattleFormulaEngine
         return new DamageResult(true, desiredHp, finalDamage, ruleName) { Trace = trace };
     }
 
+    public MpResult EvaluateMp(MpEvent e)
+    {
+        if (e.IsMpLoss && !_settings.RewriteObservedMpLoss) return MpResult.NoRewrite(e.CurrentMp);
+        if (e.IsMpGain && !_settings.RewriteObservedMpGain) return MpResult.NoRewrite(e.CurrentMp);
+        if (!e.IsMpLoss && !e.IsMpGain) return MpResult.NoRewrite(e.CurrentMp);
+        if (e.Target.IsFoe && !_settings.AffectFoes) return MpResult.NoRewrite(e.CurrentMp);
+        if (!e.Target.IsFoe && !_settings.AffectAllies) return MpResult.NoRewrite(e.CurrentMp);
+
+        var targetSlots = ReadEquipmentSlots(e.Target, _settings.EquipmentSlots);
+        var attackerSlots = ReadEquipmentSlots(e.Attacker, _settings.AttackerEquipmentSlots);
+
+        var actionResolution = ResolveMpActionSignal(e, targetSlots, attackerSlots);
+        if (!actionResolution.Success)
+            return MpResult.NoRewrite(e.CurrentMp, actionResolution.RuleName);
+        e = actionResolution.Event;
+
+        var formulaContext = BuildMpFormulaContext(e, targetSlots, attackerSlots);
+        if (!PrepareFinalFormulaContext(formulaContext, out string preparationError))
+            return MpResult.NoRewrite(e.CurrentMp, preparationError);
+        if (!ShouldRewriteMpByFormula(formulaContext, out bool rewriteAllowed, out string rewriteConditionError))
+            return MpResult.NoRewrite(e.CurrentMp, rewriteConditionError);
+        if (!rewriteAllowed)
+            return MpResult.NoRewrite(e.CurrentMp, "MpRewriteConditionFormula=0");
+
+        var resolved = ResolveFinalMpChange(e, formulaContext);
+        if (!resolved.Success) return MpResult.NoRewrite(e.CurrentMp, resolved.RuleName);
+
+        int finalMpChange = e.IsMpLoss
+            ? Math.Clamp(resolved.FinalMpChange, -9999, 0)
+            : Math.Clamp(resolved.FinalMpChange, 0, 9999);
+        int desiredMp = Math.Clamp(e.PreviousMp + finalMpChange, 0, e.Target.MaxMp);
+        formulaContext.Set("result.finalMpChange", finalMpChange);
+        formulaContext.Set("result.desiredMp", desiredMp);
+        formulaContext.Set("result.shouldRewriteMp", 1);
+        string trace = _settings.LogResolvedRuntimeContext
+            ? BuildMpRuntimeTrace(e, targetSlots, attackerSlots, resolved.RuleName, finalMpChange, formulaContext)
+            : "";
+        return new MpResult(true, desiredMp, finalMpChange, resolved.RuleName) { Trace = trace };
+    }
+
     private string BuildRuntimeTrace(
         DamageEvent e,
         List<EquipmentSlotValue> targetSlots,
@@ -676,6 +1057,29 @@ internal sealed class BattleFormulaEngine
             $"response=raw{response.RawPermille}/permille{response.Permille}/rules{response.RuleCount}/clamped{(response.Clamped ? 1 : 0)}:{CleanTraceValue(response.RuleName)}",
             DescribeTraceVariables(context),
             $"final={finalDamage}:{CleanTraceValue(finalRule)}");
+    }
+
+    private string BuildMpRuntimeTrace(
+        MpEvent e,
+        List<EquipmentSlotValue> targetSlots,
+        List<EquipmentSlotValue> attackerSlots,
+        string finalRule,
+        int finalMpChange,
+        FormulaContext context)
+    {
+        string eventKind = e.IsMpLoss ? "mpLoss" : e.IsMpGain ? "mpGain" : "mpOther";
+        string attacker = e.Attacker is null
+            ? "none"
+            : $"0x{e.Attacker.Ptr:X}:{CleanTraceValue(e.AttackerSource)}";
+
+        return string.Join(" | ",
+            $"event={eventKind}",
+            $"attacker={attacker}",
+            DescribeAction(e.Action),
+            DescribeSlots("targetSlots", targetSlots),
+            DescribeSlots("attackerSlots", attackerSlots),
+            DescribeTraceVariables(context),
+            $"finalMpChange={finalMpChange}:{CleanTraceValue(finalRule)}");
     }
 
     private string DescribeTraceVariables(FormulaContext context)
@@ -712,8 +1116,15 @@ internal sealed class BattleFormulaEngine
                          !kv.Key.Equals("vanillaDamage", StringComparison.OrdinalIgnoreCase) &&
                          !kv.Key.Equals("vanillaDamageAbs", StringComparison.OrdinalIgnoreCase) &&
                          !kv.Key.Equals("vanillaHealing", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("vanillaMpChange", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("vanillaMpChangeAbs", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("vanillaMpLoss", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("vanillaMpGain", StringComparison.OrdinalIgnoreCase) &&
                          !kv.Key.Equals("isDamage", StringComparison.OrdinalIgnoreCase) &&
-                         !kv.Key.Equals("isHealing", StringComparison.OrdinalIgnoreCase))
+                         !kv.Key.Equals("isHealing", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("isMpLoss", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("isMpGain", StringComparison.OrdinalIgnoreCase) &&
+                         !kv.Key.Equals("isMpChange", StringComparison.OrdinalIgnoreCase))
             .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
             .Take(16)
             .Select(kv => $"{FormulaExpression.NormalizeIdentifierPart(kv.Key)}={kv.Value}");
@@ -749,7 +1160,7 @@ internal sealed class BattleFormulaEngine
         foreach (var rule in _settings.DamageRules)
         {
             string ruleName = string.IsNullOrWhiteSpace(rule.Name) ? "DamageRules" : rule.Name;
-            if (!rule.TryMatches(e.Target, e.Action, context, out bool matches, out string matchError))
+            if (!rule.TryMatches(e, context, out bool matches, out string matchError))
                 return (false, 0, $"{ruleName}: ConditionFormula: {matchError}");
             if (!matches) continue;
 
@@ -774,6 +1185,33 @@ internal sealed class BattleFormulaEngine
         return (true, Math.Clamp(_settings.ProofFinalDamage, 0, 9999), "ProofFinalDamage");
     }
 
+    private (bool Success, int FinalMpChange, string RuleName) ResolveFinalMpChange(MpEvent e, FormulaContext context)
+    {
+        foreach (var rule in _settings.MpRules)
+        {
+            string ruleName = string.IsNullOrWhiteSpace(rule.Name) ? "MpRules" : rule.Name;
+            if (!rule.TryMatches(e, context, out bool matches, out string matchError))
+                return (false, 0, $"{ruleName}: ConditionFormula: {matchError}");
+            if (!matches) continue;
+
+            if (!rule.TryApply(e.VanillaMpChange, context, out int ruleMpChange, out string error))
+                return (false, 0, $"{ruleName}: {error}");
+            return (true, ruleMpChange, ruleName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_settings.FinalMpChangeFormula))
+        {
+            if (!FormulaExpression.TryEvaluate(_settings.FinalMpChangeFormula, context, out int formulaChange, out string error))
+                return (false, 0, $"FinalMpChangeFormula: {error}");
+            return (true, formulaChange, "FinalMpChangeFormula");
+        }
+
+        if (e.IsMpGain)
+            return (true, Math.Clamp(_settings.ProofFinalMpGain, 0, 9999), "ProofFinalMpGain");
+
+        return (true, -Math.Clamp(_settings.ProofFinalMpLoss, 0, 9999), "ProofFinalMpLoss");
+    }
+
     private bool PrepareFinalFormulaContext(FormulaContext context, out string error)
     {
         if (!ApplyFormulaVariables(_settings.FormulaPreActionVariables, context, "FormulaPreActionVariables", out error))
@@ -787,17 +1225,28 @@ internal sealed class BattleFormulaEngine
     }
 
     private bool ShouldRewriteByFormula(FormulaContext context, out bool rewriteAllowed, out string error)
+        => ShouldRewriteByFormula(context, _settings.RewriteConditionFormula, "RewriteConditionFormula", out rewriteAllowed, out error);
+
+    private bool ShouldRewriteMpByFormula(FormulaContext context, out bool rewriteAllowed, out string error)
+        => ShouldRewriteByFormula(context, _settings.MpRewriteConditionFormula, "MpRewriteConditionFormula", out rewriteAllowed, out error);
+
+    private static bool ShouldRewriteByFormula(
+        FormulaContext context,
+        string formula,
+        string formulaName,
+        out bool rewriteAllowed,
+        out string error)
     {
         rewriteAllowed = true;
         error = "";
 
-        if (string.IsNullOrWhiteSpace(_settings.RewriteConditionFormula))
+        if (string.IsNullOrWhiteSpace(formula))
             return true;
 
-        if (!FormulaExpression.TryEvaluate(_settings.RewriteConditionFormula, context, out int value, out string formulaError))
+        if (!FormulaExpression.TryEvaluate(formula, context, out int value, out string formulaError))
         {
             rewriteAllowed = false;
-            error = $"RewriteConditionFormula: {formulaError}";
+            error = $"{formulaName}: {formulaError}";
             return false;
         }
 
@@ -868,12 +1317,25 @@ internal sealed class BattleFormulaEngine
         context.Set("observedHpGain", Math.Max(0, e.ObservedHpDelta));
         context.Set("previousHp", e.PreviousHp);
         context.Set("currentHp", e.CurrentHp);
+        context.Set("vanillaMpChange", 0);
+        context.Set("vanillaMpDelta", 0);
+        context.Set("vanillaMpChangeAbs", 0);
+        context.Set("vanillaMpLoss", 0);
+        context.Set("vanillaMpGain", 0);
+        context.Set("observedMpDelta", 0);
+        context.Set("observedMpLoss", 0);
+        context.Set("observedMpGain", 0);
+        context.Set("previousMp", e.Target.Mp);
+        context.Set("currentMp", e.Target.Mp);
         context.Set("equipmentDr", equipmentDr);
         AddDamageResponseVariables(context, response);
         context.Set("event.isDamage", e.IsDamage ? 1 : 0);
         context.Set("event.isHealing", e.IsHealing ? 1 : 0);
         context.Set("event.isHpLoss", e.IsDamage ? 1 : 0);
         context.Set("event.isHpGain", e.IsHealing ? 1 : 0);
+        context.Set("event.isMpLoss", 0);
+        context.Set("event.isMpGain", 0);
+        context.Set("event.isMpChange", 0);
         context.Set("event.index", ClampToInt(e.EventIndex));
         context.Set("event.seed", ClampToInt(e.EventSeed));
         AddUnitVariables(context, "target", e.Target);
@@ -888,6 +1350,74 @@ internal sealed class BattleFormulaEngine
         AddActionVariables(context, "act", e.Action, e);
 
         AddSlotVariables(context, "slot", targetSlots);       // backwards-compatible target alias
+        AddSlotVariables(context, "targetSlot", targetSlots);
+        AddSlotVariables(context, "tslot", targetSlots);
+        AddSlotVariables(context, "attackerSlot", attackerSlots);
+        AddSlotVariables(context, "aslot", attackerSlots);
+
+        return context;
+    }
+
+    private FormulaContext BuildMpFormulaContext(
+        MpEvent e,
+        List<EquipmentSlotValue> targetSlots,
+        List<EquipmentSlotValue> attackerSlots)
+    {
+        var context = new FormulaContext(e.Target, e.Attacker, e.EventIndex, e.EventSeed);
+
+        foreach (var kv in _settings.FormulaVariables)
+        {
+            context.Set(kv.Key, kv.Value);
+            context.Set($"const.{kv.Key}", kv.Value);
+        }
+        foreach (var kv in _settings.FormulaTables)
+            context.SetTable(kv.Key, kv.Value);
+        foreach (var kv in _settings.FormulaMatrices)
+            context.SetMatrix(kv.Key, kv.Value);
+        foreach (var kv in _settings.FormulaMaps)
+            context.SetMap(kv.Key, kv.Value);
+
+        context.Set("vanillaDamage", 0);
+        context.Set("vanillaDamageAbs", 0);
+        context.Set("vanillaHealing", 0);
+        context.Set("observedHpDelta", 0);
+        context.Set("observedHpLoss", 0);
+        context.Set("observedHpGain", 0);
+        context.Set("previousHp", e.Target.Hp);
+        context.Set("currentHp", e.Target.Hp);
+        context.Set("vanillaMpChange", e.VanillaMpChange);
+        context.Set("vanillaMpDelta", e.VanillaMpChange);
+        context.Set("vanillaMpChangeAbs", e.VanillaMpChangeAbs);
+        context.Set("vanillaMpLoss", e.VanillaMpLoss);
+        context.Set("vanillaMpGain", e.VanillaMpGain);
+        context.Set("observedMpDelta", e.ObservedMpDelta);
+        context.Set("observedMpLoss", Math.Max(0, -e.ObservedMpDelta));
+        context.Set("observedMpGain", Math.Max(0, e.ObservedMpDelta));
+        context.Set("previousMp", e.PreviousMp);
+        context.Set("currentMp", e.CurrentMp);
+        context.Set("equipmentDr", 0);
+        AddDamageResponseVariables(context, DamageResponse.Neutral);
+        context.Set("event.isDamage", 0);
+        context.Set("event.isHealing", 0);
+        context.Set("event.isHpLoss", 0);
+        context.Set("event.isHpGain", 0);
+        context.Set("event.isMpLoss", e.IsMpLoss ? 1 : 0);
+        context.Set("event.isMpGain", e.IsMpGain ? 1 : 0);
+        context.Set("event.isMpChange", e.IsMpLoss || e.IsMpGain ? 1 : 0);
+        context.Set("event.index", ClampToInt(e.EventIndex));
+        context.Set("event.seed", ClampToInt(e.EventSeed));
+        AddUnitVariables(context, "target", e.Target);
+        AddUnitVariables(context, "t", e.Target);
+        AddUnitVariables(context, "attacker", e.Attacker);
+        AddUnitVariables(context, "a", e.Attacker);
+        context.Set("attacker.inferred", e.Attacker is not null && !e.AttackerSource.Equals("none", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.inferred", e.Attacker is not null && !e.AttackerSource.Equals("none", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("a.sourceRecent", e.AttackerSource.Equals("recent-unit", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        AddMpActionVariables(context, "action", e.Action, e);
+        AddMpActionVariables(context, "act", e.Action, e);
+
+        AddSlotVariables(context, "slot", targetSlots);
         AddSlotVariables(context, "targetSlot", targetSlots);
         AddSlotVariables(context, "tslot", targetSlots);
         AddSlotVariables(context, "attackerSlot", attackerSlots);
@@ -922,6 +1452,32 @@ internal sealed class BattleFormulaEngine
         return (true, e, "NoActionSignal");
     }
 
+    private (bool Success, MpEvent Event, string RuleName) ResolveMpActionSignal(
+        MpEvent e,
+        List<EquipmentSlotValue> targetSlots,
+        List<EquipmentSlotValue> attackerSlots)
+    {
+        if (e.Action is not null) return (true, e, "ActionSignal");
+        var context = BuildMpFormulaContext(e, targetSlots, attackerSlots);
+        if (!ApplyFormulaVariables(_settings.FormulaPreActionVariables, context, "FormulaPreActionVariables", out string preActionError))
+            return (false, e, preActionError);
+
+        for (int i = 0; i < _settings.ActionSignalRules.Count; i++)
+        {
+            var rule = _settings.ActionSignalRules[i];
+            string ruleName = string.IsNullOrWhiteSpace(rule.Name) ? $"ActionSignal{i + 1}" : rule.Name;
+            if (!rule.TryMatches(e, context, out bool matches, out string matchError))
+                return (false, e, $"{ruleName}: ConditionFormula: {matchError}");
+            if (!matches) continue;
+
+            if (!rule.TryToSignal(i, e, context, out var signal, out string signalError))
+                return (false, e, $"{ruleName}: VariableFormulas: {signalError}");
+            return (true, e with { Action = signal }, ruleName);
+        }
+
+        return (true, e, "NoActionSignal");
+    }
+
     private void AddActionVariables(FormulaContext context, string prefix, ActionSignal? action, DamageEvent e)
     {
         context.Set($"{prefix}.present", action is null ? 0 : 1);
@@ -930,8 +1486,55 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.vanillaDamage", e.VanillaDamage);
         context.Set($"{prefix}.vanillaDamageAbs", e.VanillaDamageAbs);
         context.Set($"{prefix}.vanillaHealing", e.VanillaHealing);
+        context.Set($"{prefix}.vanillaMpChange", 0);
+        context.Set($"{prefix}.vanillaMpChangeAbs", 0);
+        context.Set($"{prefix}.vanillaMpLoss", 0);
+        context.Set($"{prefix}.vanillaMpGain", 0);
         context.Set($"{prefix}.isDamage", e.IsDamage ? 1 : 0);
         context.Set($"{prefix}.isHealing", e.IsHealing ? 1 : 0);
+        context.Set($"{prefix}.isMpLoss", 0);
+        context.Set($"{prefix}.isMpGain", 0);
+        context.Set($"{prefix}.isMpChange", 0);
+        context.Set($"{prefix}.sourceMpChange", 0);
+
+        foreach (var rule in _settings.ActionSignalRules)
+        {
+            if (rule.Variables is not null)
+            {
+                foreach (var key in rule.Variables.Keys)
+                    context.Set($"{prefix}.{FormulaExpression.NormalizeIdentifierPart(key)}", 0);
+            }
+            if (rule.VariableFormulas is not null)
+            {
+                foreach (var key in rule.VariableFormulas.Keys)
+                    context.Set($"{prefix}.{FormulaExpression.NormalizeIdentifierPart(key)}", 0);
+            }
+        }
+
+        if (action is null) return;
+
+        foreach (var kv in action.Variables)
+            context.Set($"{prefix}.{FormulaExpression.NormalizeIdentifierPart(kv.Key)}", kv.Value);
+    }
+
+    private void AddMpActionVariables(FormulaContext context, string prefix, ActionSignal? action, MpEvent e)
+    {
+        context.Set($"{prefix}.present", action is null ? 0 : 1);
+        context.Set($"{prefix}.sourceVanillaDamage", 0);
+        context.Set($"{prefix}.sourceMpChange", action?.Source.Equals("mp-change", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
+        context.Set($"{prefix}.signal", action?.Get("signal") ?? 0);
+        context.Set($"{prefix}.vanillaDamage", 0);
+        context.Set($"{prefix}.vanillaDamageAbs", 0);
+        context.Set($"{prefix}.vanillaHealing", 0);
+        context.Set($"{prefix}.vanillaMpChange", e.VanillaMpChange);
+        context.Set($"{prefix}.vanillaMpChangeAbs", e.VanillaMpChangeAbs);
+        context.Set($"{prefix}.vanillaMpLoss", e.VanillaMpLoss);
+        context.Set($"{prefix}.vanillaMpGain", e.VanillaMpGain);
+        context.Set($"{prefix}.isDamage", 0);
+        context.Set($"{prefix}.isHealing", 0);
+        context.Set($"{prefix}.isMpLoss", e.IsMpLoss ? 1 : 0);
+        context.Set($"{prefix}.isMpGain", e.IsMpGain ? 1 : 0);
+        context.Set($"{prefix}.isMpChange", e.IsMpLoss || e.IsMpGain ? 1 : 0);
 
         foreach (var rule in _settings.ActionSignalRules)
         {
@@ -1240,6 +1843,7 @@ internal sealed class DamageRule
 {
     public string Name { get; set; } = "";
     public string Faction { get; set; } = "Any"; // Any, Ally, Foe
+    public string EventKind { get; set; } = "Any"; // Any, Damage/HpLoss, Healing/HpGain
     public int? Team { get; set; }
     public int? CharId { get; set; }
     public int? MinLevel { get; set; }
@@ -1255,16 +1859,19 @@ internal sealed class DamageRule
     public int? MinFinalDamage { get; set; }
     public int? MaxFinalDamage { get; set; }
 
-    public bool TryMatches(UnitSnapshot target, ActionSignal? action, FormulaContext context, out bool matches, out string error)
+    public bool TryMatches(DamageEvent e, FormulaContext context, out bool matches, out string error)
     {
         matches = false;
         error = "";
+        var target = e.Target;
+        var action = e.Action;
 
         if (!FactionMatches(target)) return true;
         if (Team.HasValue && target.Team != Team.Value) return true;
         if (CharId.HasValue && target.CharId != CharId.Value) return true;
         if (MinLevel.HasValue && target.Level < MinLevel.Value) return true;
         if (MaxLevel.HasValue && target.Level > MaxLevel.Value) return true;
+        if (!EventKindMatches(e)) return true;
         if (ActionSignal.HasValue && (action?.Get("signal") ?? 0) != ActionSignal.Value) return true;
         if (!string.IsNullOrWhiteSpace(RequiredActionVariable) &&
             (action?.Get(RequiredActionVariable) ?? 0) == 0) return true;
@@ -1320,12 +1927,130 @@ internal sealed class DamageRule
         if (Faction.Equals("Ally", StringComparison.OrdinalIgnoreCase)) return !target.IsFoe;
         return true;
     }
+
+    private bool EventKindMatches(DamageEvent e)
+    {
+        if (string.IsNullOrWhiteSpace(EventKind) ||
+            EventKind.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (EventKind.Equals("HP", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpChange", StringComparison.OrdinalIgnoreCase))
+            return e.IsDamage || e.IsHealing;
+        if (EventKind.Equals("Damage", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpLoss", StringComparison.OrdinalIgnoreCase))
+            return e.IsDamage;
+        if (EventKind.Equals("Healing", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("Heal", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpGain", StringComparison.OrdinalIgnoreCase))
+            return e.IsHealing;
+        return false;
+    }
+}
+
+internal sealed class MpRule
+{
+    public string Name { get; set; } = "";
+    public string Faction { get; set; } = "Any"; // Any, Ally, Foe
+    public string EventKind { get; set; } = "Any"; // Any, Loss, Gain
+    public int? Team { get; set; }
+    public int? CharId { get; set; }
+    public int? MinLevel { get; set; }
+    public int? MaxLevel { get; set; }
+    public int? ActionSignal { get; set; }
+    public string RequiredActionVariable { get; set; } = "";
+    public string ConditionFormula { get; set; } = "";
+    public string FinalMpChangeFormula { get; set; } = "";
+    public int? FinalMpChange { get; set; }
+    public int ScaleNumerator { get; set; } = 1;
+    public int ScaleDenominator { get; set; } = 1;
+    public int? MinFinalMpChange { get; set; }
+    public int? MaxFinalMpChange { get; set; }
+
+    public bool TryMatches(MpEvent e, FormulaContext context, out bool matches, out string error)
+    {
+        matches = false;
+        error = "";
+        var target = e.Target;
+
+        if (!FactionMatches(target)) return true;
+        if (!EventKindMatches(e)) return true;
+        if (Team.HasValue && target.Team != Team.Value) return true;
+        if (CharId.HasValue && target.CharId != CharId.Value) return true;
+        if (MinLevel.HasValue && target.Level < MinLevel.Value) return true;
+        if (MaxLevel.HasValue && target.Level > MaxLevel.Value) return true;
+        if (ActionSignal.HasValue && (e.Action?.Get("signal") ?? 0) != ActionSignal.Value) return true;
+        if (!string.IsNullOrWhiteSpace(RequiredActionVariable) &&
+            (e.Action?.Get(RequiredActionVariable) ?? 0) == 0) return true;
+
+        if (!string.IsNullOrWhiteSpace(ConditionFormula))
+        {
+            if (!FormulaExpression.TryEvaluate(ConditionFormula, context, out int value, out error))
+                return false;
+
+            matches = value != 0;
+            return true;
+        }
+
+        matches = true;
+        return true;
+    }
+
+    public bool TryApply(int vanillaMpChange, FormulaContext context, out int finalMpChange, out string error)
+    {
+        finalMpChange = 0;
+        error = "";
+
+        int value;
+        if (!string.IsNullOrWhiteSpace(FinalMpChangeFormula))
+        {
+            if (!FormulaExpression.TryEvaluate(FinalMpChangeFormula, context, out value, out error))
+                return false;
+        }
+        else
+        {
+            value = FinalMpChange ?? vanillaMpChange;
+        }
+
+        if (ScaleNumerator != 1 || ScaleDenominator != 1)
+        {
+            int denominator = Math.Max(1, ScaleDenominator);
+            value = value * ScaleNumerator / denominator;
+        }
+
+        if (MinFinalMpChange.HasValue) value = Math.Max(MinFinalMpChange.Value, value);
+        if (MaxFinalMpChange.HasValue) value = Math.Min(MaxFinalMpChange.Value, value);
+        finalMpChange = value;
+        return true;
+    }
+
+    private bool FactionMatches(UnitSnapshot target)
+    {
+        if (Faction.Equals("Any", StringComparison.OrdinalIgnoreCase)) return true;
+        if (Faction.Equals("Foe", StringComparison.OrdinalIgnoreCase)) return target.IsFoe;
+        if (Faction.Equals("Ally", StringComparison.OrdinalIgnoreCase)) return !target.IsFoe;
+        return true;
+    }
+
+    private bool EventKindMatches(MpEvent e)
+    {
+        if (string.IsNullOrWhiteSpace(EventKind) ||
+            EventKind.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (EventKind.Equals("Loss", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("MpLoss", StringComparison.OrdinalIgnoreCase))
+            return e.IsMpLoss;
+        if (EventKind.Equals("Gain", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("MpGain", StringComparison.OrdinalIgnoreCase))
+            return e.IsMpGain;
+        return false;
+    }
 }
 
 internal sealed class ActionSignalRule
 {
     public string Name { get; set; } = "";
     public string Faction { get; set; } = "Any"; // Any, Ally, Foe
+    public string EventKind { get; set; } = "Any"; // Any, HP/Damage/Healing, MP/MpLoss/MpGain
     public int? Team { get; set; }
     public int? CharId { get; set; }
     public int? MinLevel { get; set; }
@@ -1333,6 +2058,9 @@ internal sealed class ActionSignalRule
     public int? VanillaDamage { get; set; }
     public int? MinVanillaDamage { get; set; }
     public int? MaxVanillaDamage { get; set; }
+    public int? VanillaMpChange { get; set; }
+    public int? MinVanillaMpChange { get; set; }
+    public int? MaxVanillaMpChange { get; set; }
     public int Signal { get; set; } = 0;
     public Dictionary<string, int> Variables { get; set; } = new();
     public string ConditionFormula { get; set; } = "";
@@ -1348,9 +2076,40 @@ internal sealed class ActionSignalRule
         if (CharId.HasValue && target.CharId != CharId.Value) return true;
         if (MinLevel.HasValue && target.Level < MinLevel.Value) return true;
         if (MaxLevel.HasValue && target.Level > MaxLevel.Value) return true;
+        if (!EventKindMatches(e)) return true;
+        if (HasMpChangeFilter) return true;
         if (VanillaDamage.HasValue && e.VanillaDamage != VanillaDamage.Value) return true;
         if (MinVanillaDamage.HasValue && e.VanillaDamage < MinVanillaDamage.Value) return true;
         if (MaxVanillaDamage.HasValue && e.VanillaDamage > MaxVanillaDamage.Value) return true;
+
+        if (!string.IsNullOrWhiteSpace(ConditionFormula))
+        {
+            if (!FormulaExpression.TryEvaluate(ConditionFormula, context, out int value, out error))
+                return false;
+
+            matches = value != 0;
+            return true;
+        }
+
+        matches = true;
+        return true;
+    }
+
+    public bool TryMatches(MpEvent e, FormulaContext context, out bool matches, out string error)
+    {
+        matches = false;
+        error = "";
+        var target = e.Target;
+        if (!FactionMatches(target)) return true;
+        if (Team.HasValue && target.Team != Team.Value) return true;
+        if (CharId.HasValue && target.CharId != CharId.Value) return true;
+        if (MinLevel.HasValue && target.Level < MinLevel.Value) return true;
+        if (MaxLevel.HasValue && target.Level > MaxLevel.Value) return true;
+        if (!EventKindMatches(e)) return true;
+        if (HasDamageFilter) return true;
+        if (VanillaMpChange.HasValue && e.VanillaMpChange != VanillaMpChange.Value) return true;
+        if (MinVanillaMpChange.HasValue && e.VanillaMpChange < MinVanillaMpChange.Value) return true;
+        if (MaxVanillaMpChange.HasValue && e.VanillaMpChange > MaxVanillaMpChange.Value) return true;
 
         if (!string.IsNullOrWhiteSpace(ConditionFormula))
         {
@@ -1374,8 +2133,15 @@ internal sealed class ActionSignalRule
             ["vanillaDamage"] = e.VanillaDamage,
             ["vanillaDamageAbs"] = e.VanillaDamageAbs,
             ["vanillaHealing"] = e.VanillaHealing,
+            ["vanillaMpChange"] = 0,
+            ["vanillaMpChangeAbs"] = 0,
+            ["vanillaMpLoss"] = 0,
+            ["vanillaMpGain"] = 0,
             ["isDamage"] = e.IsDamage ? 1 : 0,
             ["isHealing"] = e.IsHealing ? 1 : 0,
+            ["isMpLoss"] = 0,
+            ["isMpGain"] = 0,
+            ["isMpChange"] = 0,
         };
 
         foreach (var kv in Variables ?? [])
@@ -1401,12 +2167,100 @@ internal sealed class ActionSignalRule
         return true;
     }
 
+    public bool TryToSignal(int ruleIndex, MpEvent e, FormulaContext context, out ActionSignal signal, out string error)
+    {
+        error = "";
+        var variables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["signal"] = Signal != 0 ? Signal : ruleIndex + 1,
+            ["vanillaDamage"] = 0,
+            ["vanillaDamageAbs"] = 0,
+            ["vanillaHealing"] = 0,
+            ["vanillaMpChange"] = e.VanillaMpChange,
+            ["vanillaMpChangeAbs"] = e.VanillaMpChangeAbs,
+            ["vanillaMpLoss"] = e.VanillaMpLoss,
+            ["vanillaMpGain"] = e.VanillaMpGain,
+            ["isDamage"] = 0,
+            ["isHealing"] = 0,
+            ["isMpLoss"] = e.IsMpLoss ? 1 : 0,
+            ["isMpGain"] = e.IsMpGain ? 1 : 0,
+            ["isMpChange"] = e.IsMpLoss || e.IsMpGain ? 1 : 0,
+        };
+
+        foreach (var kv in Variables ?? [])
+            variables[FormulaExpression.NormalizeIdentifierPart(kv.Key)] = kv.Value;
+
+        foreach (var kv in VariableFormulas ?? [])
+        {
+            string variableName = FormulaExpression.NormalizeIdentifierPart(kv.Key);
+            if (!FormulaExpression.TryEvaluate(kv.Value, context, out int value, out string formulaError))
+            {
+                signal = new ActionSignal("", "", new Dictionary<string, int>());
+                error = $"{variableName}: {formulaError}";
+                return false;
+            }
+
+            variables[variableName] = value;
+            context.Set($"action.{variableName}", value);
+            context.Set($"act.{variableName}", value);
+        }
+
+        string name = string.IsNullOrWhiteSpace(Name) ? $"ActionSignal{ruleIndex + 1}" : Name;
+        signal = new ActionSignal(name, "mp-change", variables);
+        return true;
+    }
+
+    private bool HasDamageFilter =>
+        VanillaDamage.HasValue ||
+        MinVanillaDamage.HasValue ||
+        MaxVanillaDamage.HasValue;
+
+    private bool HasMpChangeFilter =>
+        VanillaMpChange.HasValue ||
+        MinVanillaMpChange.HasValue ||
+        MaxVanillaMpChange.HasValue;
+
     private bool FactionMatches(UnitSnapshot target)
     {
         if (Faction.Equals("Any", StringComparison.OrdinalIgnoreCase)) return true;
         if (Faction.Equals("Foe", StringComparison.OrdinalIgnoreCase)) return target.IsFoe;
         if (Faction.Equals("Ally", StringComparison.OrdinalIgnoreCase)) return !target.IsFoe;
         return true;
+    }
+
+    private bool EventKindMatches(DamageEvent e)
+    {
+        if (string.IsNullOrWhiteSpace(EventKind) ||
+            EventKind.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (EventKind.Equals("HP", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpChange", StringComparison.OrdinalIgnoreCase))
+            return e.IsDamage || e.IsHealing;
+        if (EventKind.Equals("Damage", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpLoss", StringComparison.OrdinalIgnoreCase))
+            return e.IsDamage;
+        if (EventKind.Equals("Healing", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("Heal", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("HpGain", StringComparison.OrdinalIgnoreCase))
+            return e.IsHealing;
+        return false;
+    }
+
+    private bool EventKindMatches(MpEvent e)
+    {
+        if (string.IsNullOrWhiteSpace(EventKind) ||
+            EventKind.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (EventKind.Equals("MP", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("MpChange", StringComparison.OrdinalIgnoreCase))
+            return e.IsMpLoss || e.IsMpGain;
+        if (EventKind.Equals("Loss", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("MpLoss", StringComparison.OrdinalIgnoreCase))
+            return e.IsMpLoss;
+        if (EventKind.Equals("Gain", StringComparison.OrdinalIgnoreCase) ||
+            EventKind.Equals("MpGain", StringComparison.OrdinalIgnoreCase))
+            return e.IsMpGain;
+        return false;
     }
 }
 
@@ -1821,11 +2675,18 @@ internal sealed class RuntimeSettings
 {
     public bool RewriteObservedDamage { get; set; } = false;
     public bool RewriteObservedHealing { get; set; } = false;
+    public bool RewriteObservedMpLoss { get; set; } = false;
+    public bool RewriteObservedMpGain { get; set; } = false;
+    public bool DryRunRewrites { get; set; } = false;
     public int ProofFinalDamage { get; set; } = 1;
     public int ProofFinalHealing { get; set; } = 1;
+    public int ProofFinalMpLoss { get; set; } = 1;
+    public int ProofFinalMpGain { get; set; } = 1;
     public int FlatDamageReduction { get; set; } = 0;
     public string RewriteConditionFormula { get; set; } = "";
     public string FinalDamageFormula { get; set; } = "";
+    public string MpRewriteConditionFormula { get; set; } = "";
+    public string FinalMpChangeFormula { get; set; } = "";
     public Dictionary<string, int> FormulaVariables { get; set; } = new();
     public List<FormulaDerivedVariable> FormulaPreActionVariables { get; set; } = new();
     public List<FormulaDerivedVariable> FormulaPreResponseVariables { get; set; } = new();
@@ -1839,6 +2700,7 @@ internal sealed class RuntimeSettings
     public bool AffectFoes { get; set; } = true;
     public List<ActionSignalRule> ActionSignalRules { get; set; } = new();
     public List<DamageRule> DamageRules { get; set; } = new();
+    public List<MpRule> MpRules { get; set; } = new();
     public bool ApplyEquipmentDr { get; set; } = false;
     public List<EquipmentSlotProbe> EquipmentSlots { get; set; } = new();
     public List<EquipmentSlotProbe> AttackerEquipmentSlots { get; set; } = new();
@@ -1858,6 +2720,8 @@ internal sealed class RuntimeSettings
     public bool PreferOpposingTeamAttacker { get; set; } = true;
     public int MaxAttackerCandidatesToLog { get; set; } = 4;
     public bool LogResolvedRuntimeContext { get; set; } = false;
+    public int UnitPollIntervalMs { get; set; } = 25;
+    public int MaxTrackedBattleUnits { get; set; } = 64;
     public int SuppressOwnRewriteEchoWindowMs { get; set; } = 1000;
     public List<MemoryTableProbe> MemoryTableProbes { get; set; } = new();
 
@@ -1901,6 +2765,7 @@ internal sealed class RuntimeSettings
             }
         }
         DamageRules ??= new List<DamageRule>();
+        MpRules ??= new List<MpRule>();
         FormulaVariables ??= new Dictionary<string, int>();
         FormulaPreActionVariables ??= new List<FormulaDerivedVariable>();
         FormulaPreResponseVariables ??= new List<FormulaDerivedVariable>();
@@ -1919,5 +2784,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}";
 }

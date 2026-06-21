@@ -92,10 +92,20 @@ internal static class Program
         foreach (var result in results)
         {
             Console.WriteLine($"== {result.Name}");
-            Console.WriteLine(
-                $"rewrite={result.ShouldRewrite} vanillaDamage={result.VanillaDamage} " +
-                $"hp={result.PreviousHp}->{result.CurrentHp}->{result.DesiredHp} " +
-                $"finalDamage={result.FinalDamage} rule={result.RuleName}");
+            if (result.EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(
+                    $"rewrite={result.ShouldRewrite} vanillaMpChange={result.VanillaMpChange} " +
+                    $"mp={result.PreviousMp}->{result.CurrentMp}->{result.DesiredMp} " +
+                    $"finalMpChange={result.FinalMpChange} rule={result.RuleName}");
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"rewrite={result.ShouldRewrite} vanillaDamage={result.VanillaDamage} " +
+                    $"hp={result.PreviousHp}->{result.CurrentHp}->{result.DesiredHp} " +
+                    $"finalDamage={result.FinalDamage} rule={result.RuleName}");
+            }
             if (result.HasExpectations)
             {
                 if (result.ExpectationsPassed)
@@ -137,7 +147,8 @@ internal static class Program
             Use --write-scenarios-with-expectations path.json to refresh scenario expectations from current runtime results.
             Use --no-trace for concise text output.
             Scenario JSON shape:
-              { "scenarios": [ { "name": "...", "previousHp": 50, "currentHp": 30, "vanillaDamage": 20, "target": { "raw": { "0x70": 172 } }, "attacker": { "raw": { "0x50": 19 } }, "expect": { "shouldRewrite": true, "finalDamage": 182 } } ] }
+              HP: { "scenarios": [ { "name": "...", "previousHp": 50, "currentHp": 30, "vanillaDamage": 20, "target": { "raw": { "0x70": 172 } }, "attacker": { "raw": { "0x50": 19 } }, "expect": { "shouldRewrite": true, "finalDamage": 182 } } ] }
+              MP: { "scenarios": [ { "name": "...", "eventKind": "mp", "previousMp": 20, "currentMp": 12, "target": { "mp": 12, "maxMp": 30 }, "expect": { "shouldRewrite": true, "finalMpChange": -11, "desiredMp": 9 } } ] }
             """);
     }
 

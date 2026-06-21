@@ -154,8 +154,9 @@ tools/analyze_battleprobe_log.py -> work/battleprobe_analysis.md (pointer-keyed 
                                item_catalog.csv; includes `[RUNTIME]` resolved slot/action/
                                response traces when enabled; summarizes action/slot/response
                                observations and recommends stable exact slot offsets; includes
-                               `[MEMTABLE]` probe tables/rows/issues; warns when the log is from
-                               an old harness build)
+                               `[MEMTABLE]` probe tables/rows/issues; includes an HP write-proof
+                               check using `finalDamage=1`, rewrite failures, and `sampleAgeMs`;
+                               warns when the log is from an old harness build)
 tools/promote_runtime_offsets.py
                             -> work/battle-runtime-settings.v0.2.exact-from-log.json (promotes
                                stable `[RUNTIME]` scan observations into exact `Offset`/`Width`
@@ -166,8 +167,8 @@ tools/test_runtime_tooling.py smoke-tests the runtime log analyzer, memory-table
 tools/test_memtable_candidates.py smoke-tests the offline RIP-relative scanner and contextual
                                  AOB/settings conversion
 tools/watch_live_mapping.py waits for fresh `[RUNTIME]` live evidence, reports memory-table probe
-                            evidence when present, then can run analysis and exact-offset
-                            promotion
+                            evidence and optional `[REWRITE]` evidence when present, then can run
+                            analysis and exact-offset promotion
 codemod/prepare-live-mapping.ps1 builds/deploys the code mod with the scan live-noop profile and
                                archives stale game-side battle logs before a live mapping run
 codemod/build-deploy.ps1 explicitly deploys the code mod into Reloaded-II. Plain `dotnet build`
@@ -212,13 +213,19 @@ codemod/run-offline-checks.ps1
                             -> offline-only regression runner. Runs Python syntax/tooling tests,
                                JSON parsing, C# build/smoke tests, settings validation,
                                short + matrix scenario simulation, scan-slot matrix comparison,
-                               matrix-response simulation, GURPS-DR proof simulation, and
-                               git diff whitespace checks
+                               matrix-response simulation, GURPS-DR proof simulation, MP
+                               simulation, dry-run profile validation, and git diff whitespace checks
                                without deploying to Reloaded-II or launching the game.
 docs/modding/examples/battle-runtime-settings.gurps-dr.example.json
                             -> subtractive DR proof profile: GURPS-like swing/thrust tables,
                                real item-catalog armor DR, post-DR wound multipliers, and trace
                                variables for each intermediate.
+docs/modding/examples/battle-runtime-settings.mp.example.json
+                            -> MP rewrite proof profile: signed MP loss/gain formulas, MP
+                               action-signal classification, and MpRules selection.
+docs/modding/examples/battle-runtime-settings.dry-run.example.json
+                            -> live-safety profile for mapping/evaluation. Computes HP/MP rewrite
+                               decisions and traces while `DryRunRewrites` prevents memory writes.
 docs/modding/examples/runtime-simulation-scenarios.example.json
                             -> sample simulator scenarios for sword/leather damage,
                                no-attacker vanilla fallback, and signed healing event coverage,
@@ -233,6 +240,9 @@ docs/modding/examples/runtime-simulation-gurps-dr.example.json
                             -> five-scenario proof that subtractive armor DR can reduce,
                                partially absorb, or fully stop swing/thrust/fist damage before
                                GURPS-like wound multipliers.
+docs/modding/examples/runtime-simulation-mp.example.json
+                            -> MP simulator scenarios with assertions for signed MP loss/gain
+                               rewrites and MpRules fallback behavior.
 tools/entd_tool.py          dump/patch ENTD encounter binaries (from New Game++)
 tools/guest_scan.py         scan ENTD for guest/ally slots (from New Game++)
 work/override_ability.sqlite OverrideAbilityActionData extracted (the formula override table)
@@ -280,9 +290,12 @@ FF16Tools.CLI (extract/convert) is reused from `D:\Projects\FFTModNewGame++\tool
 ```text
 - TableData XML pipeline PROVEN LIVE (2026-06-20): a JobData.xml proof patch (all jobs Move/Jump
   edited) changed every battle unit from vanilla (Mv5/Jp3) to the modded values mid-battle,
-  observed via the probe harness. The data-merge layer works end-to-end. The NXD path is the same
-  loader-merge mechanism, so OverrideAbilityActionData delivery is high-confidence (one nuance
-  remains - see open list: confirming the EXE reads override Formula/X/Y, not just CT/MP).
+  observed via the probe harness. The data-merge layer works end-to-end.
+- OverrideAbilityActionData Formula/X/Y READ PROVEN LIVE (2026-06-21): an NXD with Y=99 on
+  Cure/Fire/Thunder/Blizzard made Fire damage explode in battle (JobData Move=9 as positive
+  control). The exe reads override Formula/X/Y for damage magnitude, not just CT/MP. So the ENTIRE
+  Level-1 data formula layer is confirmed: JobData + OverrideAbilityActionData + ItemWeaponData are
+  all re-pointable with pure data. See 07-live-findings.md (Test D).
 - Struct offsets CONFIRMED LIVE (probe harness): all unit fields read sane/consistent values.
   Caveat observed: edited Move=9/Jump=9 showed as Mv9-10/Jp7 in-battle - there are additional
   modifiers/clamps stacked on the JobData base (support abilities like Move+1, and/or an engine
@@ -293,9 +306,6 @@ FF16Tools.CLI (extract/convert) is reused from `D:\Projects\FFTModNewGame++\tool
 ### Genuinely requires the game / reverse-engineering (open)
 ```text
 - Vanilla baseline Formula/X/Y per ability (exe-hardcoded; not in data).
-- Whether the EXE actually READS override Formula/X/Y from OverrideAbilityActionData at damage
-  time (vanilla only uses that table for CT/MP). Delivery is proven; this specific read is the
-  last untested data lever. Test: crank X on Cure(0x01)/Fire(0x10), cast, watch the damage/heal.
 - The formula-dispatch switch/jump table (downstream of the read-site) - not located.
 - Exact IVC truncation order / damage-variance variant.
 - LEVEL 2 (arbitrary custom math): the damage routine is Denuvo-virtualized and could not be

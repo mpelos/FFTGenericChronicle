@@ -70,6 +70,8 @@ internal static class Program
             Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.v0.2.scan.generated.example.json"),
             Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.v0.2.scan.live-noop.example.json"),
             Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.gurps-dr.example.json"),
+            Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.mp.example.json"),
+            Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.dry-run.example.json"),
             Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.memtable-probe.disabled.example.json"),
             Path.Combine(root, "work", "battle-runtime-settings.v0.2.generated.json"),
             Path.Combine(root, "work", "battle-runtime-settings.v0.2.matrix.generated.json"),

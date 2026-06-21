@@ -1,0 +1,30 @@
+{
+  "_note": "Live safety profile for mapping/evaluation only. It computes HP/MP rewrite decisions and emits runtime traces, but DryRunRewrites prevents managed memory writes.",
+  "DryRunRewrites": true,
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": true,
+  "RewriteObservedMpLoss": true,
+  "RewriteObservedMpGain": true,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "InferAttackerFromRecentUnits": true,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": true,
+  "LogUnknownFieldDiffs": false,
+  "FinalDamageFormula": "if(event.isHealing, -min(t.maxHp - previousHp, vanillaHealing + t.ma), max(0, vanillaDamage - min(vanillaDamage, t.ma)))",
+  "FinalMpChangeFormula": "if(event.isMpLoss, -min(previousMp, vanillaMpLoss + t.ma), min(t.maxMp - previousMp, vanillaMpGain + t.ma))",
+  "RewriteConditionFormula": "event.isDamage || event.isHealing",
+  "MpRewriteConditionFormula": "event.isMpChange",
+  "FormulaTraceVariables": [
+    { "Name": "trace.vanillaDamage", "Formula": "vanillaDamage" },
+    { "Name": "trace.vanillaMpChange", "Formula": "vanillaMpChange" },
+    { "Name": "trace.currentHp", "Formula": "currentHp" },
+    { "Name": "trace.currentMp", "Formula": "currentMp" },
+    { "Name": "trace.isDamage", "Formula": "event.isDamage" },
+    { "Name": "trace.isHealing", "Formula": "event.isHealing" },
+    { "Name": "trace.isMpLoss", "Formula": "event.isMpLoss" },
+    { "Name": "trace.isMpGain", "Formula": "event.isMpGain" }
+  ]
+}

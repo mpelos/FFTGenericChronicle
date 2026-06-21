@@ -11,9 +11,13 @@ internal sealed class RuntimeSimulationBundle
 internal sealed class RuntimeSimulationScenario
 {
     public string Name { get; set; } = "default";
+    public string EventKind { get; set; } = "hp";
     public int PreviousHp { get; set; } = 50;
     public int CurrentHp { get; set; } = 30;
     public int VanillaDamage { get; set; } = 20;
+    public int PreviousMp { get; set; } = 20;
+    public int CurrentMp { get; set; } = 12;
+    public int? VanillaMpChange { get; set; }
     public long EventIndex { get; set; } = 1;
     public long EventSeed { get; set; } = 12345;
     public RuntimeSimulationExpectation? Expect { get; set; }
@@ -21,6 +25,12 @@ internal sealed class RuntimeSimulationScenario
     public RuntimeSimulationUnit? Attacker { get; set; } = RuntimeSimulationUnit.AttackerDefaults();
     public string AttackerSource { get; set; } = "scenario";
     public RuntimeSimulationAction? Action { get; set; }
+
+    [JsonIgnore]
+    public bool IsMpEvent =>
+        EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase) ||
+        EventKind.Equals("mpLoss", StringComparison.OrdinalIgnoreCase) ||
+        EventKind.Equals("mpGain", StringComparison.OrdinalIgnoreCase);
 }
 
 internal sealed class RuntimeSimulationExpectation
@@ -28,6 +38,8 @@ internal sealed class RuntimeSimulationExpectation
     public bool? ShouldRewrite { get; set; }
     public int? FinalDamage { get; set; }
     public int? DesiredHp { get; set; }
+    public int? FinalMpChange { get; set; }
+    public int? DesiredMp { get; set; }
     public string? RuleName { get; set; }
     public List<string> TraceContains { get; set; } = new();
 
@@ -36,6 +48,8 @@ internal sealed class RuntimeSimulationExpectation
         ShouldRewrite.HasValue ||
         FinalDamage.HasValue ||
         DesiredHp.HasValue ||
+        FinalMpChange.HasValue ||
+        DesiredMp.HasValue ||
         !string.IsNullOrWhiteSpace(RuleName) ||
         TraceContains.Any(text => !string.IsNullOrWhiteSpace(text));
 }
@@ -183,12 +197,18 @@ internal sealed class RuntimeSimulationAction
 
 internal sealed record RuntimeSimulationResult(
     string Name,
+    string EventKind,
     bool ShouldRewrite,
     int PreviousHp,
     int CurrentHp,
     int VanillaDamage,
     int DesiredHp,
     int FinalDamage,
+    int PreviousMp,
+    int CurrentMp,
+    int VanillaMpChange,
+    int DesiredMp,
+    int FinalMpChange,
     string RuleName,
     string Trace,
     bool HasExpectations,
@@ -236,6 +256,51 @@ internal static class RuntimeSettingsSimulator
             UnitSnapshot target = scenario.Target.ToSnapshot(scenario.CurrentHp);
             UnitSnapshot? attacker = scenario.Attacker?.ToSnapshot(scenario.Attacker.Hp ?? scenario.Attacker.MaxHp ?? 40);
             ActionSignal? action = scenario.Action?.ToActionSignal();
+
+            if (scenario.IsMpEvent)
+            {
+                int targetMaxMp = target.MaxMp > 0
+                    ? target.MaxMp
+                    : Math.Max(scenario.PreviousMp, scenario.CurrentMp);
+                target = target with
+                {
+                    Mp = scenario.CurrentMp,
+                    MaxMp = Math.Max(targetMaxMp, scenario.CurrentMp),
+                };
+                int vanillaMpChange = scenario.VanillaMpChange ?? scenario.CurrentMp - scenario.PreviousMp;
+                var mpEvent = new MpEvent(
+                    target,
+                    scenario.PreviousMp,
+                    scenario.CurrentMp,
+                    vanillaMpChange,
+                    attacker,
+                    attacker is null ? "none" : scenario.AttackerSource,
+                    action,
+                    scenario.EventIndex,
+                    scenario.EventSeed);
+                MpResult mpResult = engine.EvaluateMp(mpEvent);
+                IReadOnlyList<string> mpExpectationFailures = EvaluateMpExpectations(scenario, mpResult);
+                results.Add(new RuntimeSimulationResult(
+                    scenario.Name,
+                    "mp",
+                    mpResult.ShouldRewrite,
+                    scenario.PreviousHp,
+                    scenario.CurrentHp,
+                    scenario.VanillaDamage,
+                    target.Hp,
+                    0,
+                    scenario.PreviousMp,
+                    scenario.CurrentMp,
+                    vanillaMpChange,
+                    mpResult.DesiredMp,
+                    mpResult.FinalMpChange,
+                    mpResult.RuleName,
+                    mpResult.Trace,
+                    scenario.Expect?.HasAssertions == true,
+                    mpExpectationFailures));
+                continue;
+            }
+
             var damageEvent = new DamageEvent(
                 target,
                 scenario.PreviousHp,
@@ -250,12 +315,18 @@ internal static class RuntimeSettingsSimulator
             IReadOnlyList<string> expectationFailures = EvaluateExpectations(scenario, result);
             results.Add(new RuntimeSimulationResult(
                 scenario.Name,
+                "hp",
                 result.ShouldRewrite,
                 scenario.PreviousHp,
                 scenario.CurrentHp,
                 scenario.VanillaDamage,
                 result.DesiredHp,
                 result.FinalDamage,
+                target.Mp,
+                target.Mp,
+                0,
+                target.Mp,
+                0,
                 result.RuleName,
                 result.Trace,
                 scenario.Expect?.HasAssertions == true,
@@ -279,8 +350,10 @@ internal static class RuntimeSettingsSimulator
             scenarios[i].Expect = new RuntimeSimulationExpectation
             {
                 ShouldRewrite = result.ShouldRewrite,
-                FinalDamage = result.FinalDamage,
-                DesiredHp = result.DesiredHp,
+                FinalDamage = result.EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase) ? null : result.FinalDamage,
+                DesiredHp = result.EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase) ? null : result.DesiredHp,
+                FinalMpChange = result.EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase) ? result.FinalMpChange : null,
+                DesiredMp = result.EventKind.Equals("mp", StringComparison.OrdinalIgnoreCase) ? result.DesiredMp : null,
                 RuleName = result.RuleName,
             };
         }
@@ -299,6 +372,32 @@ internal static class RuntimeSettingsSimulator
             failures.Add($"finalDamage expected {expect.FinalDamage.Value}, got {result.FinalDamage}");
         if (expect.DesiredHp.HasValue && result.DesiredHp != expect.DesiredHp.Value)
             failures.Add($"desiredHp expected {expect.DesiredHp.Value}, got {result.DesiredHp}");
+        if (!string.IsNullOrWhiteSpace(expect.RuleName) &&
+            !string.Equals(result.RuleName, expect.RuleName, StringComparison.OrdinalIgnoreCase))
+            failures.Add($"ruleName expected '{expect.RuleName}', got '{result.RuleName}'");
+
+        foreach (string text in expect.TraceContains.Where(text => !string.IsNullOrWhiteSpace(text)))
+        {
+            if (!result.Trace.Contains(text, StringComparison.OrdinalIgnoreCase))
+                failures.Add($"trace expected to contain '{text}'");
+        }
+
+        return failures;
+    }
+
+    private static IReadOnlyList<string> EvaluateMpExpectations(RuntimeSimulationScenario scenario, MpResult result)
+    {
+        var expect = scenario.Expect;
+        if (expect?.HasAssertions != true)
+            return Array.Empty<string>();
+
+        var failures = new List<string>();
+        if (expect.ShouldRewrite.HasValue && result.ShouldRewrite != expect.ShouldRewrite.Value)
+            failures.Add($"shouldRewrite expected {expect.ShouldRewrite.Value}, got {result.ShouldRewrite}");
+        if (expect.FinalMpChange.HasValue && result.FinalMpChange != expect.FinalMpChange.Value)
+            failures.Add($"finalMpChange expected {expect.FinalMpChange.Value}, got {result.FinalMpChange}");
+        if (expect.DesiredMp.HasValue && result.DesiredMp != expect.DesiredMp.Value)
+            failures.Add($"desiredMp expected {expect.DesiredMp.Value}, got {result.DesiredMp}");
         if (!string.IsNullOrWhiteSpace(expect.RuleName) &&
             !string.Equals(result.RuleName, expect.RuleName, StringComparison.OrdinalIgnoreCase))
             failures.Add($"ruleName expected '{expect.RuleName}', got '{result.RuleName}'");

@@ -56,8 +56,20 @@ internal static class RuntimeSettingsValidator
             report.Error("DamageResponseClamp", "MaxDamageResponsePermille is below MinDamageResponsePermille.");
         if (settings.DamageResponseChipFloor < 0)
             report.Error("DamageResponseChipFloor", "DamageResponseChipFloor must be nonnegative.");
+        if (settings.ProofFinalMpLoss < 0)
+            report.Error("ProofFinalMpLoss", "ProofFinalMpLoss must be nonnegative.");
+        if (settings.ProofFinalMpGain < 0)
+            report.Error("ProofFinalMpGain", "ProofFinalMpGain must be nonnegative.");
         if (settings.RecentAttackerWindowMs < 0)
             report.Error("RecentAttackerWindowMs", "RecentAttackerWindowMs must be nonnegative.");
+        if (settings.UnitPollIntervalMs <= 0)
+            report.Error("UnitPollIntervalMs", "UnitPollIntervalMs must be greater than zero.");
+        else if (settings.UnitPollIntervalMs > 100)
+            report.Warn("UnitPollIntervalMs", "poll intervals above 100 ms may miss or delay short-lived battle state changes.");
+        if (settings.MaxTrackedBattleUnits <= 0)
+            report.Error("MaxTrackedBattleUnits", "MaxTrackedBattleUnits must be greater than zero.");
+        else if (settings.MaxTrackedBattleUnits < 16)
+            report.Warn("MaxTrackedBattleUnits", "values below 16 may skip units in larger battles.");
         if (settings.SuppressOwnRewriteEchoWindowMs < 0)
             report.Error("SuppressOwnRewriteEchoWindowMs", "SuppressOwnRewriteEchoWindowMs must be nonnegative.");
         if (settings.UnknownDiffStart < 0 || settings.UnknownDiffStart >= RawSize)
@@ -207,6 +219,8 @@ internal static class RuntimeSettingsValidator
         {
             var rule = settings.ActionSignalRules[i];
             string scope = $"ActionSignalRules.{RuleName(rule.Name, i + 1)}";
+            if (!IsSupportedActionSignalEventKind(rule.EventKind))
+                report.Error(scope, $"unsupported EventKind '{rule.EventKind}'. Use Any, HP/HpChange, Damage/HpLoss, Healing/HpGain, MP/MpChange, Loss/MpLoss, or Gain/MpGain.");
             ValidateFormula(rule.ConditionFormula, context, $"{scope}.ConditionFormula", report, allowEmpty: true);
             foreach (var (name, formula) in rule.VariableFormulas ?? [])
                 ValidateFormula(formula, context, $"{scope}.VariableFormulas.{name}", report);
@@ -224,8 +238,22 @@ internal static class RuntimeSettingsValidator
         {
             var rule = settings.DamageRules[i];
             string scope = $"DamageRules.{RuleName(rule.Name, i + 1)}";
+            if (!IsSupportedDamageRuleEventKind(rule.EventKind))
+                report.Error(scope, $"unsupported EventKind '{rule.EventKind}'. Use Any, HP/HpChange, Damage/HpLoss, or Healing/HpGain.");
             ValidateFormula(rule.ConditionFormula, context, $"{scope}.ConditionFormula", report, allowEmpty: true);
             ValidateFormula(rule.FinalDamageFormula, context, $"{scope}.FinalDamageFormula", report, allowEmpty: true);
+            if (rule.ScaleDenominator <= 0)
+                report.Error(scope, "ScaleDenominator must be greater than zero.");
+        }
+
+        for (int i = 0; i < settings.MpRules.Count; i++)
+        {
+            var rule = settings.MpRules[i];
+            string scope = $"MpRules.{RuleName(rule.Name, i + 1)}";
+            if (!IsSupportedMpEventKind(rule.EventKind))
+                report.Error(scope, $"unsupported EventKind '{rule.EventKind}'. Use Any, Loss/MpLoss, or Gain/MpGain.");
+            ValidateFormula(rule.ConditionFormula, context, $"{scope}.ConditionFormula", report, allowEmpty: true);
+            ValidateFormula(rule.FinalMpChangeFormula, context, $"{scope}.FinalMpChangeFormula", report, allowEmpty: true);
             if (rule.ScaleDenominator <= 0)
                 report.Error(scope, "ScaleDenominator must be greater than zero.");
         }
@@ -247,7 +275,45 @@ internal static class RuntimeSettingsValidator
         }
 
         ValidateFormula(settings.FinalDamageFormula, context, "FinalDamageFormula", report, allowEmpty: true);
+        ValidateFormula(settings.MpRewriteConditionFormula, context, "MpRewriteConditionFormula", report, allowEmpty: true);
+        ValidateFormula(settings.FinalMpChangeFormula, context, "FinalMpChangeFormula", report, allowEmpty: true);
     }
+
+    private static bool IsSupportedMpEventKind(string? eventKind)
+        => string.IsNullOrWhiteSpace(eventKind) ||
+           eventKind.Equals("Any", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Loss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MpLoss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Gain", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MpGain", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSupportedDamageRuleEventKind(string? eventKind)
+        => string.IsNullOrWhiteSpace(eventKind) ||
+           eventKind.Equals("Any", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HP", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpChange", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Damage", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpLoss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Healing", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Heal", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpGain", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSupportedActionSignalEventKind(string? eventKind)
+        => string.IsNullOrWhiteSpace(eventKind) ||
+           eventKind.Equals("Any", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HP", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpChange", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Damage", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpLoss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Healing", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Heal", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("HpGain", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MP", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MpChange", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Loss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MpLoss", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("Gain", StringComparison.OrdinalIgnoreCase) ||
+           eventKind.Equals("MpGain", StringComparison.OrdinalIgnoreCase);
 
     private static void ValidateIntegratedEvaluation(RuntimeSettings settings, ItemCatalog catalog, SettingsValidationReport report)
     {
@@ -258,10 +324,14 @@ internal static class RuntimeSettingsValidator
 
         var damageSettingsEnabled = settings.RewriteObservedDamage;
         var healingSettingsEnabled = settings.RewriteObservedHealing;
+        var mpLossSettingsEnabled = settings.RewriteObservedMpLoss;
+        var mpGainSettingsEnabled = settings.RewriteObservedMpGain;
         var affectAllies = settings.AffectAllies;
         var affectFoes = settings.AffectFoes;
         settings.RewriteObservedDamage = true;
         settings.RewriteObservedHealing = true;
+        settings.RewriteObservedMpLoss = true;
+        settings.RewriteObservedMpGain = true;
         settings.AffectAllies = true;
         settings.AffectFoes = true;
 
@@ -285,11 +355,23 @@ internal static class RuntimeSettingsValidator
             var healing = engine.Evaluate(new DamageEvent(healedTarget, 30, 40, -10, attacker, "validator", action, EventIndex: 2, EventSeed: 12346));
             if (!healing.ShouldRewrite && !IsIntentionalNoRewrite(healing.RuleName))
                 report.Error("IntegratedHealingEvaluation", healing.RuleName);
+
+            var mpLossTarget = target with { Mp = 12 };
+            var mpLoss = engine.EvaluateMp(new MpEvent(mpLossTarget, 20, 12, -8, attacker, "validator", action, EventIndex: 4, EventSeed: 12348));
+            if (!mpLoss.ShouldRewrite && !IsIntentionalNoRewrite(mpLoss.RuleName))
+                report.Error("IntegratedMpLossEvaluation", mpLoss.RuleName);
+
+            var mpGainTarget = target with { Mp = 18 };
+            var mpGain = engine.EvaluateMp(new MpEvent(mpGainTarget, 10, 18, 8, attacker, "validator", action, EventIndex: 5, EventSeed: 12349));
+            if (!mpGain.ShouldRewrite && !IsIntentionalNoRewrite(mpGain.RuleName))
+                report.Error("IntegratedMpGainEvaluation", mpGain.RuleName);
         }
         finally
         {
             settings.RewriteObservedDamage = damageSettingsEnabled;
             settings.RewriteObservedHealing = healingSettingsEnabled;
+            settings.RewriteObservedMpLoss = mpLossSettingsEnabled;
+            settings.RewriteObservedMpGain = mpGainSettingsEnabled;
             settings.AffectAllies = affectAllies;
             settings.AffectFoes = affectFoes;
         }
@@ -297,7 +379,8 @@ internal static class RuntimeSettingsValidator
 
     private static bool IsIntentionalNoRewrite(string reason)
         => reason.Equals("off", StringComparison.OrdinalIgnoreCase) ||
-           reason.Equals("RewriteConditionFormula=0", StringComparison.OrdinalIgnoreCase);
+           reason.Equals("RewriteConditionFormula=0", StringComparison.OrdinalIgnoreCase) ||
+           reason.Equals("MpRewriteConditionFormula=0", StringComparison.OrdinalIgnoreCase);
 
     private static void ValidateDerivedFormula(
         FormulaContext context,
@@ -453,8 +536,15 @@ internal static class RuntimeSettingsValidator
             ["vanillaDamage"] = 20,
             ["vanillaDamageAbs"] = 20,
             ["vanillaHealing"] = 0,
+            ["vanillaMpChange"] = -8,
+            ["vanillaMpChangeAbs"] = 8,
+            ["vanillaMpLoss"] = 8,
+            ["vanillaMpGain"] = 0,
             ["isDamage"] = 1,
             ["isHealing"] = 0,
+            ["isMpLoss"] = 1,
+            ["isMpGain"] = 0,
+            ["isMpChange"] = 1,
         };
 
         foreach (var rule in settings.ActionSignalRules)
@@ -484,11 +574,27 @@ internal static class RuntimeSettingsValidator
         context.Set("observedHpGain", 0);
         context.Set("previousHp", 50);
         context.Set("currentHp", 30);
+        context.Set("vanillaMpChange", -8);
+        context.Set("vanillaMpDelta", -8);
+        context.Set("vanillaMpChangeAbs", 8);
+        context.Set("vanillaMpLoss", 8);
+        context.Set("vanillaMpGain", 0);
+        context.Set("observedMpDelta", -8);
+        context.Set("observedMpLoss", 8);
+        context.Set("observedMpGain", 0);
+        context.Set("previousMp", 20);
+        context.Set("currentMp", 12);
         context.Set("equipmentDr", 3);
         context.Set("event.isDamage", 1);
         context.Set("event.isHealing", 0);
         context.Set("event.isHpLoss", 1);
         context.Set("event.isHpGain", 0);
+        context.Set("event.isMpLoss", 1);
+        context.Set("event.isMpGain", 0);
+        context.Set("event.isMpChange", 1);
+        context.Set("result.finalMpChange", -8);
+        context.Set("result.desiredMp", 12);
+        context.Set("result.shouldRewriteMp", 1);
     }
 
     private static void AddUnitVariables(FormulaContext context, string prefix, UnitSnapshot unit)
@@ -522,8 +628,16 @@ internal static class RuntimeSettingsValidator
             context.Set($"{prefix}.vanillaDamage", 20);
             context.Set($"{prefix}.vanillaDamageAbs", 20);
             context.Set($"{prefix}.vanillaHealing", 0);
+            context.Set($"{prefix}.vanillaMpChange", -8);
+            context.Set($"{prefix}.vanillaMpChangeAbs", 8);
+            context.Set($"{prefix}.vanillaMpLoss", 8);
+            context.Set($"{prefix}.vanillaMpGain", 0);
             context.Set($"{prefix}.isDamage", 1);
             context.Set($"{prefix}.isHealing", 0);
+            context.Set($"{prefix}.isMpLoss", 1);
+            context.Set($"{prefix}.isMpGain", 0);
+            context.Set($"{prefix}.isMpChange", 1);
+            context.Set($"{prefix}.sourceMpChange", 0);
 
             foreach (var rule in settings.ActionSignalRules)
             {

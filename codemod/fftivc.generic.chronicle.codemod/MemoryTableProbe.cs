@@ -327,14 +327,24 @@ internal static class ReadableMemoryRange
     private const uint MemCommit = 0x1000;
     private const uint PageNoAccess = 0x01;
     private const uint PageGuard = 0x100;
+    private const uint PageReadWrite = 0x04;
+    private const uint PageWriteCopy = 0x08;
+    private const uint PageExecuteReadWrite = 0x40;
+    private const uint PageExecuteWriteCopy = 0x80;
 
-    public static bool IsReadable(nint address, int length)
+    public static bool IsReadable(nint address, int length) => HasProtection(address, length, requireWritable: false);
+
+    public static bool IsWritable(nint address, int length) => HasProtection(address, length, requireWritable: true);
+
+    private static bool HasProtection(nint address, int length, bool requireWritable)
     {
         if (address == 0 || length <= 0) return false;
         if (VirtualQuery(address, out var info, (nuint)Marshal.SizeOf<MemoryBasicInformation>()) == 0)
             return false;
         if (info.State != MemCommit) return false;
         if ((info.Protect & PageNoAccess) != 0 || (info.Protect & PageGuard) != 0)
+            return false;
+        if (requireWritable && !IsWritableProtect(info.Protect))
             return false;
 
         ulong start = unchecked((ulong)address.ToInt64());
@@ -343,6 +353,9 @@ internal static class ReadableMemoryRange
         ulong end = start + (ulong)length;
         return start >= regionStart && end >= start && end <= regionEnd;
     }
+
+    private static bool IsWritableProtect(uint protect)
+        => (protect & (PageReadWrite | PageWriteCopy | PageExecuteReadWrite | PageExecuteWriteCopy)) != 0;
 
     [DllImport("kernel32.dll")]
     private static extern nuint VirtualQuery(nint lpAddress, out MemoryBasicInformation lpBuffer, nuint dwLength);

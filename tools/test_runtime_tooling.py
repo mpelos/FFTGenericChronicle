@@ -7,8 +7,11 @@ from pathlib import Path
 
 from analyze_battleprobe_log import (
     build_warnings,
+    parse_hp_event_line,
     parse_memory_table_events,
+    parse_rewrite_line,
     parse_runtime_contexts,
+    render_hp_write_proof_summary,
     render_memory_table_summary,
     render_runtime_summary,
 )
@@ -106,6 +109,24 @@ def main() -> int:
         "ambiguous rejection reason missing",
     )
 
+    hp_event = parse_hp_event_line("[GC-Probe] [DAMAGE ptr=0x2000 id=0x80] 100 -> 72 = 28 sampleAgeMs=25", 10)
+    hp_rewrite = parse_rewrite_line(
+        "[GC-Probe] [REWRITE ptr=0x2000 id=0x80] rule=FinalDamageFormula vanillaDamage=28 finalDamage=1 HP 72->99",
+        11,
+    )
+    check(hp_event is not None and hp_event["sample_age_ms"] == 25, "HP sample age should parse")
+    check(hp_rewrite is not None and hp_rewrite["final"] == 1, "HP rewrite final damage should parse")
+    hp_proof = "\n".join(render_hp_write_proof_summary([hp_event], [hp_rewrite]))
+    check("pass-candidate" in hp_proof, "fresh finalDamage=1 proof should pass as candidate")
+
+    old_hp_event = parse_hp_event_line("[GC-Probe] [DAMAGE ptr=0x2000 id=0x80] 100 -> 72 = 28", 12)
+    old_hp_proof = "\n".join(render_hp_write_proof_summary([old_hp_event], [hp_rewrite]))
+    check("sampleAgeMs" in old_hp_proof and "inconclusive" in old_hp_proof, "old HP proof logs should be inconclusive")
+
+    failed_rewrite = parse_rewrite_line("[GC-Probe] [REWRITE-FAILED ptr=0x2000 id=0x80] range not writable 0x1234+0x2", 13)
+    failed_proof = "\n".join(render_hp_write_proof_summary([hp_event], [hp_rewrite, failed_rewrite]))
+    check("rewrite failures" in failed_proof and "failed" in failed_proof, "HP proof should flag rewrite failures")
+
     warnings = build_warnings(["==== Generic Chronicle Battle Validation Harness (iter 8) ===="], {}, [], 3)
     check(any("old-format" in warning for warning in warnings), "old harness warning missing")
 
@@ -163,6 +184,17 @@ def main() -> int:
         ready_state = inspect_log(log_path, start_time=0.0, allow_existing=True)
         check(ready_state.is_ready, "ready watcher state should be ready")
         check("ready: 1 [RUNTIME]" in describe_state(ready_state, 1), "ready watcher message should mention runtime count")
+        check("waiting for [REWRITE]" in describe_state(ready_state, 0, 1), "watcher should wait for rewrite evidence when requested")
+
+        rewrite_log = (
+            ready_log
+            + "[GC-Probe] [DAMAGE ptr=0x2000 id=0x80] 100 -> 72 = 28 sampleAgeMs=25\n"
+            + "[GC-Probe] [REWRITE ptr=0x2000 id=0x80] rule=FinalDamageFormula vanillaDamage=28 finalDamage=1 HP 72->99\n"
+        )
+        log_path.write_text(rewrite_log, encoding="utf-8")
+        rewrite_state = inspect_log(log_path, start_time=0.0, allow_existing=True)
+        check(rewrite_state.rewrite_events == 1, "watcher should count rewrite events")
+        check("1 [REWRITE]" in describe_state(rewrite_state, 0, 1), "watcher ready message should mention rewrite count")
 
     print("runtime tooling smoke tests passed")
     return 0

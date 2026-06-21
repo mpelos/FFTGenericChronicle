@@ -60,6 +60,162 @@ internal static class Program
         Check(mpAwareResult.ShouldRewrite, "MP-aware formula should rewrite");
         Check(mpAwareResult.FinalDamage == 40, $"MP-aware formula expected 40, got {mpAwareResult.FinalDamage}");
 
+        var ignoredMpLoss = new BattleFormulaEngine(new RuntimeSettings
+        {
+            FinalMpChangeFormula = "-99",
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(!ignoredMpLoss.ShouldRewrite, "MP loss should not rewrite unless RewriteObservedMpLoss is enabled");
+        Check(ignoredMpLoss.DesiredMp == 12, $"ignored MP loss should preserve current MP 12, got {ignoredMpLoss.DesiredMp}");
+
+        var proofMpLoss = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            ProofFinalMpLoss = 5,
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(proofMpLoss.ShouldRewrite, "proof MP loss should rewrite when enabled");
+        Check(proofMpLoss.FinalMpChange == -5, $"proof MP loss final change expected -5, got {proofMpLoss.FinalMpChange}");
+        Check(proofMpLoss.DesiredMp == 15, $"proof MP loss desired MP expected 15, got {proofMpLoss.DesiredMp}");
+
+        var formulaMpLoss = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            FinalMpChangeFormula = "-clamp(vanillaMpLoss + t.ma + a.mp, 0, previousMp)",
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(formulaMpLoss.ShouldRewrite, "formula MP loss should rewrite");
+        Check(formulaMpLoss.FinalMpChange == -20, $"formula MP loss final change expected -20, got {formulaMpLoss.FinalMpChange}");
+        Check(formulaMpLoss.DesiredMp == 0, $"formula MP loss desired MP expected 0, got {formulaMpLoss.DesiredMp}");
+
+        var formulaMpGain = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpGain = true,
+            FinalMpChangeFormula = "min(vanillaMpGain + t.ma + a.mp, t.maxMp - previousMp)",
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 18 }, 10, 18, 8, attacker));
+        Check(formulaMpGain.ShouldRewrite, "formula MP gain should rewrite");
+        Check(formulaMpGain.FinalMpChange == 20, $"formula MP gain final change expected 20, got {formulaMpGain.FinalMpChange}");
+        Check(formulaMpGain.DesiredMp == 30, $"formula MP gain desired MP expected 30, got {formulaMpGain.DesiredMp}");
+
+        var mpGateBlocked = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            MpRewriteConditionFormula = "event.isMpGain",
+            FinalMpChangeFormula = "-1",
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(!mpGateBlocked.ShouldRewrite, "MP rewrite condition should block a nonmatching MP event");
+        Check(mpGateBlocked.RuleName == "MpRewriteConditionFormula=0", $"MP gate blocked reason expected MpRewriteConditionFormula=0, got {mpGateBlocked.RuleName}");
+
+        var actionMpLoss = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            FinalMpChangeFormula = "-(vanillaMpLoss + action.sourceMpChange + action.spell)",
+            LogResolvedRuntimeContext = true,
+            FormulaTraceVariables =
+            [
+                new FormulaDerivedVariable { Name = "mp.loss", Formula = "vanillaMpLoss" },
+                new FormulaDerivedVariable { Name = "result.mp", Formula = "result.finalMpChange" },
+            ],
+        }, catalog).EvaluateMp(new MpEvent(
+            target with { Mp = 12 },
+            20,
+            12,
+            -8,
+            attacker,
+            "validator",
+            new ActionSignal("Spell MP cost", "mp-change", new Dictionary<string, int> { ["signal"] = 22, ["spell"] = 1 })));
+        Check(actionMpLoss.ShouldRewrite, "manual MP action context should rewrite");
+        Check(actionMpLoss.FinalMpChange == -10, $"manual MP action final change expected -10, got {actionMpLoss.FinalMpChange}");
+        Check(actionMpLoss.DesiredMp == 10, $"manual MP action desired MP expected 10, got {actionMpLoss.DesiredMp}");
+        Check(actionMpLoss.Trace.Contains("event=mpLoss"), "MP trace should include event kind");
+        Check(actionMpLoss.Trace.Contains("finalMpChange=-10:FinalMpChangeFormula"), "MP trace should include final MP change");
+
+        var mpSignalSettings = new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            RewriteObservedMpLoss = true,
+            FinalDamageFormula = "vanillaDamage + action.spell * 100",
+            FinalMpChangeFormula = "-min(previousMp, vanillaMpLoss + action.spellPower + action.sourceMpChange)",
+            LogResolvedRuntimeContext = true,
+            ActionSignalRules =
+            [
+                new ActionSignalRule
+                {
+                    Name = "MP spell sentinel",
+                    VanillaMpChange = -8,
+                    Signal = 33,
+                    Variables = new Dictionary<string, int> { ["spell"] = 1 },
+                    VariableFormulas = new Dictionary<string, string> { ["spellPower"] = "vanillaMpLoss + t.ma" },
+                },
+            ],
+        };
+        var mpSignalResult = new BattleFormulaEngine(mpSignalSettings, catalog)
+            .EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(mpSignalResult.ShouldRewrite, "MP action signal should classify a matching MP delta");
+        Check(mpSignalResult.FinalMpChange == -20, $"MP action signal final change expected -20, got {mpSignalResult.FinalMpChange}");
+        Check(mpSignalResult.DesiredMp == 0, $"MP action signal desired MP expected 0, got {mpSignalResult.DesiredMp}");
+        Check(mpSignalResult.Trace.Contains("action=MP spell sentinel:source=mp-change:signal=33:vars=spell=1,spellpower=11"), "MP action signal trace should include derived action variables");
+
+        var mpSignalShouldNotMatchHp = new BattleFormulaEngine(mpSignalSettings, catalog)
+            .Evaluate(new DamageEvent(target, 50, 30, 20, attacker));
+        Check(mpSignalShouldNotMatchHp.ShouldRewrite, "HP event should still rewrite with MP-only signal rule present");
+        Check(mpSignalShouldNotMatchHp.FinalDamage == 20, $"MP-only action signal should not classify HP event, got final damage {mpSignalShouldNotMatchHp.FinalDamage}");
+
+        var mpRuleSettings = new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            RewriteObservedMpGain = true,
+            FinalMpChangeFormula = "vanillaMpChange",
+            ActionSignalRules =
+            [
+                new ActionSignalRule
+                {
+                    Name = "MP spell sentinel",
+                    VanillaMpChange = -8,
+                    Signal = 33,
+                    Variables = new Dictionary<string, int> { ["spell"] = 1 },
+                    VariableFormulas = new Dictionary<string, string> { ["spellPower"] = "vanillaMpLoss + t.ma" },
+                },
+            ],
+            MpRules =
+            [
+                new MpRule
+                {
+                    Name = "Spell MP rule",
+                    EventKind = "Loss",
+                    RequiredActionVariable = "spell",
+                    FinalMpChangeFormula = "-min(previousMp, action.spellPower + 1)",
+                },
+                new MpRule
+                {
+                    Name = "Small gain rule",
+                    EventKind = "Gain",
+                    MaxFinalMpChange = 5,
+                },
+            ],
+        };
+        var mpRuleLossResult = new BattleFormulaEngine(mpRuleSettings, catalog)
+            .EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(mpRuleLossResult.ShouldRewrite, "MP rule should rewrite matching spell loss");
+        Check(mpRuleLossResult.RuleName == "Spell MP rule", $"MP rule loss expected Spell MP rule, got {mpRuleLossResult.RuleName}");
+        Check(mpRuleLossResult.FinalMpChange == -12, $"MP rule loss final change expected -12, got {mpRuleLossResult.FinalMpChange}");
+        Check(mpRuleLossResult.DesiredMp == 8, $"MP rule loss desired MP expected 8, got {mpRuleLossResult.DesiredMp}");
+
+        var mpRuleGainResult = new BattleFormulaEngine(mpRuleSettings, catalog)
+            .EvaluateMp(new MpEvent(target with { Mp = 18 }, 10, 18, 8, attacker));
+        Check(mpRuleGainResult.ShouldRewrite, "MP gain rule should rewrite matching gain");
+        Check(mpRuleGainResult.RuleName == "Small gain rule", $"MP gain rule expected Small gain rule, got {mpRuleGainResult.RuleName}");
+        Check(mpRuleGainResult.FinalMpChange == 5, $"MP gain rule final change expected 5, got {mpRuleGainResult.FinalMpChange}");
+        Check(mpRuleGainResult.DesiredMp == 15, $"MP gain rule desired MP expected 15, got {mpRuleGainResult.DesiredMp}");
+
+        var badMpRuleResult = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedMpLoss = true,
+            MpRules =
+            [
+                new MpRule { Name = "Bad MP rule", FinalMpChangeFormula = "missingVariable + 1" },
+            ],
+        }, catalog).EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(!badMpRuleResult.ShouldRewrite, "invalid MP rule formula should skip rewrite");
+        Check(badMpRuleResult.RuleName.Contains("Bad MP rule"), "invalid MP rule should name the failing rule");
+
         var fallbackSettings = new RuntimeSettings
         {
             RewriteObservedDamage = true,
@@ -456,6 +612,18 @@ internal static class Program
         Check(seededRollA is >= 1 and <= 11, $"diceRoll(2,6,-1) should be in 1..11, got {seededRollA}");
         var seededSequence = EvalFormula("diceRoll(1, 6, 0) + diceRoll(1, 6, 0)", target, attacker, 42, 123456);
         Check(seededSequence is >= 2 and <= 12, $"two diceRoll calls should be in 2..12, got {seededSequence}");
+        var indexedRandom = EvalFormula("randAt(7, 1, 100)", target, attacker, 42, 123456);
+        var indexedRandomAfterSequential = EvalFormula("rand(1, 100) * 0 + randAt(7, 1, 100)", target, attacker, 42, 123456);
+        var indexedRandomBeforeSequential = EvalFormula("randAt(7, 1, 100) + rand(1, 100) * 0", target, attacker, 42, 123456);
+        Check(indexedRandom == indexedRandomAfterSequential, "randAt should not depend on earlier sequential rand calls");
+        Check(indexedRandom == indexedRandomBeforeSequential, "randAt should not depend on later sequential rand calls");
+        Check(indexedRandom is >= 1 and <= 100, $"randAt(7,1,100) should be in 1..100, got {indexedRandom}");
+        var indexedDice = EvalFormula("diceRollAt(7, 2, 6, -1)", target, attacker, 42, 123456);
+        var indexedDiceRepeated = EvalFormula("diceRollAt(7, 2, 6, -1) - diceRollAt(7, 2, 6, -1)", target, attacker, 42, 123456);
+        var indexedDiceAfterSequential = EvalFormula("rand(1, 100) * 0 + diceRollAt(7, 2, 6, -1)", target, attacker, 42, 123456);
+        Check(indexedDiceRepeated == 0, "diceRollAt should return the same roll for the same index inside one formula");
+        Check(indexedDice == indexedDiceAfterSequential, "diceRollAt should not depend on earlier sequential rand calls");
+        Check(indexedDice is >= 1 and <= 11, $"diceRollAt(7,2,6,-1) should be in 1..11, got {indexedDice}");
 
         var attackerWeaponSettings = new RuntimeSettings
         {
@@ -606,6 +774,28 @@ internal static class Program
             .Evaluate(new DamageEvent(target, 50, 30, 20));
         Check(conditionalDamageRuleFallback.ShouldRewrite, "conditional damage fallback should rewrite");
         Check(conditionalDamageRuleFallback.FinalDamage == 1, $"conditional damage fallback expected 1, got {conditionalDamageRuleFallback.FinalDamage}");
+
+        var eventKindDamageRuleSettings = new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            RewriteObservedHealing = true,
+            DamageRules =
+            [
+                new DamageRule { Name = "Damage only rule", EventKind = "Damage", FinalDamage = 7 },
+                new DamageRule { Name = "Healing only rule", EventKind = "Healing", FinalDamageFormula = "-12" },
+            ],
+        };
+        var eventKindDamageRuleResult = new BattleFormulaEngine(eventKindDamageRuleSettings, catalog)
+            .Evaluate(new DamageEvent(target, 50, 30, 20, attacker));
+        Check(eventKindDamageRuleResult.ShouldRewrite, "event-kind damage rule should rewrite damage");
+        Check(eventKindDamageRuleResult.RuleName == "Damage only rule", $"event-kind damage rule expected Damage only rule, got {eventKindDamageRuleResult.RuleName}");
+        Check(eventKindDamageRuleResult.FinalDamage == 7, $"event-kind damage rule expected 7, got {eventKindDamageRuleResult.FinalDamage}");
+
+        var eventKindHealingRuleResult = new BattleFormulaEngine(eventKindDamageRuleSettings, catalog)
+            .Evaluate(new DamageEvent(healedTarget, 30, 40, -10, attacker));
+        Check(eventKindHealingRuleResult.ShouldRewrite, "event-kind healing rule should rewrite healing");
+        Check(eventKindHealingRuleResult.RuleName == "Healing only rule", $"event-kind healing rule expected Healing only rule, got {eventKindHealingRuleResult.RuleName}");
+        Check(eventKindHealingRuleResult.FinalDamage == -12, $"event-kind healing rule expected -12, got {eventKindHealingRuleResult.FinalDamage}");
 
         var badConditionRuleResult = new BattleFormulaEngine(new RuntimeSettings
         {
@@ -809,6 +999,56 @@ internal static class Program
         Check(healingActionSignalResult.ShouldRewrite, "healing formula action signal should rewrite");
         Check(healingActionSignalResult.FinalDamage == -13, $"healing formula action signal expected -13, got {healingActionSignalResult.FinalDamage}");
         Check(healingActionSignalResult.DesiredHp == 43, $"healing formula action signal desired HP expected 43, got {healingActionSignalResult.DesiredHp}");
+
+        var eventKindActionSignalSettings = new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            RewriteObservedHealing = true,
+            RewriteObservedMpLoss = true,
+            FinalDamageFormula = "if(event.isHealing, -action.healPower, vanillaDamage + action.swing * 100 + action.spell * 1000)",
+            FinalMpChangeFormula = "-min(previousMp, vanillaMpLoss + action.spell * 10 + action.swing * 100)",
+            LogResolvedRuntimeContext = true,
+            ActionSignalRules =
+            [
+                new ActionSignalRule
+                {
+                    Name = "Controlled damage swing",
+                    EventKind = "Damage",
+                    ConditionFormula = "t.charId == 0x80",
+                    Variables = new Dictionary<string, int> { ["swing"] = 1 },
+                },
+                new ActionSignalRule
+                {
+                    Name = "Controlled healing",
+                    EventKind = "Healing",
+                    Variables = new Dictionary<string, int> { ["heal"] = 1 },
+                    VariableFormulas = new Dictionary<string, string> { ["healPower"] = "vanillaHealing + 1" },
+                },
+                new ActionSignalRule
+                {
+                    Name = "Controlled MP spell",
+                    EventKind = "MpLoss",
+                    Variables = new Dictionary<string, int> { ["spell"] = 1 },
+                },
+            ],
+        };
+        var eventKindDamageResult = new BattleFormulaEngine(eventKindActionSignalSettings, catalog)
+            .Evaluate(new DamageEvent(target, 50, 30, 20, attacker));
+        Check(eventKindDamageResult.ShouldRewrite, "event-kind damage action signal should rewrite");
+        Check(eventKindDamageResult.FinalDamage == 120, $"event-kind damage signal expected 120, got {eventKindDamageResult.FinalDamage}");
+        Check(eventKindDamageResult.Trace.Contains("action=Controlled damage swing"), "event-kind damage trace should name the damage signal");
+
+        var eventKindHealingResult = new BattleFormulaEngine(eventKindActionSignalSettings, catalog)
+            .Evaluate(new DamageEvent(healedTarget, 30, 40, -10, attacker));
+        Check(eventKindHealingResult.ShouldRewrite, "event-kind healing action signal should rewrite");
+        Check(eventKindHealingResult.FinalDamage == -11, $"event-kind healing signal expected -11, got {eventKindHealingResult.FinalDamage}");
+        Check(eventKindHealingResult.Trace.Contains("action=Controlled healing"), "event-kind healing trace should name the healing signal");
+
+        var eventKindMpLossResult = new BattleFormulaEngine(eventKindActionSignalSettings, catalog)
+            .EvaluateMp(new MpEvent(target with { Mp = 12 }, 20, 12, -8, attacker));
+        Check(eventKindMpLossResult.ShouldRewrite, "event-kind MP action signal should rewrite");
+        Check(eventKindMpLossResult.FinalMpChange == -18, $"event-kind MP signal expected -18, got {eventKindMpLossResult.FinalMpChange}");
+        Check(eventKindMpLossResult.RuleName == "FinalMpChangeFormula", $"event-kind MP rule expected FinalMpChangeFormula, got {eventKindMpLossResult.RuleName}");
 
         var actionRuleSettings = new RuntimeSettings
         {
@@ -1499,7 +1739,7 @@ internal static class Program
         Check(activeResolver.Unit?.Ptr == attacker.Ptr, "active resolver should prefer opposing recent unit over same-team unit");
         Check(activeResolver.Source == "recent-unit", $"active resolver source expected recent-unit, got {activeResolver.Source}");
 
-        var echoGuard = new HpRewriteEchoGuard();
+        var echoGuard = new ValueRewriteEchoGuard("HP");
         echoGuard.Remember((nint)0x5000, 30, 18, now);
         Check(
             echoGuard.TrySuppress((nint)0x5000, 30, 18, now + Stopwatch.Frequency / 10, 1000, out string echoReason),
@@ -1518,6 +1758,26 @@ internal static class Program
         Check(
             !echoGuard.TrySuppress((nint)0x5002, 18, 12, now + Stopwatch.Frequency / 10, 1000, out _),
             "rewrite echo guard should not suppress a real delta after the desired HP");
+
+        var normalRewriteDecision = RewriteApplication.Decide(false, 30, 18);
+        Check(normalRewriteDecision.ShouldWrite, "normal rewrite decision should write changed values");
+        Check(!normalRewriteDecision.ShouldLogDryRun, "normal rewrite decision should not log dry-run");
+        Check(normalRewriteDecision.TrackingValue == 18, "normal rewrite decision should advance tracking to desired value");
+
+        var normalNoOpDecision = RewriteApplication.Decide(false, 18, 18);
+        Check(!normalNoOpDecision.ShouldWrite, "normal no-op rewrite decision should not write");
+        Check(!normalNoOpDecision.ShouldLogDryRun, "normal no-op rewrite decision should not log dry-run");
+        Check(normalNoOpDecision.TrackingValue == 18, "normal no-op rewrite decision should keep current tracking");
+
+        var dryRunRewriteDecision = RewriteApplication.Decide(true, 30, 18);
+        Check(!dryRunRewriteDecision.ShouldWrite, "dry-run rewrite decision should not write changed values");
+        Check(dryRunRewriteDecision.ShouldLogDryRun, "dry-run rewrite decision should log changed values");
+        Check(dryRunRewriteDecision.TrackingValue == 30, "dry-run rewrite decision should keep observed tracking");
+
+        var dryRunNoOpDecision = RewriteApplication.Decide(true, 18, 18);
+        Check(!dryRunNoOpDecision.ShouldWrite, "dry-run no-op rewrite decision should not write");
+        Check(dryRunNoOpDecision.ShouldLogDryRun, "dry-run no-op rewrite decision should still log evaluation");
+        Check(dryRunNoOpDecision.TrackingValue == 18, "dry-run no-op rewrite decision should keep current tracking");
 
         TestMemoryTableProbe();
         TestRuntimeSettingsLoad();
@@ -1599,6 +1859,18 @@ internal static class Program
             Marshal.WriteByte(table + 8, 1, 0xFF);
 
             Check(ReadableMemoryRange.IsReadable(table, 16), "allocated probe table should be readable");
+            var copied = new byte[16];
+            Check(CurrentProcessMemory.TryRead(table, copied, out string processReadError), $"current process memory read should succeed: {processReadError}");
+            Check(copied[1] == 7, "current process memory read should copy byte values");
+            Check((copied[4] | copied[5] << 8) == 0x1234, "current process memory read should copy word values");
+            Check(ReadableMemoryRange.IsWritable(table, 16), "allocated probe table should be writable");
+            Check(CurrentProcessMemory.TryWriteInt16(table + 6, 0x2345, out string processWriteError), $"current process memory write should succeed: {processWriteError}");
+            Check(Marshal.ReadInt16(table, 6) == 0x2345, "current process memory write should update word values");
+            Check(!CurrentProcessMemory.TryRead(0, new byte[4], out string nullReadError), "null process memory read should fail");
+            Check(nullReadError.Contains("not readable"), $"null process memory read should explain readability, got {nullReadError}");
+            Check(!CurrentProcessMemory.TryWriteInt16(0, 1, out string nullWriteError), "null process memory write should fail");
+            Check(nullWriteError.Contains("not writable"), $"null process memory write should explain writability, got {nullWriteError}");
+
             Check(probe.TryReadRow(table, 0, out var occupied, out string rowError), $"occupied row should read: {rowError}");
             Check(occupied.PresenceScore == 2, $"occupied row presence expected 2, got {occupied.PresenceScore}");
             Check(occupied.Values[0].Value == 7, "unitIndex field should read byte value");
@@ -1632,7 +1904,10 @@ internal static class Program
         {
             File.WriteAllText(path, """
                 {
+                  "DryRunRewrites": true,
                   "RewriteObservedDamage": true,
+                  "UnitPollIntervalMs": 12,
+                  "MaxTrackedBattleUnits": 32,
                   "RewriteConditionFormula": "action.present",
                   "FormulaPreActionVariables": [
                     { "Name": "pre.weaponBlade", "Formula": "1" }
@@ -1681,7 +1956,13 @@ internal static class Program
                 """);
 
             Check(RuntimeSettings.TryLoad(path, out var loaded, out string validError), $"valid settings should load: {validError}");
+            Check(loaded.DryRunRewrites, "loaded settings should preserve DryRunRewrites");
             Check(loaded.RewriteObservedDamage, "loaded settings should preserve RewriteObservedDamage");
+            Check(loaded.Describe().Contains("DryRunRewrites=True"), "settings description should include DryRunRewrites");
+            Check(loaded.UnitPollIntervalMs == 12, $"loaded settings should preserve UnitPollIntervalMs, got {loaded.UnitPollIntervalMs}");
+            Check(loaded.MaxTrackedBattleUnits == 32, $"loaded settings should preserve MaxTrackedBattleUnits, got {loaded.MaxTrackedBattleUnits}");
+            Check(loaded.Describe().Contains("UnitPollIntervalMs=12"), "settings description should include UnitPollIntervalMs");
+            Check(loaded.Describe().Contains("MaxTrackedBattleUnits=32"), "settings description should include MaxTrackedBattleUnits");
             Check(loaded.RewriteConditionFormula == "action.present", "loaded settings should preserve RewriteConditionFormula");
             Check(loaded.FormulaPreActionVariables.Count == 1, "loaded settings should preserve pre-action variables");
             Check(loaded.FormulaPreResponseVariables.Count == 1, "loaded settings should preserve pre-response variables");
@@ -1757,6 +2038,13 @@ internal static class Program
         Check(gurpsDr.EquipmentDrRules.Count == 1, "GURPS-DR example should define one armor DR rule");
         Check(!gurpsDr.ApplyEquipmentDr, "GURPS-DR example should subtract DR inside the formula");
         Check(gurpsDr.FormulaTraceVariables.Count >= 8, "GURPS-DR example should expose DR formula trace variables");
+
+        string dryRunPath = Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.dry-run.example.json");
+        Check(File.Exists(dryRunPath), "dry-run example settings file should exist");
+        Check(RuntimeSettings.TryLoad(dryRunPath, out var dryRun, out string dryRunError), $"dry-run example should load: {dryRunError}");
+        Check(dryRun.DryRunRewrites, "dry-run example should enable DryRunRewrites");
+        Check(dryRun.RewriteObservedDamage && dryRun.RewriteObservedHealing, "dry-run example should enable HP rewrite evaluation");
+        Check(dryRun.RewriteObservedMpLoss && dryRun.RewriteObservedMpGain, "dry-run example should enable MP rewrite evaluation");
     }
 
     private static void TestRuntimeSettingsValidator(string root, ItemCatalog catalog)
@@ -1805,6 +2093,8 @@ internal static class Program
         var invalidSettings = new RuntimeSettings
         {
             RewriteObservedDamage = true,
+            UnitPollIntervalMs = 0,
+            MaxTrackedBattleUnits = 0,
             RewriteConditionFormula = "missingGateValue + 1",
             FinalDamageFormula = "missingVariable + 1",
             FormulaPreActionVariables =
@@ -1826,6 +2116,33 @@ internal static class Program
                     ["not-an-int"] = 1,
                 },
             },
+            ActionSignalRules =
+            [
+                new ActionSignalRule
+                {
+                    Name = "Bad action event",
+                    EventKind = "Typo",
+                },
+            ],
+            DamageRules =
+            [
+                new DamageRule
+                {
+                    Name = "Bad damage event",
+                    EventKind = "Typo",
+                    FinalDamage = 1,
+                },
+            ],
+            MpRules =
+            [
+                new MpRule
+                {
+                    Name = "Bad MP rule",
+                    EventKind = "Typo",
+                    FinalMpChangeFormula = "missingMpRuleValue + 1",
+                    ScaleDenominator = 0,
+                },
+            ],
             MemoryTableProbes =
             [
                 new MemoryTableProbe
@@ -1859,8 +2176,29 @@ internal static class Program
             invalidReport.Findings.Any(finding => finding.Scope.Contains("FormulaMaps")),
             "validator should report invalid formula map");
         Check(
+            invalidReport.Findings.Any(finding => finding.Scope.Contains("ActionSignalRules.Bad action event") && finding.Message.Contains("unsupported EventKind")),
+            "validator should report invalid action signal event kind");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope.Contains("DamageRules.Bad damage event") && finding.Message.Contains("unsupported EventKind")),
+            "validator should report invalid damage rule event kind");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope.Contains("MpRules.Bad MP rule") && finding.Message.Contains("unsupported EventKind")),
+            "validator should report invalid MP rule event kind");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope.Contains("MpRules.Bad MP rule.FinalMpChangeFormula") && finding.Message.Contains("missingMpRuleValue")),
+            "validator should report invalid MP rule formula");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope.Contains("MpRules.Bad MP rule") && finding.Message.Contains("ScaleDenominator")),
+            "validator should report invalid MP rule scale denominator");
+        Check(
             invalidReport.Findings.Any(finding => finding.Scope.Contains("MemoryTableProbes")),
             "validator should report invalid memory table probe");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "UnitPollIntervalMs" && finding.Severity == "ERROR"),
+            "validator should report invalid poll interval");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "MaxTrackedBattleUnits" && finding.Severity == "ERROR"),
+            "validator should report invalid max tracked units");
     }
 
     private static void TestRuntimeSettingsSimulator(string root, ItemCatalog catalog)
@@ -1904,6 +2242,21 @@ internal static class Program
             },
         ]);
         Check(mpScenarioResults[0].FinalDamage == 28, $"MP-aware simulator expected 28, got {mpScenarioResults[0].FinalDamage}");
+
+        string mpSettingsPath = Path.Combine(root, "docs", "modding", "examples", "battle-runtime-settings.mp.example.json");
+        Check(RuntimeSettings.TryLoad(mpSettingsPath, out var mpSettings, out string mpSettingsError), $"MP settings should load: {mpSettingsError}");
+        string mpScenarioPath = Path.Combine(root, "docs", "modding", "examples", "runtime-simulation-mp.example.json");
+        var mpScenarios = RuntimeSettingsSimulator.LoadScenarios(mpScenarioPath);
+        Check(mpScenarios.Count == 2, $"MP simulation should contain 2 scenarios, got {mpScenarios.Count}");
+        var mpResults = RuntimeSettingsSimulator.Run(mpSettings, catalog, mpScenarios);
+        Check(mpResults.All(result => result.EventKind == "mp"), "MP simulation should emit MP results");
+        Check(mpResults.All(result => result.HasExpectations), "MP simulation should assert all scenarios");
+        Check(
+            mpResults.All(result => result.ExpectationsPassed),
+            "MP simulation expectations should pass: " +
+            string.Join("; ", mpResults.SelectMany(result => result.ExpectationFailures)));
+        Check(mpResults[0].FinalMpChange == -11 && mpResults[0].DesiredMp == 9, "MP loss simulation should rewrite to desired MP 9");
+        Check(mpResults[1].FinalMpChange == 11 && mpResults[1].DesiredMp == 21, "MP gain simulation should rewrite to desired MP 21");
 
         string scenarioPath = Path.Combine(root, "docs", "modding", "examples", "runtime-simulation-scenarios.example.json");
         var scenarios = RuntimeSettingsSimulator.LoadScenarios(scenarioPath);

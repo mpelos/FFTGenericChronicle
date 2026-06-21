@@ -226,6 +226,26 @@ internal sealed class FormulaContext
         return minInclusive + (long)(sample % span);
     }
 
+    public long RandomIntAt(long index, long minInclusive, long maxInclusive)
+        => RandomIntAt(index, 0, minInclusive, maxInclusive);
+
+    public long RandomIntAt(long index, long drawIndex, long minInclusive, long maxInclusive)
+    {
+        if (maxInclusive < minInclusive)
+            throw new FormulaException($"random range {minInclusive}..{maxInclusive} is invalid");
+
+        ulong span = unchecked((ulong)(maxInclusive - minInclusive + 1));
+        if (span == 0)
+            throw new FormulaException("random range is too large");
+
+        ulong sample = SplitMix64(unchecked((ulong)EventSeed) ^
+                                  unchecked((ulong)EventIndex * 0x9E3779B97F4A7C15UL) ^
+                                  0xD1B54A32D192ED03UL ^
+                                  unchecked((ulong)index * 0x94D049BB133111EBUL) ^
+                                  unchecked((ulong)drawIndex * 0xBF58476D1CE4E5B9UL));
+        return minInclusive + (long)(sample % span);
+    }
+
     private static int ReadByte(UnitSnapshot unit, string functionName, long offset)
     {
         if (offset < 0 || offset >= unit.Raw.Length)
@@ -829,12 +849,26 @@ internal sealed class FormulaParser
             case "roll":
                 RequireArgCount(name, args, 3, 3);
                 return DiceRoll(args[0], args[1], args[2]);
+            case "dicerollat":
+            case "dice_roll_at":
+            case "rollat":
+            case "roll_at":
+                RequireArgCount(name, args, 4, 4);
+                return DiceRollAt(args[0], args[1], args[2], args[3]);
             case "rand":
             case "random":
             case "randomint":
             case "random_int":
                 RequireArgCount(name, args, 2, 2);
                 return _context.NextRandomInt(args[0], args[1]);
+            case "randat":
+            case "rand_at":
+            case "randomat":
+            case "random_at":
+            case "randomintat":
+            case "random_int_at":
+                RequireArgCount(name, args, 3, 3);
+                return _context.RandomIntAt(args[0], args[1], args[2]);
             case "targetbyte":
             case "tbyte":
             case "byte":
@@ -1114,6 +1148,15 @@ internal sealed class FormulaParser
         long total = adds;
         for (long i = 0; i < checkedDice.Dice; i++)
             total += _context.NextRandomInt(1, checkedDice.Sides);
+        return total;
+    }
+
+    private long DiceRollAt(long index, long dice, long sides, long adds)
+    {
+        var checkedDice = CheckedDice(dice, sides, adds, "diceRollAt");
+        long total = adds;
+        for (long i = 0; i < checkedDice.Dice; i++)
+            total += _context.RandomIntAt(index, i, 1, checkedDice.Sides);
         return total;
     }
 

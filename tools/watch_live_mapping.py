@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from analyze_battleprobe_log import DEFAULT_LOG, MEMTABLE_FOUND_RE, MEMTABLE_ROW_RE, OLD_UNIT_RE, RUNTIME_RE
+from analyze_battleprobe_log import DEFAULT_LOG, MEMTABLE_FOUND_RE, MEMTABLE_ROW_RE, OLD_UNIT_RE, REWRITE_EVENT_RE, RUNTIME_RE
 from promote_runtime_offsets import (
     DEFAULT_BASE,
     DEFAULT_OUTPUT,
@@ -30,6 +30,7 @@ class LogState:
     has_old_header: bool
     old_unit_lines: int
     runtime_events: int
+    rewrite_events: int = 0
     memory_table_found: int = 0
     memory_table_rows: int = 0
 
@@ -42,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Wait for fresh Generic Chronicle [RUNTIME] mapping evidence.")
     p.add_argument("log", nargs="?", type=Path, default=DEFAULT_LOG)
     p.add_argument("--runtime-events", type=int, default=1, help="Minimum [RUNTIME] lines to wait for.")
+    p.add_argument("--rewrite-events", type=int, default=0, help="Minimum [REWRITE] lines to wait for.")
     p.add_argument("--timeout", type=float, default=300.0, help="Seconds to wait before failing.")
     p.add_argument("--interval", type=float, default=1.0, help="Seconds between log checks.")
     p.add_argument("--allow-existing", action="store_true", help="Accept a log older than this watcher start.")
@@ -61,21 +63,31 @@ def main() -> int:
     args = parse_args()
     start_time = time.time()
     deadline = start_time + max(0.1, args.timeout)
-    required_runtime_events = max(1, args.runtime_events)
+    required_runtime_events = max(0, args.runtime_events)
+    required_rewrite_events = max(0, args.rewrite_events)
     last_message = ""
 
     print(f"watching {args.log}")
-    print(f"waiting for current runtime header and {required_runtime_events} [RUNTIME] event(s)")
+    print(
+        f"waiting for current runtime header, {required_runtime_events} [RUNTIME] event(s), "
+        f"and {required_rewrite_events} [REWRITE] event(s)"
+    )
 
     while time.time() <= deadline:
         state = inspect_log(args.log, start_time, args.allow_existing)
-        message = describe_state(state, required_runtime_events)
+        message = describe_state(state, required_runtime_events, required_rewrite_events)
         if message != last_message:
             print(message)
             last_message = message
 
-        if state.exists and state.is_fresh and state.has_current_header and state.runtime_events >= required_runtime_events:
-            print("runtime mapping evidence is ready")
+        if (
+            state.exists
+            and state.is_fresh
+            and state.has_current_header
+            and state.runtime_events >= required_runtime_events
+            and state.rewrite_events >= required_rewrite_events
+        ):
+            print("runtime evidence is ready")
             if not args.skip_analyze:
                 run_analyzer(args.log, args.analysis_output)
             if args.promote:
@@ -86,7 +98,7 @@ def main() -> int:
 
     state = inspect_log(args.log, start_time, args.allow_existing)
     print("timeout waiting for runtime mapping evidence")
-    print(describe_state(state, required_runtime_events))
+    print(describe_state(state, required_runtime_events, required_rewrite_events))
     return 1
 
 
@@ -100,6 +112,7 @@ def inspect_log(log: Path, start_time: float = 0.0, allow_existing: bool = False
     has_old_header = False
     old_unit_lines = 0
     runtime_events = 0
+    rewrite_events = 0
     memory_table_found = 0
     memory_table_rows = 0
 
@@ -112,6 +125,8 @@ def inspect_log(log: Path, start_time: float = 0.0, allow_existing: bool = False
             old_unit_lines += 1
         if RUNTIME_RE.search(line):
             runtime_events += 1
+        if REWRITE_EVENT_RE.search(line):
+            rewrite_events += 1
         if MEMTABLE_FOUND_RE.search(line):
             memory_table_found += 1
         if MEMTABLE_ROW_RE.search(line):
@@ -125,12 +140,13 @@ def inspect_log(log: Path, start_time: float = 0.0, allow_existing: bool = False
         has_old_header,
         old_unit_lines,
         runtime_events,
+        rewrite_events,
         memory_table_found,
         memory_table_rows,
     )
 
 
-def describe_state(state: LogState, required_runtime_events: int) -> str:
+def describe_state(state: LogState, required_runtime_events: int, required_rewrite_events: int = 0) -> str:
     if not state.exists:
         return "log not found yet"
     if not state.is_fresh:
@@ -144,7 +160,16 @@ def describe_state(state: LogState, required_runtime_events: int) -> str:
             f"current runtime loaded; waiting for [RUNTIME] events "
             f"({state.runtime_events}/{required_runtime_events}){memory_table_suffix(state)}"
         )
-    return f"ready: {state.runtime_events} [RUNTIME] event(s){memory_table_suffix(state)}"
+    if state.rewrite_events < required_rewrite_events:
+        return (
+            f"current runtime loaded; waiting for [REWRITE] events "
+            f"({state.rewrite_events}/{required_rewrite_events}); "
+            f"{state.runtime_events} [RUNTIME] event(s){memory_table_suffix(state)}"
+        )
+    return (
+        f"ready: {state.runtime_events} [RUNTIME] event(s), "
+        f"{state.rewrite_events} [REWRITE] event(s){memory_table_suffix(state)}"
+    )
 
 
 def memory_table_suffix(state: LogState) -> str:

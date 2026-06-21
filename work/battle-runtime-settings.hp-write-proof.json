@@ -1,0 +1,14 @@
+{
+  "_note": "LIVE TEST 1 - hp-write-proof. Forces EVERY observed damage to exactly 1 HP. This proves the full live loop end-to-end: stable hook -> HP-delta event detection -> formula engine -> memory write -> echo guard. Needs NO context (formula is the constant 1). If any hit makes a unit lose exactly 1 HP, the reconciler works live.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "FinalDamageFormula": "1",
+  "ApplyDamageResponseRules": false,
+  "ApplyEquipmentDr": false,
+  "InferAttackerFromRecentUnits": false,
+  "LogAttackerCandidates": false,
+  "LogResolvedRuntimeContext": true,
+  "LogUnknownFieldDiffs": false
+}

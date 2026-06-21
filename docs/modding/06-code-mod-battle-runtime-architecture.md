@@ -51,6 +51,14 @@ New local probe update:
 - `Mod.cs` now treats HP changes as signed events: damage is positive final damage, healing is
   negative final damage. Healing rewrite is opt-in through `RewriteObservedHealing=true`, so
   existing damage-only settings keep their old behavior.
+- `Mod.cs` now also observes MP deltas and can optionally reconcile them through
+  `RewriteObservedMpLoss` / `RewriteObservedMpGain`. MP remains off by default and uses a signed
+  `FinalMpChangeFormula`: negative values spend/drain MP, positive values restore MP.
+- After Live Test 1 proved HP writes but exposed stale turn-sampled baselines, `Mod.cs` now keeps
+  a registry of every battle-unit pointer seen by the hook and directly polls every registered
+  pointer about every 25 ms. The hook still supplies recent touch timestamps for the experimental
+  attacker resolver, but HP/MP event detection now uses fresh live reads instead of a single
+  hook-fed buffer snapshot.
 - `Mod.cs` now routes each observed HP event through a small C# formula engine:
   `UnitSnapshot -> DamageEvent -> DamageRule/BattleFormulaEngine -> DamageResult -> HP write`.
   Live events are still target-only until attacker/action context is mapped, but `DamageEvent`
@@ -66,11 +74,13 @@ New local probe update:
   action, equipment DR, response, and derived variables are prepared but before HP is rewritten.
   A zero result intentionally preserves vanilla HP for that event.
 - `RuntimeSettings` now supports `ActionSignalRules`. This is the implemented sentinel-channel
-  bridge: a controlled vanilla damage delta can classify an observed event as `action.swing`,
-  `action.thrust`, `action.cut`, etc., before a true ability-id hook exists.
-- `ActionSignalRules` can now use `ConditionFormula` and `VariableFormulas`, so sentinel events
-  can derive action metadata such as power, wound multiplier, or healing amount from the observed
-  HP event, attacker weapon, target equipment, and item catalog metadata instead of only
+  bridge: a controlled vanilla damage or MP delta can classify an observed event as
+  `action.swing`, `action.thrust`, `action.cut`, `action.spell`, etc., before a true ability-id
+  hook exists.
+- `ActionSignalRules` can now use `EventKind`, `ConditionFormula`, and `VariableFormulas`, so
+  sentinel/context events can be limited to HP damage, healing, MP loss, or MP gain, and can
+  derive action metadata such as power, wound multiplier, or healing amount from the observed
+  HP/MP event, attacker weapon, target equipment, and item catalog metadata instead of only
   installing fixed constants.
 - `DamageEvent` now has an optional attacker slot. The live runtime has an opt-in experimental
   recent-unit attacker resolver: by default it only logs `[CTX]` candidates; if
@@ -103,9 +113,10 @@ New local probe update:
   percent/type response rules, and final damage formulas. This is the preferred way to derive
   reusable tags such as `armor.plate` or `armor.mail` without duplicating item filters in every
   response rule.
-- `DamageRules` and `EquipmentDrRules` now support `ConditionFormula`, so rule selection itself
-  can be formula-driven using attacker, target, action, slot, item, table, and derived variables
-  instead of relying only on fixed match fields.
+- `DamageRules` now support `EventKind`, and `DamageRules` / `EquipmentDrRules` support
+  `ConditionFormula`, so rule selection itself can be limited to damage or healing and then be
+  formula-driven using attacker, target, action, slot, item, table, and derived variables instead
+  of relying only on fixed match fields.
 - `RuntimeSettings` now supports `DamageResponseRules`, the C-bounded mitigation path for the
   accepted v0.2 policy. Response rules multiply a combined permille value, expose it to formulas,
   can be auto-applied with a clamp/chip floor, and can match action variables plus target
@@ -116,7 +127,8 @@ New local probe update:
   separately, e.g. `2d+1`, while keeping formula evaluation reproducible.
 - The expression engine now also has event-seeded dice/random helpers (`diceRoll`, `rand`) for
   real GURPS-like variance. Rolls are pseudo-random but deterministic for a given damage event
-  seed, making logs and smoke tests reproducible.
+  seed, making logs and smoke tests reproducible. Use `randAt` or `diceRollAt` when a roll needs
+  a stable numeric stream that does not depend on formula evaluation order.
 - The expression engine now has integer ratio helpers (`floorDiv`, `ceilDiv`, `roundDiv`,
   `mulDiv`, `mulDivCeil`, `mulDivRound`) so GURPS-style wound multipliers such as cutting
   `x1.5` can be expressed without ad hoc arithmetic.
@@ -207,7 +219,8 @@ for damage/heal, not only CT/MP. The data pipeline itself is already proven.
 
 ### 2. Runtime unit registry
 
-Use the stable `battle_base_ptr` hook as a read-only hot-path sampler:
+Use the stable `battle_base_ptr` hook as a read-only hot-path sampler and unit-pointer discovery
+source:
 
 ```text
 rcx -> BattleUnit*
@@ -227,14 +240,27 @@ The managed polling thread maintains:
 - unit pointer -> team/faction;
 - unit pointer -> first-seen hex dump for unknown-field mapping.
 
-This registry is the foundation for target detection, DR lookup, stat reads, and HP correction.
+Once a pointer has been seen by the hook, the poller reads that unit directly from process memory
+each tick through `ReadableMemoryRange` + `ReadProcessMemory`. This is the important post-Live
+Test 1 change: HP/MP baselines should now be only about one poll interval old rather than "last
+time this unit got its own turn." Hook samples still update the recent-unit touch list used by the
+temporary attacker resolver, so direct polling does not make every unit look like a fresh attacker
+candidate.
+
+Runtime knobs:
+
+- `UnitPollIntervalMs` defaults to `25`. Lower it for tighter live proof timing; keep it positive.
+- `MaxTrackedBattleUnits` defaults to `64`. New unit pointers beyond the cap are skipped with a
+  `[UNIT-SKIP]` log instead of growing the registry without bound.
+
+This registry is the foundation for target detection, DR lookup, stat reads, and HP/MP correction.
 
 ### 3. Event detector
 
 The first event detector can be deliberately simple:
 
 ```text
-if currentHP < previousHP for the same unit pointer:
+if currentHP < previousHP for the same registered unit pointer:
     create DamageObserved(targetPtr, vanillaDelta, timestamp)
 ```
 
@@ -490,7 +516,9 @@ Functions:   min(...) max(...) clamp(value,min,max) abs(x) sign(x)
              diceAvgRound(dice,sides,adds)           # deterministic integer average, rounded
              diceAvgCeil(dice,sides,adds)            # deterministic integer average, ceiling
              diceRoll(dice,sides,adds)               # event-seeded deterministic roll
+             diceRollAt(index,dice,sides,adds)        # event-seeded roll independent of call order
              rand(min,max)                           # inclusive event-seeded integer
+             randAt(index,min,max)                    # inclusive event-seeded integer by stream
              floorDiv(value,divisor)
              ceilDiv(value,divisor)
              roundDiv(value,divisor)
@@ -500,6 +528,10 @@ Functions:   min(...) max(...) clamp(value,min,max) abs(x) sign(x)
 Variables:   vanillaDamage vanillaDamageAbs vanillaHealing
              observedHpDelta observedHpLoss observedHpGain
              previousHp currentHp equipmentDr
+             vanillaMpChange vanillaMpDelta vanillaMpChangeAbs
+             vanillaMpLoss vanillaMpGain
+             observedMpDelta observedMpLoss observedMpGain
+             previousMp currentMp
              damageResponsePermille responsePermille typeResponsePermille
              combinedResponsePermille boundedResponsePermille
              damageResponse.* / response.*:
@@ -508,6 +540,7 @@ Variables:   vanillaDamage vanillaDamageAbs vanillaHealing
                rawPermille or permille aliases for the same response layer
              event.index event.seed
              event.isDamage event.isHealing event.isHpLoss event.isHpGain
+             event.isMpLoss event.isMpGain event.isMpChange
              target.* or t.*:
                charId level hp maxHp mp maxMp team isFoe isAlly pa ma speed move jump brave faith
              attacker.* or a.*:
@@ -515,7 +548,8 @@ Variables:   vanillaDamage vanillaDamageAbs vanillaHealing
                charId level hp maxHp mp maxMp team isFoe isAlly pa ma speed move jump brave faith
              action.* or act.*:
                present sourceVanillaDamage signal vanillaDamage vanillaDamageAbs vanillaHealing
-               isDamage isHealing
+               vanillaMpChange vanillaMpLoss vanillaMpGain
+               isDamage isHealing isMpLoss isMpGain sourceMpChange
                plus every configured ActionSignalRules.Variables and VariableFormulas key,
                defaulting to 0
              slot.<slotName> and slot_<slotName> for target item ids (backwards-compatible)
@@ -530,11 +564,13 @@ Variables:   vanillaDamage vanillaDamageAbs vanillaHealing
              FormulaPreResponseVariables entries, evaluated before equipment DR, damage response,
                and final damage
              FormulaDerivedVariables entries, evaluated in order before final damage
-Rule gates:  DamageRules.ConditionFormula, EquipmentDrRules.ConditionFormula, and
+Rule gates:  DamageRules.ConditionFormula, MpRules.ConditionFormula, EquipmentDrRules.ConditionFormula, and
              DamageResponseRules.ConditionFormula use this same expression context. A nonzero
              result means "match"; zero means "skip this rule".
 Rewrite gate: RewriteConditionFormula also uses this context after derived variables are ready.
               A nonzero result means "rewrite HP"; zero means "leave vanilla HP alone".
+MP rewrite gate: MpRewriteConditionFormula uses the MP event context after derived variables are
+                 ready. A nonzero result means "rewrite MP"; zero preserves vanilla MP.
 ```
 
 Raw reads are little-endian. `Byte`/`Word`/`DWord` read unsigned values, while `SByte` and
@@ -635,11 +671,33 @@ Sentinel action classification example:
 Every variable declared in `ActionSignalRules.Variables` or
 `ActionSignalRules.VariableFormulas` is installed with a default value of `0`. That makes
 expressions like `action.swing`, `action.thrust`, and `action.power` safe even when no signal
-matched. `ActionSignalRules` match in order and currently support `Faction`, `Team`, `CharId`,
-`MinLevel`, `MaxLevel`, `VanillaDamage`, `MinVanillaDamage`, `MaxVanillaDamage`, and
-`ConditionFormula`. These formulas run after configured `EquipmentSlots` and
+matched. `ActionSignalRules` match in order and currently support `Faction`, `EventKind`, `Team`,
+`CharId`, `MinLevel`, `MaxLevel`, `VanillaDamage`, `MinVanillaDamage`, `MaxVanillaDamage`, and
+`ConditionFormula` for HP events. They also support `VanillaMpChange`,
+`MinVanillaMpChange`, and `MaxVanillaMpChange` for MP events. Damage-filtered rules do not match
+MP events, and MP-filtered rules do not match HP events. `EventKind` accepts `Any`,
+`HP`/`HpChange`, `Damage`/`HpLoss`, `Healing`/`HpGain`, `MP`/`MpChange`, `Loss`/`MpLoss`, and
+`Gain`/`MpGain`. Use it for condition-only rules so an HP-damage signal does not accidentally
+classify a healing or MP event. These formulas run after configured `EquipmentSlots` and
 `AttackerEquipmentSlots` are read, so they can use `slot.*`, `targetSlot.*`, `aslot.*`, and
 `attackerSlot.*` item metadata, plus any `FormulaPreActionVariables` tags.
+
+Condition-only controlled-context signal:
+
+```json
+{
+  "ActionSignalRules": [
+    {
+      "Name": "controlled sword swing",
+      "EventKind": "Damage",
+      "ConditionFormula": "a.sourceRecent && aslot.weapon.category_sword",
+      "Variables": { "swing": 1 },
+      "VariableFormulas": { "wp": "aslot.weapon.weaponPower" }
+    }
+  ],
+  "FinalDamageFormula": "vanillaDamage + action.swing * action.wp"
+}
+```
 
 Pre-action classification example:
 
@@ -755,7 +813,10 @@ Those numbers are example placeholders. The real GURPS swing/thrust progression 
 average-damage proofs, `diceAvg` when floor-average behavior is intentional, and `diceRoll` when
 actual GURPS-style variance is desired. `diceRoll` and `rand` use `event.seed` plus a per-formula
 call counter, so the same event evaluates to the same rolled result while separate events can
-vary. The example applies DR before the wound multiplier: cutting uses
+vary. Prefer `diceRollAt(index,dice,sides,adds)` or `randAt(index,min,max)` for important named
+rolls such as base weapon roll, crit roll, or status rider roll; these indexed streams stay stable
+if the formula is refactored or another random helper is inserted earlier. The example applies DR
+before the wound multiplier: cutting uses
 `mulDiv(penetrating, 3, 2)` for x1.5, while thrust/impale can use x2.
 
 The same formula is easier to maintain with derived variables:
@@ -765,7 +826,7 @@ The same formula is easier to maintain with derived variables:
   "RewriteObservedDamage": true,
   "FormulaVariables": { "grossDamage": 20 },
   "FormulaDerivedVariables": [
-    { "Name": "grossDamage", "Formula": "diceRoll(2, 6, 0)" },
+    { "Name": "grossDamage", "Formula": "diceRollAt(1, 2, 6, 0)" },
     { "Name": "penetrating", "Formula": "max(0, grossDamage - equipmentDr)" },
     { "Name": "wound.num", "Formula": "if(action.cut, 3, if(action.impale, 2, 1))" },
     { "Name": "wound.den", "Formula": "if(action.cut, 2, 1)" },
@@ -894,14 +955,17 @@ This smoke test validates:
   `||` guards around unavailable attacker raw reads;
 - signed HP event formulas: positive `finalDamage` hurts, negative `finalDamage` heals, with
   healing gated by `RewriteObservedHealing`;
-- action sentinel variables through `ActionSignalRules`, including safe zero defaults and
-  `DamageRules` selection by action variable;
-- formula-coded action signals through `ActionSignalRules.ConditionFormula` and
-  `ActionSignalRules.VariableFormulas`;
+- signed MP event formulas: negative `finalMpChange` spends/drains MP, positive
+  `finalMpChange` restores MP, separately gated by `RewriteObservedMpLoss` and
+  `RewriteObservedMpGain`;
+- action sentinel variables through `ActionSignalRules`, including HP-delta and MP-delta
+  sentinels, safe zero defaults, and `DamageRules` selection by action variable;
+- event-kind and formula-coded action signals through `ActionSignalRules.EventKind`,
+  `ActionSignalRules.ConditionFormula`, and `ActionSignalRules.VariableFormulas`;
 - action-typed equipment DR through `EquipmentDrRules.ActionSignal` and
   `EquipmentDrRules.RequiredActionVariable`;
-- formula-gated `DamageRules` and `EquipmentDrRules.ConditionFormula`, including attacker weapon
-  gates, action/armor gates, and safe skip on invalid condition formulas;
+- formula-gated `DamageRules`, `MpRules`, and `EquipmentDrRules.ConditionFormula`, including
+  attacker weapon gates, action/armor/resource gates, and safe skip on invalid condition formulas;
 - formula trace variables that expose selected intermediates in `[RUNTIME]` lines without
   affecting HP rewrite success;
 - percent/type response rules through `DamageResponseRules`, including manual formula use,
@@ -946,10 +1010,11 @@ Offline regression runner:
 
 This is the default no-game gate before changing combat formulas. It runs Python syntax/tooling
 tests, strict JSON parsing for the checked-in examples/work files, the C# build, smoke tests,
-runtime settings validation, both scenario simulation fixtures with `expect` assertions, the
-v0.2 matrix against both exact-slot and scan-slot generated policy settings, and the
-matrix-response fixture, plus `git diff --check`. It deliberately does not deploy to Reloaded-II,
-edit AppConfig, touch saves, archive logs, or launch FFT.
+runtime settings validation, scenario simulation fixtures with `expect` assertions, the v0.2
+matrix against both exact-slot and scan-slot generated policy settings, the matrix-response
+fixture, the GURPS-DR fixture, the MP fixture, and the dry-run settings profile, plus
+`git diff --check`. It deliberately does not deploy to Reloaded-II, edit AppConfig, touch saves,
+archive logs, or launch FFT.
 
 Runtime settings simulation:
 
@@ -969,8 +1034,8 @@ expect=pass
 ```
 
 Scenario files may include an `expect` block with `shouldRewrite`, `finalDamage`, `desiredHp`,
-`ruleName`, and `traceContains` assertions. When any assertion fails, the simulator returns exit
-code `3` unless `--ignore-expectations` is passed. This makes
+`finalMpChange`, `desiredMp`, `ruleName`, and `traceContains` assertions. When any assertion
+fails, the simulator returns exit code `3` unless `--ignore-expectations` is passed. This makes
 `docs/modding/examples/runtime-simulation-scenarios.example.json` a regression fixture for the
 current v0.2 generated settings, not just sample input. The short fixture covers the main
 sword/leather policy path, no-attacker damage fallback to vanilla, and signed healing skip.
@@ -994,6 +1059,12 @@ single `DamageResponse(matrix response)` route backed by `FormulaMatrices`:
 
 ```powershell
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- work\battle-runtime-settings.v0.2.matrix.generated.json docs\modding\examples\runtime-simulation-matrix-response.v0.2.example.json
+```
+
+The MP fixture uses `eventKind: "mp"` and asserts signed `finalMpChange` / `desiredMp`:
+
+```powershell
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -c Release -- docs\modding\examples\battle-runtime-settings.mp.example.json docs\modding\examples\runtime-simulation-mp.example.json
 ```
 
 JSON output can be captured for regression comparison:
@@ -1576,16 +1647,38 @@ Damage rewrites are gated by `RewriteObservedDamage` and clamp to nonnegative fi
 healing rewrites are separately gated by `RewriteObservedHealing` and clamp to nonpositive final
 damage. This preserves old damage formulas while allowing explicit healing formulas.
 
+The same polling path now has an opt-in MP reconciler:
+
+```text
+vanillaMP = target.MP
+wantedMP = previousMP + finalMpChange
+write target.MP = Clamp(wantedMP, 0, target.MaxMP)
+```
+
+`finalMpChange` is signed: negative values spend/drain MP, positive values restore MP. MP loss
+rewrites are gated by `RewriteObservedMpLoss`; MP gain rewrites are gated by
+`RewriteObservedMpGain`. If `FinalMpChangeFormula` is empty, the proof settings
+`ProofFinalMpLoss` and `ProofFinalMpGain` provide fixed signed changes.
+
 The write is done from managed code outside the asm hook and is guarded with:
 
+- the destination `HP`/`MP` word is checked as writable through `VirtualQuery` before applying;
+- the actual write uses `WriteProcessMemory` against the current process, so write failures can be
+  logged as `[REWRITE-FAILED]` / `[MP-REWRITE-FAILED]` instead of relying on a raw pointer write;
 - tracking HP is advanced to the desired post-rewrite HP after a successful write;
-- `HpRewriteEchoGuard` suppresses an exact delayed echo of our own HP write within
+- tracking MP is advanced to the desired post-rewrite MP after a successful write;
+- `DryRunRewrites=true` evaluates formulas and logs `[REWRITE-DRY-RUN]` /
+  `[MP-REWRITE-DRY-RUN]`, but does not call `WriteProcessMemory`, does not arm the echo guard,
+  and keeps HP/MP tracking on the observed live value;
+- `ValueRewriteEchoGuard` suppresses an exact delayed echo of our own HP/MP write within
   `SuppressOwnRewriteEchoWindowMs` (default `1000`);
 - clamps for 0..MaxHP;
+- clamps for 0..MaxMP;
 - per-event id/seed for deterministic formula evaluation.
 
 Remaining reconciler work: full KO/status correctness. For the first live proof, prove that HP can
-be reliably rewritten after a normal hit. Then add KO/status once action context is stable.
+be reliably rewritten after a normal hit, then prove MP can be rewritten after a controlled
+cost/drain/restore event. Then add KO/status once action context is stable.
 
 Current opt-in settings path:
 
@@ -1597,6 +1690,8 @@ The code mod watches this file and the configured `ItemCatalogPath` during the p
 Changes are picked up about once per second, so formula constants, tables, DR rules, action
 signals, and catalog data can be iterated without rebuilding the DLL. If a settings edit is not
 valid JSON, the runtime logs `[SETTINGS-RELOAD-FAILED]` and keeps using the last valid settings.
+`UnitPollIntervalMs` and `MaxTrackedBattleUnits` are also runtime settings, so polling sensitivity
+and registry cap can be adjusted for a live test without rebuilding.
 
 Fixed final-damage proof:
 
@@ -1630,6 +1725,114 @@ Formula-driven healing proof:
 }
 ```
 
+Formula-driven MP proof:
+
+```json
+{
+  "RewriteObservedMpLoss": true,
+  "RewriteObservedMpGain": true,
+  "FinalMpChangeFormula": "if(event.isMpLoss, -min(previousMp, vanillaMpLoss + t.ma), min(t.maxMp - previousMp, vanillaMpGain + t.ma))",
+  "MpRewriteConditionFormula": "event.isMpChange"
+}
+```
+
+Dry-run mapping/evaluation proof:
+
+```json
+{
+  "DryRunRewrites": true,
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": true,
+  "RewriteObservedMpLoss": true,
+  "RewriteObservedMpGain": true,
+  "LogResolvedRuntimeContext": true,
+  "FinalDamageFormula": "if(event.isHealing, -min(t.maxHp - previousHp, vanillaHealing + t.ma), max(0, vanillaDamage - min(vanillaDamage, t.ma)))",
+  "FinalMpChangeFormula": "if(event.isMpLoss, -min(previousMp, vanillaMpLoss + t.ma), min(t.maxMp - previousMp, vanillaMpGain + t.ma))"
+}
+```
+
+The checked-in version is
+`docs/modding/examples/battle-runtime-settings.dry-run.example.json`. Use it when the next live
+question is "does the runtime classify the event and compute the formula I expect?" rather than
+"can we write the corrected HP/MP value yet?". A dry-run pass still does not prove that the final
+memory write sticks; it only proves detection, context, formula evaluation, and the planned
+rewrite decision.
+
+MP sentinel action proof:
+
+```json
+{
+  "RewriteObservedMpLoss": true,
+  "ActionSignalRules": [
+    {
+      "Name": "MP cost sentinel",
+      "EventKind": "MpLoss",
+      "VanillaMpChange": -8,
+      "Signal": 201,
+      "Variables": { "spell": 1 },
+      "VariableFormulas": { "mpCost": "vanillaMpLoss" }
+    }
+  ],
+  "FinalMpChangeFormula": "-min(previousMp, vanillaMpLoss + action.mpcost)",
+  "MpRewriteConditionFormula": "event.isMpLoss && action.spell"
+}
+```
+
+MP rule-engine proof:
+
+```json
+{
+  "RewriteObservedMpLoss": true,
+  "RewriteObservedMpGain": true,
+  "ActionSignalRules": [
+    {
+      "Name": "MP cost sentinel",
+      "EventKind": "MpLoss",
+      "VanillaMpChange": -8,
+      "Variables": { "spell": 1 }
+    }
+  ],
+  "MpRules": [
+    {
+      "Name": "Spell MP loss rule",
+      "EventKind": "Loss",
+      "RequiredActionVariable": "spell",
+      "FinalMpChangeFormula": "-min(previousMp, vanillaMpLoss + t.ma)"
+    },
+    {
+      "Name": "Small gain cap",
+      "EventKind": "Gain",
+      "MaxFinalMpChange": 5
+    }
+  ],
+  "FinalMpChangeFormula": "vanillaMpChange"
+}
+```
+
+Supported `MpRules` match fields:
+
+```text
+Faction: Any | Ally | Foe
+EventKind: Any | Loss/MpLoss | Gain/MpGain
+Team, CharId, MinLevel, MaxLevel
+ActionSignal
+RequiredActionVariable
+ConditionFormula
+```
+
+Supported `MpRules` effect fields:
+
+```text
+FinalMpChangeFormula
+FinalMpChange
+ScaleNumerator / ScaleDenominator
+MinFinalMpChange / MaxFinalMpChange
+```
+
+If one or more `MpRules` match the MP event, the first matching rule takes precedence over the
+global `FinalMpChangeFormula`. If no rule matches, `FinalMpChangeFormula`, `ProofFinalMpLoss`, or
+`ProofFinalMpGain` are used.
+
 Static DR-style proof:
 
 ```json
@@ -1652,12 +1855,14 @@ Rule-engine proof:
   "DamageRules": [
     {
       "Name": "Foes have DR 10",
+      "EventKind": "Damage",
       "Faction": "Foe",
       "FlatDamageReduction": 10,
       "MinFinalDamage": 0
     },
     {
       "Name": "Ally proof clamp",
+      "EventKind": "Damage",
       "Faction": "Ally",
       "FinalDamage": 1
     }
@@ -1669,6 +1874,7 @@ Supported `DamageRules` match fields:
 
 ```text
 Faction: Any | Ally | Foe
+EventKind: Any | HP/HpChange | Damage/HpLoss | Healing/HpGain
 Team
 CharId
 MinLevel
@@ -1692,6 +1898,10 @@ MaxFinalDamage
 `FinalDamageFormula` and `FinalDamage` are signed. Positive values are damage; negative values are
 healing. Damage events clamp the result to `0..9999`; healing events clamp it to `-9999..0`.
 `FlatDamageReduction` and equipment DR are only applied to damage events.
+
+Use `EventKind` when a rule should not cross HP event types. For example, a `Damage` rule will not
+match a healing event, and a `Healing` rule can safely return a negative `FinalDamageFormula`
+without becoming a damage fallback.
 
 If `FlatDamageReduction` is greater than zero, it takes precedence and computes:
 
@@ -1788,6 +1998,22 @@ work\battleprobe_analysis.md
 If the report says no pointer-keyed `[UNIT]` lines were found, the game is still running an old
 loaded assembly. Restart through Reloaded-II so the current DLL loads.
 
+For the next `hp-write-proof` rerun, the analyzer also emits an `HP Write Proof Check`. With the
+continuous-polling DLL, `[DAMAGE]` / `[HEALING]` lines include `sampleAgeMs=<n>`, the age of the
+previous HP sample for that same unit pointer. A useful proof log should show concrete
+`[REWRITE]` events with `finalDamage=1`, no `[REWRITE-FAILED]` lines, and a small maximum
+`sampleAgeMs` (the analyzer treats `<=150ms` as a pass-candidate threshold). Missing
+`sampleAgeMs` means the game did not load the current instrumented DLL.
+
+To wait specifically for HP-write proof evidence instead of mapping evidence:
+
+```powershell
+python tools\watch_live_mapping.py --runtime-events 0 --rewrite-events 1
+```
+
+The watcher still requires the current runtime header, then runs the analyzer unless
+`--skip-analyze` is passed.
+
 ## What this gives us
 
 Achievable with this architecture:
@@ -1826,36 +2052,44 @@ Those are follow-up layers, not reasons to abandon the code-mod path.
    and possible roster slot fields. Generate `work/item_catalog.csv` first so the analyzer can
    cross-reference full dump byte/word values with item names/categories in
    `work/battleprobe_analysis.md`.
-3. **HP write proof.** Implemented in code, unverified live. Enable `RewriteObservedDamage` and
-   first test `ProofFinalDamage=1`. If this works, we have a real post-damage hook.
-4. **Healing write proof.** Implemented in code, unverified live. Enable
+3. **Dry-run evaluation proof.** Implemented in code, unverified live. Enable
+   `DryRunRewrites=true` with HP/MP rewrite gates and `LogResolvedRuntimeContext=true`. Confirm
+   `[REWRITE-DRY-RUN]` and `[MP-REWRITE-DRY-RUN]` lines appear for controlled events while HP/MP
+   remain untouched by the code mod. This proves event detection, context resolution, and formula
+   decisions before any memory write risk.
+4. **HP write proof.** Implemented in code, first write proven live, continuous-polling fix
+   unverified live. Disable dry-run, enable `RewriteObservedDamage`, and first test
+   `ProofFinalDamage=1`. Then run `python tools\analyze_battleprobe_log.py` and require the
+   `HP Write Proof Check` to report concrete `finalDamage=1` rewrites, no rewrite failures, and
+   fresh `sampleAgeMs` baselines. If this works, we have a real post-damage hook.
+5. **Healing write proof.** Implemented in code, unverified live. Enable
    `RewriteObservedHealing=true` with `ProofFinalHealing` or a negative `FinalDamageFormula`, then
    verify a vanilla heal can be corrected by the runtime.
-5. **Static DR proof.** Implemented in code, unverified live. Enable `FlatDamageReduction=10` or
+6. **Static DR proof.** Implemented in code, unverified live. Enable `FlatDamageReduction=10` or
    a matching `DamageRules` entry. Verify hits are reduced after vanilla applies damage.
-6. **Equipment DR proof.** Runtime support is implemented, unverified live. Map equipped armor,
+7. **Equipment DR proof.** Runtime support is implemented, unverified live. Map equipped armor,
    configure `EquipmentSlots` + `EquipmentDrRules`, and verify hits are reduced by item DR.
    Start with exact `ItemId`, then test catalog-backed rules such as `ItemCategory=Armor` plus
    `DamageReductionFormula`. Use `LogResolvedRuntimeContext=true` to confirm whether `Body`
    resolved as present, missing, or ambiguous before trusting any HP outcome.
-7. **Percent/type response proof.** Runtime support is implemented and covered offline. After
+8. **Percent/type response proof.** Runtime support is implemented and covered offline. After
    equipment offsets are mapped, configure `DamageResponseRules` for plate/mail/leather/cloth
    and verify that `swing`, `thrust`, `crush`, and `missile` placeholder actions produce the v0.2
    response pattern in live HP outcomes. The `[RUNTIME]` line should show the expected
    `response=raw.../permille...` value for each hit.
-8. **Action context proof.** First, use the new `[CTX]` recent-unit evidence in controlled
+9. **Action context proof.** First, use the new `[CTX]` recent-unit evidence in controlled
    battles to see whether attacker touch order is useful. In parallel, use `[RUNTIME]` lines to
    test `ActionSignalRules` by making two ability families produce distinct placeholder deltas
    and verifying formulas see `action.swing`/`action.thrust`. Then capture true active attacker
    and action family/ability through either a current-action structure or UI/preview hook.
-9. **Formula engine proof.** Target-side expression formulas are implemented in code, unverified
+10. **Formula engine proof.** Target-side expression formulas are implemented in code, unverified
    live. Offline smoke tests prove the expression engine can already consume attacker PA,
    target armor DR, catalog-backed item metadata, and sentinel action variables. The remaining
-   full proof is to feed it live attacker PA/weapon class/action type after step 6 maps that
+   full proof is to feed it live attacker PA/weapon class/action type after step 7 maps that
    context.
 
-If steps 1-5 pass, the answer to "can we put DR in armor?" is yes for real HP outcomes. Steps
-6-7 determine how complete and elegant the final battle system can become.
+If steps 1-6 pass, the answer to "can we put DR in armor?" is yes for real HP outcomes. Steps
+7-8 determine how complete and elegant the final battle system can become.
 
 ## Sources
 
