@@ -1,0 +1,26 @@
+{
+  "_note": "DEATH-BY-HP-WRITE TEST, STEP 2 (any target) - HP=0 + KO FLAG. Same as death-test-anytarget.json but CauseDeathOnZeroHp=true: after forcing the target's HP to 0, also set the death/status bit found in Test 2a (struct +0x61 |= 0x20). Used because step 1 (HP=0 alone) left a zombie at 0 HP with only +0x30/HP changed. WATCH: does the target die now? Look for [DEATH-WRITE ...] lines confirming the flag write. Requires a NEUTERED basic weapon attack so vanilla is non-lethal. AffectAllies=true so any target works.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "FinalDamageFormula": "9999",
+  "ApplyDamageResponseRules": false,
+  "ApplyEquipmentDr": false,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "CaptureStructOnDeath": true,
+  "DeathCaptureFollowTicks": 60,
+  "LogUnknownFieldDiffs": true,
+  "CauseDeathOnZeroHp": true,
+  "DeathStateWrites": [
+    {
+      "Name": "KO-0x61-bit0x20",
+      "_offset_hex": "0x61 = 97 dec",
+      "_mask_hex": "0x20 = 32 dec (set on every death in Test 2a)",
+      "Offset": 97,
+      "Width": "Byte",
+      "OrMask": 32
+    }
+  ]
+}

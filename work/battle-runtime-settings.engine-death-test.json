@@ -1,0 +1,17 @@
+{
+  "_note": "ENGINE-OWNED DEATH TEST (B1, 'leave-at-1'). New lever MinHpFloor=1: our HP write never goes below 1, so it can NEVER create a zombie. FinalDamageFormula=9999 makes every observed hit 'lethal' -> our write drops the target to 1 HP. The engine's own (neutered) chip on the NEXT hit takes it 1->0 and the ENGINE kills it for real; we detect the observed 0 and skip rewriting it ([REWRITE-SKIP-DEATH]). TEST: with a basic (neutered) weapon attack, hit the SAME full-HP target TWICE. Hit 1 -> it drops to 1 HP (log [REWRITE ...->1]). Hit 2 -> it should DIE for real (KO/crystal, NOT zombie) and log [REWRITE-SKIP-DEATH]. Requires the neuter data mod deployed. AffectAllies+AffectFoes both true, so any target works.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": true,
+  "FinalDamageFormula": "9999",
+  "MinHpFloor": 1,
+  "ApplyDamageResponseRules": false,
+  "ApplyEquipmentDr": false,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "CaptureStructOnDeath": true,
+  "DeathCaptureFollowTicks": 60,
+  "LogUnknownFieldDiffs": true,
+  "CauseDeathOnZeroHp": false
+}
