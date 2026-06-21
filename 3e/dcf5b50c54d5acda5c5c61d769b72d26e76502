@@ -1,0 +1,21 @@
+docs/reference/fft-vanilla-ability-effect-index.md
+  s_fce6b25a5764ca::t_1921ba982e6b18 28-33
+tools/build_vanilla_reference.py
+  s_fce6b25a5764ca::t_76001bde9f9cb8 568-573
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3edcf5b50c54d5acda5c5c61d769b72d26e76502",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
