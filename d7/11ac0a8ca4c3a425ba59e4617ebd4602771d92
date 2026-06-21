@@ -1,0 +1,36 @@
+work/t10-action-economy-scenarios-v0.json
+  s_fce6b25a5764ca::t_e55076dbe11e24 1-2,4-59,75-103,119-147,163-203,222-274,294-356,377-422,441-476,495-518,534-564,583-606,622-645,661-689,705-733,1081-1083
+  s_fce6b25a5764ca::t_87fe2d2e9763e7 3
+  s_fce6b25a5764ca::t_258c9dff5e5f52 778-792,822-836,878-895,932-948
+  s_fce6b25a5764ca::t_6bb5e03f63800d 949-977,993-1021,1037-1065
+  s_fce6b25a5764ca::t_5ada0b178bc5f6 978-992,1022-1036,1066-1080
+  s_fce6b25a5764ca::t_5cee191e25e503 749-777,793-821,837-877,896-931
+  s_fce6b25a5764ca::t_26b8efe95b210f 60-74,104-118,148-162,204-221,275-293,357-376,423-440,477-494,519-533,565-582,607-621,646-660,690-704,734-748
+work/gpt-t10-action-economy-v0.json
+  s_fce6b25a5764ca::t_258c9dff5e5f52 264-336
+  s_fce6b25a5764ca::t_26b8efe95b210f 1-2,4-263,388-391
+  s_fce6b25a5764ca::t_5ada0b178bc5f6 3,337-387
+tools/check_action_economy.py
+  s_fce6b25a5764ca::t_e55076dbe11e24 1-144
+docs/job-balance/36-action-economy-model-schema.md
+  s_fce6b25a5764ca::t_e55076dbe11e24 1-2,4-69,77-149,153-158,163-199,201-211
+  s_fce6b25a5764ca::t_6bb5e03f63800d 74-76,151,160,162
+  s_fce6b25a5764ca::t_8a64b7499054ef 70-73,150,152,159,161,200
+  s_fce6b25a5764ca::t_87fe2d2e9763e7 3,212-227
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d711ac0a8ca4c3a425ba59e4617ebd4602771d92",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
