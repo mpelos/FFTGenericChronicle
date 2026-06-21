@@ -1,0 +1,21 @@
+tools/check_build_incidence.py
+  s_fce6b25a5764ca::t_a8153b4057633a 1-209
+.gitignore
+  s_fce6b25a5764ca::t_459f1c11fdd48b 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "5578504249ce3a93ff3cf0aeb0e154e1ec82764e",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
