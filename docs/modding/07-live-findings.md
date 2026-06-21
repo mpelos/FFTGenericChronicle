@@ -265,3 +265,29 @@ hot-reload ~1/s; copy the chosen profile to
 
 The outcome of 2b decides whether the death-state RE (2a) is even on the critical path, before we
 invest further in it.
+
+---
+
+## LIVE TEST 2a - death-flag capture (2026-06-21) - PASSED
+
+Profile `death-flag-capture` (observe-only, no neuter). Player killed 5 units by normal damage.
+
+### Result: the death/status flag is struct `+0x61`, bit `0x20`
+All 5 `[DEATH-DIFF]` lines (char ids 0x82, 0x80, 0x32, 0x01, 0x80 - humans and monsters) were:
+
+```
++0x30->00 (HP)  +0x61: 00->20
+```
+
+`+0x61` flips `00->20` on **every** death; nothing else changed consistently (`+0x63:01->00`
+appeared once = noise) and `[DEATH-FOLLOW]` was empty (no delayed change within ~1.5s, in the
+0x00..0x17F window). So within the unit struct, death = HP 0 **and** `+0x61 |= 0x20`. This maps the
+first bit of the previously-unknown status region (docs/modding/05 updated).
+
+### What this enables
+`DeathStateWrites` is now configured with `Offset=0x61 (97), Width=Byte, OrMask=0x20 (32)`. Two
+profiles are ready for Test 2b: `death-test.json` (HP=0 alone, `CauseDeathOnZeroHp=false`) and
+`death-test-killflag.json` (HP=0 + set `+0x61` bit, `CauseDeathOnZeroHp=true`). Settings hot-reload,
+so 2b can try HP=0-alone first and, if the unit zombies, swap to the killflag profile without
+relaunching. Open question 2b answers: is `+0x61|=0x20` (plus HP=0) enough, or is death also tracked
+outside the unit struct (turn manager / AI lists)?

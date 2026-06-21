@@ -45,6 +45,14 @@ status bitfields, and R/S/M ability ids weren't locatable from full-HP/no-status
 them later from controlled units or at the formula hook. The current harness now captures through
 0x17F so the next controlled battle can test whether those fields live later in the unit object.
 
+**CONFIRMED LIVE (2026-06-21, Test 2a death-flag capture):** `+0x61` is a **status byte**, and
+**bit `0x20` is set on death** (KO/dead). In 5/5 deaths (humans and monsters) the alive->dead diff
+was exactly `+0x30->00` (HP) plus `+0x61: 00->20`, with no other consistent change and no delayed
+follow-up change. This is the first mapped bit of the status bitfield region. The code mod can both
+read it (`hasBit(targetByte(0x61), 5)` for KO checks) and write it (`DeathStateWrites` with
+`Offset=0x61, OrMask=0x20`) to set the death state when our formula is lethal. Whether setting this
+bit (plus HP=0) is *sufficient* to make the engine treat the unit as dead is the Test 2b question.
+
 Current harness support for this mapping: `Mod.cs` copies `0x00..0x17F`, logs `[DUMP]` plus
 `[CANDIDATES]` for non-zero bytes/plausible 16-bit ids in `0x44..0x17F`, and logs `[DIFF]` when
 those unknown bytes change. Use controlled units with deliberately different gear/status to

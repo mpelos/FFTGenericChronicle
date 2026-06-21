@@ -1,0 +1,26 @@
+{
+  "_note": "DEATH-BY-HP-WRITE TEST, STEP 2 of 2 - HP=0 + KO FLAG (docs/modding/07 Test 2b). Use this ONLY if step 1 (death-test.json) left a 'zombie' at 0 HP. Same as step 1 but CauseDeathOnZeroHp=true: after forcing a foe's HP to 0, also set the death/status bit found in Test 2a (struct +0x61 |= 0x20). WATCH: does the enemy die now? Look for [DEATH-WRITE ...] lines confirming the flag write. If it dies -> we can cause death ourselves (gate 2 solved). If still a zombie -> death is also tracked outside the unit struct (turn manager / AI), and we capture more.",
+  "RewriteObservedDamage": true,
+  "RewriteObservedHealing": false,
+  "AffectFoes": true,
+  "AffectAllies": false,
+  "FinalDamageFormula": "9999",
+  "ApplyDamageResponseRules": false,
+  "ApplyEquipmentDr": false,
+  "InferAttackerFromRecentUnits": false,
+  "LogResolvedRuntimeContext": true,
+  "CaptureStructOnDeath": true,
+  "DeathCaptureFollowTicks": 60,
+  "LogUnknownFieldDiffs": true,
+  "CauseDeathOnZeroHp": true,
+  "DeathStateWrites": [
+    {
+      "Name": "KO-0x61-bit0x20",
+      "_offset_hex": "0x61 = 97 dec",
+      "_mask_hex": "0x20 = 32 dec (set on every death in Test 2a)",
+      "Offset": 97,
+      "Width": "Byte",
+      "OrMask": 32
+    }
+  ]
+}
