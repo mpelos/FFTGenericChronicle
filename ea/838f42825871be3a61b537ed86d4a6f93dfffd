@@ -1,0 +1,22 @@
+docs/job-balance/02-job-design-protocol.md
+  s_fce6b25a5764ca::t_f4d4c1487c0b6e 1-2,4-39,46-144,146-286,332-411,414-653
+  s_fce6b25a5764ca::t_ff37c007c7bb08 3,40-45
+  s_fce6b25a5764ca::t_aa0fef219f79df 287-331,412-413
+  s_fce6b25a5764ca::t_81c10fd859d340 145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ea838f42825871be3a61b537ed86d4a6f93dfffd",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
