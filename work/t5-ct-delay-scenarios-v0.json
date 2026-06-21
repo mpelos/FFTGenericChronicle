@@ -1,0 +1,238 @@
+{
+  "schema_version": "t5-ct-delay-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-20",
+  "source_docs": [
+    "docs/job-balance/06-knight-archer-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/11-ct-delay-model-schema.md",
+    "work/sim-inputs-v0.2.1.json"
+  ],
+  "external_sources": [
+    {
+      "id": "aerostar_battle_mechanics",
+      "url": "https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/3876",
+      "notes": [
+        "CT reaches active turn at 100.",
+        "Each clocktick increases CT by Speed.",
+        "Post-turn CT reduction depends on move/action choice.",
+        "Slow action CTR is round-up of 100 divided by spell speed."
+      ]
+    }
+  ],
+  "formula_contract": {
+    "ticks_to_turn": "0 if current_ct>=100 else ceil((100-current_ct)/speed)",
+    "post_turn_ct": {
+      "move_and_act": -100,
+      "move_only": -80,
+      "act_only": -80,
+      "wait": -60
+    },
+    "ctr_from_spell_speed": "ceil(100/spell_speed)",
+    "ticks_to_resolution": "ctr",
+    "jump_ticks": "ceil(50/speed)",
+    "target_safe": "ticks_to_resolution < target_ticks_to_turn",
+    "same_tick_policy": "unsafe_for_panel_targeted_delayed_actions",
+    "interrupts_before_resolution": "interrupt_tick < ticks_to_resolution",
+    "whiff_window_ticks": "max(0,ticks_to_resolution-target_ticks_to_turn)",
+    "predictability": "safe if target_safe else unsafe",
+    "whiff_window_ticks_note": "lateness_magnitude_only_not_safe_unsafe_verdict"
+  },
+  "phase_speed_bands": {
+    "early": 6,
+    "mid": 7,
+    "late": 8,
+    "stress": 9
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t5_ticks_to_turn_from_zero_speed6",
+      "model": "turn_readiness",
+      "unit": {
+        "speed": 6,
+        "current_ct": 0
+      },
+      "expected": {
+        "ticks_to_turn": 17
+      }
+    },
+    {
+      "scenario_id": "t5_ticks_to_turn_partial_ct_speed8",
+      "model": "turn_readiness",
+      "unit": {
+        "speed": 8,
+        "current_ct": 36
+      },
+      "expected": {
+        "ticks_to_turn": 8
+      }
+    },
+    {
+      "scenario_id": "t5_ticks_to_turn_ready_over100",
+      "model": "turn_readiness",
+      "unit": {
+        "speed": 7,
+        "current_ct": 114
+      },
+      "expected": {
+        "ticks_to_turn": 0
+      }
+    },
+    {
+      "scenario_id": "t5_post_turn_move_and_act_spillover",
+      "model": "post_turn_ct",
+      "unit": {
+        "current_ct": 114,
+        "turn_choice": "move_and_act"
+      },
+      "expected": {
+        "new_ct": 14
+      }
+    },
+    {
+      "scenario_id": "t5_post_turn_wait_spillover",
+      "model": "post_turn_ct",
+      "unit": {
+        "current_ct": 114,
+        "turn_choice": "wait"
+      },
+      "expected": {
+        "new_ct": 54
+      }
+    },
+    {
+      "scenario_id": "t5_spell_speed25_ctr4",
+      "model": "ctr_from_spell_speed",
+      "action": {
+        "spell_speed": 25
+      },
+      "expected": {
+        "ctr": 4,
+        "ticks_to_resolution": 4
+      }
+    },
+    {
+      "scenario_id": "t5_spell_speed34_ctr3",
+      "model": "ctr_from_spell_speed",
+      "action": {
+        "spell_speed": 34
+      },
+      "expected": {
+        "ctr": 3,
+        "ticks_to_resolution": 3
+      }
+    },
+    {
+      "scenario_id": "t5_delayed_action_safe_window",
+      "model": "delayed_target_safety",
+      "action": {
+        "ticks_to_resolution": 4,
+        "panel_targeted": true
+      },
+      "target": {
+        "speed": 6,
+        "current_ct": 40,
+        "will_vacate_if_turn_arrives": true
+      },
+      "expected": {
+        "target_ticks_to_turn": 10,
+        "target_safe": true,
+        "can_resolve_on_target": true,
+        "whiff_window_ticks": 0,
+        "predictability": "safe"
+      }
+    },
+    {
+      "scenario_id": "t5_delayed_action_same_tick_unsafe",
+      "model": "delayed_target_safety",
+      "action": {
+        "ticks_to_resolution": 4,
+        "panel_targeted": true
+      },
+      "target": {
+        "speed": 6,
+        "current_ct": 80,
+        "will_vacate_if_turn_arrives": true
+      },
+      "expected": {
+        "target_ticks_to_turn": 4,
+        "target_safe": false,
+        "can_resolve_on_target": false,
+        "whiff_window_ticks": 0,
+        "predictability": "unsafe"
+      }
+    },
+    {
+      "scenario_id": "t5_delayed_action_unsafe_window",
+      "model": "delayed_target_safety",
+      "action": {
+        "ticks_to_resolution": 6,
+        "panel_targeted": true
+      },
+      "target": {
+        "speed": 8,
+        "current_ct": 76,
+        "will_vacate_if_turn_arrives": true
+      },
+      "expected": {
+        "target_ticks_to_turn": 3,
+        "target_safe": false,
+        "can_resolve_on_target": false,
+        "whiff_window_ticks": 3,
+        "predictability": "unsafe"
+      }
+    },
+    {
+      "scenario_id": "t5_interrupt_before_resolution",
+      "model": "interrupt_window",
+      "action": {
+        "ticks_to_resolution": 5,
+        "interrupt_tick": 3
+      },
+      "expected": {
+        "interrupts_before_resolution": true
+      }
+    },
+    {
+      "scenario_id": "t5_interrupt_same_tick_not_before_resolution",
+      "model": "interrupt_window",
+      "action": {
+        "ticks_to_resolution": 5,
+        "interrupt_tick": 5
+      },
+      "expected": {
+        "interrupts_before_resolution": false
+      }
+    },
+    {
+      "scenario_id": "t5_speed_save_next_turn_delta",
+      "model": "speed_delta",
+      "unit": {
+        "current_ct": 20,
+        "speed_before": 8,
+        "speed_delta": 2
+      },
+      "expected": {
+        "ticks_to_turn_before": 10,
+        "speed_after": 10,
+        "ticks_to_turn_after": 8
+      }
+    },
+    {
+      "scenario_id": "t5_jump_like_speed5_ticks10",
+      "model": "jump_like",
+      "unit": {
+        "speed": 5
+      },
+      "expected": {
+        "jump_ticks": 10
+      }
+    }
+  ],
+  "expected_counter_outputs": [
+    "scenario_id",
+    "model",
+    "calculated_fields",
+    "validation_errors"
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "scenario_count": 14,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t5_delayed_action_safe_window",
+      "model": "delayed_target_safety",
+      "calculated_fields": {
+        "target_ticks_to_turn": 10,
+        "target_safe": true,
+        "can_resolve_on_target": true,
+        "whiff_window_ticks": 0,
+        "predictability": "safe"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_delayed_action_same_tick_unsafe",
+      "model": "delayed_target_safety",
+      "calculated_fields": {
+        "target_ticks_to_turn": 4,
+        "target_safe": false,
+        "can_resolve_on_target": false,
+        "whiff_window_ticks": 0,
+        "predictability": "unsafe"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_delayed_action_unsafe_window",
+      "model": "delayed_target_safety",
+      "calculated_fields": {
+        "target_ticks_to_turn": 3,
+        "target_safe": false,
+        "can_resolve_on_target": false,
+        "whiff_window_ticks": 3,
+        "predictability": "unsafe"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_interrupt_before_resolution",
+      "model": "interrupt_window",
+      "calculated_fields": {
+        "interrupts_before_resolution": true
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_interrupt_same_tick_not_before_resolution",
+      "model": "interrupt_window",
+      "calculated_fields": {
+        "interrupts_before_resolution": false
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_jump_like_speed5_ticks10",
+      "model": "jump_like",
+      "calculated_fields": {
+        "jump_ticks": 10
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_post_turn_move_and_act_spillover",
+      "model": "post_turn_ct",
+      "calculated_fields": {
+        "new_ct": 14
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_post_turn_wait_spillover",
+      "model": "post_turn_ct",
+      "calculated_fields": {
+        "new_ct": 54
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_speed_save_next_turn_delta",
+      "model": "speed_delta",
+      "calculated_fields": {
+        "ticks_to_turn_before": 10,
+        "speed_after": 10,
+        "ticks_to_turn_after": 8
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_spell_speed25_ctr4",
+      "model": "ctr_from_spell_speed",
+      "calculated_fields": {
+        "ctr": 4,
+        "ticks_to_resolution": 4
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_spell_speed34_ctr3",
+      "model": "ctr_from_spell_speed",
+      "calculated_fields": {
+        "ctr": 3,
+        "ticks_to_resolution": 3
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_ticks_to_turn_from_zero_speed6",
+      "model": "turn_readiness",
+      "calculated_fields": {
+        "ticks_to_turn": 17
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_ticks_to_turn_partial_ct_speed8",
+      "model": "turn_readiness",
+      "calculated_fields": {
+        "ticks_to_turn": 8
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t5_ticks_to_turn_ready_over100",
+      "model": "turn_readiness",
+      "calculated_fields": {
+        "ticks_to_turn": 0
+      },
+      "validation_errors": []
+    }
+  ]
+}
