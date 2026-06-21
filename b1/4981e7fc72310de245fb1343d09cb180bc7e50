@@ -1,0 +1,20 @@
+docs/job-balance/30-roster-completion-and-infra-sprint-plan.md
+  s_fce6b25a5764ca::t_a22d284096514e 67-68,136-137
+  s_fce6b25a5764ca::t_ca71ba1f5b062b 74-112,116-117,119,130,138-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "b14981e7fc72310de245fb1343d09cb180bc7e50",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
