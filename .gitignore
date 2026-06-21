@@ -39,6 +39,7 @@ tools/*
 !tools/check_ct_delay.py
 !tools/check_armor_response.py
 !tools/check_enemy_offense.py
+!tools/check_targeting_challenge.py
 !tools/build_vanilla_reference.py
 
 # === Unpacked game data (copyrighted, regenerated) ===

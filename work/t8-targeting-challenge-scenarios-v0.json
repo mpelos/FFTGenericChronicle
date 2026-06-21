@@ -1,0 +1,705 @@
+{
+  "schema_version": "t8-targeting-challenge-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/06-knight-archer-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/12-vanilla-skill-status-reference.md",
+    "docs/job-balance/15-targeting-challenge-model-schema.md",
+    "docs/reference/fft-vanilla-ability-effect-index.md",
+    "docs/reference/fft-vanilla-status-effect-map.md"
+  ],
+  "formula_contract": {
+    "normalization": "per_enemy_decision",
+    "candidate_eligibility": "can_target and can_reach and line_of_effect and not ai_ignored",
+    "control_override": "control_state != normal selects control_policy_candidate_id and ignores challenge for this decision",
+    "control_override_eligibility": "control override is not gated by normal AI eligibility; the control policy owns the target selection",
+    "hard_challenge": "if mode=hard and actor is not forced_target_immune and challenger has an eligible candidate, select the highest-scoring eligible challenger candidate",
+    "hard_challenge_fallback": "forced_target_immune actors or ineligible challengers use normal scoring",
+    "soft_challenge": "candidate_score = tactical_score + lethal_bonus + self_preservation_bonus + objective_bonus + challenge_bonus_if_targeting_challenger",
+    "soft_challenge_bonus_type": "additive_not_multiplicative",
+    "tie_breaker": "earliest candidate in scenario order",
+    "duration_policy": "duration_ticks_is_context_only_for_later_t8xt5_composition",
+    "mandatory_piece_policy": "T2 must flag challenge, taunt, mark, defender, and anti-targeting incidence before concrete job data is accepted"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t8_normal_selects_highest_score",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "none",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 60,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 80,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 80,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_tie_break_earliest_candidate_wins",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "none",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 70,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 70,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 70,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_soft_challenge_redirects_close_choice",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30,
+        "duration_ticks": 24
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 60,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 80,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 90,
+        "selected_challenge_bonus": 30,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_soft_challenge_counts_multiple_challenger_candidates",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30,
+        "duration_ticks": 24
+      },
+      "candidates": [
+        {
+          "candidate_id": "basic_attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 40,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "heavy_attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 50,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 75,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "heavy_attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 80,
+        "selected_challenge_bonus": 30,
+        "eligible_count": 3,
+        "challenge_bonus_applied_count": 2,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_soft_challenge_loses_to_lethal",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 60,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "finish_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 70,
+          "lethal_bonus": 40,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "finish_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 110,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_soft_challenge_loses_to_self_preservation",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 55,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "move_to_safety",
+          "target_id": "self",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 10,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 100,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "move_to_safety",
+        "selected_target_id": "self",
+        "selected_total_score": 110,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_soft_challenge_unreachable_challenger",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": false,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 60,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 70,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 70,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_hard_challenge_valid_forces_challenger",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 45,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 95,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 45,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": true,
+        "control_override_applied": false,
+        "selection_reason": "hard_challenge"
+      }
+    },
+    {
+      "scenario_id": "t8_hard_challenge_picks_best_challenger_candidate",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "basic_attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 40,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "heavy_attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 65,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 95,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "heavy_attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 65,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 3,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": true,
+        "control_override_applied": false,
+        "selection_reason": "hard_challenge"
+      }
+    },
+    {
+      "scenario_id": "t8_hard_challenge_actor_immune_uses_score",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": true
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 45,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 95,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 95,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_hard_challenge_ineligible_challenger_fallback",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight",
+        "soft_bonus": 0
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": false,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 45,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_black_mage",
+          "target_id": "black_mage",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 95,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 95,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    },
+    {
+      "scenario_id": "t8_control_override_ignores_challenge",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "confuse",
+        "forced_target_immune": false,
+        "control_policy_candidate_id": "random_attack_squire"
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 100
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 20,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "random_attack_squire",
+          "target_id": "squire",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 5,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "random_attack_squire",
+        "selected_target_id": "squire",
+        "selected_total_score": 5,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": true,
+        "selection_reason": "control_override"
+      }
+    },
+    {
+      "scenario_id": "t8_invisible_challenger_is_ineligible",
+      "model": "targeting_challenge",
+      "actor": {
+        "control_state": "normal",
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "candidates": [
+        {
+          "candidate_id": "attack_knight",
+          "target_id": "knight",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": true,
+          "tactical_score": 60,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        },
+        {
+          "candidate_id": "attack_archer",
+          "target_id": "archer",
+          "can_target": true,
+          "can_reach": true,
+          "line_of_effect": true,
+          "ai_ignored": false,
+          "tactical_score": 65,
+          "lethal_bonus": 0,
+          "self_preservation_bonus": 0,
+          "objective_bonus": 0
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "attack_archer",
+        "selected_target_id": "archer",
+        "selected_total_score": 65,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      }
+    }
+  ]
+}

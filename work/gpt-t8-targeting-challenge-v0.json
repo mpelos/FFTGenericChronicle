@@ -1,0 +1,215 @@
+{
+  "scenario_count": 13,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t8_control_override_ignores_challenge",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "random_attack_squire",
+        "selected_target_id": "squire",
+        "selected_total_score": 5,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": true,
+        "selection_reason": "control_override"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_hard_challenge_actor_immune_uses_score",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 95,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_hard_challenge_ineligible_challenger_fallback",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 95,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_hard_challenge_picks_best_challenger_candidate",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "heavy_attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 65,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 3,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": true,
+        "control_override_applied": false,
+        "selection_reason": "hard_challenge"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_hard_challenge_valid_forces_challenger",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 45,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": true,
+        "control_override_applied": false,
+        "selection_reason": "hard_challenge"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_invisible_challenger_is_ineligible",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_archer",
+        "selected_target_id": "archer",
+        "selected_total_score": 65,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_normal_selects_highest_score",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 80,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_soft_challenge_counts_multiple_challenger_candidates",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "heavy_attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 80,
+        "selected_challenge_bonus": 30,
+        "eligible_count": 3,
+        "challenge_bonus_applied_count": 2,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_soft_challenge_loses_to_lethal",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "finish_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 110,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_soft_challenge_loses_to_self_preservation",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "move_to_safety",
+        "selected_target_id": "self",
+        "selected_total_score": 110,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_soft_challenge_redirects_close_choice",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 90,
+        "selected_challenge_bonus": 30,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_soft_challenge_unreachable_challenger",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_black_mage",
+        "selected_target_id": "black_mage",
+        "selected_total_score": 70,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t8_tie_break_earliest_candidate_wins",
+      "model": "targeting_challenge",
+      "calculated_fields": {
+        "selected_candidate_id": "attack_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 70,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "control_override_applied": false,
+        "selection_reason": "score"
+      },
+      "validation_errors": []
+    }
+  ]
+}
