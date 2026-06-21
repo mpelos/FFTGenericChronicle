@@ -1,0 +1,357 @@
+{
+  "schema_version": "t11-area-terrain-scenarios-v0",
+  "scenario_count": 20,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t11_diamond_radius1_counts_cluster_with_collateral",
+      "model": "area_terrain",
+      "selected_panel_id": "center",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 3,
+      "selected_ally_hits": 1,
+      "selected_target_count": 4,
+      "selected_affected_ids": [
+        "enemy_center",
+        "enemy_north",
+        "enemy_west",
+        "ally_east"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_ally_safe_excludes_collateral",
+      "model": "area_terrain",
+      "selected_panel_id": "center",
+      "selected_score": 3.0,
+      "selected_enemy_hits": 3,
+      "selected_ally_hits": 0,
+      "selected_target_count": 3,
+      "selected_affected_ids": [
+        "enemy_center",
+        "enemy_north",
+        "enemy_west"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_best_panel_avoids_friendly_fire",
+      "model": "area_terrain",
+      "selected_panel_id": "clean_two",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 2,
+      "selected_ally_hits": 0,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "enemy_right_center",
+        "enemy_right_north"
+      ],
+      "valid_candidate_count": 2,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_vertical_tolerance_excludes_high_target",
+      "model": "area_terrain",
+      "selected_panel_id": "low_center",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_ground"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_square_radius1_includes_diagonal",
+      "model": "area_terrain",
+      "selected_panel_id": "square_center",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 2,
+      "selected_ally_hits": 0,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "enemy_center",
+        "enemy_diagonal"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_line_pierce_axis_aligned",
+      "model": "area_terrain",
+      "selected_panel_id": "east_line",
+      "selected_score": 3.0,
+      "selected_enemy_hits": 3,
+      "selected_ally_hits": 0,
+      "selected_target_count": 3,
+      "selected_affected_ids": [
+        "enemy_e1",
+        "enemy_e2",
+        "enemy_e4"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_mapwide_counts_targetable_enemies_only",
+      "model": "area_terrain",
+      "selected_panel_id": "map",
+      "selected_score": 3.0,
+      "selected_enemy_hits": 3,
+      "selected_ally_hits": 0,
+      "selected_target_count": 3,
+      "selected_affected_ids": [
+        "enemy_a",
+        "enemy_b",
+        "enemy_c"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_tie_break_earliest_panel",
+      "model": "area_terrain",
+      "selected_panel_id": "first_equal",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_first"
+      ],
+      "valid_candidate_count": 2,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_minimum_score_blocks_zero_hit",
+      "model": "area_terrain",
+      "selected_panel_id": "none",
+      "selected_score": 0.0,
+      "selected_enemy_hits": 0,
+      "selected_ally_hits": 0,
+      "selected_target_count": 0,
+      "selected_affected_ids": [],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "below_minimum_score",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_terrain_target_panel_filters_invalid_geomancy",
+      "model": "area_terrain",
+      "selected_panel_id": "grass_panel",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_grass"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": 0.5,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_terrain_no_valid_candidate",
+      "model": "area_terrain",
+      "selected_panel_id": "none",
+      "selected_score": 0.0,
+      "selected_enemy_hits": 0,
+      "selected_ally_hits": 0,
+      "selected_target_count": 0,
+      "selected_affected_ids": [],
+      "valid_candidate_count": 0,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": 0.0,
+      "no_selection_reason": "no_valid_candidate",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_terrain_availability_ratio",
+      "model": "area_terrain",
+      "selected_panel_id": "water_a",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_water_a"
+      ],
+      "valid_candidate_count": 2,
+      "total_candidate_count": 5,
+      "terrain_available_ratio": 0.4,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_ally_support_area_counts_allies_not_enemies",
+      "model": "area_terrain",
+      "selected_panel_id": "support_center",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 0,
+      "selected_ally_hits": 2,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "ally_center",
+        "ally_north"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_terrain_origin_scope_gates_all_candidates",
+      "model": "area_terrain",
+      "selected_panel_id": "water_target",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 2,
+      "selected_ally_hits": 0,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "enemy_water_a",
+        "enemy_water_b"
+      ],
+      "valid_candidate_count": 2,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": 1.0,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_priority_weighting",
+      "model": "area_terrain",
+      "selected_panel_id": "center",
+      "selected_score": 3.0,
+      "selected_enemy_hits": 2,
+      "selected_ally_hits": 0,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "enemy_high_value",
+        "enemy_normal"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_line_non_axis_no_hit",
+      "model": "area_terrain",
+      "selected_panel_id": "none",
+      "selected_score": 0.0,
+      "selected_enemy_hits": 0,
+      "selected_ally_hits": 0,
+      "selected_target_count": 0,
+      "selected_affected_ids": [],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "below_minimum_score",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_diamond_radius2",
+      "model": "area_terrain",
+      "selected_panel_id": "radius2_center",
+      "selected_score": 2.0,
+      "selected_enemy_hits": 2,
+      "selected_ally_hits": 0,
+      "selected_target_count": 2,
+      "selected_affected_ids": [
+        "enemy_center",
+        "enemy_distance2"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_line_length_boundary",
+      "model": "area_terrain",
+      "selected_panel_id": "east_length3",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_at_length"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_loe_false_excludes_candidate",
+      "model": "area_terrain",
+      "selected_panel_id": "open_panel",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_open"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 2,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t11_line_vertical_uses_origin_height",
+      "model": "area_terrain",
+      "selected_panel_id": "raised_target_panel",
+      "selected_score": 1.0,
+      "selected_enemy_hits": 1,
+      "selected_ally_hits": 0,
+      "selected_target_count": 1,
+      "selected_affected_ids": [
+        "enemy_origin_height"
+      ],
+      "valid_candidate_count": 1,
+      "total_candidate_count": 1,
+      "terrain_available_ratio": null,
+      "no_selection_reason": "none",
+      "validation_errors": []
+    }
+  ]
+}
