@@ -1,0 +1,23 @@
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_0fcfe86caabc5f 48-50,151-152,245-282,302-303,307-309
+docs/job-balance/20-time-mystic-v1-proposal.md
+  s_fce6b25a5764ca::t_cf9ab791e4d944 65,124-125,152,525
+  s_fce6b25a5764ca::t_c31b1e90d10978 1-2,4-34,38-64,66,68,70-73,76,82-84,86-123,126-151,154-157,162-165,167-264,266-303,306-466,469,474-482,486-489,491-495,498-524,527,529-534,537,541,543
+  s_fce6b25a5764ca::t_1d5e4541f3c357 3,35-37,67,69,74-75,77-81,85,153,158-161,166,265,304-305,467-468,470-473,483-485,490,496-497,526,528,535-536,538-540,542,544-548
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "f84e7447fe9ad214943a5e9eea84f063237bbbce",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
