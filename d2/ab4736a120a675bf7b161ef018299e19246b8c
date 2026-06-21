@@ -1,0 +1,21 @@
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_fce6b25a5764ca::t_c550681ef90146 274
+  s_fce6b25a5764ca::t_5aad43b6cd5405 3,66-70,89-92,198-199,202-205,210-227,249,251,258
+  s_fce6b25a5764ca::t_863d065026e5cd 1-2,4-65,71-88,93-197,200-201,206-209,228-248,250,252-257,259-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d2ab4736a120a675bf7b161ef018299e19246b8c",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
