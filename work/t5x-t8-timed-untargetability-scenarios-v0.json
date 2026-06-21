@@ -1,0 +1,833 @@
+{
+  "schema_version": "t5x-t8-timed-untargetability-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/11-ct-delay-model-schema.md",
+    "docs/job-balance/15-targeting-challenge-model-schema.md",
+    "docs/job-balance/25-ninja-v1-proposal.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/reference/fft-vanilla-command-skillset-effect-map.md",
+    "docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md",
+    "docs/reference/fft-vanilla-status-effect-map.md",
+    "docs/job-balance/39-timed-untargetability-composition-schema.md"
+  ],
+  "formula_contract": {
+    "normalization": "single_targeting_or_resolution_event",
+    "active_window": "start_tick <= evaluation_tick < expire_tick",
+    "same_tick_expiry": "expired before targeting or resolution at that tick",
+    "break_events": "effects with break_on_damage or break_on_action end when a matching event tick is <= evaluation_tick",
+    "candidate_eligibility": "target unit exists, target can_target, target not ai_ignored, candidate can_reach, candidate line_of_effect, and target has no active untargetable effect",
+    "selection": "highest total_score; earliest eligible candidate wins ties",
+    "delayed_resolution": "a delayed action resolves only if the target is targetable at resolution_tick"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t5xt8_visible_targeting_baseline",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "frontliner",
+          "team": "player"
+        },
+        {
+          "unit_id": "caster",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_frontliner",
+          "target_id": "frontliner",
+          "tactical_score": 40
+        },
+        {
+          "candidate_id": "hit_caster",
+          "target_id": "caster",
+          "tactical_score": 55
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_caster",
+        "selected_target_id": "caster",
+        "selected_total_score": 55,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_active_vanish_filters_high_score_target",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "vanished_target",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10,
+              "break_on_damage": true,
+              "break_on_action": true
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_vanished",
+          "target_id": "vanished_target",
+          "tactical_score": 90
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 45
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_visible",
+        "selected_target_id": "visible_target",
+        "selected_total_score": 45,
+        "eligible_count": 1,
+        "untargetable_filtered_count": 1,
+        "untargetable_filtered_target_ids": [
+          "vanished_target"
+        ],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_vanish_expired_before_decision",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "former_vanished",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 4,
+              "break_on_damage": true,
+              "break_on_action": true
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_former_vanished",
+          "target_id": "former_vanished",
+          "tactical_score": 80
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 40
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_former_vanished",
+        "selected_target_id": "former_vanished",
+        "selected_total_score": 80,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_vanish_expires_on_decision_tick",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "same_tick_expired",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 5,
+              "break_on_damage": true,
+              "break_on_action": true
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_same_tick_expired",
+          "target_id": "same_tick_expired",
+          "tactical_score": 80
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 40
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_same_tick_expired",
+        "selected_target_id": "same_tick_expired",
+        "selected_total_score": 80,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_damage_breaks_vanish_before_decision",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "damaged_vanished",
+          "team": "player",
+          "events": [
+            {
+              "tick": 4,
+              "type": "damage"
+            }
+          ],
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10,
+              "break_on_damage": true,
+              "break_on_action": true
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_damaged_vanished",
+          "target_id": "damaged_vanished",
+          "tactical_score": 85
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 40
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_damaged_vanished",
+        "selected_target_id": "damaged_vanished",
+        "selected_total_score": 85,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_action_breaks_invisible_before_decision",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "acted_invisible",
+          "team": "player",
+          "events": [
+            {
+              "tick": 3,
+              "type": "action"
+            }
+          ],
+          "untargetable_effects": [
+            {
+              "kind": "invisible",
+              "start_tick": 0,
+              "expire_tick": 10,
+              "break_on_damage": true,
+              "break_on_action": true
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_acted_invisible",
+          "target_id": "acted_invisible",
+          "tactical_score": 85
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 40
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_acted_invisible",
+        "selected_target_id": "acted_invisible",
+        "selected_total_score": 85,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_jump_airborne_filters_target",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "airborne_dragoon",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "jump_airborne",
+              "start_tick": 0,
+              "expire_tick": 8
+            }
+          ]
+        },
+        {
+          "unit_id": "grounded_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_dragoon",
+          "target_id": "airborne_dragoon",
+          "tactical_score": 95
+        },
+        {
+          "candidate_id": "hit_grounded",
+          "target_id": "grounded_target",
+          "tactical_score": 50
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_grounded",
+        "selected_target_id": "grounded_target",
+        "selected_total_score": 50,
+        "eligible_count": 1,
+        "untargetable_filtered_count": 1,
+        "untargetable_filtered_target_ids": [
+          "airborne_dragoon"
+        ],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_jump_lands_on_decision_tick",
+      "model": "targeting_decision",
+      "decision_tick": 8,
+      "units": [
+        {
+          "unit_id": "landing_dragoon",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "jump_airborne",
+              "start_tick": 0,
+              "expire_tick": 8
+            }
+          ]
+        },
+        {
+          "unit_id": "grounded_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_landing_dragoon",
+          "target_id": "landing_dragoon",
+          "tactical_score": 95
+        },
+        {
+          "candidate_id": "hit_grounded",
+          "target_id": "grounded_target",
+          "tactical_score": 50
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_landing_dragoon",
+        "selected_target_id": "landing_dragoon",
+        "selected_total_score": 95,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_all_targets_untargetable_no_selection",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "vanished_a",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10
+            }
+          ]
+        },
+        {
+          "unit_id": "jumping_b",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "jump_airborne",
+              "start_tick": 0,
+              "expire_tick": 8
+            }
+          ]
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_vanished_a",
+          "target_id": "vanished_a",
+          "tactical_score": 70
+        },
+        {
+          "candidate_id": "hit_jumping_b",
+          "target_id": "jumping_b",
+          "tactical_score": 60
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "none",
+        "selected_target_id": "none",
+        "selected_total_score": null,
+        "eligible_count": 0,
+        "untargetable_filtered_count": 2,
+        "untargetable_filtered_target_ids": [
+          "jumping_b",
+          "vanished_a"
+        ],
+        "no_eligible_targets": true
+      }
+    },
+    {
+      "scenario_id": "t5xt8_delayed_action_whiffs_on_active_vanish",
+      "model": "delayed_resolution",
+      "action": {
+        "target_id": "vanished_target",
+        "resolution_tick": 5
+      },
+      "units": [
+        {
+          "unit_id": "vanished_target",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "target_active_untargetable_effects": [
+          "vanish"
+        ],
+        "target_untargetable_at_resolution": true,
+        "resolves_on_target": false,
+        "fizzle_reason": "target_untargetable"
+      }
+    },
+    {
+      "scenario_id": "t5xt8_delayed_action_resolves_after_vanish_expires",
+      "model": "delayed_resolution",
+      "action": {
+        "target_id": "former_vanished",
+        "resolution_tick": 10
+      },
+      "units": [
+        {
+          "unit_id": "former_vanished",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "target_active_untargetable_effects": [],
+        "target_untargetable_at_resolution": false,
+        "resolves_on_target": true,
+        "fizzle_reason": "resolved"
+      }
+    },
+    {
+      "scenario_id": "t5xt8_soft_challenge_target_untargetable_no_bonus",
+      "model": "challenge_decision",
+      "decision_tick": 5,
+      "actor": {
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "units": [
+        {
+          "unit_id": "knight",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10
+            }
+          ]
+        },
+        {
+          "unit_id": "mage",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_knight",
+          "target_id": "knight",
+          "tactical_score": 60
+        },
+        {
+          "candidate_id": "hit_mage",
+          "target_id": "mage",
+          "tactical_score": 55
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_mage",
+        "selected_target_id": "mage",
+        "selected_total_score": 55,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "untargetable_filtered_count": 1,
+        "untargetable_filtered_target_ids": [
+          "knight"
+        ],
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "selection_reason": "score",
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_hard_challenge_target_untargetable_fallback",
+      "model": "challenge_decision",
+      "decision_tick": 5,
+      "actor": {
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight"
+      },
+      "units": [
+        {
+          "unit_id": "knight",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 0,
+              "expire_tick": 10
+            }
+          ]
+        },
+        {
+          "unit_id": "mage",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_knight",
+          "target_id": "knight",
+          "tactical_score": 80
+        },
+        {
+          "candidate_id": "hit_mage",
+          "target_id": "mage",
+          "tactical_score": 55
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_mage",
+        "selected_target_id": "mage",
+        "selected_total_score": 55,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 1,
+        "untargetable_filtered_count": 1,
+        "untargetable_filtered_target_ids": [
+          "knight"
+        ],
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": false,
+        "selection_reason": "score",
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_untargetable_starts_after_decision",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "future_vanished",
+          "team": "player",
+          "untargetable_effects": [
+            {
+              "kind": "vanish",
+              "start_tick": 6,
+              "expire_tick": 12
+            }
+          ]
+        },
+        {
+          "unit_id": "visible_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_future_vanished",
+          "target_id": "future_vanished",
+          "tactical_score": 85
+        },
+        {
+          "candidate_id": "hit_visible",
+          "target_id": "visible_target",
+          "tactical_score": 40
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_future_vanished",
+        "selected_target_id": "future_vanished",
+        "selected_total_score": 85,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_soft_challenge_bonus_applied",
+      "model": "challenge_decision",
+      "decision_tick": 5,
+      "actor": {
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "units": [
+        {
+          "unit_id": "knight",
+          "team": "player"
+        },
+        {
+          "unit_id": "mage",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_knight",
+          "target_id": "knight",
+          "tactical_score": 60
+        },
+        {
+          "candidate_id": "hit_mage",
+          "target_id": "mage",
+          "tactical_score": 55
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 90,
+        "selected_challenge_bonus": 30,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "selection_reason": "score",
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_hard_challenge_forces_eligible",
+      "model": "challenge_decision",
+      "decision_tick": 5,
+      "actor": {
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "hard",
+        "challenger_target_id": "knight"
+      },
+      "units": [
+        {
+          "unit_id": "knight",
+          "team": "player"
+        },
+        {
+          "unit_id": "mage",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_knight",
+          "target_id": "knight",
+          "tactical_score": 50
+        },
+        {
+          "candidate_id": "hit_mage",
+          "target_id": "mage",
+          "tactical_score": 80
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_knight",
+        "selected_target_id": "knight",
+        "selected_total_score": 50,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "challenge_bonus_applied_count": 0,
+        "hard_challenge_applied": true,
+        "selection_reason": "hard_challenge",
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_targeting_tie_break_earliest",
+      "model": "targeting_decision",
+      "decision_tick": 5,
+      "units": [
+        {
+          "unit_id": "first_target",
+          "team": "player"
+        },
+        {
+          "unit_id": "second_target",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_first",
+          "target_id": "first_target",
+          "tactical_score": 60
+        },
+        {
+          "candidate_id": "hit_second",
+          "target_id": "second_target",
+          "tactical_score": 60
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_first",
+        "selected_target_id": "first_target",
+        "selected_total_score": 60,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "no_eligible_targets": false
+      }
+    },
+    {
+      "scenario_id": "t5xt8_soft_challenge_bonus_applied_but_loses",
+      "model": "challenge_decision",
+      "decision_tick": 5,
+      "actor": {
+        "forced_target_immune": false
+      },
+      "challenge": {
+        "mode": "soft",
+        "challenger_target_id": "knight",
+        "soft_bonus": 30
+      },
+      "units": [
+        {
+          "unit_id": "knight",
+          "team": "player"
+        },
+        {
+          "unit_id": "mage",
+          "team": "player"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "hit_knight",
+          "target_id": "knight",
+          "tactical_score": 20
+        },
+        {
+          "candidate_id": "hit_mage",
+          "target_id": "mage",
+          "tactical_score": 55
+        }
+      ],
+      "expected": {
+        "selected_candidate_id": "hit_mage",
+        "selected_target_id": "mage",
+        "selected_total_score": 55,
+        "selected_challenge_bonus": 0,
+        "eligible_count": 2,
+        "untargetable_filtered_count": 0,
+        "untargetable_filtered_target_ids": [],
+        "challenge_bonus_applied_count": 1,
+        "hard_challenge_applied": false,
+        "selection_reason": "score",
+        "no_eligible_targets": false
+      }
+    }
+  ]
+}
