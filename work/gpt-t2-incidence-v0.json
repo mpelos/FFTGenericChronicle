@@ -1,0 +1,36 @@
+{
+  "total_counted_builds": 0,
+  "incidence_by_secondary": "NO_COUNTED_BUILDS",
+  "incidence_by_reaction": "NO_COUNTED_BUILDS",
+  "incidence_by_support": "NO_COUNTED_BUILDS",
+  "incidence_by_movement": "NO_COUNTED_BUILDS",
+  "incidence_by_equipment_unlock": "NO_COUNTED_BUILDS",
+  "missing_required_coverage": {},
+  "threshold_warnings": [],
+  "threshold_failures": [],
+  "validation_errors": [],
+  "ignored_records_by_reason": {
+    "Required Brave-sensitive build; Monk concrete slice paused until infra.": [
+      "slot_brave_sensitive_unarmed_crush"
+    ],
+    "Required coverage slot; Ramza chapter design not accepted yet.": [
+      "slot_protagonist_hybrid_ramza_chapter4"
+    ],
+    "Required coverage slot; concrete accepted build not filled yet.": [
+      "slot_caster_offense_cloth_magic_faith",
+      "slot_caster_support_cloth_healing_faith",
+      "slot_controller_leather_spirit_status_gun",
+      "slot_hybrid_mail_swing_crush_terrain",
+      "slot_melee_physical_plate_swing_control",
+      "slot_performer_cloth_support_or_debuff",
+      "slot_ranged_physical_leather_missile_speed",
+      "slot_specialist_leather_item_gun"
+    ],
+    "Required coverage slot; replacement job not designed yet.": [
+      "slot_late_reward_cloth_dark_magic"
+    ],
+    "Required damage-mode coverage slot; exact job pending.": [
+      "slot_thrust_physical_plate_or_leather"
+    ]
+  }
+}

@@ -1,0 +1,616 @@
+{
+  "schema_version": "job-build-incidence-benchmark-v0",
+  "status": "accepted",
+  "date": "2026-06-20",
+  "source_docs": [
+    "docs/job-balance/01-cross-job-build-principles.md",
+    "docs/job-balance/02-job-design-protocol.md",
+    "docs/job-balance/03-job-roster-and-role-map.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md"
+  ],
+  "purpose": "Pinned input bundle for T2 build-incidence matrix schema and required coverage.",
+  "thresholds": {
+    "reaction_support_movement": {
+      "warning_exclusive_gt": 0.35,
+      "fail_exclusive_gt": 0.5
+    },
+    "secondary": {
+      "warning_exclusive_gt": 0.35,
+      "fail_exclusive_gt": 0.5
+    },
+    "equipment_unlock": {
+      "warning_exclusive_gt": 0.35,
+      "fail_exclusive_gt": 0.5
+    }
+  },
+  "record_statuses": {
+    "open_slot": {
+      "counted": false,
+      "meaning": "Required coverage slot exists but no accepted build fills it yet."
+    },
+    "draft_candidate": {
+      "counted": false,
+      "meaning": "Plausible build candidate exists but has not been accepted."
+    },
+    "accepted_provisional": {
+      "counted": true,
+      "meaning": "Accepted for provisional design and counted in provisional incidence runs."
+    },
+    "accepted_final": {
+      "counted": true,
+      "meaning": "Accepted after all required validation gates."
+    },
+    "retired": {
+      "counted": false,
+      "meaning": "Superseded or rejected record retained for audit."
+    }
+  },
+  "counted_slots": [
+    "secondary",
+    "reaction",
+    "support",
+    "movement",
+    "equipment_unlocks"
+  ],
+  "required_coverage": {
+    "primary_roles": [
+      "melee-physical",
+      "ranged-physical",
+      "caster-offense",
+      "caster-support",
+      "controller",
+      "hybrid",
+      "performer",
+      "specialist",
+      "late-reward",
+      "protagonist"
+    ],
+    "armor_profiles": [
+      "plate",
+      "mail",
+      "leather",
+      "cloth"
+    ],
+    "physical_damage_modes": [
+      "swing",
+      "thrust",
+      "crush",
+      "missile"
+    ],
+    "nonphysical_pressure": [
+      "magic",
+      "spirit_status"
+    ],
+    "sensitivity_tags": [
+      "Brave",
+      "Faith",
+      "Speed"
+    ],
+    "mandatory_phases": [
+      "late",
+      "stress"
+    ],
+    "optional_phases": [
+      "early",
+      "mid"
+    ]
+  },
+  "coverage_semantics": {
+    "missing_required_coverage": "marginal_per_dimension",
+    "coverage_presence_record_subset": "all_records_including_open_slot",
+    "incidence_record_subset": "records_where_record_statuses_status_counted_is_true",
+    "phase_coverage_scope": "mandatory_phases_only"
+  },
+  "anti_bias_rules": [
+    "Do not over-represent already dominant builds.",
+    "Do not under-represent weak roles.",
+    "Do not count small equipment variants as separate build identities unless tactical identity changes.",
+    "Do not omit armor classes or damage modes that make a favored global piece look less universal.",
+    "Do not curate the benchmark set to pass a favored secondary, reaction, support, movement, or equipment unlock."
+  ],
+  "build_record_schema": {
+    "id": "stable snake-case id",
+    "status": "open_slot | draft_candidate | accepted_provisional | accepted_final | retired",
+    "phase": "early | mid | late | stress",
+    "primary_role": "role taxonomy value",
+    "active_job": "job name or TBD",
+    "coverage": {
+      "armor_profile": "plate | mail | leather | cloth | TBD",
+      "damage_modes": [
+        "swing | thrust | crush | missile | magic | spirit_status | TBD"
+      ],
+      "pressure_tags": [
+        "freeform controlled tag"
+      ],
+      "sensitivity_tags": [
+        "Brave | Faith | Speed"
+      ]
+    },
+    "slots": {
+      "secondary": "skillset name or NONE or TBD",
+      "reaction": "skill name or NONE or TBD",
+      "support": "skill name or NONE or TBD",
+      "movement": "skill name or NONE or TBD",
+      "equipment_unlocks": [
+        "support-granted equipment unlocks"
+      ]
+    },
+    "counting": {
+      "include": false,
+      "reason": "why included or ignored"
+    },
+    "flags": [
+      "optional flags such as protagonist_exception or shared_gender_pair"
+    ],
+    "notes": "short explanation"
+  },
+  "counting_contract": {
+    "counting_source_of_truth": "record_statuses[status].counted",
+    "per_record_counting_include_must_equal_status_counted": true,
+    "counting_divergence": "hard_validation_error",
+    "incidence_scope": {
+      "phases": [
+        "late",
+        "stress"
+      ],
+      "denominator": "counted builds in late or stress phase",
+      "numerator": "counted late or stress builds whose relevant slot contains the value",
+      "array_slot_dedupe_per_build": true,
+      "threshold_comparison": "raw_fraction_exclusive_greater_than"
+    },
+    "slot_tokens": {
+      "none": "NONE",
+      "unknown": "TBD",
+      "none_behavior": "excluded_from_incidence",
+      "tbd_in_counted_record": "hard_validation_error"
+    },
+    "empty_denominator": {
+      "canonical_token": "NO_COUNTED_BUILDS",
+      "incidence_tables": "empty",
+      "threshold_warnings": 0,
+      "threshold_failures": 0
+    },
+    "canonical_output": {
+      "sort_rows": "alphabetical_by_key",
+      "ignored_records_by_reason_key": "exact_counting_reason_string",
+      "display_percentage_decimals": 6,
+      "comparison_basis": "raw_numerator_denominator_fraction"
+    }
+  },
+  "special_counting_rules": {
+    "t2_1_population": "only accepted_provisional or accepted_final records; no draft_candidate placeholders",
+    "ramza_chapter4": "same table with protagonist_exception flag",
+    "bard_dancer_shared_globals": "count shared reaction/support/movement global pieces once"
+  },
+  "benchmark_slots": [
+    {
+      "id": "slot_melee_physical_plate_swing_control",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "melee-physical",
+      "active_job": "Knight",
+      "coverage": {
+        "armor_profile": "plate",
+        "damage_modes": [
+          "swing",
+          "crush"
+        ],
+        "pressure_tags": [
+          "frontline",
+          "weapon_control",
+          "durable"
+        ],
+        "sensitivity_tags": []
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Covers durable swing frontline without letting Knight become universal tank."
+    },
+    {
+      "id": "slot_ranged_physical_leather_missile_speed",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "ranged-physical",
+      "active_job": "Archer",
+      "coverage": {
+        "armor_profile": "leather",
+        "damage_modes": [
+          "missile"
+        ],
+        "pressure_tags": [
+          "range",
+          "anti_mail",
+          "height"
+        ],
+        "sensitivity_tags": [
+          "Speed"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Covers native bow/crossbow identity and Speed-sensitive ranged pressure."
+    },
+    {
+      "id": "slot_caster_offense_cloth_magic_faith",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "caster-offense",
+      "active_job": "Black Mage",
+      "coverage": {
+        "armor_profile": "cloth",
+        "damage_modes": [
+          "magic"
+        ],
+        "pressure_tags": [
+          "spell_damage",
+          "mp",
+          "element"
+        ],
+        "sensitivity_tags": [
+          "Faith"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Prevents physical-only benchmark bias."
+    },
+    {
+      "id": "slot_caster_support_cloth_healing_faith",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "caster-support",
+      "active_job": "White Mage",
+      "coverage": {
+        "armor_profile": "cloth",
+        "damage_modes": [
+          "magic"
+        ],
+        "pressure_tags": [
+          "healing",
+          "protection",
+          "support_magic"
+        ],
+        "sensitivity_tags": [
+          "Faith"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Required to judge Chemist item reliability against support magic."
+    },
+    {
+      "id": "slot_controller_leather_spirit_status_gun",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "controller",
+      "active_job": "Orator",
+      "coverage": {
+        "armor_profile": "leather",
+        "damage_modes": [
+          "missile",
+          "spirit_status"
+        ],
+        "pressure_tags": [
+          "speech",
+          "morale",
+          "recruit",
+          "gun"
+        ],
+        "sensitivity_tags": [
+          "Faith"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Keeps social/status control and gun identity represented."
+    },
+    {
+      "id": "slot_hybrid_mail_swing_crush_terrain",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "hybrid",
+      "active_job": "Geomancer",
+      "coverage": {
+        "armor_profile": "mail",
+        "damage_modes": [
+          "swing",
+          "crush",
+          "magic"
+        ],
+        "pressure_tags": [
+          "terrain",
+          "hybrid",
+          "map_state"
+        ],
+        "sensitivity_tags": []
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Required mail-profile hybrid slot."
+    },
+    {
+      "id": "slot_performer_cloth_support_or_debuff",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "performer",
+      "active_job": "Bard/Dancer",
+      "coverage": {
+        "armor_profile": "cloth",
+        "damage_modes": [
+          "missile",
+          "swing",
+          "crush",
+          "spirit_status"
+        ],
+        "pressure_tags": [
+          "performance",
+          "party_wide",
+          "gender_linked"
+        ],
+        "sensitivity_tags": []
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [
+        "shared_gender_pair"
+      ],
+      "notes": "Bard/Dancer R/S/M parity counts shared global pieces once."
+    },
+    {
+      "id": "slot_specialist_leather_item_gun",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "specialist",
+      "active_job": "Chemist",
+      "coverage": {
+        "armor_profile": "leather",
+        "damage_modes": [
+          "missile",
+          "thrust",
+          "crush"
+        ],
+        "pressure_tags": [
+          "item",
+          "gun",
+          "reliable_support"
+        ],
+        "sensitivity_tags": []
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; concrete accepted build not filled yet."
+      },
+      "flags": [],
+      "notes": "Required item/gun specialist slot."
+    },
+    {
+      "id": "slot_late_reward_cloth_dark_magic",
+      "status": "open_slot",
+      "phase": "stress",
+      "primary_role": "late-reward",
+      "active_job": "Necromancer",
+      "coverage": {
+        "armor_profile": "cloth",
+        "damage_modes": [
+          "magic",
+          "spirit_status"
+        ],
+        "pressure_tags": [
+          "late_reward",
+          "dark_magic",
+          "undead"
+        ],
+        "sensitivity_tags": [
+          "Faith"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; replacement job not designed yet."
+      },
+      "flags": [],
+      "notes": "Prevents late-reward jobs from being omitted from mandatory-piece counts."
+    },
+    {
+      "id": "slot_protagonist_hybrid_ramza_chapter4",
+      "status": "open_slot",
+      "phase": "stress",
+      "primary_role": "protagonist",
+      "active_job": "Ramza",
+      "coverage": {
+        "armor_profile": "TBD",
+        "damage_modes": [
+          "swing",
+          "crush",
+          "magic"
+        ],
+        "pressure_tags": [
+          "chapter4",
+          "hybrid",
+          "leadership"
+        ],
+        "sensitivity_tags": [
+          "Brave",
+          "Faith"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required coverage slot; Ramza chapter design not accepted yet."
+      },
+      "flags": [
+        "protagonist_exception"
+      ],
+      "notes": "Ramza uses separate protagonist exception analysis for niche dominance."
+    },
+    {
+      "id": "slot_thrust_physical_plate_or_leather",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "melee-physical",
+      "active_job": "Dragoon/Thief/Ninja",
+      "coverage": {
+        "armor_profile": "TBD",
+        "damage_modes": [
+          "thrust"
+        ],
+        "pressure_tags": [
+          "anti_mail",
+          "precision"
+        ],
+        "sensitivity_tags": [
+          "Speed"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required damage-mode coverage slot; exact job pending."
+      },
+      "flags": [],
+      "notes": "Ensures thrust is represented separately from sword and bow plans."
+    },
+    {
+      "id": "slot_brave_sensitive_unarmed_crush",
+      "status": "open_slot",
+      "phase": "late",
+      "primary_role": "melee-physical",
+      "active_job": "Monk",
+      "coverage": {
+        "armor_profile": "cloth",
+        "damage_modes": [
+          "crush"
+        ],
+        "pressure_tags": [
+          "unarmed",
+          "anti_plate",
+          "body_discipline"
+        ],
+        "sensitivity_tags": [
+          "Brave"
+        ]
+      },
+      "slots": {
+        "secondary": "TBD",
+        "reaction": "TBD",
+        "support": "TBD",
+        "movement": "TBD",
+        "equipment_unlocks": []
+      },
+      "counting": {
+        "include": false,
+        "reason": "Required Brave-sensitive build; Monk concrete slice paused until infra."
+      },
+      "flags": [],
+      "notes": "Protects Monk's unarmed crush identity from being omitted."
+    }
+  ],
+  "expected_counter_outputs": [
+    "total_counted_builds",
+    "ignored_records_by_reason",
+    "incidence_by_secondary",
+    "incidence_by_reaction",
+    "incidence_by_support",
+    "incidence_by_movement",
+    "incidence_by_equipment_unlock",
+    "missing_required_coverage",
+    "threshold_warnings",
+    "threshold_failures"
+  ]
+}
