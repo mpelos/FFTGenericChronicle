@@ -1,0 +1,139 @@
+{
+  "scenario_count": 11,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t3_auto_potion_expected_value",
+      "model": "reaction_heal",
+      "raw_heal": 30,
+      "effective_heal": 30,
+      "overheal": 0,
+      "expected_heal": 21.0,
+      "resource_consumed": 0.7,
+      "uses_resolved": 1,
+      "total_expected_heal": 21.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_auto_potion_multi_trigger_cap",
+      "model": "reaction_heal",
+      "raw_heal": 30,
+      "effective_heal": 30,
+      "overheal": 0,
+      "expected_heal": 42.0,
+      "resource_consumed": 1.4,
+      "uses_resolved": 2,
+      "total_expected_heal": 42.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_auto_potion_per_round_cap",
+      "model": "reaction_heal",
+      "raw_heal": 30,
+      "effective_heal": 30,
+      "overheal": 0,
+      "expected_heal": 21.0,
+      "resource_consumed": 0.7,
+      "uses_resolved": 1,
+      "total_expected_heal": 21.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_item_inventory_limited",
+      "model": "item_heal",
+      "raw_heal": 30,
+      "effective_heal": 30,
+      "overheal": 0,
+      "expected_heal": 30.0,
+      "resource_consumed": 2.0,
+      "uses_resolved": 2,
+      "total_expected_heal": 60.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_item_potion_missing50",
+      "model": "item_heal",
+      "raw_heal": 30,
+      "effective_heal": 30,
+      "overheal": 0,
+      "expected_heal": 30.0,
+      "resource_consumed": 1.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 30.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_item_potion_overheal_cap",
+      "model": "item_heal",
+      "raw_heal": 30,
+      "effective_heal": 20,
+      "overheal": 10,
+      "expected_heal": 20.0,
+      "resource_consumed": 1.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 20.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_item_x_potion_missing200",
+      "model": "item_heal",
+      "raw_heal": 150,
+      "effective_heal": 150,
+      "overheal": 0,
+      "expected_heal": 150.0,
+      "resource_consumed": 1.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 150.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_phoenix_down_reliable_low_revive",
+      "model": "revive_item",
+      "raw_heal": 20,
+      "effective_heal": 20,
+      "overheal": 0,
+      "expected_heal": 20.0,
+      "resource_consumed": 1.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 20.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_spell_high_faith_above_floor",
+      "model": "spell_heal",
+      "raw_heal": 102,
+      "effective_heal": 102,
+      "overheal": 0,
+      "expected_heal": 102.0,
+      "resource_consumed": 8.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 102.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_spell_low_faith_floor",
+      "model": "spell_heal",
+      "raw_heal": 42,
+      "effective_heal": 42,
+      "overheal": 0,
+      "expected_heal": 42.0,
+      "resource_consumed": 6.0,
+      "uses_resolved": 1,
+      "total_expected_heal": 42.0,
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t3_spell_mp_limited",
+      "model": "spell_heal",
+      "raw_heal": 42,
+      "effective_heal": 42,
+      "overheal": 0,
+      "expected_heal": 42.0,
+      "resource_consumed": 12.0,
+      "uses_resolved": 2,
+      "total_expected_heal": 84.0,
+      "validation_errors": []
+    }
+  ]
+}

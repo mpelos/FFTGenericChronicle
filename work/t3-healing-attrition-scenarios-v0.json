@@ -1,0 +1,429 @@
+{
+  "schema_version": "t3-healing-attrition-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-20",
+  "source_docs": [
+    "docs/job-balance/05-squire-chemist-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/10-healing-attrition-model-schema.md",
+    "work/sim-inputs-v0.2.1.json"
+  ],
+  "external_sources": [
+    {
+      "id": "aerostar_battle_mechanics",
+      "url": "https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/3876",
+      "notes": [
+        "Potion restores 30 HP.",
+        "Hi-Potion restores 70 HP.",
+        "X-Potion restores 150 HP.",
+        "Phoenix Down cancels Dead and restores low random HP in vanilla."
+      ]
+    }
+  ],
+  "formula_contract": {
+    "normalization": "action_normalized",
+    "rounding": "floor_spell_raw_heal",
+    "overheal_policy": "effective_heal=min(raw_heal,missing_hp)",
+    "faith_factor_floor": 0.6,
+    "spell_heal": "floor(K * MA * max(faith_factor_floor,(caster_faith/100)*(target_faith/100)))",
+    "item_heal": "item_power",
+    "success_chance": "fixed_1_0_in_T3_0",
+    "expected_reaction_heal": "effective_heal * trigger_chance * effective_triggers",
+    "effective_triggers": "min(incoming_triggers,per_round_cap)",
+    "expected_reaction_resource_consumed": "trigger_chance * effective_triggers * resource_cost",
+    "reaction_uses_resolved": "effective_triggers",
+    "reaction_total_expected_heal": "expected_heal",
+    "non_reaction_resource_consumed": "resource_cost * uses_resolved",
+    "resource_limited_uses": "non_reaction_only:min(planned_uses,floor(resource_available/resource_cost))",
+    "resolution_delay_ticks": "recorded_context_only_until_T5",
+    "numeric_comparison": {
+      "integers": [
+        "raw_heal",
+        "effective_heal",
+        "overheal"
+      ],
+      "floats": [
+        "expected_heal",
+        "resource_consumed",
+        "total_expected_heal"
+      ],
+      "float_decimals": 6
+    },
+    "cross_delivery_reliability": "not_accepted_until_T3xT5_composition"
+  },
+  "tokens": {
+    "not_applicable": "NA"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t3_item_potion_missing50",
+      "model": "item_heal",
+      "phase": "early",
+      "actor": {
+        "ma": 5,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 50,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "success_chance": 1.0,
+        "resource_type": "inventory",
+        "resource_available": 3,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 30,
+        "overheal": 0,
+        "expected_heal": 30,
+        "resource_consumed": 1,
+        "uses_resolved": 1,
+        "total_expected_heal": 30
+      }
+    },
+    {
+      "scenario_id": "t3_item_potion_overheal_cap",
+      "model": "item_heal",
+      "phase": "early",
+      "actor": {
+        "ma": 5,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 20,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "success_chance": 1.0,
+        "resource_type": "inventory",
+        "resource_available": 3,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 20,
+        "overheal": 10,
+        "expected_heal": 20,
+        "resource_consumed": 1,
+        "uses_resolved": 1,
+        "total_expected_heal": 20
+      }
+    },
+    {
+      "scenario_id": "t3_item_x_potion_missing200",
+      "model": "item_heal",
+      "phase": "late",
+      "actor": {
+        "ma": 10,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 200,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 150,
+        "success_chance": 1.0,
+        "resource_type": "inventory",
+        "resource_available": 2,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 150,
+        "effective_heal": 150,
+        "overheal": 0,
+        "expected_heal": 150,
+        "resource_consumed": 1,
+        "uses_resolved": 1,
+        "total_expected_heal": 150
+      }
+    },
+    {
+      "scenario_id": "t3_spell_low_faith_floor",
+      "model": "spell_heal",
+      "phase": "early",
+      "actor": {
+        "ma": 5,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 100,
+        "target_faith": 40,
+        "dead": false
+      },
+      "action": {
+        "spell_k": 14,
+        "success_chance": 1.0,
+        "resource_type": "mp",
+        "resource_available": 20,
+        "resource_cost": 6,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 4
+      },
+      "expected": {
+        "raw_heal": 42,
+        "effective_heal": 42,
+        "overheal": 0,
+        "expected_heal": 42,
+        "resource_consumed": 6,
+        "uses_resolved": 1,
+        "total_expected_heal": 42
+      }
+    },
+    {
+      "scenario_id": "t3_spell_high_faith_above_floor",
+      "model": "spell_heal",
+      "phase": "mid",
+      "actor": {
+        "ma": 8,
+        "caster_faith": 80
+      },
+      "target": {
+        "missing_hp": 200,
+        "target_faith": 80,
+        "dead": false
+      },
+      "action": {
+        "spell_k": 20,
+        "success_chance": 1.0,
+        "resource_type": "mp",
+        "resource_available": 30,
+        "resource_cost": 8,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 5
+      },
+      "expected": {
+        "raw_heal": 102,
+        "effective_heal": 102,
+        "overheal": 0,
+        "expected_heal": 102,
+        "resource_consumed": 8,
+        "uses_resolved": 1,
+        "total_expected_heal": 102
+      }
+    },
+    {
+      "scenario_id": "t3_item_inventory_limited",
+      "model": "item_heal",
+      "phase": "mid",
+      "actor": {
+        "ma": 8,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 100,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "success_chance": 1.0,
+        "resource_type": "inventory",
+        "resource_available": 2,
+        "resource_cost": 1,
+        "planned_uses": 4,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 30,
+        "overheal": 0,
+        "expected_heal": 30,
+        "resource_consumed": 2,
+        "uses_resolved": 2,
+        "total_expected_heal": 60
+      }
+    },
+    {
+      "scenario_id": "t3_spell_mp_limited",
+      "model": "spell_heal",
+      "phase": "mid",
+      "actor": {
+        "ma": 5,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 100,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "spell_k": 14,
+        "success_chance": 1.0,
+        "resource_type": "mp",
+        "resource_available": 12,
+        "resource_cost": 6,
+        "planned_uses": 3,
+        "resolution_delay_ticks": 4
+      },
+      "expected": {
+        "raw_heal": 42,
+        "effective_heal": 42,
+        "overheal": 0,
+        "expected_heal": 42,
+        "resource_consumed": 12,
+        "uses_resolved": 2,
+        "total_expected_heal": 84
+      }
+    },
+    {
+      "scenario_id": "t3_auto_potion_expected_value",
+      "model": "reaction_heal",
+      "phase": "mid",
+      "actor": {
+        "ma": 8,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 80,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "trigger_chance": 0.7,
+        "resource_type": "inventory",
+        "resource_available": 5,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "per_round_cap": 1,
+        "incoming_triggers": 1,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 30,
+        "overheal": 0,
+        "expected_heal": 21,
+        "resource_consumed": 0.7,
+        "uses_resolved": 1,
+        "total_expected_heal": 21
+      }
+    },
+    {
+      "scenario_id": "t3_auto_potion_per_round_cap",
+      "model": "reaction_heal",
+      "phase": "stress",
+      "actor": {
+        "ma": 12,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 120,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "trigger_chance": 0.7,
+        "resource_type": "inventory",
+        "resource_available": 5,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "per_round_cap": 1,
+        "incoming_triggers": 2,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 30,
+        "overheal": 0,
+        "expected_heal": 21,
+        "resource_consumed": 0.7,
+        "uses_resolved": 1,
+        "total_expected_heal": 21
+      }
+    },
+    {
+      "scenario_id": "t3_auto_potion_multi_trigger_cap",
+      "model": "reaction_heal",
+      "phase": "stress",
+      "actor": {
+        "ma": 12,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 120,
+        "target_faith": 70,
+        "dead": false
+      },
+      "action": {
+        "item_power": 30,
+        "trigger_chance": 0.7,
+        "resource_type": "inventory",
+        "resource_available": 5,
+        "resource_cost": 1,
+        "planned_uses": 2,
+        "per_round_cap": 2,
+        "incoming_triggers": 3,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 30,
+        "effective_heal": 30,
+        "overheal": 0,
+        "expected_heal": 42,
+        "resource_consumed": 1.4,
+        "uses_resolved": 2,
+        "total_expected_heal": 42
+      }
+    },
+    {
+      "scenario_id": "t3_phoenix_down_reliable_low_revive",
+      "model": "revive_item",
+      "phase": "early",
+      "actor": {
+        "ma": 5,
+        "caster_faith": 70
+      },
+      "target": {
+        "missing_hp": 150,
+        "target_faith": 70,
+        "dead": true
+      },
+      "action": {
+        "revive_hp": 20,
+        "success_chance": 1.0,
+        "resource_type": "inventory",
+        "resource_available": 1,
+        "resource_cost": 1,
+        "planned_uses": 1,
+        "resolution_delay_ticks": 0
+      },
+      "expected": {
+        "raw_heal": 20,
+        "effective_heal": 20,
+        "overheal": 0,
+        "expected_heal": 20,
+        "resource_consumed": 1,
+        "uses_resolved": 1,
+        "total_expected_heal": 20
+      }
+    }
+  ],
+  "expected_counter_outputs": [
+    "scenario_id",
+    "model",
+    "raw_heal",
+    "effective_heal",
+    "overheal",
+    "expected_heal",
+    "resource_consumed",
+    "uses_resolved",
+    "total_expected_heal",
+    "validation_errors"
+  ]
+}

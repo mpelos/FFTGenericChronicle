@@ -35,6 +35,7 @@ tools/*
 !tools/watch_live_mapping.py
 !tools/check_build_incidence.py
 !tools/check_accuracy_evasion.py
+!tools/check_healing_attrition.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/
