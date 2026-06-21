@@ -1,0 +1,34 @@
+work/t8-targeting-challenge-scenarios-v0.json
+  s_fce6b25a5764ca::t_1f5f4fca84e34e 1-2,4-16,18-77,128-172,236-441,504-546,597-705
+  s_fce6b25a5764ca::t_a9b6a3ed74dd5f 3
+  s_fce6b25a5764ca::t_5f1022bd147b31 17,78-127,173-235,442-503,547-596
+work/gpt-t8-targeting-challenge-v0.json
+  s_fce6b25a5764ca::t_523c4290ad0baf 3-4,15,20
+  s_fce6b25a5764ca::t_56adee33bb9ad0 1,5-14,16-19,21-38,71-111,128-190,207-215
+  s_fce6b25a5764ca::t_d65c16c50a1f65 2,39-70,112-127,191-206
+.gitignore
+  s_fce6b25a5764ca::t_1f5f4fca84e34e 15
+docs/job-balance/15-targeting-challenge-model-schema.md
+  s_fce6b25a5764ca::t_1f5f4fca84e34e 1-2,4-93,96-143,145,147-150,152,154-208
+  s_fce6b25a5764ca::t_a9b6a3ed74dd5f 3,209-211
+  s_fce6b25a5764ca::t_5f1022bd147b31 94-95,144,146,151,153
+tools/check_targeting_challenge.py
+  s_fce6b25a5764ca::t_1f5f4fca84e34e 1-93,100-107,109-198
+  s_fce6b25a5764ca::t_871fb97086656b 94-99,108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "c9f03cb3b6b7a9c492afbbb00d7f2c0f1c1c1fd4",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
