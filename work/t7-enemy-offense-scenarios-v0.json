@@ -1,0 +1,627 @@
+{
+  "schema_version": "t7-enemy-offense-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/06-knight-archer-v1-proposal.md",
+    "docs/job-balance/07-validation-infrastructure-roadmap.md",
+    "docs/job-balance/12-vanilla-skill-status-reference.md",
+    "docs/job-balance/13-armor-response-model-schema.md",
+    "docs/job-balance/14-enemy-offense-disarm-model-schema.md",
+    "docs/formula-balance/11-validated-policy-v0.2.md",
+    "work/sim-inputs-v0.2.1.json"
+  ],
+  "reference_docs": [
+    "docs/reference/fft-vanilla-ability-effect-index.md",
+    "docs/reference/fft-vanilla-status-effect-map.md"
+  ],
+  "formula_contract": {
+    "base_family": "attack.weapon_family",
+    "attacker_side_routine": "use the v0.2.1 family routine with attacker stats and phase-scaled WP",
+    "permanent_replacement_order": "blocked permanent break effects are ignored, then unblocked permanent break/steal/disarm may replace the family or set it to none",
+    "temporary_output_pressure_order": "apply output multipliers after permanent replacement",
+    "effective_output_multiplier": "clamp(product(output_multiplier effects), 0.0, 1.0), or 0.0 for temporary_jam/no_family",
+    "output_multiplier_stacking": "multiplicative_not_additive",
+    "permanent_replacement_limit": "T7.0 assumes at most one unblocked permanent replacement effect per application; future stacked-break scenarios must define precedence before acceptance",
+    "output_per_hit": "floor(round(resulting_raw_output_per_hit * effective_output_multiplier, 6))",
+    "total_output": "output_per_hit * hit_count",
+    "normalization": "per_application_per_hit",
+    "duration_policy": "duration_ticks_is_context_only_for_later_t7xt5_composition",
+    "t6xt7_hook": "record resulting_family and resulting_damage_type for later armor-response composition",
+    "mandatory_piece_policy": "T2 must flag disarm, weapon-break, and anti-break support incidence before concrete job data is accepted",
+    "float_safe_floor_note": "round_to_6_before_floor_prevents_ieee_double_artifacts_like_100_times_0_29_flooring_to_28",
+    "copied_policy_values_note": "families_jobs_phase_wp_scalar_and_default_brave_are_copied_from_v0_2_1_and_must_be_regenerated_if_formula_policy_changes",
+    "numeric_comparison": {
+      "float_decimals": 6
+    }
+  },
+  "phase_wp_scalar": {
+    "early": 0.5,
+    "mid": 0.75,
+    "late": 1.0,
+    "stress": 1.0
+  },
+  "families": {
+    "sword": {
+      "routine": "pa_wp",
+      "damage_type": "swing",
+      "wp": 16,
+      "penetration": 0.0
+    },
+    "knight_sword": {
+      "routine": "br_pa_wp",
+      "damage_type": "swing",
+      "wp": 20,
+      "penetration": 0.0
+    },
+    "katana": {
+      "routine": "br_pa_wp",
+      "damage_type": "swing",
+      "wp": 18,
+      "penetration": 0.0
+    },
+    "knife": {
+      "routine": "spd_pa_wp",
+      "damage_type": "thrust",
+      "wp": 12,
+      "penetration": 0.1
+    },
+    "ninja_blade": {
+      "routine": "spd_pa_wp",
+      "damage_type": "swing",
+      "wp": 13,
+      "penetration": 0.0
+    },
+    "longbow": {
+      "routine": "spd_pa_wp",
+      "damage_type": "missile",
+      "wp": 15,
+      "penetration": 0.15
+    },
+    "crossbow": {
+      "routine": "pa_wp",
+      "damage_type": "missile",
+      "wp": 14,
+      "penetration": 0.35
+    },
+    "gun": {
+      "routine": "wp_wp",
+      "damage_type": "missile",
+      "wp": 12,
+      "penetration": 0.7
+    },
+    "spear": {
+      "routine": "pa_wp",
+      "damage_type": "thrust",
+      "wp": 15,
+      "penetration": 0.1
+    },
+    "staff": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 14,
+      "penetration": 0.0
+    },
+    "rod": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 10,
+      "penetration": 0.0
+    },
+    "pole": {
+      "routine": "ma_wp",
+      "damage_type": "crush",
+      "wp": 13,
+      "penetration": 0.0
+    },
+    "axe": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 20,
+      "penetration": 0.0
+    },
+    "flail": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 24,
+      "penetration": 0.0
+    },
+    "fists": {
+      "routine": "br_pa_pa",
+      "damage_type": "crush",
+      "wp": 0,
+      "penetration": 0.15
+    },
+    "instrument": {
+      "routine": "pampa_wp",
+      "damage_type": "missile",
+      "wp": 10,
+      "penetration": 0.0
+    },
+    "book": {
+      "routine": "pampa_wp",
+      "damage_type": "crush",
+      "wp": 15,
+      "penetration": 0.0
+    },
+    "cloth_weapon": {
+      "routine": "pampa_wp",
+      "damage_type": "swing",
+      "wp": 14,
+      "penetration": 0.0
+    },
+    "bag": {
+      "routine": "rdm_pa_wp",
+      "damage_type": "crush",
+      "wp": 20,
+      "penetration": 0.0
+    }
+  },
+  "jobs": {
+    "Knight": {
+      "bands": {
+        "late": {
+          "hp": 516,
+          "pa": 12,
+          "ma": 8,
+          "spd": 8
+        }
+      }
+    },
+    "Archer": {
+      "bands": {
+        "late": {
+          "hp": 430,
+          "pa": 11,
+          "ma": 8,
+          "spd": 8
+        }
+      }
+    },
+    "Chemist": {
+      "bands": {
+        "late": {
+          "hp": 344,
+          "pa": 8,
+          "ma": 8,
+          "spd": 8
+        }
+      }
+    },
+    "Ninja": {
+      "bands": {
+        "late": {
+          "hp": 301,
+          "pa": 12,
+          "ma": 8,
+          "spd": 10
+        }
+      }
+    },
+    "Samurai": {
+      "bands": {
+        "late": {
+          "hp": 322,
+          "pa": 13,
+          "ma": 9,
+          "spd": 8
+        }
+      }
+    },
+    "Black Mage": {
+      "bands": {
+        "late": {
+          "hp": 322,
+          "pa": 6,
+          "ma": 15,
+          "spd": 8
+        }
+      }
+    }
+  },
+  "defaults": {
+    "brave": 70,
+    "faith": 70
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t7_base_sword_no_pressure",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 192,
+        "total_output": 192,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "normal"
+      }
+    },
+    {
+      "scenario_id": "t7_temp_output_down_sword",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.5,
+          "duration_ticks": 24
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 96,
+        "total_output": 96,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_partial_jam_crossbow",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Archer"
+      },
+      "attack": {
+        "weapon_family": "crossbow",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.35,
+          "duration_ticks": 16
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 154,
+        "resulting_family": "crossbow",
+        "resulting_damage_type": "missile",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 154,
+        "effective_output_multiplier": 0.35,
+        "output_per_hit": 53,
+        "total_output": 53,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_stacked_output_down_multiplicative",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.6,
+          "duration_ticks": 12
+        },
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.5,
+          "duration_ticks": 8
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 0.3,
+        "output_per_hit": 57,
+        "total_output": 57,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_temporary_jam_zero_crossbow",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Archer"
+      },
+      "attack": {
+        "weapon_family": "crossbow",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_jam",
+          "duration_ticks": 16
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 154,
+        "resulting_family": "crossbow",
+        "resulting_damage_type": "missile",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 154,
+        "effective_output_multiplier": 0.0,
+        "output_per_hit": 0,
+        "total_output": 0,
+        "can_attack": false,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_jammed"
+      }
+    },
+    {
+      "scenario_id": "t7_permanent_break_to_fists",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "permanent_weapon_break",
+          "fallback_family": "fists"
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "fists",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "br_pa_pa",
+        "resulting_raw_output_per_hit": 96,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 96,
+        "total_output": 96,
+        "can_attack": true,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_break_fallback"
+      }
+    },
+    {
+      "scenario_id": "t7_permanent_break_no_fallback_gun",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Chemist"
+      },
+      "attack": {
+        "weapon_family": "gun",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "permanent_weapon_break",
+          "fallback_family": "none"
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 144,
+        "resulting_family": "none",
+        "resulting_damage_type": "none",
+        "resulting_routine": "none",
+        "resulting_raw_output_per_hit": 0,
+        "effective_output_multiplier": 0.0,
+        "output_per_hit": 0,
+        "total_output": 0,
+        "can_attack": false,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_no_family"
+      }
+    },
+    {
+      "scenario_id": "t7_safeguard_blocks_weapon_break",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "permanent_weapon_break",
+          "fallback_family": "fists",
+          "blocked_by_safeguard": true
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 192,
+        "total_output": 192,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 1,
+        "output_state": "normal"
+      }
+    },
+    {
+      "scenario_id": "t7_multi_hit_ninja_blade_output_down",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Ninja"
+      },
+      "attack": {
+        "weapon_family": "ninja_blade",
+        "hit_count": 2
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.5,
+          "duration_ticks": 12
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 143,
+        "resulting_family": "ninja_blade",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "spd_pa_wp",
+        "resulting_raw_output_per_hit": 143,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 71,
+        "total_output": 142,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_brave_routine_katana_output_down",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Samurai"
+      },
+      "attack": {
+        "weapon_family": "katana",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.57,
+          "duration_ticks": 12
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 162,
+        "resulting_family": "katana",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "br_pa_wp",
+        "resulting_raw_output_per_hit": 162,
+        "effective_output_multiplier": 0.57,
+        "output_per_hit": 92,
+        "total_output": 92,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_float_safe_floor_rod_output_down",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Black Mage",
+        "stat_overrides": {
+          "ma": 10
+        }
+      },
+      "attack": {
+        "weapon_family": "rod",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.29,
+          "duration_ticks": 8
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 100,
+        "resulting_family": "rod",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "ma_wp",
+        "resulting_raw_output_per_hit": 100,
+        "effective_output_multiplier": 0.29,
+        "output_per_hit": 29,
+        "total_output": 29,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      }
+    },
+    {
+      "scenario_id": "t7_break_to_fists_then_output_down",
+      "model": "enemy_offense_disarm",
+      "phase": "late",
+      "attacker": {
+        "job": "Knight"
+      },
+      "attack": {
+        "weapon_family": "sword",
+        "hit_count": 1
+      },
+      "offense_effects": [
+        {
+          "kind": "permanent_weapon_break",
+          "fallback_family": "fists"
+        },
+        {
+          "kind": "temporary_output_down",
+          "output_multiplier": 0.5,
+          "duration_ticks": 12
+        }
+      ],
+      "expected": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "fists",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "br_pa_pa",
+        "resulting_raw_output_per_hit": 96,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 48,
+        "total_output": 48,
+        "can_attack": true,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_break_fallback_temporary_output_down"
+      }
+    }
+  ]
+}

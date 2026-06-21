@@ -1,0 +1,235 @@
+{
+  "scenario_count": 12,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "rows": [
+    {
+      "scenario_id": "t7_base_sword_no_pressure",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 192,
+        "total_output": 192,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "normal"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_brave_routine_katana_output_down",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 162,
+        "resulting_family": "katana",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "br_pa_wp",
+        "resulting_raw_output_per_hit": 162,
+        "effective_output_multiplier": 0.57,
+        "output_per_hit": 92,
+        "total_output": 92,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_break_to_fists_then_output_down",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "fists",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "br_pa_pa",
+        "resulting_raw_output_per_hit": 96,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 48,
+        "total_output": 48,
+        "can_attack": true,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_break_fallback_temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_float_safe_floor_rod_output_down",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 100,
+        "resulting_family": "rod",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "ma_wp",
+        "resulting_raw_output_per_hit": 100,
+        "effective_output_multiplier": 0.29,
+        "output_per_hit": 29,
+        "total_output": 29,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_multi_hit_ninja_blade_output_down",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 143,
+        "resulting_family": "ninja_blade",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "spd_pa_wp",
+        "resulting_raw_output_per_hit": 143,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 71,
+        "total_output": 142,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_partial_jam_crossbow",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 154,
+        "resulting_family": "crossbow",
+        "resulting_damage_type": "missile",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 154,
+        "effective_output_multiplier": 0.35,
+        "output_per_hit": 53,
+        "total_output": 53,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_permanent_break_no_fallback_gun",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 144,
+        "resulting_family": "none",
+        "resulting_damage_type": "none",
+        "resulting_routine": "none",
+        "resulting_raw_output_per_hit": 0,
+        "effective_output_multiplier": 0.0,
+        "output_per_hit": 0,
+        "total_output": 0,
+        "can_attack": false,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_no_family"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_permanent_break_to_fists",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "fists",
+        "resulting_damage_type": "crush",
+        "resulting_routine": "br_pa_pa",
+        "resulting_raw_output_per_hit": 96,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 96,
+        "total_output": 96,
+        "can_attack": true,
+        "permanent_family_change": true,
+        "blocked_effects": 0,
+        "output_state": "permanent_break_fallback"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_safeguard_blocks_weapon_break",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 1.0,
+        "output_per_hit": 192,
+        "total_output": 192,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 1,
+        "output_state": "normal"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_stacked_output_down_multiplicative",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 0.3,
+        "output_per_hit": 57,
+        "total_output": 57,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_temp_output_down_sword",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 192,
+        "resulting_family": "sword",
+        "resulting_damage_type": "swing",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 192,
+        "effective_output_multiplier": 0.5,
+        "output_per_hit": 96,
+        "total_output": 96,
+        "can_attack": true,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_output_down"
+      },
+      "validation_errors": []
+    },
+    {
+      "scenario_id": "t7_temporary_jam_zero_crossbow",
+      "model": "enemy_offense_disarm",
+      "calculated_fields": {
+        "base_raw_output_per_hit": 154,
+        "resulting_family": "crossbow",
+        "resulting_damage_type": "missile",
+        "resulting_routine": "pa_wp",
+        "resulting_raw_output_per_hit": 154,
+        "effective_output_multiplier": 0.0,
+        "output_per_hit": 0,
+        "total_output": 0,
+        "can_attack": false,
+        "permanent_family_change": false,
+        "blocked_effects": 0,
+        "output_state": "temporary_jammed"
+      },
+      "validation_errors": []
+    }
+  ]
+}
