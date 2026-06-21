@@ -1,0 +1,21 @@
+docs/job-balance/28-foundation-reconciliation-v1.md
+  s_fce6b25a5764ca::t_3eea56ca799a4f 137,142,145
+  s_fce6b25a5764ca::t_f4af990707c9ff 1-2,4-136,138-141,143-144,146-170
+  s_fce6b25a5764ca::t_8850e1c98ee3d3 3,171-177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ec0efc4a07f9cb20fbbabf5676445a8ea04daa97",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
