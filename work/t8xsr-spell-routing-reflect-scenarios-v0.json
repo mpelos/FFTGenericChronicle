@@ -1,0 +1,664 @@
+{
+  "schema_version": "t8xsr-spell-routing-reflect-scenarios-v0",
+  "status": "accepted",
+  "date": "2026-06-21",
+  "source_docs": [
+    "docs/job-balance/15-targeting-challenge-model-schema.md",
+    "docs/job-balance/20-time-mystic-v1-proposal.md",
+    "docs/job-balance/21-summoner-geomancer-v1-proposal.md",
+    "docs/job-balance/30-roster-completion-and-infra-sprint-plan.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/38-spell-routing-reflect-composition-schema.md"
+  ],
+  "formula_contract": {
+    "normalization": "single_spell_routing_event",
+    "reflect_trigger": "spell.reflectable and original_target.has_reflect",
+    "candidate_eligibility": "unit exists and can_target and line_of_effect and not spell_immune and not ai_ignored",
+    "selection": "highest routing_score; earliest eligible candidate wins ties",
+    "no_legal_target": "fizzle",
+    "backfire": "hostile backfires onto caster team; beneficial backfires away from caster team",
+    "anti_loop": "one reflection only; selected target reflect is suppressed and reported"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "t8xsr_hostile_spell_bounces_to_caster_team",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_caster",
+            "routing_score": 80
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_caster",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_caster",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 80,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_beneficial_spell_backfires_to_enemy",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "beneficial",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "player_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "enemy_target",
+            "routing_score": 50
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "player_reflector",
+          "team": "player",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "enemy_target",
+          "team": "enemy",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "enemy_target",
+        "final_team": "enemy",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 50,
+        "hostile_backfire": false,
+        "beneficial_backfire": true,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_nonreflectable_spell_ignores_reflect",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": false,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_caster",
+            "routing_score": 80
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_caster",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": false,
+        "final_target_id": "enemy_reflector",
+        "final_team": "enemy",
+        "fizzled": false,
+        "eligible_reflection_count": 0,
+        "selected_routing_score": null,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_no_reflect_status_keeps_original_target",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_no_reflect",
+        "reflection_candidates": [
+          {
+            "target_id": "player_caster",
+            "routing_score": 80
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_no_reflect",
+          "team": "enemy",
+          "has_reflect": false
+        },
+        {
+          "unit_id": "player_caster",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": false,
+        "final_target_id": "enemy_no_reflect",
+        "final_team": "enemy",
+        "fizzled": false,
+        "eligible_reflection_count": 0,
+        "selected_routing_score": null,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_no_legal_reflection_target_fizzles",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "immune_player",
+            "routing_score": 90
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "immune_player",
+          "team": "player",
+          "has_reflect": false,
+          "spell_immune": true
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "none",
+        "final_team": "none",
+        "fizzled": true,
+        "eligible_reflection_count": 0,
+        "selected_routing_score": null,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_spell_immune_candidate_skipped",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "immune_player",
+            "routing_score": 90
+          },
+          {
+            "target_id": "player_caster",
+            "routing_score": 70
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "immune_player",
+          "team": "player",
+          "has_reflect": false,
+          "spell_immune": true
+        },
+        {
+          "unit_id": "player_caster",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_caster",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 70,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_line_blocked_candidate_skipped",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "blocked_player",
+            "routing_score": 90
+          },
+          {
+            "target_id": "open_player",
+            "routing_score": 60
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "blocked_player",
+          "team": "player",
+          "has_reflect": false,
+          "line_of_effect": false
+        },
+        {
+          "unit_id": "open_player",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "open_player",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 60,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_highest_score_candidate_selected",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_low",
+            "routing_score": 40
+          },
+          {
+            "target_id": "player_high",
+            "routing_score": 85
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_low",
+          "team": "player",
+          "has_reflect": false
+        },
+        {
+          "unit_id": "player_high",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_high",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 2,
+        "selected_routing_score": 85,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_tie_break_earliest_candidate",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_first",
+            "routing_score": 70
+          },
+          {
+            "target_id": "player_second",
+            "routing_score": 70
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_first",
+          "team": "player",
+          "has_reflect": false
+        },
+        {
+          "unit_id": "player_second",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_first",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 2,
+        "selected_routing_score": 70,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_secondary_reflect_suppressed",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_reflector",
+            "routing_score": 80
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_reflector",
+          "team": "player",
+          "has_reflect": true
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_reflector",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 80,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": true
+      }
+    },
+    {
+      "scenario_id": "t8xsr_untargetable_candidate_skipped",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "untargetable_player",
+            "routing_score": 90
+          },
+          {
+            "target_id": "open_player",
+            "routing_score": 60
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "untargetable_player",
+          "team": "player",
+          "has_reflect": false,
+          "can_target": false
+        },
+        {
+          "unit_id": "open_player",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "open_player",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 60,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_ai_ignored_candidate_skipped",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "ignored_player",
+            "routing_score": 90
+          },
+          {
+            "target_id": "open_player",
+            "routing_score": 60
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "ignored_player",
+          "team": "player",
+          "has_reflect": false,
+          "ai_ignored": true
+        },
+        {
+          "unit_id": "open_player",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "open_player",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 60,
+        "hostile_backfire": true,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_hostile_reflect_no_backfire_offteam",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "enemy_other",
+            "routing_score": 50
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "enemy_other",
+          "team": "enemy",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "enemy_other",
+        "final_team": "enemy",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 50,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_beneficial_reflect_no_backfire_sameteam",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "beneficial",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "player_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "player_ally",
+            "routing_score": 50
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "player_reflector",
+          "team": "player",
+          "has_reflect": true
+        },
+        {
+          "unit_id": "player_ally",
+          "team": "player",
+          "has_reflect": false
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "player_ally",
+        "final_team": "player",
+        "fizzled": false,
+        "eligible_reflection_count": 1,
+        "selected_routing_score": 50,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    },
+    {
+      "scenario_id": "t8xsr_nonexistent_candidate_skipped",
+      "model": "spell_routing_reflect",
+      "spell": {
+        "intent": "hostile",
+        "caster_team": "player",
+        "reflectable": true,
+        "original_target_id": "enemy_reflector",
+        "reflection_candidates": [
+          {
+            "target_id": "ghost_id",
+            "routing_score": 100
+          }
+        ]
+      },
+      "units": [
+        {
+          "unit_id": "enemy_reflector",
+          "team": "enemy",
+          "has_reflect": true
+        }
+      ],
+      "expected": {
+        "reflect_triggered": true,
+        "final_target_id": "none",
+        "final_team": "none",
+        "fizzled": true,
+        "eligible_reflection_count": 0,
+        "selected_routing_score": null,
+        "hostile_backfire": false,
+        "beneficial_backfire": false,
+        "secondary_reflect_suppressed": false
+      }
+    }
+  ]
+}
