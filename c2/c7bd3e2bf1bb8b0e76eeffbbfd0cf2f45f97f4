@@ -1,0 +1,35 @@
+tools/check_armor_response.py
+  s_fce6b25a5764ca::t_629fd297f684f0 56-58
+  s_fce6b25a5764ca::t_da42b77d0f4efb 1-55,59-123
+docs/job-balance/13-armor-response-model-schema.md
+  s_fce6b25a5764ca::t_238f1a9539c87c 3,259-266
+  s_fce6b25a5764ca::t_da42b77d0f4efb 1-2,4-68,73-79,84-85,94-97,108-176,178-179,184-258
+  s_fce6b25a5764ca::t_9a3c26d7cef717 80-83,86-93,98-107
+  s_fce6b25a5764ca::t_629fd297f684f0 69-72,177,180-183
+work/gpt-t6-armor-response-v0.json
+  s_fce6b25a5764ca::t_2035b57264c5c9 1-105,108-187
+  s_fce6b25a5764ca::t_9f32196c431d97 106-107
+.gitignore
+  s_fce6b25a5764ca::t_da42b77d0f4efb 13
+work/t6-armor-response-scenarios-v0.json
+  s_fce6b25a5764ca::t_da42b77d0f4efb 1-2,4-29,31-33,36-251,254-448
+  s_fce6b25a5764ca::t_238f1a9539c87c 3
+  s_fce6b25a5764ca::t_629fd297f684f0 30,34-35
+  s_fce6b25a5764ca::t_749ce109b3f15a 252-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "c2c7bd3e2bf1bb8b0e76eeffbbfd0cf2f45f97f4",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
