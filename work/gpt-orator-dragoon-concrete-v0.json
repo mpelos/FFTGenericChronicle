@@ -1,0 +1,395 @@
+{
+  "schema_version": "orator-dragoon-concrete-provisional-v0",
+    "status": "accepted_w3_orator_dragoon_concrete_provisional",
+  "date": "2026-06-22",
+    "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+    "effective_wp_rounding": "none",
+  "purpose": "Fourth W3 physical/foundation concrete action-value producer, covering Orator and Dragoon.",
+  "scope": {
+    "jobs": ["Orator", "Dragoon"],
+    "included": [
+      "Orator Speechcraft action values",
+      "battle-scoped Brave and Faith boundaries",
+      "speech status boundaries",
+      "Orator gun baseline rows",
+      "Dragoon Jump damage and timing",
+      "Dragoon horizontal and vertical Jump unlock values"
+    ],
+    "excluded": [
+      "final reaction/support/movement values",
+      "final equipment-unlock pricing",
+      "permanent recruit and economy rewards",
+      "monster interaction",
+      "exact speech range and line implementation",
+      "non-spear Jump routes",
+      "full W4/W5 incidence verdicts"
+    ]
+  },
+  "speech_accuracy_boundary": {
+    "ally_morale_speech": "reliable on eligible allies",
+    "enemy_debuff_speech_base_rate": 0.6,
+    "enemy_hard_status_speech_base_rate": "0.30-0.35",
+    "requires_final_t4_line_range": true,
+    "blocked_by_silence": true,
+    "boss_protected_target_policy": "deferred immunity/resistance row"
+  },
+  "orator_actions": [
+    {
+      "name": "Entice",
+      "kind": "temporary_recruit_control",
+      "base_success_rate": 0.35,
+      "duration": "one controlled action or damage break",
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "C/D",
+      "limits": "eligible human targets only in this pass; no permanent recruitment"
+    },
+    {
+      "name": "Stall",
+      "kind": "ct_pressure",
+      "ct_damage": 12,
+      "base_success_rate": 0.6,
+      "ct": 0,
+      "mp": 0,
+      "jp": 120,
+      "band": "C",
+      "limits": "no Slow, no Speed stat change, no hard lock"
+    },
+    {
+      "name": "Praise",
+      "kind": "brave_up",
+      "brave_delta": 8,
+      "brave_cap_from_orator_speech": 80,
+      "duration": "battle-scoped",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "C",
+      "limits": "one active Orator Brave-up speech per target; no permanent Brave"
+    },
+    {
+      "name": "Intimidate",
+      "kind": "brave_down",
+      "brave_delta": -8,
+      "brave_floor_from_orator_speech": 50,
+      "base_success_rate": 0.6,
+      "duration": "battle-scoped",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "C",
+      "limits": "does not cause Chicken; no permanent Brave"
+    },
+    {
+      "name": "Preach",
+      "kind": "faith_up",
+      "faith_delta": 5,
+      "faith_cap_from_orator_speech": 80,
+      "duration": "battle-scoped",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "C/D",
+      "limits": "weaker than Mystic Faith control; double-edged target amplification; intentionally not a baseline 70/70 damage button"
+    },
+    {
+      "name": "Enlighten",
+      "kind": "faith_down",
+      "faith_delta": -5,
+      "faith_floor_from_orator_speech": 50,
+      "base_success_rate": 0.6,
+      "duration": "battle-scoped",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "C/D",
+      "limits": "anti-caster/countersetup; cannot invalidate ordinary magic by itself"
+    },
+    {
+      "name": "Condemn",
+      "kind": "doom",
+      "base_success_rate": 0.35,
+      "doom_countdown": 4,
+      "ct": 0,
+      "mp": 0,
+      "jp": 450,
+      "band": "C/D",
+      "limits": "no instant KO in this pass; immunity respected; Doom ecosystem cure/immunity policy remains T8-required"
+    },
+    {
+      "name": "Defraud",
+      "kind": "economy_marker",
+      "combat_power": 0,
+      "ct": 0,
+      "mp": 0,
+      "jp": 100,
+      "band": "C",
+      "limits": "battle-scoped marker only; permanent reward deferred"
+    },
+    {
+      "name": "Insult",
+      "kind": "berserk",
+      "base_success_rate": 0.3,
+      "duration": "one forced enemy action or damage break",
+      "ct": 0,
+      "mp": 0,
+      "jp": 300,
+      "band": "C/D",
+      "limits": "not Confuse and not broad hard control"
+    },
+    {
+      "name": "Mimic Darlavon",
+      "kind": "sleep",
+      "base_success_rate": 0.3,
+      "duration": "until target misses one action or takes damage",
+      "ct": 0,
+      "mp": 0,
+      "jp": 300,
+      "band": "C/D",
+      "limits": "single-target only in this pass"
+    }
+  ],
+  "dragoon_actions": [
+    {
+      "name": "Jump",
+      "kind": "delayed_spear_strike",
+      "required_family": "spear",
+      "pressure_multiplier": 1.25,
+      "ct_formula": "ceil(50 / Speed)",
+      "mp": 0,
+      "jp": 200,
+      "band": "C",
+      "limits": "spear/thrust only in this pass; whiffs if target or panel is invalid at resolution"
+    },
+    {
+      "name": "Horizontal Jump +1",
+      "kind": "jump_reach_unlock",
+      "max_jump_reach": 3,
+      "damage_bonus": 0,
+      "jp": 120,
+      "band": "C"
+    },
+    {
+      "name": "Horizontal Jump +2",
+      "kind": "jump_reach_unlock",
+      "max_jump_reach": 4,
+      "damage_bonus": 0,
+      "jp": 240,
+      "band": "C"
+    },
+    {
+      "name": "Horizontal Jump +3",
+      "kind": "jump_reach_unlock",
+      "max_jump_reach": 5,
+      "damage_bonus": 0,
+      "jp": 380,
+      "band": "C/D"
+    },
+    {
+      "name": "Horizontal Jump +4",
+      "kind": "jump_reach_unlock",
+      "max_jump_reach": 6,
+      "damage_bonus": 0,
+      "jp": 550,
+      "band": "D"
+    },
+    {
+      "name": "Horizontal Jump +7",
+      "kind": "jump_reach_unlock",
+      "max_jump_reach": 8,
+      "damage_bonus": 0,
+      "jp": 800,
+      "band": "D/E"
+    },
+    {
+      "name": "Vertical Jump +/-2",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 2,
+      "damage_bonus": 0,
+      "jp": 100,
+      "band": "C"
+    },
+    {
+      "name": "Vertical Jump +/-3",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 3,
+      "damage_bonus": 0,
+      "jp": 180,
+      "band": "C"
+    },
+    {
+      "name": "Vertical Jump +/-4",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 4,
+      "damage_bonus": 0,
+      "jp": 300,
+      "band": "C/D"
+    },
+    {
+      "name": "Vertical Jump +/-5",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 5,
+      "damage_bonus": 0,
+      "jp": 420,
+      "band": "C/D"
+    },
+    {
+      "name": "Vertical Jump +/-6",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 6,
+      "damage_bonus": 0,
+      "jp": 560,
+      "band": "D"
+    },
+    {
+      "name": "Vertical Jump +/-7",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 7,
+      "damage_bonus": 0,
+      "jp": 720,
+      "band": "D"
+    },
+    {
+      "name": "Vertical Jump +/-8",
+      "kind": "jump_vertical_unlock",
+      "vertical_tolerance": 8,
+      "damage_bonus": 0,
+      "jp": 900,
+      "band": "D/E"
+    }
+  ],
+  "rsm_boundary_values": {
+    "Bravery Surge": "deferred to RSM/F5/T2.1 producer; must not become universal Brave stacking",
+    "Faith Surge": "deferred to RSM/F4/F5/T2.1 producer; high risk with Faith setup",
+    "Equip Guns": "deferred to RSM/equipment producer; doc 51 C/D strong global piece because guns are wp_wp",
+    "Tame": "deferred until monster scope opens",
+    "Beast Tongue": "deferred until monster scope opens",
+    "Social Positioning": "deferred to movement/T5/T2.1 producer",
+    "Dragonheart": "deferred to RSM/T3/T5/T2.1 producer; must avoid survival loops",
+    "Brace Landing": "deferred narrow landing-risk candidate",
+    "Equip Polearms": "deferred to RSM/equipment/F5 producer",
+    "Jump Training": "deferred; no Jump CT reduction accepted in this pass",
+    "Jump +1/+2/+3": "deferred movement-slot values, distinct from action Jump unlocks",
+    "Ignore Elevation": "deferred D/E movement capstone"
+  },
+  "simulation_rows": {
+    "orator_gun_baseline": {
+      "read": "Orator and Chemist gun rows match because guns are stat-independent wp_wp.",
+      "orator_gun_mid": {"plate": 81, "mail": 89, "leather": 85, "cloth": 86},
+      "chemist_gun_mid": {"plate": 81, "mail": 89, "leather": 85, "cloth": 86},
+      "orator_gun_late": {"plate": 145, "mail": 158, "leather": 151, "cloth": 154}
+    },
+    "brave_force_multiplier_rows_cloth": [
+      {
+        "route": "Monk fists mid",
+        "brave_62": 60,
+        "brave_70": 71,
+        "brave_78": 71,
+        "brave_80": 81
+      },
+      {
+        "route": "Monk fists late",
+        "brave_62": 105,
+        "brave_70": 118,
+        "brave_78": 131,
+        "brave_80": 131
+      },
+      {
+        "route": "Samurai katana late",
+        "brave_62": 144,
+        "brave_70": 162,
+        "brave_78": 180,
+        "brave_80": 180
+      },
+      {
+        "route": "Knight sword late",
+        "brave_62": 140,
+        "brave_70": 160,
+        "brave_78": 180,
+        "brave_80": 180
+      }
+    ],
+    "faith_force_multiplier_rows_black_mage_mid_k20": [
+      {
+        "caster_faith": 70,
+        "target_faith": 70,
+        "damage": 144,
+        "faith_factor": 0.6
+      },
+      {
+        "caster_faith": 75,
+        "target_faith": 70,
+        "damage": 144,
+        "faith_factor": 0.6
+      },
+      {
+        "caster_faith": 70,
+        "target_faith": 75,
+        "damage": 144,
+        "faith_factor": 0.6
+      },
+      {
+        "caster_faith": 75,
+        "target_faith": 75,
+        "damage": 144,
+        "faith_factor": 0.6
+      },
+      {
+        "caster_faith": 80,
+        "target_faith": 80,
+        "damage": 153,
+        "faith_factor": 0.64
+      },
+      {
+        "caster_faith": 85,
+        "target_faith": 85,
+        "damage": 173,
+        "faith_factor": 0.722
+      },
+      {
+        "caster_faith": 85,
+        "target_faith": 80,
+        "damage": 163,
+        "faith_factor": 0.68
+      }
+    ],
+    "dragoon_spear_damage": {
+      "mid_normal_spear": {"plate": 78, "mail": 123, "leather": 108, "cloth": 113},
+      "mid_jump_x1_25": {"plate": 97, "mail": 154, "leather": 135, "cloth": 142},
+      "late_normal_spear": {"plate": 125, "mail": 198, "leather": 173, "cloth": 181},
+      "late_jump_x1_25": {"plate": 156, "mail": 247, "leather": 217, "cloth": 227}
+    },
+    "jump_timing_rows": [
+      {"speed": 6, "jump_ticks": 9},
+      {"speed": 7, "jump_ticks": 8},
+      {"speed": 8, "jump_ticks": 7},
+      {"speed": 9, "jump_ticks": 6},
+      {"speed": 10, "jump_ticks": 5},
+      {"speed": 12, "jump_ticks": 5}
+    ],
+    "speed_7_target_ct_race": [
+      {"target_ct": 30, "target_ticks_to_action": 10, "verdict": "jump_lands_before_target_turn"},
+      {"target_ct": 40, "target_ticks_to_action": 9, "verdict": "jump_lands_before_target_turn"},
+      {"target_ct": 44, "target_ticks_to_action": 8, "verdict": "same_tick_unsafe"},
+      {"target_ct": 50, "target_ticks_to_action": 8, "verdict": "same_tick_unsafe"},
+      {"target_ct": 58, "target_ticks_to_action": 6, "verdict": "target_can_act_before_landing"},
+      {"target_ct": 70, "target_ticks_to_action": 5, "verdict": "target_can_act_before_landing"}
+    ],
+    "speed_7_airborne_window_start_0_expire_8": [
+      {"evaluation_tick": 0, "airborne_untargetable": true},
+      {"evaluation_tick": 1, "airborne_untargetable": true},
+      {"evaluation_tick": 4, "airborne_untargetable": true},
+      {"evaluation_tick": 7, "airborne_untargetable": true},
+      {"evaluation_tick": 8, "airborne_untargetable": false},
+      {"evaluation_tick": 9, "airborne_untargetable": false}
+    ]
+  },
+  "claude_review_questions": [
+    "Are Praise +8 and Intimidate -8 acceptable with cap/floor and battle-scoped non-permanence?",
+    "Is Faith movement at +/-5 too weak to matter, or desirable because Mystic owns Faith control?",
+    "Are the speech hard-status rates low enough given speech range and no weapon damage?",
+    "Is Jump x1.25 viable with ceil(50 / Speed) delay and T5xT8 whiff rules, or should it fall to x1.15?",
+    "Are the Dragoon reach bands sufficient without replacing Archer range or late movement choices?"
+  ]
+}
