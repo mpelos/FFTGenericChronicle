@@ -12,6 +12,7 @@ Depends on:
 - `docs/job-balance/51-progression-and-build-input-ledger-v0.md`
 - `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
 - `docs/job-balance/59-equipment-availability-timing-v0.md`
+- `docs/job-balance/61-jp-boost-removal-decision-v0.md`
 - `docs/reference/README.md`
 - `docs/reference/fft-vanilla-ability-effect-index.md`
 - `docs/reference/fft-vanilla-command-skillset-effect-map.md`
@@ -46,7 +47,7 @@ Vanilla overlap checked:
 
 | Family | Records checked | This producer read |
 | --- | --- | --- |
-| Starter progression | Squire, Chemist, `JP Boost`, `Move +1`, basic Items | Starter routes stay early and useful without forcing a permanent combat support. |
+| Starter progression | Squire, Chemist, `Basic Training`, `Move +1`, basic Items | Starter routes stay early and useful without forcing a permanent combat support. |
 | Equipment unlocks | `Equip Heavy Armor`, `Equip Shields`, `Equip Crossbows`, `Equip Katana`, `Equip Polearms`, `Equip Guns`, `Equip Swords`, `Reequip` | Existing unlock vocabulary retained where accepted; broad `Equip Sword` remains rejected. |
 | Physical engines | `Brawler`, `Doublehand`, `Dual Wield`, `Attack Boost`, `Concentration` | Costed as convergence risks, not cheap flavor. |
 | Defensive reactions | `Parry`, `Shirahadori`, `Reflexes`, `Auto-Potion`, `Dragonheart`, `Vanish` | Costed by band and slot pressure; no practical immunity route is accepted. |
@@ -97,8 +98,8 @@ implementation data.
 | Lv4 | deep | 1200 | Advanced route commitment and strong engines. |
 | Lv5 | mastery | 2000 | Late reward jobs and capstone exports. |
 
-`JP Boost` affects earned JP pacing only. It does not change combat values, does not appear in floor
-rows, and must be tested by W4 with and without optimizer routing.
+Doc 61 removes `JP Boost` entirely. Fixed JP pacing must be tested by W4 through ordinary,
+optimizer, and grind-heavy rows instead of with/without support-tax routing.
 
 ## Job Prerequisite Tree
 
@@ -175,8 +176,7 @@ needs a full machine-readable export.
 | Job | Piece | Slot | Band | Depth | JP | Notes |
 | --- | --- | --- | --- | --- | ---: | --- |
 | Squire | `Grit` | Reaction | A/B | Lv2 | 180 | Early morale defense; narrow enough to appear early. |
-| Squire | `JP Boost` | Support | A | Lv2 | 200 | Pacing utility only; W4 with/without JP Boost required. |
-| Squire | `Basic Training` | Support | B/C | Lv3 | 350 | Squire actions only, not broad physical output. |
+| Squire | `Basic Training` | Support | B/C | Lv3 | 350 | Squire's sole intentional support export; Squire actions only, not broad physical output. |
 | Squire | `Move +1` | Movement | A | Lv2 | 150 | Floor comfort. |
 | Chemist | `Throw Item` | Support | A/B | Lv2 | 300 | Range utility; fixed item economy. |
 | Chemist | `Auto-Potion` | Reaction | C | Lv3 | 700 | Potion-only 30 HP; strong global despite flat value. |
@@ -292,7 +292,6 @@ These rows must be watched first in W4/T2.1.
 
 | Piece | Job | Band | JP | Why it is protected |
 | --- | --- | --- | ---: | --- |
-| `JP Boost` | Squire | A | 200 | Pacing accelerator; tested with and without optimizer routing. |
 | `Auto-Potion` | Chemist | C | 700 | Reliable global sustain if too early or too broad. |
 | `Equip Armor` | Knight | C | 700 | Can erase fragile job weakness. |
 | `Equip Shield` | Knight | C | 600 | Can stack with evasion/reactions. |
@@ -320,8 +319,8 @@ W4/T2.1 should treat a build piece as reachable only when all of these are true:
 5. equipment exports also satisfy doc 59 practical-online timing;
 6. fixed vanilla economy remains unchanged.
 
-If an optimizer with `JP Boost` can move a Band D/E protected piece into ordinary Band B/C play,
-the first allowed tuning levers are:
+If ordinary or optimizer fixed-JP routing can move a Band D/E protected piece into ordinary Band B/C
+play, the first allowed tuning levers are:
 
 1. raise donor depth;
 2. raise JP cost within the same band;

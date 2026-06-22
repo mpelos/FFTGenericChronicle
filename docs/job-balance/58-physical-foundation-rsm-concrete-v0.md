@@ -43,7 +43,7 @@ It covers:
 - `Vanguard`;
 - Ramza's chapter-progressing protagonist job.
 
-It does not finalize the exact prerequisite tree, final JP economy, equipment shop/gil timing,
+It does not finalize the exact prerequisite tree, final JP economy, equipment availability timing,
 caster RSM, performer RSM, Necromancer RSM, monster scope, or W4/W5 pass/fail incidence.
 
 ## Atlas Consultation
@@ -70,7 +70,7 @@ Vanilla overlap checked:
 | Reaction stat/morale | `Bravery Surge`, `Faith Surge`, `Speed Surge`, `Critical: Quick` | Brave/Faith kept battle-scoped; Speed Save becomes CT gain, not Speed stat growth. |
 | Equipment unlock supports | `Equip Heavy Armor`, `Equip Shields`, `Equip Katana`, `Equip Crossbows`, `Equip Polearms`, `Equip Guns`, `Reequip` | Retained as build routes but band/equipment-gated; no broad `Equip Swords`. |
 | Damage/support engines | `Brawler`, `Doublehand`, `Dual Wield`, `Attack Boost`, `Concentration` | Stress engines remain recognizable; support-slot conflicts are explicit. |
-| Progression/economy supports | `JP Boost`, `EXP Boost`, `Poach`, `Tame`, `Beast Tongue` | JP Boost retained as pacing only; monster/economy supports deferred. |
+| Progression/economy supports | `EXP Boost`, `Poach`, `Tame`, `Beast Tongue` | `JP Boost` is intentionally removed by doc 61; monster/economy supports remain deferred. |
 | Movement | `Movement +1/+2/+3`, `Jump +1/+2/+3`, `Ignore Elevation`, `Ignore Terrain`, `Lifefont`, `Manafont`, `Teleport`, `Fly`, `Treasure Hunter` | Movement ladder split by role so no single late default is accepted. |
 
 No vanilla R/S/M family is intentionally omitted from this physical/foundation pass without being
@@ -87,13 +87,13 @@ rsm_constants.version = physical_foundation_rsm_v0_proposed
 The pin was committed in:
 
 ```text
-030211e430b0a78a8462db5f6ae1ab50fc71c7f6
+1ef121e66529b0c5fd5feb609b0a1d378fb04f17
 ```
 
 The committed bundle blob hash is:
 
 ```text
-b990e5f1a1a6a1eb3fc6584bf1d116467b5a725059b0b33025e633ca6c27d71d
+d57c4688b2c1f656ad0094cdfc47564dec87f62b671c845b619aecb5ae6a8c95
 ```
 
 The existing stress engines remain unchanged:
@@ -220,18 +220,18 @@ another independent evasion layer.
 | Piece | Slot | Band | Value | Boundary |
 | --- | --- | --- | --- | --- |
 | `Grit` | Reaction | A/B | cap 0.65; next incoming direct hit x0.90 | Early morale defense; one hit only; channel member. |
-| `JP Boost` | Support | A | earned JP x1.25 | Pacing utility only; no combat stats; not assumed in P0 floor. |
-| `Basic Training` | Support | B/C | Squire/Fundaments-style action output x1.10 | Does not affect ordinary attacks, weapons, spells, or `Ultima`. |
+| `Basic Training` | Support | B/C | Squire/Fundaments-style action output x1.10 | Squire's sole intentional support export; does not affect ordinary attacks, weapons, spells, items, or `Ultima`. |
 | `Move +1` | Movement | A | Move +1 | Early floor comfort; no terrain/elevation bypass. |
 
-`JP Boost` is a W9 pacing-distortion lever. It exists to keep FFT planning pleasure and reduce
-some grind, but it cannot be used as a combat balance row.
+`Basic Training` is intentionally narrow. If W4 shows that it is weak or never chosen, the first fix
+direction is improving Squire actions, not broadening this support into generic physical, weapon,
+spell, or item output.
 
 ### Chemist
 
 | Piece | Slot | Band | Value | Boundary |
 | --- | --- | --- | --- | --- |
-| `Throw Item` | Support | A/B | item range +2 | Requires item stock/gil; does not improve item power. |
+| `Throw Item` | Support | A/B | item range +2 | Requires item stock; does not improve item power. |
 | `Auto-Potion` | Reaction | C | cap 0.70; Potion-only 30 HP; 1/round | Post-damage, survivor-only, no Item Lore interaction, no Hi/X-Potion. |
 | `Item Lore` | Support | C | HP items x1.30; Ether items x1.20 | Does not modify Auto-Potion; economy-gated. |
 | `Safeguard` | Support | C | blocks battle-scoped equipment break/steal effects | No generic damage mitigation. |
@@ -329,12 +329,12 @@ Thief's RSM value is mobility, stealing reliability, and economy texture, not ra
 | --- | --- | --- | --- | --- |
 | `Bravery Surge` | Reaction | C/D | cap 0.60; Brave +4 battle-scoped, cap 80 | No permanent Brave; no damage prevention. |
 | `Faith Surge` | Reaction | C/D | cap 0.60; Faith +4 battle-scoped, cap 80 | High-risk caster/vulnerability lever. |
-| `Equip Guns` | Support | C/D | enables gun use | Requires gun shop/gil timing; no PA scaling. |
+| `Equip Guns` | Support | C/D | enables gun use | Requires gun availability timing; no PA scaling. |
 | `Tame` | Support | Deferred | monster route | Out of current no-monster pass. |
 | `Beast Tongue` | Support | Deferred | monster route | Out of current no-monster pass. |
 | `Social Positioning` | Movement | C | Move +1; Speechcraft hit +0.05 after movement | Orator/speech only; no terrain/elevation bypass. |
 
-`Equip Guns` remains a high-risk equipment unlock because guns are PA-independent. The equipment/gil
+`Equip Guns` remains a high-risk equipment unlock because guns are PA-independent. The equipment availability
 producer must prove when this support is practically online.
 
 ### Dragoon
@@ -359,7 +359,7 @@ horizontal movement answer.
 | --- | --- | --- | --- | --- |
 | `Shirahadori` | Reaction | D/E | cap 0.55; block eligible direct weapon hit | Does not cover magic/status/area/guns/Throw/Jump/specials. |
 | `Bonecrusher` | Reaction | D | cap 0.65; retaliation x0.85 after surviving | Narrower alternative to Shirahadori. |
-| `Equip Katana` | Support | D | enables katana use | Katana stock/gil timing required. |
+| `Equip Katana` | Support | D | enables katana use | Katana availability timing required. |
 | `Doublehand` | Support | D/E | `two_hands` x1.80 | No Dual Wield; no shield/offhand; D/E only. |
 | `Iaido Focus` | Support | D | Iaido hit/reliability +0.05 | Iaido only; no broad magic/damage support. |
 | `Waterwalking` | Movement | C/D | water traversal | Map-dependent; not a general mobility answer. |
@@ -389,7 +389,7 @@ warning row here is the Knight-hosted row.
 | `Vanish` | Reaction | D/E | cap 0.45; one-action Invisible | No stealth damage bonus; no permanent untargetable loop. |
 | `Reflexes` | Reaction | D | cap 0.55; direct weapon hit x0.70 | Channel member; no independent evasion stacking. |
 | `Dual Wield` | Support | D/E | `two_swords_hits` = 2 | No fists, Throw, Iaido, spells, reactions, non-weapon specials, or Doublehand. |
-| `Throw Mastery` | Support | D | Throw damage x1.10; Throw range +1 | Throw only; inventory/gil pressure remains. |
+| `Throw Mastery` | Support | D | Throw damage x1.10; Throw range +1 | Throw only; inventory pressure remains. |
 | `Move +3` | Movement | D/E | Move +3 | No terrain/elevation bypass. |
 | `Ignore Terrain` | Movement | D | ignores terrain cost/effects | No Move +3; no elevation bypass. |
 
@@ -507,14 +507,15 @@ does not bypass terrain or elevation. `Ignore Elevation` solves height but not h
 
 This proposal creates mandatory future rows:
 
-- T2/T2.1 incidence for `JP Boost`, `Auto-Potion`, `Equip Armor`, `Equip Shield`, `Concentration`,
+- T2/T2.1 incidence for `Basic Training`, `Auto-Potion`, `Equip Armor`, `Equip Shield`,
+  `Concentration`,
   `Brawler`, `Doublehand`, `Dual Wield`, `Move +3`, `Ignore Elevation`, `Intervention`, and
   `Equip Knight Swords`;
 - T4 accuracy/evasion rows for `Concentration`, `Parry`, `Arrow Guard`, `Shirahadori`, `Vanish`,
   `Reflexes`, and `Equip Shield`;
 - T6xPS mitigation rows using the strongest-single mitigation channel;
 - F5 real-roster rows after Vanguard and Ramza are promoted into the sim bundle as real job rows;
-- W9 pacing rows with and without `JP Boost`.
+- W9 ordinary-progression, optimizer-progression, and grind-heavy rows under the fixed JP model.
 
 ## Claude Review Request
 

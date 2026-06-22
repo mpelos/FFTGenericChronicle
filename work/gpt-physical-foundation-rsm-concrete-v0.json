@@ -3,8 +3,8 @@
   "status": "accepted_w3_physical_foundation_rsm_concrete_provisional",
   "date": "2026-06-22",
   "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
-  "bundle_commit": "030211e430b0a78a8462db5f6ae1ab50fc71c7f6",
-  "bundle_sha256": "b990e5f1a1a6a1eb3fc6584bf1d116467b5a725059b0b33025e633ca6c27d71d",
+  "bundle_commit": "1ef121e66529b0c5fd5feb609b0a1d378fb04f17",
+  "bundle_sha256": "d57c4688b2c1f656ad0094cdfc47564dec87f62b671c845b619aecb5ae6a8c95",
   "scope": {
     "jobs": [
       "Squire",
@@ -24,7 +24,7 @@
     "excluded": [
       "exact prerequisite tree",
       "final JP economy",
-      "equipment shop and gil timing",
+      "equipment availability timing",
       "caster RSM",
       "performer RSM",
       "Necromancer RSM",
@@ -108,12 +108,11 @@
   "rsm_by_job": {
     "Squire": [
       {"name": "Grit", "slot": "reaction", "band": "A/B", "trigger_cap": 0.65, "effect": "next_direct_hit_x0.90", "limits": "one hit; mitigation channel"},
-      {"name": "JP Boost", "slot": "support", "band": "A", "jp_multiplier": 1.25, "limits": "pacing only; no combat stats"},
-      {"name": "Basic Training", "slot": "support", "band": "B/C", "action_multiplier": 1.1, "limits": "Squire/Fundaments actions only; excludes Ultima"},
+      {"name": "Basic Training", "slot": "support", "band": "B/C", "action_multiplier": 1.1, "limits": "Squire/Fundaments actions only; excludes Ultima; sole intentional Squire support export"},
       {"name": "Move +1", "slot": "movement", "band": "A", "move_bonus": 1, "limits": "no terrain or elevation bypass"}
     ],
     "Chemist": [
-      {"name": "Throw Item", "slot": "support", "band": "A/B", "range_bonus": 2, "limits": "items only; stock and gil gated"},
+      {"name": "Throw Item", "slot": "support", "band": "A/B", "range_bonus": 2, "limits": "items only; stock gated"},
       {"name": "Auto-Potion", "slot": "reaction", "band": "C", "trigger_cap": 0.7, "heal_hp": 30, "round_cap": 1, "limits": "post-damage survivor-only Potion; no Item Lore"},
       {"name": "Item Lore", "slot": "support", "band": "C", "hp_item_multiplier": 1.3, "ether_multiplier": 1.2, "limits": "does not modify Auto-Potion"},
       {"name": "Safeguard", "slot": "support", "band": "C", "effect": "blocks battle-scoped equipment break/steal", "limits": "no generic mitigation"},
@@ -153,7 +152,7 @@
     "Orator": [
       {"name": "Bravery Surge", "slot": "reaction", "band": "C/D", "trigger_cap": 0.6, "brave_delta": 4, "battle_cap": 80, "limits": "battle-scoped only"},
       {"name": "Faith Surge", "slot": "reaction", "band": "C/D", "trigger_cap": 0.6, "faith_delta": 4, "battle_cap": 80, "limits": "battle-scoped vulnerability lever"},
-      {"name": "Equip Guns", "slot": "support", "band": "C/D", "effect": "gun access", "limits": "shop/gil gated"},
+      {"name": "Equip Guns", "slot": "support", "band": "C/D", "effect": "gun access", "limits": "availability gated"},
       {"name": "Tame", "slot": "support", "band": "deferred", "effect": "monster route", "limits": "out of scope"},
       {"name": "Beast Tongue", "slot": "support", "band": "deferred", "effect": "monster route", "limits": "out of scope"},
       {"name": "Social Positioning", "slot": "movement", "band": "C", "move_bonus": 1, "speech_hit_bonus": 0.05, "limits": "Orator/speech only"}
@@ -161,7 +160,7 @@
     "Dragoon": [
       {"name": "Dragonheart", "slot": "reaction", "band": "C/D", "trigger_cap": 0.35, "reraise_hp_fraction": 0.2, "battle_cap": 1, "limits": "no re-trigger loop"},
       {"name": "Brace Landing", "slot": "reaction", "band": "C", "trigger_cap": 0.6, "next_hit_multiplier": 0.85, "limits": "Jump route only; mitigation channel"},
-      {"name": "Equip Polearms", "slot": "support", "band": "C/D", "effect": "spear/polearm access", "limits": "shop/gil/map gated"},
+      {"name": "Equip Polearms", "slot": "support", "band": "C/D", "effect": "spear/polearm access", "limits": "availability/map gated"},
       {"name": "Jump Training", "slot": "support", "band": "C", "horizontal_bonus": 1, "vertical_bonus": 1, "limits": "no CT or damage bonus"},
       {"name": "Jump +1", "slot": "movement", "band": "B/C", "jump_bonus": 1, "limits": "vertical answer"},
       {"name": "Jump +2", "slot": "movement", "band": "C", "jump_bonus": 2, "limits": "vertical answer"},
@@ -171,7 +170,7 @@
     "Samurai": [
       {"name": "Shirahadori", "slot": "reaction", "band": "D/E", "trigger_cap": 0.55, "effect": "block eligible direct weapon hit", "limits": "no magic/status/area/guns/Throw/Jump/specials"},
       {"name": "Bonecrusher", "slot": "reaction", "band": "D", "trigger_cap": 0.65, "retaliation_multiplier": 0.85, "limits": "survive first"},
-      {"name": "Equip Katana", "slot": "support", "band": "D", "effect": "katana access", "limits": "stock/gil gated"},
+      {"name": "Equip Katana", "slot": "support", "band": "D", "effect": "katana access", "limits": "availability gated"},
       {"name": "Doublehand", "slot": "support", "band": "D/E", "multiplier": 1.8, "limits": "no offhand, no shield, no Dual Wield"},
       {"name": "Iaido Focus", "slot": "support", "band": "D", "iaido_hit_bonus": 0.05, "limits": "Iaido only"},
       {"name": "Waterwalking", "slot": "movement", "band": "C/D", "effect": "water traversal", "limits": "map dependent"},

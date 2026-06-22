@@ -59,13 +59,13 @@ exact JP, equipment, RSM, formula-v1, and real-roster numbers.
 
 ## Band Envelopes
 
-These envelopes are planning bounds only. W3 must replace them with exact prerequisite, JP, JP Boost,
-and equipment timing data.
+These envelopes are planning bounds only. W3 must replace them with exact prerequisite, JP, and
+equipment timing data.
 
-| Band | Campaign read | Rough party level | Rough learned depth | Equipment/gil tier | Floor constraint |
+| Band | Campaign read | Rough party level | Rough learned depth | Equipment tier | Floor constraint |
 | --- | --- | --- | --- | --- | --- |
-| 0 | raw start | 1-3 | starter actions only | opening gear | no JP Boost, no optimized detours |
-| A | first direction | 3-7 | one shallow starter route | first shop tier | P0 can miss JP Boost and still proceed |
+| 0 | raw start | 1-3 | starter actions only | opening gear | no hidden progression accelerator, no optimized detours |
+| A | first direction | 3-7 | one shallow starter route | first shop tier | P0 proceeds under fixed JP without hidden support taxes |
 | B | first specialists | 7-14 | one active specialist per unit | basic specialist weapons/armor | active jobs matter before exports |
 | C | midgame branches | 14-24 | two routes, one modest RSM | midgame armor and common weapons | no full damage/sustain/control package |
 | D | advanced build crafting | 24-36 | two to three routes, one premium RSM | late non-premium equipment | multiple good routes still compete |
@@ -84,7 +84,7 @@ planning until named IVC encounters or exact ENTD/stat rows replace them.
 | --- | --- | --- | --- |
 | `GCV-PIN-00-RAW-MIXED` | 0 | 4 enemies at party level +0/1: 2 leather melee, 1 weak ranged unit, 1 item/support unit; no heavy armor, no hard status, no AoE. | Can raw Squire/Chemist survive without perfect routing? |
 | `GCV-PIN-A-PHYSICAL` | A | 5 enemies at party level +0/1: 3 leather melee, 1 early shield/armor body, 1 ranged chip unit; low vertical pressure. | Are starter recovery and basic positioning enough? |
-| `GCV-PIN-A-JP-ACCEL` | A/B | Same enemy profile as A, evaluated under two party envelopes: without JP Boost and with optimizer JP Boost routing. | Does JP Boost move Band B depth into Band A reality? |
+| `GCV-PIN-A-PROGRESSION-RUSH` | A/B | Same enemy profile as A, evaluated under ordinary, optimizer, and grind-heavy fixed-JP routing. | Does fixed-JP routing move Band B depth into Band A reality? |
 | `GCV-PIN-B-FIRST-SPECIALIST` | B | 5 enemies at party level +0/2: 1 plate captain, 2 leather skirmishers, 1 cloth caster, 1 ranged unit; moderate spread. | Do Knight, Archer, White Mage, and Black Mage all have active value? |
 | `GCV-PIN-B-MONK-SECONDARY` | B | 5 enemies at party level +1/2: 2 durable melee bodies, 1 evasive leather unit, 1 support unit, 1 ranged unit; sustained melee pressure. | Does early Knight-body plus Monk/Squire utility compress too much? |
 | `GCV-PIN-C-MITIGATION-STACK` | C | 6 enemies at party level +1/3: 2 plate frontliners, 1 mail bruiser, 1 White/Time support, 1 archer, 1 skirmisher; ordinary offense plus buffs. | Can plate/shield/Protect/Shell/reaction stacks become practical immunity? |
@@ -107,19 +107,19 @@ Verdict terms:
 | Party | Band | Anchors | Expected five-unit active jobs | Expected build pieces | Planning read | W2 verdict |
 | --- | --- | --- | --- | --- | --- | --- |
 | P0 naive/thematic | 0 | `GCV-PIN-00-RAW-MIXED` | Ramza/Squire, 2 Squires, 1 Chemist, 1 Squire trainee | basic attacks, basic Items, starter utility | Floor should feel like FFT with better bounded tools. | floor row |
-| P0 naive/thematic | A | `GCV-PIN-A-PHYSICAL` | Ramza/Squire, Chemist, Squire physical, Squire/caster trainee, Squire/ranged trainee | no JP Boost assumption, Move +1 optional, basic Items | Missing JP Boost cannot punish the player for many battles. | floor row |
+| P0 naive/thematic | A | `GCV-PIN-A-PHYSICAL` | Ramza/Squire, Chemist, Squire physical, Squire/caster trainee, Squire/ranged trainee | fixed-JP floor, Move +1 optional, basic Items | No hidden support tax can punish the player for many battles. | floor row |
 | P0 naive/thematic | B | `GCV-PIN-B-FIRST-SPECIALIST` | Ramza flexible, Knight or Archer, White or Black Mage, Chemist, Squire/first specialist | active specialist actions before premium exports | First specialists must feel useful before their best supports. | floor row |
 | P0 naive/thematic | C | `GCV-PIN-C-VERTICAL-MAIL`, `GCV-PIN-C-CASTER-STATUS` | Ramza hybrid, one first specialist holdover, one midgame branch, one healer/support, one flex | mostly on-job actions, shallow secondaries | Wrong early branch remains recoverable through midgame identity. | provisional row only |
 | P0 naive/thematic | D | `GCV-PIN-D-SPREAD-RANGED`, `GCV-PIN-D-LONG-FIGHT` | Ramza, one advanced or favorite job, two older specialists, one support/flex | one or two RSM pieces, not optimized | Thematic parties become strong without mandatory Samurai/Ninja/Time routing. | stress row |
 | P0 naive/thematic | E | `GCV-PIN-E-BOSS-RESIST` | final Ramza, old favorite specialist, healer/control, late job optional, flex | late tools possible but not required | Necromancer, Vanguard, and final Ramza cannot be required for ordinary viability. | stress row |
 | P1 balanced | 0 | `GCV-PIN-00-RAW-MIXED` | Ramza/Squire, Squire frontline, Squire utility, Chemist, Squire trainee | starter attacks, Items | Baseline early FFT party. | provisional row only |
-| P1 balanced | A | `GCV-PIN-A-PHYSICAL`, `GCV-PIN-A-JP-ACCEL` | Ramza, Chemist, physical trainee, caster trainee, ranged/utility trainee | JP Boost optional, Move +1 useful, basic Items | JP Boost is convenience, not required combat power. | stress row |
+| P1 balanced | A | `GCV-PIN-A-PHYSICAL`, `GCV-PIN-A-PROGRESSION-RUSH` | Ramza, Chemist, physical trainee, caster trainee, ranged/utility trainee | fixed-JP routing, Move +1 useful, basic Items | Progression breadth is tested without a support tax. | stress row |
 | P1 balanced | B | `GCV-PIN-B-FIRST-SPECIALIST` | Ramza, Knight, Archer, White Mage, Black Mage | one active action line each, few exports | Archer and both mages must all look like rational active jobs. | stress row |
 | P1 balanced | C | `GCV-PIN-C-MITIGATION-STACK`, `GCV-PIN-C-CASTER-STATUS` | Ramza, Knight/Monk/Dragoon or Geomancer, Archer/Thief/Orator, White/Time/Mystic, Black/Summoner | early secondaries, one modest RSM | Haste, Chakra, and Items cannot cover every weakness at once. | stress row |
 | P1 balanced | D | `GCV-PIN-D-CLUSTER-AREA`, `GCV-PIN-D-SPREAD-RANGED` | Ramza, Samurai or Ninja, Summoner/Time, performer optional, older specialist | one high-value RSM per route | One support or movement cannot become the obvious default. | stress row |
 | P1 balanced | E | `GCV-PIN-E-BOSS-RESIST`, `GCV-PIN-E-UNDEAD-CORPSE` | final Ramza, one late job optional, two older specialists, one flex | late tools plus specialist anchors | Final party should still invite older active jobs. | stress row |
 | P5 optimizer rush | 0 | `GCV-PIN-00-RAW-MIXED` | same as P1, optimized actions | earliest JP-efficient starter actions | Safe JP farming cannot break raw start. | stress row |
-| P5 optimizer rush | A | `GCV-PIN-A-JP-ACCEL` | Ramza/Squire, multiple Squire/Chemist routes, early trainees | JP Boost, Move +1, basic Items | JP Boost acceleration is the pacing line-mover. | stress row |
+| P5 optimizer rush | A | `GCV-PIN-A-PROGRESSION-RUSH` | Ramza/Squire, multiple Squire/Chemist routes, early trainees | fixed-JP optimizer route, Move +1, basic Items | Fixed-JP progression rush is the pacing line-mover. | stress row |
 | P5 optimizer rush | B | `GCV-PIN-B-FIRST-SPECIALIST`, `GCV-PIN-B-MONK-SECONDARY` | Ramza, Knight shell, Archer/Thief utility, Monk or caster trainee, Chemist/White | early armor/shield, Concentration/Brawler candidates, early Chakra/Revive candidates | Watch early physical full-package formation. | stress row |
 | P5 optimizer rush | C | `GCV-PIN-C-MITIGATION-STACK`, `GCV-PIN-C-CASTER-STATUS` | Ramza hybrid, Knight/Monk/Dragoon, Time/Mystic, Geomancer/Orator, Black/Summoner | Haste/Slow, Chakra, Throw Item, early MP tools, equipment unlock candidates | First likely over-compression band. | stress row |
 | P5 optimizer rush | D | `GCV-PIN-D-CLUSTER-AREA`, `GCV-PIN-D-SPREAD-RANGED`, `GCV-PIN-D-LONG-FIGHT` | Ramza, Ninja/Samurai, Time/Summoner, performer or White, Dragoon/old specialist | Dual Wield, Doublehand, Swiftspell, Teleport, Move +3, Shirahadori/Vanish candidates | Highest cross-job convergence band. | stress row |
@@ -145,7 +145,7 @@ Claude must build an independent ceiling stack before any A3 ceiling row becomes
 | Band | GPT strongest plausible five-unit stack | Reachability | Main breakpoints to reconcile |
 | --- | --- | --- | --- |
 | 0 | Ramza/Squire, Squire melee, Squire ranged/utility, Chemist, Squire trainee. | floor-realistic | Auto-Potion too early, safe JP loops, Ramza self-buff snowball, Chemist throw-range safety |
-| A | Ramza/Squire, Chemist, one JP Boost route, one early specialist fished by JP Boost such as Monk Chakra or White Cure, one trainee. | optimizer-realistic | JP Boost acceleration into first specialist, early Auto-Potion placement |
+| A | Ramza/Squire, Chemist, one fixed-JP optimizer route, one early specialist reached through ordinary or optimizer routing, one trainee. | optimizer-realistic | first-specialist acceleration under fixed JP, early Auto-Potion placement |
 | B | Ramza flexible, Knight body, Monk primary sustain/damage engine, White Mage sustain, Black Mage offense; Archer pressure remains an alternate ceiling. | optimizer-realistic if first specialist unlocks are ordinary | Knight-body durability plus Monk Chakra/Punch Art compression, early Archer/White compression |
 | C | Ramza hybrid, Knight/Monk or Dragoon frontline, Time/Mystic controller, Summoner/Black area, Orator/Geomancer utility. | optimizer-realistic | mitigation stack, Haste/Slow, Chakra/Items, Belief/Oil setup seeds |
 | D | Ramza chapter hybrid, Ninja or Samurai physical engine, Time/Summoner caster, Bard/Dancer global support, Dragoon/Archer/White flex. | optimizer-realistic late, grind-only if forced into Band C | Dual Wield/Doublehand/Swiftspell/Quick/Teleport/Move +3/Shirahadori/Vanish convergence, Dancer global stat-down |

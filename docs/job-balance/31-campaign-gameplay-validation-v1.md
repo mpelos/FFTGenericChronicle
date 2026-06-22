@@ -97,7 +97,7 @@ build power reachable ahead of the encounter band that should gate it
 | Encounter band | Campaign feel | Expected job-depth overlay | Floor check | Ceiling check |
 | --- | --- | --- | --- | --- |
 | 0 - Raw start | First battles with near-zero JP. | Squire/Chemist only, with only the cheapest starter tools. | A non-optimized party can act, recover small damage, and learn the system without grind. | No starter action creates repeatable safe damage, sustain, or control. |
-| A - Starter onboarding | The player learns basic actions, items, weapon texture, and recovery. | Squire, Chemist, first access toward Knight/Archer/White Mage/Black Mage. | The game is not too hard or too slow before first specialization. | No infinite sustain, no combat JP Boost tax, no one-button starter dominance. |
+| A - Starter onboarding | The player learns basic actions, items, weapon texture, and recovery. | Squire, Chemist, first access toward Knight/Archer/White Mage/Black Mage. | The game is not too hard or too slow before first specialization. | No infinite sustain, no mandatory support tax, no one-button starter dominance. |
 | B - First specialization | The player picks first real party roles. | Knight, Archer, White Mage, Black Mage, Monk, Thief, early Time Mage tools. | Several first-specialist choices are viable without guide routing. | Roles become distinct before global build pieces arrive. |
 | C - Midgame branching | The party can branch into hybrid, control, reach, speech, and larger magic plans. | Time Mage, Mystic, Geomancer, Orator, Dragoon, Summoner. | Physical, magical, hybrid, and control parties all have a plausible path. | No single branch solves every need or skips intended weaknesses. |
 | D - Advanced build crafting | High-value support/reaction/movement pieces and late combat identities appear. | Samurai, Ninja, Bard, Dancer, deeper Time/Mystic/Summoner rewards. | A thematic party can improve without rebuilding every unit from scratch. | Strong builds feel earned; no universal support/movement/reaction convergence. |
@@ -119,16 +119,16 @@ Campaign pacing is controlled by four separate levers.
 | Lever | Why it matters | Deferred decision |
 | --- | --- | --- |
 | Job prerequisite depth | Determines when a job can appear without grinding. | Exact prerequisite tree. |
-| JP acquisition rate | Determines how quickly a unit can buy deep skills after unlock. | Exact JP gain, JP costs, and whether `JP Boost` changes practical pacing. |
-| Equipment and gil tier | Determines whether a job's equipment identity is actually available when the job unlocks. | Shop/chapter tier, prices, item stock, and special equipment timing. |
+| JP acquisition rate | Determines how quickly a unit can buy deep skills after unlock. | Exact JP gain, JP costs, and fixed-JP ordinary/optimizer/grind-heavy pacing. |
+| Equipment availability tier | Determines whether a job's equipment identity is actually available when the job unlocks. | Chapter tier, item stock, and special equipment timing; no Gil/economy tuning. |
 | Slot friction | Determines whether a powerful secondary/reaction/support/movement can be carried by a shallow active job. | Exact skill costs, slot boundaries, and equipment unlock scope. |
 
-`JP Boost` is therefore not only a campaign convenience. It is a pacing lever. If it accelerates
-deep job access enough to move Band D or E power into Band B or C encounters, the campaign curve
-fails even if `JP Boost` has no direct combat stats.
+Fixed JP pacing is therefore a campaign lever. If ordinary routing, optimizer routing, or deliberate
+grind makes Band D or E power practical during Band B or C encounters, the campaign curve fails even
+without a dedicated JP acceleration support.
 
-Equipment and gil are also pacing levers. A job with broad equipment access is not fully online
-until the relevant shop tier and item economy can support it. Special Knight, Ninja, Samurai,
+Equipment availability is also a pacing lever. A job with broad equipment access is not fully online
+until the relevant equipment family can plausibly appear. Special Knight, Ninja, Samurai,
 Dragoon, Archer, Chemist, Orator, and caster weapon access all need equipment-tier checks before
 final campaign acceptance.
 
@@ -155,7 +155,7 @@ checked in a table, scenario row, or simulator output.
 | Claim | Required proxy |
 | --- | --- |
 | Party diversity exists. | At least three distinct party journey rows can clear the representative band scenario set, and no single journey majority-dominates the others. A journey majority-dominates if it is best or tied in at least three of five axes while not worst in any: damage, sustain, control, mobility, and safety/risk. |
-| Floor is healthy. | P0 clears each band's representative encounter set within a pinned non-optimized level/JP/equipment envelope, without assuming `JP Boost`, guide routing, or optimizer-tier RSM pieces. |
+| Floor is healthy. | P0 clears each band's representative encounter set within a pinned non-optimized level/JP/equipment envelope, without hidden progression accelerators, guide routing, or optimizer-tier RSM pieces. |
 | A job is viable as an active job. | The job appears as an expected active job in at least one party journey row for its intended band before its strongest exportable support/reaction/movement is assumed. |
 | A support is not mandatory. | T2/T2.1 incidence does not show the support appearing across most unrelated archetypes in its band. |
 | A movement skill is not the default. | T2/T2.1 incidence shows role-specific movement choices still competing in the same band. |
@@ -206,7 +206,7 @@ Expected healthy path:
 Floor failure signs:
 
 - the early game becomes too hard, too slow, or too grindy before first specialization;
-- a player who misses `JP Boost` or a specific early support feels punished for many battles;
+- a player who misses a specific early support or hidden route feels punished for many battles;
 - Squire/Chemist feel useless before the player can unlock specialists;
 - an early job branch traps a unit in a weak campaign path;
 - the only practical advice is to follow one optimized route.
@@ -214,10 +214,10 @@ Floor failure signs:
 Floor proxy:
 
 - P0 must clear each band's representative encounter set inside a pinned non-optimized envelope;
-- the envelope must state level range, rough JP budget, available jobs, available equipment/gil tier,
+- the envelope must state level range, rough JP budget, available jobs, available equipment tier,
   and assumed learned skills;
-- the envelope must not assume `JP Boost`, optimized RSM detours, deep secondaries on shallow
-  chassis, or guide-only prerequisite routing;
+- the envelope must not assume optimized RSM detours, deep secondaries on shallow chassis, or
+  guide-only prerequisite routing;
 - floor fails if the P0 party needs optimizer-tier RSM pieces, excessive grind, or a specific hidden
   route to clear ordinary band rows.
 
@@ -355,7 +355,7 @@ Mandatory rush targets to test:
 
 | Category | Candidate pieces |
 | --- | --- |
-| Campaign economy | `JP Boost`, treasure/economy movements. |
+| Campaign texture | Treasure movement hooks and non-combat route texture. |
 | Early sustain | `Auto-Potion`, `Item Lore`, `Throw Item`, `First Aid`, `Chakra`, `Revive`, `Lifefont`. |
 | Defensive stack | `Equip Armor`, `Equip Shield`, `Parry`, `Shirahadori`, `Mana Shield`, `Dragonheart`, `Vanish`, `Aegis Stance`, `Intervention`. |
 | Damage engines | `Brawler`, `Attack Boost`, `Doublehand`, `Dual Wield`, `Bow Mastery`, `Concentration`, `Elemental Focus`. |
@@ -430,8 +430,9 @@ These are not exact numeric rules. They are acceptance tests for future JP and p
 
 ### I1 - Starter Tools Must Not Become Permanent Defaults
 
-`JP Boost`, `Move +1`, basic Items, Squire utility, and early recovery should help the player get
-started. They fail if optimized combat builds still feel wrong without them late in the game.
+`Move +1`, basic Items, Squire utility, early recovery, and `Basic Training` should help the player
+get started or preserve Squire action identity. They fail if optimized combat builds still feel wrong
+without them late in the game.
 
 ### I2 - First Specialist Jobs Must Work Before Their Exports
 
@@ -552,8 +553,8 @@ The table below binds each campaign risk to the validation gate that must eventu
 | W6 - Caster economy convergence | T9, T10, F4, T2/T2.1 | Do caster speed, MP, and damage supports collapse into one best package? |
 | W7 - Global performer default | T11xT5, T3xT5xT11, T2/T2.1 | Does a Bard/Dancer slot become default party infrastructure? |
 | W8 - Late replacement overreach | T3xT5xT8, T6xPS, T6xT7, T8, F5 | Do Necromancer, Special Knight, or late Ramza delete older specialist reasons to exist? |
-| W9 - Grind-to-break pacing | A1/A2/A3/A4, T2/T2.1 | Can JP acquisition or `JP Boost` move deep RSM power into early encounter bands? |
-| W10 - Equipment-tier breakpoints | A1/A2/A3/A4, F5 | Does shop/gil/equipment access bring late weapon or armor identity online too early? |
+| W9 - Grind-to-break pacing | A1/A2/A3/A4, T2/T2.1 | Can JP acquisition or deliberate grind move deep RSM power into early encounter bands? |
+| W10 - Equipment-tier breakpoints | A1/A2/A3/A4, F5 | Does equipment availability bring late weapon or armor identity online too early? |
 
 `A1` through `A4` are the campaign artifacts defined later in this document. They are not currently
 implemented harness gates, but they are required campaign-level evidence before exact prerequisite
@@ -721,8 +722,8 @@ Required proof:
 Risk:
 
 ```text
-JP Boost or ordinary grind lets the player reach deep jobs/RSM pieces while still facing early
-encounter bands.
+Fixed-JP ordinary routing, optimizer routing, or deliberate grind lets the player reach deep
+jobs/RSM pieces while still facing early encounter bands.
 ```
 
 Why it matters:
@@ -735,7 +736,8 @@ Required proof:
 - A2 unlock and JP pacing ledger;
 - A3 five-unit stack sheet for optimizer rush;
 - T2/T2.1 incidence for early access to high-value RSM pieces;
-- explicit rows with `JP Boost` learned early and rows without `JP Boost`.
+- explicit ordinary-progression, optimizer-progression, and grind-heavy rows under the fixed JP
+  model.
 
 ### W10 - Equipment-Tier Breakpoints
 
@@ -754,7 +756,7 @@ skills.
 
 Required proof:
 
-- A2 pacing ledger includes equipment/gil tier for major equipment identities;
+- A2 pacing ledger includes equipment availability tier for major equipment identities;
 - F5 real-roster re-sim for jobs whose equipment or armor profile changes;
 - party rows where the job is unlocked before its premium equipment is available;
 - party rows where the equipment arrives before the intended advanced job or support gate.
@@ -780,7 +782,7 @@ expected_secondaries
 expected_reactions
 expected_supports
 expected_movements
-equipment_gil_tier
+equipment_availability_tier
 main_damage_modes
 recovery_plan
 control_plan
@@ -808,7 +810,7 @@ minimum_job_depth
 power_category
 healthy_primary_users
 dangerous_off-job_users
-equipment_or_gil_dependency
+equipment_or_availability_dependency
 required_gate
 notes
 ```
@@ -972,7 +974,7 @@ Review notes:
 - Band 0, floor checks, and P0 naive/thematic party are accepted;
 - falsifiable proxies are accepted, including the majority-dominance party diversity rule;
 - red-flag-to-gate map W1-W10 is accepted;
-- pacing levers for prerequisites, JP acquisition, equipment/gil tier, and slot friction are
+- pacing levers for prerequisites, JP acquisition, equipment availability, and slot friction are
   accepted;
 - A1-A5 remain local to this document until a specific artifact becomes executable and dual-gated;
 - concrete pass/fail thresholds remain deferred to the infra sprint gates.

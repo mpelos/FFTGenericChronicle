@@ -65,8 +65,9 @@ The useful check at this stage is structured pacing coverage:
 - every RSM and equipment unlock has a target band and risk gate before concrete JP is assigned;
 - early-band full-package risks are separated from late reward risks;
 - support-slot and movement-slot donor pressure is visible before T2.1 incidence;
-- equipment and gil dependencies are treated as pacing levers, not flavor text;
-- W4/W5 know which pieces must be tested with and without JP Boost.
+- equipment availability dependencies are treated as pacing levers, not flavor text;
+- W4/W5 know which pieces must be tested under ordinary, optimizer, and grind-heavy fixed-JP
+  routing.
 
 If Claude accepts this ledger, later numeric passes may tune exact JP costs inside these band
 constraints. If later simulation proves a band target unsafe, this ledger must be revised rather
@@ -78,15 +79,15 @@ The bands below inherit W2's campaign envelopes.
 
 | Band | Progression meaning for this ledger |
 | --- | --- |
-| 0 | Raw start. Starter actions only; no JP Boost assumption and no RSM pressure. |
+| 0 | Raw start. Starter actions only; no hidden progression accelerator and no RSM pressure. |
 | A | First direction. One shallow starter route; campaign utility may appear, but no combat engine. |
 | B | First specialists. Active jobs should matter before their best exports. |
 | C | Midgame branches. Two routes, one modest RSM, and the first serious compression checks. |
 | D | Advanced build crafting. One premium RSM or engine per route; strong pieces compete. |
 | E | Final integration. Late jobs, final Ramza, premium equipment, and top rewards; older specialists still matter. |
 
-Band targets mean "ordinary campaign acquisition without extreme grinding." Optimizer JP Boost
-routing must be checked separately against the same targets.
+Band targets mean "ordinary campaign acquisition without extreme grinding." Optimizer and
+grind-heavy routing must be checked separately against the same fixed-JP targets.
 
 ## Power Categories
 
@@ -102,8 +103,8 @@ This ledger uses the JP posture categories from the job design protocol.
 
 ## Global Pacing Decisions
 
-1. `JP Boost` may be early because it is part of FFT's build-planning pleasure, but W4 must test
-   P0/P1/P5 both with and without it. It cannot be assumed in floor rows.
+1. `JP Boost` is removed by doc 61. W4 must test P0/P1/P5 under ordinary, optimizer, and
+   grind-heavy fixed-JP routing instead of with/without a support tax.
 2. Basic active-job identity must appear before the job's strongest export. Archer should shoot
    well before `Concentration` matters; Knight should tank and pressure gear before `Equip Armor`
    becomes a donor route; Summoner should summon before `Grand Invocation`.
@@ -117,7 +118,7 @@ This ledger uses the JP posture categories from the job design protocol.
 6. Band E late jobs may be exciting and top-tier, but `Vanguard`, `Necromancer`, and final Ramza
    cannot become mandatory for ordinary final-party viability.
 7. Equipment timing is a hard pacing lever. A support that unlocks premium gear is not online until
-   the campaign can reasonably supply that gear and gil.
+   the campaign can reasonably supply that gear.
 8. `Attack Boost` remains a protected stress-engine placement question. This ledger does not assign
    it as accepted Geomancer progression.
 9. Bard and Dancer must have exactly the same reaction/support/movement ledger rows. Their action
@@ -135,25 +136,24 @@ together; and late rewards cannot become mandatory for ordinary final-party viab
 
 Columns mirror the A2 contract from doc 31.
 
-| Job | Piece | Slot | Intended encounter band | Minimum job depth | Power category | Healthy primary users | Dangerous off-job users | Equipment or gil dependency | Required gate | Notes |
+| Job | Piece | Slot | Intended encounter band | Minimum job depth | Power category | Healthy primary users | Dangerous off-job users | Equipment or availability dependency | Required gate | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Squire | Starter fundamentals | Action | 0/A | starter | Core identity | Ramza, raw generics, trainees | none | opening weapons only | P0 floor rows | Must feel like FFT's baseline, not a trap. |
 | Squire | `Grit` | Reaction | A/B | shallow starter | Tactical option | early frontliners under pressure | durable late shells if too broad | none | T3/T6xPS/T2.1 | Early morale defense; should fall off or stay narrow. |
-| Squire | `JP Boost` | Support | A | shallow starter | Campaign utility | training builds, non-optimized parties catching up | optimizer routes moving deep pieces into B/C | none | W3 JP routing, W4 with/without JP Boost | No combat stats; never assumed in P0 floor. |
 | Squire | `Basic Training` | Support | B/C | committed starter | Tactical option | units keeping Squire actions relevant | generic physicals if it becomes broad damage | none | T2.1/F5 if formula-affecting | Should support Squire-style actions, not all physical attacks. |
 | Squire | `Move +1` | Movement | A | shallow starter | Campaign utility | early trainees and slow units | late builds if no better movement competes | none | T2.1 movement incidence | Early floor mobility; must be obsolete-by-choice, not mandatory late. |
-| Chemist | Basic Items and Phoenix Down | Action | 0/A | starter | Core identity | Chemist, any party needing floor sustain | none | item stock and early gil | T3 floor sustain | Revive access must be early enough for FFT feel, but item economy matters. |
-| Chemist | `Throw Item` | Support | A/B | shallow Chemist | Tactical option | item-support builds, backline sustain | every healer if range is too safe | item stock and gil | T3/T5/T2.1 | Early-mid range extender; must keep positional pressure. |
-| Chemist | `Auto-Potion` | Reaction | C | committed Chemist | Strong global piece | attrition builds with visible item cost | every serious build | potion tier, stock, gil | T3/T3xT5/T2.1 | Held to C+ so Band A/B floor and first-specialist rows are not warped by automatic sustain. Must be tier-aware, capped, or inventory-constrained. |
-| Chemist | `Item Lore` | Support | C | committed Chemist | Strong global piece | dedicated item healer or item economy build | all sustain builds if it doubles floor safety | item stock and gil | T3/T9/T2.1 | Pairs dangerously with Throw Item and Auto-Potion. |
+| Chemist | Basic Items and Phoenix Down | Action | 0/A | starter | Core identity | Chemist, any party needing floor sustain | none | item stock | T3 floor sustain | Revive access must be early enough for FFT feel, but item economy matters. |
+| Chemist | `Throw Item` | Support | A/B | shallow Chemist | Tactical option | item-support builds, backline sustain | every healer if range is too safe | item stock | T3/T5/T2.1 | Early-mid range extender; must keep positional pressure. |
+| Chemist | `Auto-Potion` | Reaction | C | committed Chemist | Strong global piece | attrition builds with visible item cost | every serious build | potion tier and stock | T3/T3xT5/T2.1 | Held to C+ so Band A/B floor and first-specialist rows are not warped by automatic sustain. Must be tier-aware, capped, or inventory-constrained. |
+| Chemist | `Item Lore` | Support | C | committed Chemist | Strong global piece | dedicated item healer or item economy build | all sustain builds if it doubles floor safety | item stock | T3/T9/T2.1 | Pairs dangerously with Throw Item and Auto-Potion. |
 | Chemist | `Safeguard` | Support | C | committed Chemist | Tactical option | anti-break or anti-steal utility users | universal safety patch if too broad | equipment-value dependent | T2.1/T6xT7 | Should matter in equipment-pressure fights, not every fight. |
-| Chemist | `Reequip` | Support | C/D | committed Chemist | Tactical option | reactive equipment plans | broad armor/weapon patching routes | spare equipment and gil | T2.1/equipment timing | First Chemist support to cut or delay if slots are crowded. |
+| Chemist | `Reequip` | Support | C/D | committed Chemist | Tactical option | reactive equipment plans | broad armor/weapon patching routes | spare equipment availability | T2.1/equipment timing | First Chemist support to cut or delay if slots are crowded. |
 | Chemist | `Move-Find Item` | Movement | B/C | shallow/committed Chemist | Campaign utility | exploration/economy routes | combat builds if rewards become combat-optimal | map treasure tuning | economy review/T2.1 | Keep as optional campaign texture, not a combat movement default. |
 | Knight | Rend and guard pressure basics | Action | B | first specialist | Core identity | active Knight | none | armor targets and weapon availability | T6xT7/F5 | Knight must own permanent or semi-permanent gear attrition. |
 | Knight | `Parry` | Reaction | B/C | shallow Knight | Tactical option | shield/weapon frontliners | high-evasion shells if it stacks too well | weapon/shield state if applicable | T4/T6xPS/T2.1 | Preferred Knight reaction if only one survives. |
 | Knight | `Brace` | Reaction | B/C | shallow Knight | Tactical option | tankier Knights | mitigation stacks | armor/shield tier | T6xPS/T2.1 | Alternative defensive posture; no practical immunity. |
-| Knight | `Equip Armor` | Support | C | committed Knight | Strong global piece | cloth/leather units choosing slow heavy variants | every fragile job patching weakness | armor shop tier and gil | T2.1/T6xPS/F5 | Should not erase armor-class identity before fragility has value. |
-| Knight | `Equip Shield` | Support | C | committed Knight | Strong global piece | guard builds and hybrids | evasion/reaction stacks | shield shop tier and gil | T2.1/T4/T6xPS | Must be checked with Parry, Shirahadori, Mana Shield, and protect effects. |
+| Knight | `Equip Armor` | Support | C | committed Knight | Strong global piece | cloth/leather units choosing slow heavy variants | every fragile job patching weakness | armor availability tier | T2.1/T6xPS/F5 | Should not erase armor-class identity before fragility has value. |
+| Knight | `Equip Shield` | Support | C | committed Knight | Strong global piece | guard builds and hybrids | evasion/reaction stacks | shield availability tier | T2.1/T4/T6xPS | Must be checked with Parry, Shirahadori, Mana Shield, and protect effects. |
 | Knight | `Defensive Training` | Support | C/D | committed Knight | Tactical option | active Knight or guard-focused builds | generic mitigation stack | armor/shield tier | T6xPS/T2.1 | Narrower than broad damage prevention. |
 | Knight | `Shield March` | Movement | C | committed Knight | Tactical option | plate/shield units closing or holding formation | all slow jobs if too generic | shield or heavy posture if used | T2.1/T5 | Should solve formation tempo, not all map traversal. |
 | Archer | Bow and aimed-shot basics | Action | B | first specialist | Core identity | active Archer | none | bows/crossbows and high-ground maps | T4/F5 | Archer is the only archer and must remain useful into late game. |
@@ -223,7 +223,7 @@ Columns mirror the A2 contract from doc 31.
 | Orator | Recruitment, Condemn, broad status | Action | C/D | committed Orator | Tactical option | social/control route | hard-control or economy shortcuts | status resist, recruitment rules | T4/T8/economy | Recruitment/economy is not allowed to define current monster scope. |
 | Orator | `Bravery Surge` | Reaction | C/D | committed Orator | Tactical option | morale builds | Brave-scaling physical stacks | Brave formula | F5/T2.1 | Preferred over broad Faith stacking if one reaction survives. |
 | Orator | `Faith Surge` | Reaction | C/D | committed Orator | Strong global piece | caster-risk builds | Faith burst/healing/damage stacks | Faith formula | F4/F5/T2.1 | Very high risk with Belief and caster packages. |
-| Orator | `Equip Guns` | Support | C/D | committed Orator | Strong global piece | deliberate gun builds | stat-starved jobs patching damage | gun shop tier and gil | T2.1/F5 | Guns are stat-independent enough to require strict incidence checks. |
+| Orator | `Equip Guns` | Support | C/D | committed Orator | Strong global piece | deliberate gun builds | stat-starved jobs patching damage | gun availability tier | T2.1/F5 | Guns are stat-independent enough to require strict incidence checks. |
 | Orator | `Tame` | Support | deferred | deferred | Campaign utility | monster route later | out of scope | monsters | monster-scope review | Not part of current no-monster campaign pass. |
 | Orator | `Beast Tongue` | Support | deferred | deferred | Campaign utility | monster route later | out of scope | monsters | monster-scope review | Not part of current no-monster campaign pass. |
 | Orator | `Social Positioning` | Movement | C | committed Orator | Tactical option | speech/gun positioning | all ranged builds if too safe | line/range maps | T5/T2.1 | Should help Orator role, not replace Thief/Time mobility. |
@@ -240,17 +240,17 @@ Columns mirror the A2 contract from doc 31.
 | Samurai | Protection Iaido and premium draws | Action | D/E | committed/deep Samurai | Strong global piece | active Samurai and Brave build | area/support compression | katana stock, Brave | T11/F5/T2.1 | Katana stock/resource friction remains a possible limiter. |
 | Samurai | `Shirahadori` | Reaction | D/E | deep Samurai | Strong global piece | high-Brave Samurai-style defense | evasion/Brave practical immunity | Brave and attack family | T4/T6xPS/T2.1 | Iconic, but needs hard Brave-scaled ceiling. |
 | Samurai | `Bonecrusher` | Reaction | D | committed Samurai | Tactical option | retaliation physicals | counter-damage stacks | melee exposure | T4/T10/T2.1 | Fallback/narrower option if Shirahadori cannot be bounded. |
-| Samurai | `Equip Katana` | Support | D | committed Samurai | Strong global piece | Brave-linked katana builds | Samurai reduced to support stop | katana shop tier and gil | T2.1/F5 | Meaningful route unlock, not cheap universal access. |
+| Samurai | `Equip Katana` | Support | D | committed Samurai | Strong global piece | Brave-linked katana builds | Samurai reduced to support stop | katana availability tier | T2.1/F5 | Meaningful route unlock, not cheap universal access. |
 | Samurai | `Doublehand` | Support | D/E | deep Samurai | Build-defining engine | committed single-weapon builds | all physical builds | weapon formula and two-hand state | T2.1/F5 | Protected 1.80 engine; cannot stack with Dual Wield. |
 | Samurai | `Iaido Focus` | Support | D | committed Samurai | Tactical option | active Iaido specialists | broad magic/damage if generic | katana/Iaido resource | T11/F5/T2.1 | Narrow reliability or friction support only. |
 | Samurai | `Waterwalking` | Movement | C/D | committed Samurai | Tactical option | water-heavy maps | too narrow or irrelevant | map terrain | T2.1/T5 | Keep only if map texture supports it. |
 | Samurai | `Blade Step` | Movement | D | committed Samurai | Tactical option | stance/position Samurai | generic Move +N replacement | melee exposure | T2.1/T5 | Non-water option if needed; not a universal mobility piece. |
 | Ninja | Active Dual Wield and Throw basics | Action/innate | D | advanced branch | Core identity | active Ninja | none | throwable stock and weapon availability | F5/T4/T9 | Active Ninja may be strong; learned support is the donor risk. |
-| Ninja | High-impact Throw categories | Action | D/E | committed Ninja | Strong global piece | resource-backed ranged burst | safe ranged dominance | inventory, gil, range | T4/T9/F5 | Throw must pay inventory/range/accuracy costs. |
+| Ninja | High-impact Throw categories | Action | D/E | committed Ninja | Strong global piece | resource-backed ranged burst | safe ranged dominance | inventory and range | T4/T9/F5 | Throw must pay inventory/range/accuracy costs. |
 | Ninja | `Vanish` | Reaction | D/E | deep Ninja | Strong global piece | fragile assassin route | untargetable loops and stealth-strike bypass | duration/trigger rules | T5xT8/T4/T2.1 | Preferred only if bounded; attacks from Vanish need explicit bypass rule. |
 | Ninja | `Reflexes` | Reaction | D | committed Ninja | Tactical option | light evasive builds | evasion immunity stacks | evasion gear | T4/T6xPS/T2.1 | Fallback if Vanish cannot be bounded. |
 | Ninja | `Dual Wield` | Support | D/E | deep Ninja | Build-defining engine | committed two-hit weapon builds | most physical builds | two one-handed weapons | T2.1/F5 | Protected 2-hit engine; no fists, spells, Iaido, Throw, or Doublehand stacking unless later approved. |
-| Ninja | `Throw Mastery` | Support | D | committed Ninja | Tactical option | dedicated Throw route | ranged dominance if compressed with Dual Wield | throwable stock and gil | T4/T9/T2.1 | Narrow to Throw resource/range/categories. |
+| Ninja | `Throw Mastery` | Support | D | committed Ninja | Tactical option | dedicated Throw route | ranged dominance if compressed with Dual Wield | throwable stock | T4/T9/T2.1 | Narrow to Throw resource/range/categories. |
 | Ninja | `Move +3` | Movement | D/E | deep Ninja | Strong global piece | elite skirmishers | most late builds | none | T2.1/T5 | Major donor-pull risk; must compete with Teleport and vertical tools. |
 | Ninja | `Ignore Terrain` | Movement | D | committed Ninja | Tactical option | stealth/terrain route | broad terrain erasure | terrain maps | T2.1/T5 | Optional if Move +3 proves too universal. |
 | Bard | Songs | Action | D | advanced branch | Core identity | active Bard | all parties if global value is free | CT, interruption, performer safety | T11xT5/T3xT5xT11 | Global buff/sustain must pay vulnerability and time. |
@@ -279,7 +279,7 @@ Columns mirror the A2 contract from doc 31.
 | Vanguard | Sunder Guard, Commanding Challenge, Decisive Strike | Action | E | deep late branch | Strong global piece | active Vanguard/setup finisher | Holy Knight clone or best physical shell | premium weapons/formation | T8/T10/F5 | No free ranged holy-sword pattern. |
 | Vanguard | `Intervention` | Reaction | E | committed Vanguard | Strong global piece | local protector | global cover or extra-attack loop | formation/range | T8/T6xPS/T10/T2.1 | Preferred Vanguard reaction; no global cover. |
 | Vanguard | `Last Stand` | Reaction | E | deep Vanguard | Tactical option | critical frontline survival | practical immortality | critical HP and mitigation | T3/T6xPS/T2.1 | Bounded pressure fantasy only. |
-| Vanguard | `Equip Knight Swords` | Support | E | deep Vanguard | Build-defining engine | committed premium sword plan | revived sword dominance | knight sword availability and gil | T2.1/F5 | Optional and dangerous; cut or delay if it becomes default. |
+| Vanguard | `Equip Knight Swords` | Support | E | deep Vanguard | Build-defining engine | committed premium sword plan | revived sword dominance | knight sword availability | T2.1/F5 | Optional and dangerous; cut or delay if it becomes default. |
 | Vanguard | `Vanguard Training` | Support | E | committed Vanguard | Tactical option | active Vanguard arts | universal physical support if broad | Vanguard action set | T2.1/F5 | Improves formation/protection arts, not all physical damage. |
 | Vanguard | `Armor Discipline` | Support | E | committed Vanguard | Strong global piece | plate/shield specialist | mitigation stack | heavy armor/shield tier | T6xPS/T2.1/F5 | Must stay distinct from Knight armor/shield unlocks. |
 | Vanguard | `Vanguard March` | Movement | E | committed Vanguard | Tactical option | plate/shield formation play | generic late mobility patch | heavy/formation posture | T5/T2.1 | Helps hold/enter formation, not map traversal broadly. |
@@ -309,7 +309,6 @@ Support timing is the main campaign-control lever.
 The protected support-engine set for W4 is:
 
 ```text
-JP Boost
 Auto-Potion
 Throw Item
 Equip Armor
@@ -350,17 +349,17 @@ default late movement choice.
 
 ### Equipment Unlocks
 
-Equipment unlocks must be tested at the shop/gil tier where the gear is actually available.
+Equipment unlocks must be tested at the availability tier where the gear is actually available.
 
 | Unlock | Earliest healthy band | Dependency | Main failure |
 | --- | --- | --- | --- |
-| `Equip Armor` | C | heavy armor shop tier and gil | Fragile jobs lose meaningful weakness too early. |
-| `Equip Shield` | C | shield shop tier and gil | Evasion/mitigation stacks approach immunity. |
+| `Equip Armor` | C | heavy armor availability tier | Fragile jobs lose meaningful weakness too early. |
+| `Equip Shield` | C | shield availability tier | Evasion/mitigation stacks approach immunity. |
 | `Equip Bow` | C | bow/crossbow shop tier and map range | Archer becomes only a support stop. |
-| `Equip Guns` | C/D | gun shop tier and gil | Stat-starved jobs get safe damage patch. |
+| `Equip Guns` | C/D | gun availability tier | Stat-starved jobs get safe damage patch. |
 | `Equip Polearms` | C/D | polearm shop tier and vertical/thrust maps | Dragoon loses spear ownership. |
-| `Equip Katana` | D | katana shop tier, Brave relevance, gil | Samurai loses katana ownership. |
-| `Equip Knight Swords` | E | premium knight sword access and gil | Sword dominance returns. |
+| `Equip Katana` | D | katana availability tier and Brave relevance | Samurai loses katana ownership. |
+| `Equip Knight Swords` | E | premium knight sword availability | Sword dominance returns. |
 
 No broad `Equip Sword` support is accepted.
 
@@ -369,7 +368,8 @@ No broad `Equip Sword` support is accepted.
 The first populated incidence and real-roster rows should use the accepted W2 party rows, in this
 order:
 
-1. P5 Band A/B with and without `JP Boost`, testing whether first-specialist depth moves too early.
+1. P5 Band A/B under ordinary, optimizer, and grind-heavy fixed-JP routing, testing whether
+   first-specialist depth moves too early.
 2. P5 Band B/C physical full-package route: Knight body plus Monk sustain, Chemist item range,
    Archer reliability, and early armor/shield support.
 3. P3 Band C/D caster economy route: `Swiftspell`, `Halve MP`, `Manafont`, `Summon Focus`, and
@@ -390,7 +390,7 @@ This A2 ledger is not all of W3. The remaining W3 producer artifacts are:
   Orator, Dragoon, Samurai, Ninja, Vanguard, and Ramza chapter jobs;
 - candidate RSM numeric values or hard boundaries for the pieces marked above;
 - a prerequisite-tree and JP-cost draft that maps these bands to actual unlock depth;
-- equipment shop/gil timing records that prove when each equipment unlock is practically online.
+- equipment availability timing records that prove when each equipment unlock is practically online.
 
 ## Claude Review Request
 

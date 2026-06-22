@@ -118,8 +118,8 @@
     ]
   },
   "band_envelopes": [
-    {"band": "0", "level": "1-3", "learned_depth": "starter actions only", "equipment": "opening gear", "floor_constraint": "no JP Boost or optimized detours"},
-    {"band": "A", "level": "3-7", "learned_depth": "one shallow starter route", "equipment": "first shop tier", "floor_constraint": "P0 can miss JP Boost"},
+    {"band": "0", "level": "1-3", "learned_depth": "starter actions only", "equipment": "opening gear", "floor_constraint": "no hidden progression accelerator or optimized detours"},
+    {"band": "A", "level": "3-7", "learned_depth": "one shallow starter route", "equipment": "first shop tier", "floor_constraint": "P0 proceeds under fixed JP without hidden support taxes"},
     {"band": "B", "level": "7-14", "learned_depth": "one active specialist per unit", "equipment": "basic specialist weapons and armor", "floor_constraint": "active jobs matter before exports"},
     {"band": "C", "level": "14-24", "learned_depth": "two routes and one modest RSM", "equipment": "midgame armor and common weapons", "floor_constraint": "no complete damage sustain control package"},
     {"band": "D", "level": "24-36", "learned_depth": "two to three routes and one premium RSM", "equipment": "late non-premium equipment", "floor_constraint": "multiple routes compete"},
@@ -128,7 +128,7 @@
   "a5_anchors": [
     {"id": "GCV-PIN-00-RAW-MIXED", "band": "0", "unit_count": 4, "level_delta": "+0/+1", "profile": "2 leather melee, 1 weak ranged, 1 item support; no hard status or AoE", "question": "raw Squire/Chemist survivability"},
     {"id": "GCV-PIN-A-PHYSICAL", "band": "A", "unit_count": 5, "level_delta": "+0/+1", "profile": "3 leather melee, 1 early shield body, 1 ranged chip", "question": "starter recovery and positioning"},
-    {"id": "GCV-PIN-A-JP-ACCEL", "band": "A/B", "unit_count": 5, "level_delta": "+0/+1", "profile": "A physical profile under with/without JP Boost envelopes", "question": "JP Boost acceleration"},
+    {"id": "GCV-PIN-A-PROGRESSION-RUSH", "band": "A/B", "unit_count": 5, "level_delta": "+0/+1", "profile": "A physical profile under ordinary, optimizer, and grind-heavy fixed-JP routing", "question": "fixed-JP progression rush"},
     {"id": "GCV-PIN-B-FIRST-SPECIALIST", "band": "B", "unit_count": 5, "level_delta": "+0/+2", "profile": "plate captain, 2 leather skirmishers, cloth caster, ranged unit", "question": "first specialist active value"},
     {"id": "GCV-PIN-B-MONK-SECONDARY", "band": "B", "unit_count": 5, "level_delta": "+1/+2", "profile": "2 durable melee, evasive leather, support, ranged", "question": "early physical full-package compression"},
     {"id": "GCV-PIN-C-MITIGATION-STACK", "band": "C", "unit_count": 6, "level_delta": "+1/+3", "profile": "2 plate, 1 mail, White/Time support, archer, skirmisher", "question": "mitigation stack immunity"},
@@ -141,9 +141,9 @@
     {"id": "GCV-PIN-E-UNDEAD-CORPSE", "band": "E", "unit_count": 6, "level_delta": "+1/+3", "profile": "3 undead/corpse-relevant, 2 living guards, support caster", "question": "Necromancer corpse and revive inversion"}
   ],
   "a1_rows": [
-    {"party": "P0", "bands": ["0", "A", "B", "C", "D", "E"], "role": "floor", "core_constraint": "non-optimized route with Ramza plus four generics, no hidden JP Boost dependency"},
+    {"party": "P0", "bands": ["0", "A", "B", "C", "D", "E"], "role": "floor", "core_constraint": "non-optimized route with Ramza plus four generics, no hidden progression accelerator dependency"},
     {"party": "P1", "bands": ["0", "A", "B", "C", "D", "E"], "role": "baseline", "core_constraint": "balanced FFT reference party with active specialists before export dominance"},
-    {"party": "P5", "bands": ["0", "A", "B", "C", "D", "E"], "role": "ceiling", "core_constraint": "optimizer rush checks JP Boost, early full package, and late convergence"},
+    {"party": "P5", "bands": ["0", "A", "B", "C", "D", "E"], "role": "ceiling", "core_constraint": "optimizer rush checks fixed-JP progression, early full package, and late convergence"},
     {"party": "P2", "bands": ["B", "C", "D", "E"], "role": "physical-heavy wall test", "core_constraint": "physical route viable without sword-only or universal physical support dominance"},
     {"party": "P3", "bands": ["B", "C", "D", "E"], "role": "caster-heavy wall test", "core_constraint": "caster route pays CT MP Faith Shell Reflect and fragility costs"},
     {"party": "P4", "bands": ["C", "D", "E"], "role": "control-sustain wall test", "core_constraint": "control and sustain win through planning, not immunity or denial locks"},
@@ -151,7 +151,7 @@
   ],
   "a3_gpt_ceiling_stack": [
     {"band": "0", "stack": ["Ramza/Squire", "Squire melee", "Squire ranged utility", "Chemist", "Squire trainee"], "reachability": "floor-realistic", "breakpoints": ["Auto-Potion too early", "safe JP loop", "Ramza self-buff snowball", "Chemist throw-range safety"]},
-    {"band": "A", "stack": ["Ramza/Squire", "Chemist", "Squire JP Boost route", "early specialist fished by JP Boost such as Monk Chakra or White Cure", "trainee"], "reachability": "optimizer-realistic", "breakpoints": ["JP Boost acceleration into first specialist", "early Auto-Potion"]},
+    {"band": "A", "stack": ["Ramza/Squire", "Chemist", "fixed-JP optimizer route", "early specialist reached through ordinary or optimizer routing", "trainee"], "reachability": "optimizer-realistic", "breakpoints": ["first-specialist acceleration under fixed JP", "early Auto-Potion"]},
     {"band": "B", "stack": ["Ramza flexible", "Knight body", "Monk primary sustain/damage engine with Archer as lower-ceiling alternate", "White Mage", "Black Mage"], "reachability": "optimizer-realistic if first specialist unlocks are ordinary", "breakpoints": ["Knight-body durability plus Monk Chakra/Punch Art compression", "early Archer/White compression"]},
     {"band": "C", "stack": ["Ramza hybrid", "Knight/Monk or Dragoon frontline", "Time/Mystic controller", "Summoner/Black area", "Orator/Geomancer utility"], "reachability": "optimizer-realistic", "breakpoints": ["mitigation stack", "Haste/Slow", "Chakra/Items", "Belief/Oil setup seeds"]},
     {"band": "D", "stack": ["Ramza chapter hybrid", "Ninja or Samurai engine", "Time/Summoner caster", "Bard/Dancer support", "Dragoon/Archer/White flex"], "reachability": "optimizer-realistic late; grind-only if forced early", "breakpoints": ["Dual Wield", "Doublehand", "Swiftspell", "Quick", "Teleport", "Move +3", "Shirahadori", "Vanish", "Dancer global stat-down"]},

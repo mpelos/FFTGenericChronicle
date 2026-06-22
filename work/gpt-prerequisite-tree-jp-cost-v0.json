@@ -17,7 +17,8 @@
     "docs/job-balance/50-campaign-journey-bundle-v0.md",
     "docs/job-balance/51-progression-and-build-input-ledger-v0.md",
     "docs/job-balance/58-physical-foundation-rsm-concrete-v0.md",
-    "docs/job-balance/59-equipment-availability-timing-v0.md"
+    "docs/job-balance/59-equipment-availability-timing-v0.md",
+    "docs/job-balance/61-jp-boost-removal-decision-v0.md"
   ],
   "job_depth_thresholds": [
     {"depth": "Lv1", "earned_jp": 0, "meaning": "unlocked"},
@@ -68,7 +69,6 @@
   },
   "rsm_export_costs": [
     {"job": "Squire", "piece": "Grit", "slot": "Reaction", "band": "A/B", "depth": "Lv2", "jp": 180},
-    {"job": "Squire", "piece": "JP Boost", "slot": "Support", "band": "A", "depth": "Lv2", "jp": 200},
     {"job": "Squire", "piece": "Basic Training", "slot": "Support", "band": "B/C", "depth": "Lv3", "jp": 350},
     {"job": "Squire", "piece": "Move +1", "slot": "Movement", "band": "A", "depth": "Lv2", "jp": 150},
     {"job": "Chemist", "piece": "Throw Item", "slot": "Support", "band": "A/B", "depth": "Lv2", "jp": 300},
@@ -98,7 +98,6 @@
     {"job": "Vanguard", "piece": "Armor Discipline", "slot": "Support", "band": "E", "depth": "Lv4", "jp": 1200, "name_status": "non_vanilla_doc58_label_final_implementation_name_pending", "effect_status": "doc58_pacing_row"}
   ],
   "protected_convergence_rows": [
-    "JP Boost",
     "Auto-Potion",
     "Equip Armor",
     "Equip Shield",
