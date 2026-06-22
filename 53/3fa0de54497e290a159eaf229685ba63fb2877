@@ -1,0 +1,32 @@
+docs/job-balance/50-campaign-journey-bundle-v0.md
+  s_fce6b25a5764ca::t_4bb2d814a16a01 44,48-55,147-149,151-152
+  s_fce6b25a5764ca::t_6a650ad28b7ffa 10
+  s_fce6b25a5764ca::t_044d8ae7786fb6 3
+  s_fce6b25a5764ca::t_1015831b82be66 1-2,4-9,11-43,47,56-146,150,153-193
+  s_fce6b25a5764ca::t_cd13a6fc44a414 45-46
+work/gpt-campaign-journey-bundle-v0.json
+  s_fce6b25a5764ca::t_0db0236e49a599 155
+  s_fce6b25a5764ca::t_6a650ad28b7ffa 10
+  s_fce6b25a5764ca::t_c6dabe5bb35bdb 1-2,4-5,7-9,16-28,118-152,156,159-164,166-174
+  s_fce6b25a5764ca::t_d77d52d747ba97 15
+  s_fce6b25a5764ca::t_0ef902a43919f0 6,11-14,29-90,99
+  s_fce6b25a5764ca::t_d3c88c88e06d63 165
+  s_fce6b25a5764ca::t_fc77048e9be254 3
+  s_fce6b25a5764ca::t_2a2c56aa66153a 91-98,100-117,153-154,157-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "533fa0de54497e290a159eaf229685ba63fb2877",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
