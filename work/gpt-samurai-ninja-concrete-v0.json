@@ -1,0 +1,371 @@
+{
+  "schema_version": "samurai-ninja-concrete-provisional-v0",
+  "status": "accepted_w3_samurai_ninja_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "effective_wp_rounding": "none",
+  "purpose": "Fifth W3 physical/foundation concrete action-value producer, covering Samurai and Ninja.",
+  "scope": {
+    "jobs": ["Samurai", "Ninja"],
+    "included": [
+      "Samurai Iaido action values",
+      "Samurai support-draw boundaries",
+      "Ninja active dual-wield boundary",
+      "Ninja Throw action values",
+      "Ninja flail rejection/deferment warning rows",
+      "fractional effective-WP proof rows for katana and ninja blade"
+    ],
+    "excluded": [
+      "final reaction/support/movement values",
+      "final learned Doublehand and Dual Wield incidence",
+      "final equipment shop timing",
+      "final inventory consumption and campaign economy",
+      "final Shirahadori block chance",
+      "final Vanish behavior",
+      "full W4/W5 incidence verdicts"
+    ]
+  },
+  "formula_contracts": {
+    "effective_wp": "family_wp * phase_wp_scalar",
+    "effwp_rounding": "none",
+    "samurai_katana": {
+      "routine": "br_pa_wp",
+      "damage_type": "swing",
+      "penetration": 0.0
+    },
+    "ninja_melee_accepted": {
+      "ninja_blade": {
+        "routine": "spd_pa_wp",
+        "damage_type": "swing",
+        "penetration": 0.0
+      },
+      "knife": {
+        "routine": "spd_pa_wp",
+        "damage_type": "thrust",
+        "penetration": 0.1
+      }
+    },
+    "ninja_flail_policy": "rejected/deferred for Ninja in this W3 concrete pass; later equipment pass must remove flails from Ninja or make flails ineligible for Ninja dual-wield use",
+    "throw": {
+      "pressure_formula": "floor((PA + Speed) / 2) * (throw_value * phase_wp_scalar)",
+      "damage_type": "missile",
+      "penetration": 0.2,
+      "inherits_family_routine": false,
+      "inherits_family_damage_type": false
+    }
+  },
+  "samurai_actions": [
+    {
+      "name": "Ashura",
+      "kind": "damage_iaido",
+      "pressure_multiplier": 0.6,
+      "ct": 0,
+      "mp": 0,
+      "jp": 140,
+      "band": "D",
+      "limits": "low ceiling because area/position is the value"
+    },
+    {
+      "name": "Kotetsu",
+      "kind": "damage_iaido",
+      "pressure_multiplier": 0.75,
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "D",
+      "limits": "ordinary draw below direct katana attack"
+    },
+    {
+      "name": "Bizen Osafune",
+      "kind": "damage_iaido",
+      "pressure_multiplier": 0.9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 320,
+      "band": "D",
+      "limits": "focused pressure; not a universal best button"
+    },
+    {
+      "name": "Murasame",
+      "kind": "support_iaido_heal",
+      "hp_heal": 60,
+      "ct": 0,
+      "mp": 0,
+      "jp": 380,
+      "band": "D",
+      "limits": "small area ally heal; no revive, no status clear, no Faith scaling"
+    },
+    {
+      "name": "Ame-no-Murakumo",
+      "kind": "damage_iaido",
+      "pressure_multiplier": 0.85,
+      "ct": 0,
+      "mp": 0,
+      "jp": 450,
+      "band": "D",
+      "limits": "area/formation draw lower than Bizen because target count is the value"
+    },
+    {
+      "name": "Kiyomori",
+      "kind": "support_iaido_mitigation",
+      "incoming_hit_multiplier": 0.85,
+      "duration": "one physical or magical hit",
+      "ct": 0,
+      "mp": 0,
+      "jp": 520,
+      "band": "D",
+      "limits": "small area ally guard draw; non-stacking with Protect/Shell-like mitigation"
+    },
+    {
+      "name": "Muramasa",
+      "kind": "damage_plus_status_iaido",
+      "pressure_multiplier": 0.5,
+      "status": "Slow",
+      "status_rate": 0.3,
+      "ct": 0,
+      "mp": 0,
+      "jp": 600,
+      "band": "D/E",
+      "limits": "curse draw; status is the value, not damage"
+    },
+    {
+      "name": "Kiku-ichimonji",
+      "kind": "line_damage_iaido",
+      "pressure_multiplier": 0.9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 700,
+      "band": "D/E",
+      "limits": "line geometry must prove target-count safety"
+    },
+    {
+      "name": "Masamune",
+      "kind": "support_iaido_momentum",
+      "statuses": ["Regen"],
+      "ct_gain": 8,
+      "ct": 0,
+      "mp": 0,
+      "jp": 850,
+      "band": "D/E",
+      "limits": "small area ally momentum; no Haste, Quick, Reraise, or action grant"
+    },
+    {
+      "name": "Chirijiraden",
+      "kind": "premium_damage_iaido",
+      "pressure_multiplier": 1.1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 1000,
+      "band": "E",
+      "limits": "premium finisher; narrow target shape required before final"
+    }
+  ],
+  "ninja_active_dual_wield_boundary": {
+    "active_ninja_innate_dual_wield": true,
+    "eligible_families_this_pass": ["ninja_blade", "knife"],
+    "main_hand_multiplier": 1.0,
+    "off_hand_multiplier": 1.0,
+    "excluded": ["Throw", "Iaido", "spells", "reactions", "fists", "flails", "non-weapon specials"],
+    "learned_dual_wield_support": "deferred D/E build-defining engine"
+  },
+  "ninja_throw_actions": [
+    {
+      "name": "Throw Shuriken",
+      "throw_value": 7,
+      "ct": 0,
+      "mp": 0,
+      "jp": 80,
+      "band": "D",
+      "limits": "low-cost reach below melee"
+    },
+    {
+      "name": "Throw Daggers",
+      "throw_value": 8,
+      "ct": 0,
+      "mp": 0,
+      "jp": 140,
+      "band": "D",
+      "limits": "does not inherit knife thrust"
+    },
+    {
+      "name": "Throw Swords",
+      "throw_value": 9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 180,
+      "band": "D",
+      "limits": "does not inherit sword swing routine"
+    },
+    {
+      "name": "Throw Flails",
+      "throw_value": 10,
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "D",
+      "limits": "missile throw only; no ranged crush"
+    },
+    {
+      "name": "Throw Katana",
+      "throw_value": 10,
+      "ct": 0,
+      "mp": 0,
+      "jp": 260,
+      "band": "D",
+      "limits": "does not inherit Brave katana routine or Iaido identity"
+    },
+    {
+      "name": "Throw Ninja Blades",
+      "throw_value": 12,
+      "ct": 0,
+      "mp": 0,
+      "jp": 360,
+      "band": "D/E",
+      "limits": "signature thrown burst; high resource/cost pressure"
+    },
+    {
+      "name": "Throw Axes",
+      "throw_value": 11,
+      "ct": 0,
+      "mp": 0,
+      "jp": 320,
+      "band": "D/E",
+      "limits": "heavy throw; no random axe routine"
+    },
+    {
+      "name": "Throw Polearms",
+      "throw_value": 10,
+      "ct": 0,
+      "mp": 0,
+      "jp": 300,
+      "band": "D",
+      "limits": "does not replace Dragoon spear/thrust reach"
+    },
+    {
+      "name": "Throw Poles",
+      "throw_value": 9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 260,
+      "band": "D",
+      "limits": "candidate for consolidation if duplicate"
+    },
+    {
+      "name": "Throw Knight's Swords",
+      "throw_value": 13,
+      "ct": 0,
+      "mp": 0,
+      "jp": 500,
+      "band": "E",
+      "limits": "premium finite throw; not ordinary baseline"
+    },
+    {
+      "name": "Throw Books",
+      "throw_value": 9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 240,
+      "band": "D",
+      "limits": "candidate for consolidation if duplicate"
+    },
+    {
+      "name": "Throw Bombs",
+      "throw_value": 10,
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "D",
+      "limits": "missile special in this pass; element/status deferred"
+    }
+  ],
+  "rsm_boundary_values": {
+    "Shirahadori": "deferred; hard block-chance ceiling required; no magic/status/area/all-projectile coverage",
+    "Bonecrusher": "deferred retaliation value; must not replace Monk/Thief/Knight reactions by default",
+    "Equip Katana": "deferred D route unlock",
+    "Doublehand": "deferred protected x1.80 single-weapon engine; no stacking with Dual Wield",
+    "Iaido Focus": "deferred narrow Iaido-only support",
+    "Vanish": "deferred T5xT8/T4; no permanent untargetable loop or broad stealth-strike bypass",
+    "Reflexes": "deferred evasion fallback if Vanish cannot be bounded",
+    "Dual Wield": "deferred protected two-hit engine; no fists, Throw, Iaido, spells, reactions, non-weapon specials, or Doublehand stacking",
+    "Throw Mastery": "deferred Throw-only support",
+    "Move +3": "deferred D/E donor-pull risk",
+    "Ignore Terrain": "optional Ninja movement alternative if Move +3 is too universal"
+  },
+  "simulation_rows": {
+    "samurai_baseline": {
+      "katana_mid_effwp": 13.5,
+      "samurai_katana_mid": {"plate": 61, "mail": 70, "leather": 89, "cloth": 94},
+      "samurai_katana_late": {"plate": 105, "mail": 121, "leather": 153, "cloth": 162},
+      "samurai_katana_stress": {"plate": 117, "mail": 135, "leather": 171, "cloth": 180},
+      "doublehand_katana_late_x1_80": {"plate": 189, "mail": 218, "leather": 277, "cloth": 291}
+    },
+    "samurai_iaido_late_damage": {
+      "Ashura x0.60": {"plate": 63, "mail": 72, "leather": 92, "cloth": 97},
+      "Kotetsu x0.75": {"plate": 78, "mail": 91, "leather": 115, "cloth": 121},
+      "Bizen Osafune x0.90": {"plate": 94, "mail": 109, "leather": 138, "cloth": 145},
+      "Ame-no-Murakumo x0.85": {"plate": 89, "mail": 103, "leather": 130, "cloth": 137},
+      "Muramasa x0.50": {"plate": 52, "mail": 60, "leather": 76, "cloth": 81},
+      "Kiku-ichimonji x0.90": {"plate": 94, "mail": 109, "leather": 138, "cloth": 145},
+      "Chirijiraden x1.10": {"plate": 115, "mail": 133, "leather": 169, "cloth": 178}
+    },
+    "samurai_iaido_mid_fractional_wp_damage": {
+      "Samurai katana mid": {"plate": 61, "mail": 70, "leather": 89, "cloth": 94},
+      "Ashura x0.60": {"plate": 36, "mail": 42, "leather": 53, "cloth": 56},
+      "Kotetsu x0.75": {"plate": 46, "mail": 53, "leather": 67, "cloth": 70},
+      "Bizen Osafune x0.90": {"plate": 55, "mail": 63, "leather": 80, "cloth": 85},
+      "Chirijiraden x1.10": {"plate": 67, "mail": 77, "leather": 98, "cloth": 103}
+    },
+    "ninja_melee": {
+      "ninja_blade_mid_effwp": 9.75,
+      "ninja_blade_single_mid": {"plate": 57, "mail": 65, "leather": 83, "cloth": 87},
+      "ninja_blade_dual_mid": {"plate": 114, "mail": 130, "leather": 166, "cloth": 174},
+      "knife_single_mid": {"plate": 56, "mail": 89, "leather": 78, "cloth": 81},
+      "knife_dual_mid": {"plate": 112, "mail": 178, "leather": 156, "cloth": 162},
+      "ninja_blade_single_late": {"plate": 92, "mail": 107, "leather": 135, "cloth": 143},
+      "ninja_blade_dual_late": {"plate": 184, "mail": 214, "leather": 270, "cloth": 286},
+      "knife_single_late": {"plate": 91, "mail": 145, "leather": 127, "cloth": 133},
+      "knife_dual_late": {"plate": 182, "mail": 290, "leather": 254, "cloth": 266}
+    },
+    "ninja_flail_rejected_warning": {
+      "flail_single_mid": {"plate": 113, "mail": 94, "leather": 99, "cloth": 99},
+      "flail_dual_mid": {"plate": 226, "mail": 188, "leather": 198, "cloth": 198},
+      "flail_single_late": {"plate": 179, "mail": 148, "leather": 156, "cloth": 156},
+      "flail_dual_late": {"plate": 358, "mail": 296, "leather": 312, "cloth": 312}
+    },
+    "throw_mid_damage": {
+      "Shuriken": {"plate": 40, "mail": 51, "leather": 46, "cloth": 48},
+      "Daggers": {"plate": 46, "mail": 59, "leather": 52, "cloth": 55},
+      "Swords": {"plate": 52, "mail": 66, "leather": 59, "cloth": 61},
+      "Flails": {"plate": 58, "mail": 74, "leather": 66, "cloth": 68},
+      "Katana": {"plate": 58, "mail": 74, "leather": 66, "cloth": 68},
+      "Ninja Blades": {"plate": 69, "mail": 89, "leather": 79, "cloth": 82},
+      "Axes": {"plate": 63, "mail": 81, "leather": 72, "cloth": 75},
+      "Polearms": {"plate": 58, "mail": 74, "leather": 66, "cloth": 68},
+      "Poles": {"plate": 52, "mail": 66, "leather": 59, "cloth": 61},
+      "Knight's Swords": {"plate": 75, "mail": 96, "leather": 85, "cloth": 89},
+      "Books": {"plate": 52, "mail": 66, "leather": 59, "cloth": 61},
+      "Bombs": {"plate": 58, "mail": 74, "leather": 66, "cloth": 68}
+    },
+    "throw_late_damage": {
+      "Shuriken": {"plate": 66, "mail": 84, "leather": 75, "cloth": 78},
+      "Daggers": {"plate": 75, "mail": 96, "leather": 86, "cloth": 89},
+      "Swords": {"plate": 85, "mail": 108, "leather": 97, "cloth": 100},
+      "Flails": {"plate": 94, "mail": 121, "leather": 107, "cloth": 112},
+      "Katana": {"plate": 94, "mail": 121, "leather": 107, "cloth": 112},
+      "Ninja Blades": {"plate": 113, "mail": 145, "leather": 129, "cloth": 134},
+      "Axes": {"plate": 104, "mail": 133, "leather": 118, "cloth": 123},
+      "Polearms": {"plate": 94, "mail": 121, "leather": 107, "cloth": 112},
+      "Poles": {"plate": 85, "mail": 108, "leather": 97, "cloth": 100},
+      "Knight's Swords": {"plate": 122, "mail": 157, "leather": 140, "cloth": 145},
+      "Books": {"plate": 85, "mail": 108, "leather": 97, "cloth": 100},
+      "Bombs": {"plate": 94, "mail": 121, "leather": 107, "cloth": 112}
+    }
+  },
+  "claude_review_questions": [
+    "Is rejecting/defering Ninja flail access the right call, given the dual-flail plate rows?",
+    "Is full x1.00/x1.00 active Ninja dual wield acceptable if learned Dual Wield remains D/E and excludes Throw/Iaido/fists/flail?",
+    "Are Iaido damage multipliers low enough for area/line shapes while keeping Samurai exciting?",
+    "Are Murasame, Kiyomori, and Masamune bounded enough to avoid replacing White/Time/Chemist?",
+    "Are Throw values strong enough to matter but low enough to avoid remote weapon-family theft?"
+  ]
+}
