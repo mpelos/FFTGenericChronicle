@@ -1,6 +1,6 @@
 # Vanilla Skill, Status, And Effect Reference Map
 
-Status: Reference map for job-balance consultation
+Status: Accepted reference map for job-balance consultation
 Date: 2026-06-22
 
 ## Purpose

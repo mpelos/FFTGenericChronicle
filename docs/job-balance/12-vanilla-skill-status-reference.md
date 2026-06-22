@@ -1,6 +1,6 @@
 # Vanilla Skill And Status Reference
 
-Status: Reference audit ready for Claude review
+Status: Accepted reference audit
 Date: 2026-06-21
 Depends on:
 - `docs/reference/README.md`
