@@ -1,0 +1,25 @@
+docs/job-balance/55-orator-dragoon-concrete-v0.md
+  s_fce6b25a5764ca::t_db162e87d0b454 79,81-88,166-168,176-177,214-215
+  s_fce6b25a5764ca::t_2a9990e84fd266 3
+  s_fce6b25a5764ca::t_6aa207aaec29e1 1-2,4-78,80,89-165,169-175,178-213,216-313
+work/gpt-orator-dragoon-concrete-v0.json
+  s_fce6b25a5764ca::t_2a9990e84fd266 3
+  s_fce6b25a5764ca::t_9dfb9ed8f29818 1-2,4,7-93,95-117,119-357,360-395
+  s_fce6b25a5764ca::t_db162e87d0b454 5-6,94,118,358-359
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "87008de558e325fde2422bc3ca2942eb27376455",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
