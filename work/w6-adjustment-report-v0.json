@@ -1,0 +1,245 @@
+{
+  "schema_version": "w6_adjustment_report_v0",
+  "artifact": "W6 Adjustment Report V0",
+  "status": "accepted",
+  "date": "2026-06-22",
+  "source_commit": "3633df8bc4a2754266cbbf70848d3fb17b3f38bc",
+  "source_hashes": {
+    "docs/job-balance/65-w5-f5-real-roster-sweep-schema-v0.md": "dc91fcdf8b29d077fd384825d2c32c782cfaa962a9c1adc236914ae199d80c30",
+    "docs/job-balance/66-w5-f5-real-roster-sweep-v0.md": "0f28b9ecab44869580f62ce4cdbcfe0c717f7d8dc2477eb08c4f77f7620df936",
+    "work/w5_real_roster_sweep.py": "341f0fde00108b1dc7f7460c0ff108e61d943fb5d4715e52604e2981e5c470e3",
+    "work/w5-real-roster-sweep-v0.json": "51816babc2ceaa62bc4cde7b4b90a8f8a7167bd7c922f5db025a39d75a678d4e"
+  },
+  "constraints": {
+    "no_gil_changes": true,
+    "no_new_equipment": true,
+    "no_global_fire_faith_summon_nerf": true,
+    "no_baseline_stat_rewrite_without_dual_sim": true,
+    "no_weapon_family_nerf_from_w5": true
+  },
+  "findings": [
+    {
+      "row": "W5-P3-C-BELIEF-OIL",
+      "verdict": "fail",
+      "risk_ids": [1, 4],
+      "flags": ["belief_oil_dominance"],
+      "driver": "Belief x Oil x ally-safe fire-area named risk",
+      "current_max_vector": 681,
+      "current_ratio_to_415": 1.641
+    },
+    {
+      "row": "W5-P5-D-CONV",
+      "verdict": "fail",
+      "risk_ids": [3, 4, 7, 9, 12],
+      "flags": ["belief_oil_dominance", "sustain_safety_compression"],
+      "driver": "Belief/Oil remains live plus traced sustain/safety compression",
+      "sustain": 339,
+      "safety_defense": 265
+    },
+    {
+      "row": "W5-P5-E-LATE",
+      "verdict": "watch",
+      "risk_ids": [7, 8, 11],
+      "flags": ["ramza_breadth_watch"],
+      "driver": "late breadth watch, not dominance"
+    },
+    {
+      "row": "W5-RAMZA-C4-BREADTH",
+      "verdict": "watch",
+      "risk_ids": [11],
+      "flags": ["ramza_breadth_watch"],
+      "driver": "Ramza breadth watch, not dominance"
+    }
+  ],
+  "adjustments": [
+    {
+      "id": "W6-ADJ-01",
+      "decision": "remove_player_controlled_oil_assembly_from_magma_surge",
+      "primary_lever": "magma_surge_assembly_restriction",
+      "single_target_oil_fire_multiplier_preserved": 2.0,
+      "belief_multiplier": 1.15,
+      "fire_and_summon_base_values_preserved": true,
+      "magma_surge_oil_setup_constructible_after_patch": false,
+      "magma_surge_oil_rider_status": "unshipped_deferred_design_rider_not_vanilla_status_mechanic",
+      "vanilla_status_atlas_change": false,
+      "no_replacement_repeatable_player_controlled_area_oil_before_resim": true,
+      "trigger_rows": ["W5-P3-C-BELIEF-OIL", "W5-P5-D-CONV"],
+      "risk_ids": [1, 4, 3, 7, 9, 12],
+      "lever_comparison": [
+        {
+          "candidate": "global_oil_magnitude_trim",
+          "change": "fire_on_oil_multiplier_2_00_to_1_50",
+          "belief_oil_layer": 1.725,
+          "predicted_vectors": {
+            "Ifrit": {
+              "predicted": 419.175,
+              "predicted_rounded": 419,
+              "predicted_ratio_to_415": 1.01
+            },
+            "Salamander": {
+              "predicted": 512.325,
+              "predicted_rounded": 512,
+              "predicted_ratio_to_415": 1.234
+            }
+          },
+          "predicted_w5_p3_c_verdict": "watch_fail_boundary",
+          "predicted_w5_p5_d_verdict": "watch",
+          "w6_read": "rejected_as_primary_because_it_changes_all_oil_interactions_and_still_leaves_salamander_high"
+        },
+        {
+          "candidate": "magma_surge_assembly_restriction",
+          "change": "remove_oil_from_player_controlled_magma_surge_setup_route",
+          "synthetic_oil_stack_constructible": false,
+          "same_summon_without_oil_vectors": {
+            "Ifrit": {
+              "predicted": 279.45,
+              "predicted_rounded": 279,
+              "predicted_ratio_to_415": 0.673
+            },
+            "Salamander": {
+              "predicted": 341.55,
+              "predicted_rounded": 342,
+              "predicted_ratio_to_415": 0.823
+            }
+          },
+          "predicted_w5_p3_c_verdict": "pass_if_no_equivalent_oil_setup_is_introduced",
+          "predicted_w5_p5_d_verdict": "watch_until_pressured_performer_resim",
+          "w6_read": "accepted_primary_lever"
+        },
+        {
+          "candidate": "area_oil_cap_fallback",
+          "change": "single_target_oil_2_00_preserved_area_fire_oil_cap_one_marked_target_per_cast",
+          "area_target_layers": 4.6,
+          "predicted_vectors": {
+            "Ifrit": {
+              "predicted_per_layer_estimate": 372.6,
+              "predicted_rounded": 373,
+              "predicted_ratio_scaled": 372.0,
+              "predicted_ratio_to_415": 0.896
+            },
+            "Salamander": {
+              "predicted_per_layer_estimate": 455.4,
+              "predicted_rounded": 455,
+              "predicted_ratio_scaled": 454.0,
+              "predicted_ratio_to_415": 1.094
+            }
+          },
+          "binding_result_source": "post-patch dual-sim majority/Pareto verdict, not this ratio table alone",
+          "predicted_w5_p3_c_verdict": "watch_boundary",
+          "predicted_w5_p5_d_verdict": "watch",
+          "w6_read": "fallback_only_if_magma_surge_oil_rider_cannot_be_removed_or_replaced_cleanly"
+        }
+      ],
+      "predicted_vectors": {
+        "Ifrit": {
+          "neutral_three_target_total": 243,
+          "current": 558,
+          "predicted_after_magma_surge_assembly_restriction": 279.45,
+          "predicted_rounded": 279,
+          "predicted_ratio_to_415": 0.673,
+          "binding_result_source": "post-patch dual-sim majority/Pareto verdict"
+        },
+        "Salamander": {
+          "neutral_three_target_total": 297,
+          "current": 681,
+          "predicted_after_magma_surge_assembly_restriction": 341.55,
+          "predicted_rounded": 342,
+          "predicted_ratio_to_415": 0.823,
+          "binding_result_source": "post-patch dual-sim majority/Pareto verdict"
+        }
+      },
+      "floor_guard_required": "confirm Geomancer Magma Surge and fire-Summoner rows remain above the weak-family floor after rider removal",
+      "later_patch_targets": [
+        "docs/job-balance/43-summoner-geomancer-concrete-v0.md: replace deferred Magma Surge/Oil vector with assembly restriction",
+        "docs/job-balance/44-time-mystic-concrete-v0.md: update Belief/Oil source-chain table",
+        "work/gpt-summoner-geomancer-concrete-v0.json: mirror Magma Surge Oil-rider removal or replacement",
+        "work/gpt-time-mystic-concrete-v0.json: mirror Belief/Oil source-chain update",
+        "formula/status bundle: preserve Oil x2.00 and add no area-cap unless fallback is explicitly activated"
+      ],
+      "requires_dual_sim": true
+    },
+    {
+      "id": "W6-ADJ-02",
+      "decision": "mark_caster_base_values_safe",
+      "preserve": ["Belief 1.15", "single-target Oil x2.00", "Ifrit", "Salamander", "Bahamut", "Firaga", "Flare"],
+      "residual_counterplay_axis": "Field Salve already clears Oil at 0 MP in doc52; test access, timing, and action pressure before changing damage constants.",
+      "trigger_rows": ["W5-P3-C-BELIEF-OIL", "W5-P5-D-CONV"],
+      "requires_dual_sim_after_magma_surge_assembly_patch": true
+    },
+    {
+      "id": "W6-ADJ-03",
+      "decision": "normalize_pressured_performer_rows_to_65_percent_of_full_channel_without_protection_commitment",
+      "full_channel_values_remain_valid_protected_ceilings": true,
+      "pressured_expectation_factor": 0.65,
+      "mode_exclusivity": "one performer cannot claim full sustain mode and full control/tempo mode in the same 24-tick window",
+      "coefficient_provenance": "Provisional scenario accounting from doc46 endpoints: protected full channel = 1.00, tick-12 interrupted example = 0.25; midpoint 0.625 rounded to 0.65 for contested rows without explicit protection commitment.",
+      "uniform_application": "Apply to every pressured performer row in W5/W7 until revalidated, not selectively to W5-P5-D-CONV.",
+      "trigger_rows": ["W5-P5-D-CONV"],
+      "predicted_sustain": {
+        "ramza_c3": 35,
+        "seraph_song_full": 304,
+        "seraph_song_pressured": 197.6,
+        "total_pressured": 232.6,
+        "total_pressured_rounded": 233
+      },
+      "guardrails": [
+        "Encore must not become earlier than D/E Lv4 1000 JP",
+        "Performance Mastery and Stagecraft remain performance-only",
+        "Performance Step remains performer positioning",
+        "Bard and Dancer RSM remain byte-identical"
+      ],
+      "requires_resim": true
+    },
+    {
+      "id": "W6-ADJ-04",
+      "decision": "preserve_ramza_breadth_with_boundaries",
+      "trigger_rows": ["W5-P5-E-LATE", "W5-RAMZA-C4-BREADTH"],
+      "boundaries": [
+        "no exportable Ramza-only RSM from W5 evidence",
+        "no native premium equipment expansion from W5 evidence",
+        "no broad party support that replaces specialist lanes"
+      ]
+    },
+    {
+      "id": "W6-ADJ-05",
+      "decision": "mark_weapon_and_equipment_state_safe",
+      "trigger_rows": ["W5-FLOOR-0A", "W5-FLOOR-B", "W5-P2-D-PHYS", "W5-EQUIP-BREAKPOINTS"],
+      "preserve": [
+        "no weapon-family nerf",
+        "no sword nerf",
+        "no new equipment",
+        "no Gil changes",
+        "Equip Knight Swords remains optional and cuttable",
+        "illegal support stacks remain illegal"
+      ]
+    },
+    {
+      "id": "W6-ADJ-06",
+      "decision": "keep_late_physical_convergence_pieces_unassigned_until_dedicated_rsm_pass",
+      "guardrails": [
+        "Attack Boost remains unassigned/non-canon in W6",
+        "any later assignment must be D/E paced, high JP, support-slot exclusive, and re-simulated",
+        "stress-probe values are not accepted player-facing ceilings by themselves"
+      ],
+      "requires_resim_before_assignment": true
+    }
+  ],
+  "next_gate": {
+    "name": "post_magma_surge_assembly_and_performer_w5_resim",
+    "required_before_accepting_mechanical_patch": true,
+    "rows": ["W5-P3-C-BELIEF-OIL", "W5-P5-D-CONV"],
+    "required_verdict": "pass_or_watch_by_majority_pareto_not_vector_ratio_only",
+    "dual_sim_zero_mismatch_required": true,
+    "floor_guard_required": "confirm Geomancer Magma Surge and fire-Summoner rows remain above the weak-family floor after rider removal",
+    "vanilla_status_atlas_check_required": true,
+    "preserve": [
+      "single-target Oil x2.00",
+      "Belief 1.15",
+      "Summon/fire base values",
+      "Bard/Dancer action values",
+      "no Gil/economy edits",
+      "no new equipment"
+    ],
+    "reviewer": "Claude"
+  }
+}
