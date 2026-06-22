@@ -1,0 +1,21 @@
+docs/job-balance/65-w5-f5-real-roster-sweep-schema-v0.md
+  s_fce6b25a5764ca::t_dc1f174206dcc6 3,43-44,60,64,75,93-95,109-185,187-196,201-224,244-264,266-269,271-277,279-283,286-296
+  s_fce6b25a5764ca::t_fc8ba1b93dcffa 1-2,4-42,45-59,61-63,65-74,76-92,96-108,186,225-243,265,270,278,284-285,297-323
+  s_fce6b25a5764ca::t_36c17c19caf6fb 197-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "a8f08ac9f1eb53a6d28419644b0086a86d902b56",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
