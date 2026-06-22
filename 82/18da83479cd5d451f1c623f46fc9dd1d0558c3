@@ -1,0 +1,20 @@
+docs/job-balance/61-jp-boost-removal-decision-v0.md
+  s_fce6b25a5764ca::t_069a74abf92b5d 1-2,4-111,116-210
+  s_fce6b25a5764ca::t_3d93a2d1c9d0bf 3,112-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8218da83479cd5d451f1c623f46fc9dd1d0558c3",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
