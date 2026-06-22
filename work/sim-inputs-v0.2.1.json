@@ -226,7 +226,8 @@
       "mid": 0.75,
       "late": 1.0,
       "stress": 1.0
-    }
+    },
+    "effwp_rounding": "none"
   },
   "jobs": {
     "Squire": {
