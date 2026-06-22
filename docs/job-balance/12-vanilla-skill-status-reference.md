@@ -3,6 +3,7 @@
 Status: Reference audit ready for Claude review
 Date: 2026-06-21
 Depends on:
+- `docs/reference/README.md`
 - `docs/reference/fft-vanilla-ability-effect-index.md`
 - `docs/reference/fft-vanilla-command-skillset-effect-map.md`
 - `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
@@ -21,6 +22,11 @@ rewriting skills.
 
 ## Reference Docs
 
+- `docs/reference/README.md`
+  - starting point for the vanilla skill, status, and effect atlas;
+  - gives fast lookup guidance, command-bucket coverage, effect-family grouping, status concern
+    grouping, and the proposal checklist for future job redesign work;
+  - should be opened first when a designer needs orientation rather than a full 491-row table.
 - `docs/reference/fft-vanilla-ability-effect-index.md`
   - complete local index of the 491 non-empty ability records in `work/baseline_abilities.csv`;
   - includes ability ID, name, local JP, local random flags, CT/MP overrides, command bucket,
