@@ -1,0 +1,19 @@
+work/sim-inputs-v0.2.1.json
+  s_fce6b25a5764ca::t_f0f4e11f3c76c5 924-1012
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "030211e430b0a78a8462db5f6ae1ab50fc71c7f6",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
