@@ -220,6 +220,16 @@ reaction, support, movement, and equipment.
 The key question is whether the combo creates a distinct playstyle or just becomes the obvious
 best way to play every physical, magical, or hybrid unit.
 
+Combos are part of the fun of FFT and of Generic Chronicle. The goal is not to sand down every
+strong setup until nothing feels clever. Players should be able to plan cross-job builds, coordinate
+multiple characters, and feel rewarded for discovering skill interactions that produce a big payoff.
+
+Party-level combos deserve extra tolerance. If a strong result requires several characters spending
+turns, job slots, secondary slots, positioning, CT/MP, status setup, or other real opportunity costs,
+that cooperation is usually healthy even when the payoff is high. The balance question is whether
+the setup is so cheap, repeatable, safe, early, and broadly superior that it becomes the default
+answer. Strong multi-character combos should be preserved or shaped before they are cut.
+
 ### Flavor Strength
 
 A build may be strong because it expresses a job fantasy especially well.
