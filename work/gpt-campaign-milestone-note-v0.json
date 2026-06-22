@@ -1,0 +1,82 @@
+{
+  "schema_version": "campaign-milestone-note-v0",
+  "status": "accepted_marcelo_facing_milestone_note",
+  "claude_review": {
+    "verdict": "accepted",
+    "date": "2026-06-21",
+    "accepted_caveat": "Mechanic gates prove the models compute correctly and reproducibly; they do not prove current skill values are already balanced. Real-roster F5 and T2.1 still need to prove campaign balance."
+  },
+  "date": "2026-06-21",
+  "purpose": "Milestone note to surface to Marcelo before drafting Campaign Journey Bundle V0.",
+  "depends_on": [
+    "docs/job-balance/30-roster-completion-and-infra-sprint-plan.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/47-campaign-validation-readiness-v0.md"
+  ],
+  "milestone_state": {
+    "generic_job_design_roster": "complete_and_accepted",
+    "validation_infrastructure": "accepted_mechanic_gates_docs_08_17_and_33_41",
+    "vanilla_skill_status_atlas": "accepted_reference_surface",
+    "concrete_provisional_caster_performer_clusters": "complete_and_accepted_docs_42_46",
+    "campaign_readiness_map": "accepted_doc_47",
+    "full_campaign_gameplay_validation": "not_complete"
+  },
+  "what_is_proven": [
+    "the intended generic-job roster and replacement jobs are defined",
+    "Calculator is replaced by Necromancer",
+    "Mime is replaced by Special Knight",
+    "Bard/Dancer gender restriction is preserved only for job access, with reaction/support/movement parity",
+    "the key mechanic validation gates exist and have been accepted as reproducible models with dual-independent checks and zero-row mismatch",
+    "the mechanic gates do not by themselves prove that current skill values are balanced; real-roster F5 and T2.1 still have to prove that",
+    "concrete-provisional values exist for the highest formula-sensitive caster, performer, and dark-state clusters",
+    "the campaign readiness map names the exact remaining producer steps and risk priorities"
+  ],
+  "not_proven_yet": [
+    "fresh_game_four_generics_plus_ramza_progression_band_0_to_E",
+    "exact_jp_prerequisites_equipment_timing_and_jp_boost_pacing",
+    "complete_physical_foundation_action_values",
+    "candidate_rsm_values_in_real_cross_job_builds",
+    "real_roster_f5_no_dominant_route",
+    "ramza_not_specialist_dominant"
+  ],
+  "highest_current_risks": [
+    "Belief x Oil x fire-weak area compound",
+    "JP Boost acceleration",
+    "Time Mage systemic compression",
+    "Caster economy convergence",
+    "Mitigation and early physical full-package builds",
+    "Equipment-tier and mobility timing",
+    "Late-job and final Ramza replacement pressure"
+  ],
+  "steering_options": [
+    {
+      "id": "A",
+      "name": "Draft W2 Campaign Journey Bundle V0",
+      "when_to_choose": "Priority is seeing the campaign as a player journey immediately."
+    },
+    {
+      "id": "B",
+      "name": "Start W3 physical/foundation concrete values",
+      "when_to_choose": "Priority is reducing unknowns before deeper journey ceiling rows."
+    },
+    {
+      "id": "C",
+      "name": "Build W3 A2 prerequisite/JP/equipment ledger",
+      "when_to_choose": "Priority is early power pacing and anti-overgrind/anti-rush proof."
+    },
+    {
+      "id": "D",
+      "name": "Push T1/formula-v1 on Windows",
+      "when_to_choose": "Windows environment is available and final numeric acceptance is the bottleneck."
+    }
+  ],
+  "current_recommendation": "surface_milestone_then_draft_W2_unless_Marcelo_redirects",
+  "recommended_user_facing_message_pt_br": "Chegamos num marco importante: o roster de design dos jobs esta fechado, os principais clusters caster/performer/dark-state tem valores concrete-provisional aceitos, e o mapa de readiness da validacao de campanha foi aprovado pelo Claude. Isso ainda nao significa que a campanha esta validada. Os gates provam que os modelos estao corretos e reproduziveis, nao que os numeros ja estao balanceados. O que falta agora e provar a progressao real com 4 generics + Ramza: unlocks, JP, equipamentos, builds cross-job, RSM e F5 em roster real. Proximo passo recomendado: criar o W2 Campaign Journey Bundle V0, com linhas por fase da campanha para P0/P1/P5 e wall tests. Alternativas seriam priorizar primeiro os valores concretos dos jobs fisicos/foundation, o ledger de JP/equipamentos, ou o dump T1/formula-v1 no Windows.",
+  "claude_review_request": [
+    "Is the milestone summary faithful to doc 47?",
+    "Do the proven/not-proven sections avoid overclaiming?",
+    "Are options A-D the right steering options for Marcelo?",
+    "Is the recommended user-facing message accurate enough to send before W2?"
+  ]
+}
