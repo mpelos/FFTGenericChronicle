@@ -1,0 +1,23 @@
+docs/job-balance/56-samurai-ninja-concrete-v0.md
+  s_fce6b25a5764ca::t_0bde652c5da16d 3
+  s_fce6b25a5764ca::t_b404c564b8484a 1-2,4-316
+work/gpt-samurai-ninja-concrete-v0.json
+  s_fce6b25a5764ca::t_0bde652c5da16d 3
+  s_fce6b25a5764ca::t_ee99a87f232dd9 1-2,4-371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "4bb74da9b1fb83901f5880f9128e5bb65f6d9353",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
