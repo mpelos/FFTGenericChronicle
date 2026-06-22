@@ -143,8 +143,9 @@
     },
     {
       "priority": 2,
-      "risk": "JP Boost acceleration",
-      "required_proof": "W2/W3/W4 with and without JP Boost"
+      "risk": "Fixed-JP grind-to-break pacing",
+      "required_proof": "W2/W3/W4 ordinary, optimizer, and grind-heavy fixed-JP rows",
+      "supersedes": "JP Boost acceleration"
     },
     {
       "priority": 3,
@@ -174,7 +175,7 @@
     {
       "priority": 8,
       "risk": "Equipment-tier breakpoints",
-      "required_proof": "A2/W3 plus F5 real-roster re-sim"
+      "required_proof": "A2/W3 equipment availability plus F5 real-roster re-sim"
     },
     {
       "priority": 9,

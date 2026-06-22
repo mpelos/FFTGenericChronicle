@@ -16,6 +16,10 @@ This is the milestone note to surface before drafting `Campaign Journey Bundle V
 It exists because doc 47 closed a major planning phase and created a natural steering point. The
 project can now move into W2 journey rows, W3 producer passes, or the external T1/formula-v1 path.
 
+Supersession note, 2026-06-22: doc 61 removes `JP Boost`. This Marcelo-facing note keeps its
+overclaim guard intact, but its former JP-Boost risk should now be read as fixed-JP grind-to-break
+pacing under ordinary, optimizer, and grind-heavy routing.
+
 This note does not replace doc 47. It is a concise summary for Marcelo of what is proven, what is
 not proven, and what decision is useful before more campaign-validation work is drafted.
 
@@ -66,7 +70,7 @@ The full campaign goal is still open.
 Current evidence does not yet prove:
 
 - a fresh-game party of four generics plus Ramza progresses cleanly from Band 0 through Band E;
-- exact JP, prerequisites, equipment timing, and JP Boost pacing are healthy;
+- exact JP, prerequisites, equipment timing, and fixed-JP progression pacing are healthy;
 - Squire/Chemist/Knight/Archer/Monk/Thief/Orator/Dragoon/Samurai/Ninja/Special Knight have
   complete concrete action values;
 - candidate reaction/support/movement values are safe in real cross-job builds;
@@ -85,7 +89,8 @@ Salamander, 3 targets, Belief x fire weakness/Oil = 681
 681 / 415 = 1.641
 ```
 
-2. `JP Boost` can move deep power into earlier encounter bands.
+2. Fixed-JP ordinary, optimizer, or grind-heavy routing can move deep power into earlier encounter
+   bands.
 3. Time Mage can compress too many axes through tempo, action economy, movement, and spell routing.
 4. Caster economy can converge through MP, CT, Faith, and magic-support packages.
 5. Mitigation and early physical full-package builds can erase campaign pressure.
@@ -100,7 +105,7 @@ The next work should be chosen deliberately.
 | --- | --- | --- |
 | A - Draft W2 `Campaign Journey Bundle V0` | Creates provisional per-band party rows for P0/P1/P5/P2/P3/P4/P6, with encounter anchors and Ramza checks. | Best if the priority is to see the campaign as a player journey immediately. |
 | B - Start W3 physical/foundation concrete values | Gives concrete action values to the remaining physical/foundation roster before journey simulation gets deeper. | Best if the priority is reducing unknowns before building W2 ceiling rows. |
-| C - Build W3 A2 prerequisite/JP/equipment ledger | Starts exact pacing data for job unlocks, JP, JP Boost, and equipment tiers. | Best if the priority is early power pacing and anti-overgrind/anti-rush proof. |
+| C - Build W3 A2 prerequisite/JP/equipment ledger | Starts exact pacing data for job unlocks, JP, fixed-JP routing, and equipment tiers. | Best if the priority is early power pacing and anti-overgrind/anti-rush proof. |
 | D - Push T1/formula-v1 on Windows | Captures real weapon/equipment formula data and replaces WotL-fallback assumptions. | Best if the Windows environment is available and final numeric acceptance is the bottleneck. |
 
 GPT and Claude's current recommendation is:

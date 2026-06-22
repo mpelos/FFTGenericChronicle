@@ -22,6 +22,10 @@ campaign validation goal.
 
 It does not claim the campaign is validated.
 
+Supersession note, 2026-06-22: doc 61 removes `JP Boost` from the mod. This readiness map remains
+accepted, but any `JP Boost acceleration` risk now resolves as fixed-JP grind-to-break pacing:
+ordinary, optimizer, or grind-heavy routing moving deep job power into earlier encounter bands.
+
 It records:
 
 - what evidence is already accepted;
@@ -59,7 +63,7 @@ implementation data.
 | Campaign model | Docs 31-32 define bands, party journeys, A1-A5 artifacts, detour risks, and synthetic encounter families. | Ready as provisional structure, not final proof. |
 | Concrete cluster values | Docs 42-46 accepted. | Ready for covered clusters. |
 | Physical/foundation concrete values | Squire, Chemist, Knight, Archer, Monk, Thief, Orator, Dragoon, Samurai, Ninja, and Special Knight still mostly have V1 identity, not full numeric action values. | Missing producer step. |
-| Prerequisites, JP, equipment | A2 ledger is provisional and has no exact prerequisite tree, JP costs, JP gain, JP Boost impact, or equipment tier timing. | Missing producer step. |
+| Prerequisites, JP, equipment | A2 ledger is provisional and has no exact prerequisite tree, JP costs, JP gain, fixed-JP routing impact, or equipment availability timing. | Missing producer step. |
 | RSM values | Most reaction/support/movement and equipment-unlock candidates are deferred until T2.1. | Missing producer step. |
 | Formula-v1 | T1 Windows weapon dump is missing. | Final numeric acceptance not ready. |
 | Real-roster F5 | Not yet run on actual roster rows. | Final numeric acceptance not ready. |
@@ -174,13 +178,13 @@ Do not start by globally nerfing swords, all summons, all Faith, or all elementa
 | Priority | Risk | Why it remains live | Required proof |
 | ---: | --- | --- | --- |
 | 1 | Belief/Oil/fire-weak area compound | Already quantified at up to 681, 1.641x the 415 physical reference. | W5 F5 cluster rows. |
-| 2 | JP Boost acceleration | Can move deep job power into earlier encounter bands without being a combat stat. | W2/W3/W4 with and without JP Boost. |
+| 2 | Fixed-JP grind-to-break pacing | Ordinary, optimizer, or grind-heavy routing can move deep job power into earlier encounter bands without changing combat stats. | W2/W3/W4 ordinary, optimizer, and grind-heavy fixed-JP rows. |
 | 3 | Time Mage systemic compression | Haste, Quick, Swiftspell, Teleport, Reflect, Slow/Stop, and Meteor touch too many axes. | T5/T10/T2.1/F5. |
 | 4 | Caster economy convergence | Swiftspell, Halve MP, Manafont, Summon Focus, and magic-damage supports can collapse caster choice. | T9/T10/F4/T2.1. |
 | 5 | Mitigation stack | Plate/shield plus Protect/Shell plus reactions can erase ordinary pressure. | T6xPS plus Band C rows. |
 | 6 | Early physical full-package | An early party could cover damage, sustain, range, durability, and control too soon. | W2 Band B/C ceiling rows and Full-Package Rule checks. |
 | 7 | Late physical support convergence | Dual Wield, Doublehand, Attack Boost, Brawler, Concentration, premium weapons, and mobility can converge. | T2.1 and F5 physical-heavy rows. |
-| 8 | Equipment-tier breakpoints | Shop/gil/weapon timing can create hidden spikes or dead zones independent of job unlocks. | A2/W3 plus F5 real-roster re-sim. |
+| 8 | Equipment-tier breakpoints | Equipment availability and weapon timing can create hidden spikes or dead zones independent of job unlocks. | A2/W3 plus F5 real-roster re-sim. |
 | 9 | Mobility convergence | Teleport, Move +3, Ignore Elevation, Fly, and terrain mobility can become correct for most builds. | T2.1 movement incidence. |
 | 10 | Sustain compression | Chemist, White Mage, Monk, Bard, and Necromancer recovery can overlap too cheaply. | T3/T3xT5/T3xT5xT11 plus W5 sustain axis. |
 | 11 | Late-job replacement pressure | Necromancer, Special Knight, and final Ramza must not erase older specialists. | Band E W5 comparisons. |
@@ -218,7 +222,7 @@ This readiness map does not decide final:
 
 - JP costs;
 - prerequisite tree;
-- equipment shop timing;
+- equipment availability timing;
 - physical/foundation action values;
 - RSM values;
 - Ramza chapter values;

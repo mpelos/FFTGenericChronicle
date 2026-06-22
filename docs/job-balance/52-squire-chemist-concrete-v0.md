@@ -9,6 +9,9 @@ Depends on:
 - `docs/job-balance/31-campaign-gameplay-validation-v1.md`
 - `docs/job-balance/47-campaign-validation-readiness-v0.md`
 - `docs/job-balance/51-progression-and-build-input-ledger-v0.md`
+- `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
+- `docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md`
+- `docs/job-balance/61-jp-boost-removal-decision-v0.md`
 - `docs/reference/README.md`
 - `docs/reference/fft-vanilla-command-skillset-effect-map.md`
 - `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
@@ -26,8 +29,12 @@ fresh game with Ramza plus four generics should be able to act, recover from sma
 real build hooks without getting an early combat engine.
 
 This document sets provisional action values and boundary values needed for validation. It does not
-finalize the full prerequisite tree, JP economy, shop timing, RSM incidence, or real-roster F5
-verdict.
+finalize the full prerequisite tree, JP economy, equipment/item availability timing, RSM incidence,
+or real-roster F5 verdict.
+
+Supersession note, 2026-06-22: doc 61 removes `JP Boost`; docs 58 and 60 replace Squire's support
+identity with narrow `Basic Training`. Historical mentions of deferred `JP Boost` in this document
+should be read as superseded RSM planning context, not an active support candidate.
 
 ## Atlas Consultation
 
@@ -56,10 +63,10 @@ Included here:
 
 Deferred:
 
-- final `JP Boost`, `Move +1`, `Throw Item`, `Item Lore`, `Safeguard`, `Reequip`, and
+- final `Basic Training`, `Move +1`, `Throw Item`, `Item Lore`, `Safeguard`, `Reequip`, and
   `Move-Find Item` costs/incidence;
 - exact job prerequisites and JP gain pacing;
-- exact item shop tiers, prices, and stock pressure;
+- exact item availability tiers and stock pressure;
 - full W4 populated T2.1 incidence and W5 real-roster dominance verdict.
 
 ## Shared Formula Contracts
@@ -75,8 +82,8 @@ Auto-Potion-like reaction healing is post-damage and survivor-only
 ```
 
 This is important for Chemist. Immediate items are allowed to be reliable, but they spend stock,
-gil, action economy, range, and usually single-target focus. They should beat delayed magic only
-when timing makes reliability matter.
+action economy, range, and usually single-target focus. They should beat delayed magic only when
+timing makes reliability matter.
 
 ## Squire Values
 
@@ -135,8 +142,8 @@ Read:
 
 ## Chemist Values
 
-Chemist should be item-first in Band 0/A. Gun identity is real, but first-gun access must be a shop
-and equipment-timing question, not a raw-start assumption.
+Chemist should be item-first in Band 0/A. Gun identity is real, but first-gun access must be gated
+by availability and equipment timing, not a raw-start assumption.
 
 | Skill / item action | Value | MP | CT | JP | Band | Gate binding | Notes |
 | --- | ---: | ---: | ---: | ---: | --- | --- | --- |
@@ -145,9 +152,9 @@ and equipment-timing question, not a raw-start assumption.
 | basic condition items | clear Poison, Blind, or Silence | 0 | 0 | 80 | A | T4 | Reactive cure only. |
 | `Field Salve` | 15 HP and clear Poison/Oil | 0 | 0 | 120 | A/B | T3/T4 | Range 1 or adjacent; worse than Potion for pure HP. |
 | `Ether` | 20 MP | 0 | 0 | 150 | B | T9 | Scarce item economy; single target. |
-| `Hi-Potion` | 70 HP | 0 | 0 | 200 | B/C | T3/T9 | Shop-tier gated; not Band A floor. |
+| `Hi-Potion` | 70 HP | 0 | 0 | 200 | B/C | T3/T9 | Availability-tier gated; not Band A floor. |
 | `Hi-Ether` | 50 MP | 0 | 0 | 450 | C/D | T9/T2.1 | Deep caster-support route. |
-| `X-Potion` | 150 HP | 0 | 0 | 500 | D/E | T3/T9/T2.1 | Late stock and gil; not Auto-Potion eligible. |
+| `X-Potion` | 150 HP | 0 | 0 | 500 | D/E | T3/T9/T2.1 | Late stock; not Auto-Potion eligible. |
 | `Quick Draw` | gun attack at x0.70 pressure | 0 | 0 | 260 | B+ | F5/T4 | Requires gun; no gun damage steroid. |
 | `Smoke Bomb` | deferred | - | - | - | - | T4/T8 | Do not accept until accuracy/targeting proof exists. |
 
@@ -169,7 +176,7 @@ texture while Chemist also owns item reliability. Therefore:
 - Band 0/A Chemist is balanced around knife/fists plus Items;
 - first real gun access should be Band B+ unless equipment timing proves a safer alternative;
 - `Quick Draw` should not exist before guns exist;
-- final shop/gil timing must retest this row before W5.
+- final item and equipment availability timing must retest this row before W5.
 
 ## Healing And Sustain Checks
 
@@ -211,7 +218,7 @@ Boundary rows:
 | 100 | 120 | -20 | no | 0 |
 | 150 | 40 | 110 | yes | 21 |
 
-This keeps Auto-Potion from solving lethal burst, prevents best-potion loops, and makes stock/gil
+This keeps Auto-Potion from solving lethal burst, prevents best-potion loops, and makes stock
 visible. If Claude prefers to keep all reaction values out of this producer, this section can be
 moved into the future RSM document without changing the action-value rows.
 
@@ -222,7 +229,7 @@ Band 0/A expected texture:
 - Ramza/Squire and generic Squires use ordinary weapons, `Throw Stone`, `Dash`, `First Aid`, and
   basic positioning;
 - one Chemist or item-secondary unit gives reliable Potion and Phoenix Down access;
-- the party can survive early mistakes without needing `JP Boost`, `Move +1`, or a hidden route;
+- the party can survive early mistakes without needing `Basic Training`, `Move +1`, or a hidden route;
 - no starter tool gives an infinite sustain loop, a safe damage loop, or a universal combat support.
 
 Band B+ expected texture:
@@ -239,9 +246,9 @@ Band B+ expected texture:
 | I1 starter tools not permanent defaults | Pass provisionally: Squire values are low and Chemist early power is item-limited. |
 | I2 first specialists work before exports | Preserved: nothing here gives Knight/Archer/White/Black rewards early. |
 | I3 deep secondary on shallow chassis | Watch: Items remain reliable on any chassis; W4 must count Item secondary incidence. |
-| I4 build-defining supports earned | Preserved here: final support values are deferred; `JP Boost` gets no combat stat. |
+| I4 build-defining supports earned | Preserved here: final support values are deferred or superseded by docs 58/60; `Basic Training` is the Squire support identity and no progression support gets a combat stat. |
 | I5 strong reactions not early skips | Preserved only if Auto-Potion remains Band C with the boundary above. |
-| I6 mobility remains a choice | Preserved here: `Move +1` not priced or strengthened in this pass. |
+| I6 mobility remains a choice | Preserved here: `Move +1` not assigned a final cost or strengthened in this pass. |
 | I7 sustain has texture | Pass provisionally: Squire patch, Chemist item, White Mage delayed, and Monk proximity lanes remain distinct. |
 | I8 protection not upkeep | Not touched. |
 | I9 control not replacing damage | Not touched, except `Smoke Bomb` deferred. |
@@ -254,8 +261,8 @@ This pass creates input for later W3/W4/W5 work, but does not close those gates.
 Still required:
 
 - JP/prerequisite producer must decide when these JP values are realistically reachable;
-- equipment shop/gil producer must pin Potion, Phoenix Down, Hi-Potion, Ether, and gun timing;
-- RSM producer must validate `JP Boost`, `Move +1`, `Throw Item`, `Auto-Potion`, `Item Lore`,
+- equipment availability producer must pin Potion, Phoenix Down, Hi-Potion, Ether, and gun timing;
+- RSM producer must validate `Basic Training`, `Move +1`, `Throw Item`, `Auto-Potion`, `Item Lore`,
   `Safeguard`, `Reequip`, and `Move-Find Item`;
 - W4 must count cross-job incidence of Items, `Throw Item`, `Auto-Potion`, and Squire utility;
 - W5 must test starter and Band B parties with and without early guns.

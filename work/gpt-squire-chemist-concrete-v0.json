@@ -16,7 +16,7 @@
     "excluded": [
       "final RSM pricing and incidence",
       "exact prerequisite tree",
-      "final shop and gil economy",
+      "final item stock and equipment availability",
       "full real-roster F5 verdict"
     ]
   },
@@ -97,7 +97,7 @@
       "mp": 0,
       "jp": 30,
       "band": "0/A",
-      "limits": "single-target item stock and gil"
+      "limits": "single-target item stock"
     },
     {
       "name": "Phoenix Down",
@@ -149,7 +149,7 @@
       "mp": 0,
       "jp": 200,
       "band": "B/C",
-      "limits": "shop-tier gated; not a Band A floor tool"
+      "limits": "availability-tier gated; not a Band A floor tool"
     },
     {
       "name": "Hi-Ether",
@@ -159,7 +159,7 @@
       "mp": 0,
       "jp": 450,
       "band": "C/D",
-      "limits": "deep caster support route; shop-tier gated"
+      "limits": "deep caster support route; availability-tier gated"
     },
     {
       "name": "X-Potion",
@@ -169,12 +169,12 @@
       "mp": 0,
       "jp": 500,
       "band": "D/E",
-      "limits": "late item stock and gil; not Auto-Potion eligible in this pass"
+      "limits": "late item stock; not Auto-Potion eligible in this pass"
     },
     {
       "name": "Quick Draw",
       "kind": "gun_utility",
-      "requires": "gun equipped and gun shop tier unlocked",
+      "requires": "gun equipped and gun availability tier unlocked",
       "pressure_multiplier": 0.7,
       "ct": 0,
       "mp": 0,
@@ -237,7 +237,7 @@
     },
     "chemist_gun_warning_rows": {
       "source": "tools/sim_damage.py with work/sim-inputs-v0.2.1.json",
-      "read": "early gun damage is too high for Band 0/A and is a shop-tier warning, not accepted starter access",
+      "read": "early gun damage is too high for Band 0/A and is an availability-tier warning, not accepted starter access",
       "early_normal_gun": {"plate": 36, "mail": 39, "leather": 37, "cloth": 38},
       "early_quick_draw_0.70": {"plate": 25, "mail": 27, "leather": 26, "cloth": 26},
       "mid_normal_gun": {"plate": 81, "mail": 89, "leather": 85, "cloth": 86},
@@ -268,7 +268,7 @@
   },
   "review_questions": [
     "Are the Squire fixed and setup values low enough to preserve starter texture without making Squire a trap?",
-    "Is Chemist correctly defined as item-first in Band 0/A with guns held to Band B+ shop timing?",
+    "Is Chemist correctly defined as item-first in Band 0/A with guns held to Band B+ availability timing?",
     "Are Potion, First Aid, and Phoenix Down values enough for floor play without creating infinite sustain?",
     "Is the Auto-Potion boundary acceptable for later RSM review, or should Auto-Potion stay entirely out of this producer?",
     "Does Weapon Drill remain narrow enough, or should it be deferred before acceptance?"

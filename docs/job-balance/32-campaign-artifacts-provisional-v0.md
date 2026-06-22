@@ -6,6 +6,7 @@ Depends on:
 - `docs/job-balance/31-campaign-gameplay-validation-v1.md`
 - `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
 - `docs/job-balance/03-job-roster-and-role-map.md`
+- `docs/job-balance/61-jp-boost-removal-decision-v0.md`
 
 ## Purpose
 
@@ -14,11 +15,16 @@ This document instantiates the first provisional campaign artifacts required by
 
 It is not final campaign balance acceptance.
 
-It does not set exact JP costs, exact prerequisites, exact encounter stats, exact equipment prices,
+It does not set exact JP costs, exact prerequisites, exact encounter stats, exact equipment timing,
 or final skill numbers. It creates a structured first pass so GPT and Claude can reason about
 campaign power, floor, ceiling, and detour pressure using the same rows.
 
 ## Artifact Status
+
+Supersession note, 2026-06-22: doc 61 removes `JP Boost` from the mod. Historical rows below
+that framed a `JP Boost` acceleration risk are retained as provenance, but active W4/W9 planning
+must read that risk as fixed-JP ordinary, optimizer, and grind-heavy routing moving deep power into
+earlier encounter bands. Active Squire support identity is `Basic Training`, not a JP accelerator.
 
 | Artifact | Status in this document | Final acceptance state |
 | --- | --- | --- |
@@ -45,19 +51,19 @@ stat blocks.
 | Party | Band | Job-depth overlay | Expected active jobs | Expected build pieces | Floor/ceiling read | Red flags | Verdict |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | P0 naive/thematic | 0 | Squire/Chemist only, near-zero JP. | Ramza/Squire, 2-3 Squires, 1 Chemist. | Basic attacks, basic item use, cheapest starter actions. | Floor row. Should be playable without route knowledge. | First Aid or item recovery too weak makes raw start frustrating; too strong erases attrition. | Provisional pass if starter tools are useful but bounded. |
-| P0 naive/thematic | A | Starter jobs plus visible paths to first specialists. | Ramza/Squire, Chemist, early physical, early caster trainee. | Move +1, basic Items, first cheap Squire/Chemist actions. | Floor row. Player should discover healing/range/magic route naturally. | Missing JP Boost must not punish player; no hidden required support. | Needs future JP envelope. |
+| P0 naive/thematic | A | Starter jobs plus visible paths to first specialists. | Ramza/Squire, Chemist, early physical, early caster trainee. | Move +1, basic Items, first cheap Squire/Chemist actions. | Floor row. Player should discover healing/range/magic route naturally. | No hidden progression support or route may punish the player. | Needs future JP envelope. |
 | P0 naive/thematic | B | First specialist access. | Knight or Archer, White or Black Mage, Chemist/Squire holdover, Ramza flexible. | Basic specialist actions before strong exports. | Floor row. First specialists should feel better even without optimized RSM. | If active jobs are weak until passives are learned, floor fails. | Needs active-job viability rows. |
 | P0 naive/thematic | C | Midgame branch available. | Mixed party with one branch such as Geomancer, Dragoon, Mystic, Orator, or Summoner. | Mostly on-job actions, few cross-job optimizations. | Floor row. Wrong early branch should remain recoverable. | Midgame branch should not require restarting a unit's whole route. | Needs campaign matrix expansion. |
 | P0 naive/thematic | D | Advanced jobs visible but not fully mastered. | One advanced job or strong midgame job; older specialists remain. | Some RSM rewards, but not optimized stack. | Floor row. Thematic parties should become stronger, not obsolete. | If Samurai/Ninja/Time rewards are required, floor fails. | Needs A3 comparison. |
 | P0 naive/thematic | E | Late rewards available if pursued. | Ramza final plus any mix of old specialists and late jobs. | Late job tools may appear, but not mandatory. | Floor row. Older favorite jobs still have rational uses. | Necromancer/Special Knight/Ramza must not be required for viability. | Needs late rows. |
 | P1 balanced | 0 | Squire/Chemist only. | Ramza/Squire, Squire frontline, Squire ranged/utility, Chemist, Squire trainee. | Basic items, basic physical actions. | Baseline reference. | Raw start should not demand perfect item economy. | Provisional pass. |
-| P1 balanced | A | Starter plus first unlock direction. | Ramza, Chemist, physical trainee, caster trainee, ranged/utility trainee. | JP Boost optional, Move +1 useful, Items reliable. | Baseline reference. | JP Boost cannot become mandatory combat support. | Needs JP pacing ledger. |
+| P1 balanced | A | Starter plus first unlock direction. | Ramza, Chemist, physical trainee, caster trainee, ranged/utility trainee. | Fixed-JP routing, Move +1 useful, Items reliable. | Baseline reference. | No support tax can become mandatory for normal progression. | Needs JP pacing ledger. |
 | P1 balanced | B | First specialists. | Knight, Archer, White Mage, Black Mage, Ramza flexible. | One specialist action line per unit; few exports. | Baseline reference. | Archer must not be a dead-end; White/Chemist both matter. | Needs active viability checks. |
 | P1 balanced | C | Midgame branch. | Knight/Monk/Dragoon or Geomancer, Archer/Thief/Orator, White/Time/Mystic, Black/Summoner, Ramza. | Early cross-job secondaries, limited supports. | Baseline reference. | Haste/Chakra/items cannot cover every weakness. | Needs T3/T5/T9/T10 later. |
 | P1 balanced | D | Advanced build crafting. | Samurai or Ninja, Summoner/Time, performer optional, older specialist, Ramza. | One high-value RSM per route, not all. | Baseline reference. | One support or movement cannot become default. | Needs T2/T2.1. |
 | P1 balanced | E | Late integration. | Ramza final, one late job optional, two old specialists, one flex. | Late tools plus specialist anchors. | Baseline reference. | Old jobs must still appear rationally. | Needs Band E matrix. |
 | P5 optimizer rush | 0 | Squire/Chemist only. | Same as P1, but actions chosen for JP route. | Earliest JP-efficient actions. | Ceiling row. | Raw start should not be broken by repetitive safe JP farming. | Needs JP acquisition model. |
-| P5 optimizer rush | A | Rush starter exports. | Multiple Squires/Chemists if JP route rewards them. | JP Boost, Move +1, basic Items, earliest recovery. | Ceiling row. | JP Boost may accelerate all later bands; early Auto-Potion would be dangerous. | W1/W9. |
+| P5 optimizer rush | A | Rush starter exports. | Multiple Squires/Chemists if JP route rewards them. | Fixed-JP optimizer routing, Move +1, basic Items, earliest recovery. | Ceiling row. | Optimizer or grind-heavy fixed-JP routing may accelerate later bands; early Auto-Potion would be dangerous. | W1/W9. |
 | P5 optimizer rush | B | Rush first specialist exports. | Knight shell, Archer/Thief utility, Monk or caster trainee, Chemist/White, Ramza. | Early armor/shield, Concentration/Brawler candidates, Chakra/Revive candidates. | Ceiling row. | Deep secondary on shallow chassis; early strong reaction. | W1/W2/W4. |
 | P5 optimizer rush | C | Rush midgame control/resource branches. | Knight/Monk/Dragoon, Time/Mystic, Geomancer/Orator, Black/Summoner, Ramza. | Haste/Slow, Chakra, Throw Item, Equip Guns/Bow/Polearms candidates, early MP tools. | Ceiling row. | Time snowball, sustain compression, equipment unlock detours. | W2/W3/W6/W9/W10. |
 | P5 optimizer rush | D | Rush advanced RSM. | Ninja/Samurai/Time/Summoner or performer plus Ramza. | Dual Wield, Doublehand, Swiftspell, Teleport, Move +3, Shirahadori/Vanish candidates. | Ceiling row. | Physical/caster/mobility convergence. | W3/W4/W5/W6/W7. |
@@ -80,7 +86,7 @@ band where a piece should be allowed to matter in ordinary play without overgrin
 | Job | Piece or package | Slot | Intended band | Dangerous off-job users | Required gate | Provisional note |
 | --- | --- | --- | --- | --- | --- | --- |
 | Squire | Basic utility actions | Action | 0/A | Any early secondary user. | T2/T3 if recovery. | Starter tools should work immediately but not dominate. |
-| Squire | `JP Boost` | Support | A as campaign convenience | Every unit if pacing acceleration is too high. | A2/A3/T2.1. | Must not be assumed in floor rows. |
+| Squire | `Basic Training` | Support | B/C as Squire action identity | Squire secondary users if it becomes broad damage. | A2/A3/T2.1. | Supersedes the removed `JP Boost` row; Squire/Fundaments-style actions only. |
 | Squire | `Move +1` | Movement | A | Most early units. | T2.1. | Healthy early mobility floor, not late default. |
 | Chemist | Basic Items/Phoenix Down | Action | 0/A/B | Any low-Faith or emergency-support build. | T3/T3xT5. | Reliable early recovery; cost/range matter. |
 | Chemist | `Throw Item` | Support | B/C | Any support unit. | T2.1/T3. | Should be commitment, not free positioning erasure. |
@@ -132,14 +138,14 @@ Shared master insight:
 ```text
 optimizer-realistic stacks are the real design problem;
 grind-only stacks are warnings but are partly self-limiting;
-JP Boost is the meta-breakpoint because it can convert grind-only depth into optimizer-realistic
-depth.
+fixed-JP routing is the meta-breakpoint because ordinary, optimizer, or grind-heavy paths can make
+deep job depth practical earlier than intended.
 ```
 
 | Band | Strongest reachable optimizer stack, GPT first pass | Reachability | Likely breakpoints | Provisional verdict |
 | --- | --- | --- | --- | --- |
 | 0 | Ramza/Squire, Squire attackers, one Chemist or item-heavy starter support. | Floor/optimizer mostly same. | Auto-Potion would be the only true Band 0 break if reachable here. Safe JP-farming loops also need watching. | No full-package risk if Auto-Potion is not reachable. Floor must remain smooth. |
-| A | Multiple Squire/Chemist routes to acquire `JP Boost`, `Move +1`, basic Items, and first specialist prerequisites. | Optimizer-realistic. | `JP Boost` pacing acceleration is the line-mover. Auto-Potion in Band A would be a major floor-warping break. | Main risk is campaign acceleration; Auto-Potion should not be ordinary Band A power. |
+| A | Multiple Squire/Chemist routes to acquire `Move +1`, basic Items, early Squire/Chemist utility, and first specialist prerequisites. | Optimizer-realistic. | Fixed-JP progression rush is the line-mover. Auto-Potion in Band A would be a major floor-warping break. | Main risk is campaign acceleration; Auto-Potion should not be ordinary Band A power. |
 | B | Durable Knight body carrying Monk damage secondary, Archer range, White/Black support/offense, Ramza flexible. | Optimizer-realistic if first specialists unlock normally. | Knight + Monk secondary can compress damage onto a durable chassis. Early `Brawler`, `Concentration`, `Equip Armor`, `Equip Shield`, or Doublehand would compound it. | Damage compression begins here. Full damage+sustain+revive compression shifts to Band C once Chakra/Revive are available. |
 | C | Durable frontline with Protect/Shell/plate/shield/Parry-style stack, Time controller, Summoner/Black area or burst, Orator/Archer utility, Ramza hybrid. | Optimizer-realistic with moderate route knowledge. | Mitigation stack is the scariest low-JP break; Time Haste/Quick and Summoner target count are the next layer. | First high-priority campaign stress row is T6xPS mitigation, not late physical damage. |
 | D | Ninja or Samurai physical engine, Time/Summoner caster, Bard/Dancer optional global support, older specialist or Dragoon, Ramza strong hybrid. | Optimizer-realistic if advanced jobs open here; grind-only if reached during Band C encounters. | Dual Wield, Doublehand, Attack Boost/Brawler/Concentration, Swiftspell, Teleport, Move +3, Shirahadori, Vanish, performance global value. | Highest convergence band; must be guarded by T2/T10/T11/T6xPS. |
@@ -151,8 +157,8 @@ depth.
    sustain, and early area/control can stack before Samurai/Ninja engines arrive.
 2. The first campaign stress row should be mitigation-stack immunity: plate/shield plus
    Protect/Shell and a defensive reaction against ordinary offense.
-3. The second campaign stress row should be JP Boost acceleration: with and without JP Boost, does
-   Band C depth become realistic during Band B encounters?
+3. The second campaign stress row should be fixed-JP progression rush: under ordinary, optimizer,
+   and grind-heavy routing, does Band C depth become realistic during Band B encounters?
 4. The third campaign stress row should be Knight-body plus Monk-secondary full-package pressure.
 5. The fourth campaign stress row should be Time action economy: Haste/Quick window versus loop.
 6. The fifth campaign stress row should be physical support convergence: Dual Wield, Doublehand,
@@ -169,7 +175,7 @@ depth.
 
 | Job | Detour pressure | Main export risk | Why | Mitigation to validate |
 | --- | --- | --- | --- | --- |
-| Squire | High early; `JP Boost` remains Critical as pacing distortion. | `JP Boost`, `Move +1`. | `JP Boost` has low late combat value but can move deep job power into earlier encounter bands. Early mobility is broadly attractive. | JP Boost outside floor rows; with/without JP Boost pacing rows; Move +1 outclassed later. |
+| Squire | High early; fixed-JP routing remains Critical as pacing distortion. | `Basic Training`, `Move +1`. | `Basic Training` preserves Squire action identity, while ordinary/optimizer/grind-heavy routing can still move deep job power into earlier encounter bands. Early mobility is broadly attractive. | Basic Training kept narrow; fixed-JP pacing rows; Move +1 outclassed later. |
 | Chemist | High. | `Auto-Potion`, `Throw Item`, `Item Lore`. | Reliable sustain is universally useful. | T3/T2.1, item cost/range, no free best-potion loop. |
 | Knight | Medium/high. | `Equip Armor`, `Equip Shield`, `Parry`. | Fixes fragility and stacks with mitigation. | T6xPS/T4/T2.1; active Knight must matter. |
 | Archer | Medium/high. | `Concentration`, `Equip Bow`. | Accuracy/range can patch many builds. | Bound by weapon/action type; Archer remains best bow shell. |
@@ -202,7 +208,7 @@ encounters or fully pinned synthetic stat blocks before final numeric acceptance
 | GCV-SYN-B-PLATE | synthetic_placeholder | B | plate-heavy enemies | Tests whether crush/guard pressure matters without being mandatory. | F5/T6xT7. | Not final. |
 | GCV-SYN-B-MONK-SECONDARY | synthetic_placeholder | B | durable body plus sustain pressure | Tests Knight-body plus Monk-secondary damage/sustain/revive compression. | T3/T3xT5/F5/T2.1. | Not final. |
 | GCV-SYN-B-LEATHER-SKIRM | synthetic_placeholder | B | leather skirmishers | Tests Archer/Thief/caster reliability against speed/evasion. | T4/T5. | Not final. |
-| GCV-SYN-A-JP-ACCEL | synthetic_placeholder | A/B | JP acceleration pacing | Tests with and without `JP Boost` to see whether deeper job depth becomes optimizer-realistic early. | A2/A3/T2.1. | Not final. |
+| GCV-SYN-A-PROGRESSION-RUSH | synthetic_placeholder | A/B | fixed-JP progression pacing | Tests ordinary, optimizer, and grind-heavy fixed-JP routing to see whether deeper job depth becomes optimizer-realistic early. | A2/A3/T2.1. | Supersedes `GCV-SYN-A-JP-ACCEL`; not final. |
 | GCV-SYN-C-MAIL | synthetic_placeholder | C | mail-heavy enemies | Tests thrust/missile demand and Dragoon/Thief/Archer roles. | F5/T4. | Not final. |
 | GCV-SYN-C-MITIGATION-STACK | synthetic_placeholder | C | mitigation stack | Tests plate/shield plus Protect/Shell plus defensive reaction against ordinary offense. | T6xPS/T4/T2.1. | Not final. |
 | GCV-SYN-C-CASTER | synthetic_placeholder | C | cloth caster pressure | Tests anti-magic, Silence, guns, and rushing fragile casters. | F4/T9/T8xSR. | Not final. |
@@ -266,7 +272,7 @@ Review notes:
   avoid early convergence;
 - A3 accepted as reconciled for provisional planning, with final ceiling evidence still requiring a
   later row-by-row dual-independent pass;
-- A4 accepted provisionally, with Orator Brave/Faith propagation and `JP Boost` pacing distortion
-  marked as explicit follow-up risks;
+- A4 accepted provisionally, with Orator Brave/Faith propagation and fixed-JP progression rush
+  marked as explicit follow-up risks after doc 61 supersession;
 - A5 synthetic placeholders accepted as provisional only; final numeric acceptance remains blocked
   until named IVC or pinned synthetic anchors exist.
