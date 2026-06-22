@@ -1,0 +1,21 @@
+docs/reference/README.md
+  s_fce6b25a5764ca::t_99a17496f3a50d 3
+docs/job-balance/12-vanilla-skill-status-reference.md
+  s_fce6b25a5764ca::t_99a17496f3a50d 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "7d627940ef8f539433367f9032735d01ec35abcc",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
