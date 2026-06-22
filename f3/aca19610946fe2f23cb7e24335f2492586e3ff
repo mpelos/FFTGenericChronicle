@@ -1,0 +1,21 @@
+docs/job-balance/62-w4-t21-populated-incidence-plan-v0.md
+  s_fce6b25a5764ca::t_8eb5141ed77abd 1-2,4-119,181-197,206-327,332-505
+  s_fce6b25a5764ca::t_af9be9b28d2991 120-180,198-205,328-331
+  s_fce6b25a5764ca::t_1656fd413b9f18 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "f3aca19610946fe2f23cb7e24335f2492586e3ff",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
