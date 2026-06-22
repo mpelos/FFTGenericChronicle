@@ -1,0 +1,174 @@
+{
+  "artifact": "campaign_journey_bundle_v0",
+  "status": "accepted_w2_provisional_campaign_journey_bundle",
+  "date": "2026-06-21",
+  "depends_on": [
+    "docs/job-balance/12-vanilla-skill-status-reference.md",
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/32-campaign-artifacts-provisional-v0.md",
+    "docs/job-balance/47-campaign-validation-readiness-v0.md",
+    "docs/job-balance/49-vanguard-rename-decision-v0.md",
+    "docs/reference/fft-vanilla-ability-effect-index.md",
+    "docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md",
+    "docs/reference/fft-vanilla-command-skillset-effect-map.md",
+    "docs/reference/fft-vanilla-status-effect-map.md",
+    "docs/job-balance/50-campaign-journey-bundle-v0.md"
+  ],
+  "scope": {
+    "work_package": "W2",
+    "produces": ["A1_party_matrix", "A3_gpt_ceiling_stack", "A5_pinned_synthetic_anchors"],
+    "party_frame": "Ramza plus four generic characters",
+    "does_not_finalize": [
+      "campaign_pass_fail",
+      "final_JP_costs",
+      "final_prerequisites",
+      "final_equipment_timing",
+      "physical_foundation_action_values",
+      "reaction_support_movement_values",
+      "formula_v1_numeric_outcomes"
+    ]
+  },
+  "vanilla_atlas_consultation": {
+    "trust_boundary": "consultation palette and completeness check only, not byte-accurate formula data",
+    "effect_tags_checked": [
+      "physical",
+      "damage",
+      "defense",
+      "equipment_break",
+      "equipment_unlock",
+      "reaction",
+      "support",
+      "magical",
+      "aoe",
+      "elemental",
+      "ct_action",
+      "mp",
+      "global",
+      "timing",
+      "healing",
+      "revive",
+      "drain",
+      "status_clear",
+      "undead",
+      "status_add",
+      "brave_up",
+      "brave_down",
+      "faith_up",
+      "faith_down",
+      "instant_ko",
+      "recruit",
+      "movement",
+      "jump",
+      "terrain",
+      "throw",
+      "steal"
+    ],
+    "statuses_checked": [
+      "Protect",
+      "Shell",
+      "Haste",
+      "Slow",
+      "Stop",
+      "Reflect",
+      "Silence",
+      "Faith",
+      "Atheist",
+      "Oil",
+      "Poison",
+      "Regen",
+      "Reraise",
+      "Undead",
+      "KO",
+      "Jump",
+      "Performing",
+      "Invisible",
+      "Charm",
+      "Confuse",
+      "Berserk",
+      "Toad",
+      "Sleep",
+      "Stone",
+      "Blind",
+      "Darkness",
+      "Doom",
+      "Death Sentence",
+      "Immobilize",
+      "Don't Move",
+      "Don't Act",
+      "Float",
+      "Disable"
+    ],
+    "status_interaction_notes": [
+      {
+        "status": "Blind/Darkness",
+        "interaction": "accuracy denial touches weapon viability and the P2 physical wall test"
+      },
+      {
+        "status": "Doom/Death Sentence",
+        "interaction": "countdown KO touches nonlethal finisher design and boss-resist rows"
+      },
+      {
+        "status": "Immobilize/Don't Move and Disable/Don't Act",
+        "interaction": "movement lock and action lock are separate denial surfaces for the P4 control/sustain row"
+      },
+      {
+        "status": "Float",
+        "interaction": "terrain bypass and earth immunity touch vertical, Geomancer, and map-texture rows"
+      }
+    ]
+  },
+  "band_envelopes": [
+    {"band": "0", "level": "1-3", "learned_depth": "starter actions only", "equipment": "opening gear", "floor_constraint": "no JP Boost or optimized detours"},
+    {"band": "A", "level": "3-7", "learned_depth": "one shallow starter route", "equipment": "first shop tier", "floor_constraint": "P0 can miss JP Boost"},
+    {"band": "B", "level": "7-14", "learned_depth": "one active specialist per unit", "equipment": "basic specialist weapons and armor", "floor_constraint": "active jobs matter before exports"},
+    {"band": "C", "level": "14-24", "learned_depth": "two routes and one modest RSM", "equipment": "midgame armor and common weapons", "floor_constraint": "no complete damage sustain control package"},
+    {"band": "D", "level": "24-36", "learned_depth": "two to three routes and one premium RSM", "equipment": "late non-premium equipment", "floor_constraint": "multiple routes compete"},
+    {"band": "E", "level": "36+", "learned_depth": "late rewards and final Ramza", "equipment": "late equipment with premium checks pending", "floor_constraint": "older specialists remain rational"}
+  ],
+  "a5_anchors": [
+    {"id": "GCV-PIN-00-RAW-MIXED", "band": "0", "unit_count": 4, "level_delta": "+0/+1", "profile": "2 leather melee, 1 weak ranged, 1 item support; no hard status or AoE", "question": "raw Squire/Chemist survivability"},
+    {"id": "GCV-PIN-A-PHYSICAL", "band": "A", "unit_count": 5, "level_delta": "+0/+1", "profile": "3 leather melee, 1 early shield body, 1 ranged chip", "question": "starter recovery and positioning"},
+    {"id": "GCV-PIN-A-JP-ACCEL", "band": "A/B", "unit_count": 5, "level_delta": "+0/+1", "profile": "A physical profile under with/without JP Boost envelopes", "question": "JP Boost acceleration"},
+    {"id": "GCV-PIN-B-FIRST-SPECIALIST", "band": "B", "unit_count": 5, "level_delta": "+0/+2", "profile": "plate captain, 2 leather skirmishers, cloth caster, ranged unit", "question": "first specialist active value"},
+    {"id": "GCV-PIN-B-MONK-SECONDARY", "band": "B", "unit_count": 5, "level_delta": "+1/+2", "profile": "2 durable melee, evasive leather, support, ranged", "question": "early physical full-package compression"},
+    {"id": "GCV-PIN-C-MITIGATION-STACK", "band": "C", "unit_count": 6, "level_delta": "+1/+3", "profile": "2 plate, 1 mail, White/Time support, archer, skirmisher", "question": "mitigation stack immunity"},
+    {"id": "GCV-PIN-C-CASTER-STATUS", "band": "C", "unit_count": 5, "level_delta": "+0/+2", "profile": "2 cloth casters, Mystic/Orator status, guard, ranged interrupter", "question": "Faith and status counterplay"},
+    {"id": "GCV-PIN-C-VERTICAL-MAIL", "band": "C", "unit_count": 5, "level_delta": "+1/+2", "profile": "vertical terrain with 2 mail targets, high-ground ranged, mobile leather, caster", "question": "height and weapon-family texture"},
+    {"id": "GCV-PIN-D-CLUSTER-AREA", "band": "D", "unit_count": 6, "level_delta": "+1/+3", "profile": "clustered mixed armor with protection support", "question": "area and global throughput"},
+    {"id": "GCV-PIN-D-SPREAD-RANGED", "band": "D", "unit_count": 6, "level_delta": "+0/+2", "profile": "spread ranged and fast pressure with blockers", "question": "interruption and mobility convergence"},
+    {"id": "GCV-PIN-D-LONG-FIGHT", "band": "D", "unit_count": 7, "level_delta": "+1/+3", "profile": "mixed armor, sustain/control pieces, reinforcement-like durable bodies", "question": "long attrition sustain and MP economy"},
+    {"id": "GCV-PIN-E-BOSS-RESIST", "band": "E", "unit_count": 5, "level_delta": "boss +4, adds +0/+2", "profile": "status-resistant boss plus mixed adds", "question": "late replacement and final Ramza pressure"},
+    {"id": "GCV-PIN-E-UNDEAD-CORPSE", "band": "E", "unit_count": 6, "level_delta": "+1/+3", "profile": "3 undead/corpse-relevant, 2 living guards, support caster", "question": "Necromancer corpse and revive inversion"}
+  ],
+  "a1_rows": [
+    {"party": "P0", "bands": ["0", "A", "B", "C", "D", "E"], "role": "floor", "core_constraint": "non-optimized route with Ramza plus four generics, no hidden JP Boost dependency"},
+    {"party": "P1", "bands": ["0", "A", "B", "C", "D", "E"], "role": "baseline", "core_constraint": "balanced FFT reference party with active specialists before export dominance"},
+    {"party": "P5", "bands": ["0", "A", "B", "C", "D", "E"], "role": "ceiling", "core_constraint": "optimizer rush checks JP Boost, early full package, and late convergence"},
+    {"party": "P2", "bands": ["B", "C", "D", "E"], "role": "physical-heavy wall test", "core_constraint": "physical route viable without sword-only or universal physical support dominance"},
+    {"party": "P3", "bands": ["B", "C", "D", "E"], "role": "caster-heavy wall test", "core_constraint": "caster route pays CT MP Faith Shell Reflect and fragility costs"},
+    {"party": "P4", "bands": ["C", "D", "E"], "role": "control-sustain wall test", "core_constraint": "control and sustain win through planning, not immunity or denial locks"},
+    {"party": "P6", "bands": ["D", "E"], "role": "performer parity wall test", "core_constraint": "Bard and Dancer RSM parity holds while actions differ"}
+  ],
+  "a3_gpt_ceiling_stack": [
+    {"band": "0", "stack": ["Ramza/Squire", "Squire melee", "Squire ranged utility", "Chemist", "Squire trainee"], "reachability": "floor-realistic", "breakpoints": ["Auto-Potion too early", "safe JP loop", "Ramza self-buff snowball", "Chemist throw-range safety"]},
+    {"band": "A", "stack": ["Ramza/Squire", "Chemist", "Squire JP Boost route", "early specialist fished by JP Boost such as Monk Chakra or White Cure", "trainee"], "reachability": "optimizer-realistic", "breakpoints": ["JP Boost acceleration into first specialist", "early Auto-Potion"]},
+    {"band": "B", "stack": ["Ramza flexible", "Knight body", "Monk primary sustain/damage engine with Archer as lower-ceiling alternate", "White Mage", "Black Mage"], "reachability": "optimizer-realistic if first specialist unlocks are ordinary", "breakpoints": ["Knight-body durability plus Monk Chakra/Punch Art compression", "early Archer/White compression"]},
+    {"band": "C", "stack": ["Ramza hybrid", "Knight/Monk or Dragoon frontline", "Time/Mystic controller", "Summoner/Black area", "Orator/Geomancer utility"], "reachability": "optimizer-realistic", "breakpoints": ["mitigation stack", "Haste/Slow", "Chakra/Items", "Belief/Oil setup seeds"]},
+    {"band": "D", "stack": ["Ramza chapter hybrid", "Ninja or Samurai engine", "Time/Summoner caster", "Bard/Dancer support", "Dragoon/Archer/White flex"], "reachability": "optimizer-realistic late; grind-only if forced early", "breakpoints": ["Dual Wield", "Doublehand", "Swiftspell", "Quick", "Teleport", "Move +3", "Shirahadori", "Vanish", "Dancer global stat-down"]},
+    {"band": "E", "stack": ["final Ramza", "Vanguard", "Necromancer", "Ninja/Samurai engine", "Time/Summoner/White/Bard flex"], "reachability": "optimizer-realistic late", "breakpoints": ["late replacement overreach", "corpse-state dominance", "Reraise/Arise sustain loops", "premium equipment", "Knight Sword access"]}
+  ],
+  "ramza_dominance_rows": [
+    {"band": "0/A", "protected": ["Squire", "Chemist"], "expectation": "Ramza flexible but not only good starter or item user"},
+    {"band": "B", "protected": ["Knight", "Archer", "White Mage", "Black Mage"], "expectation": "Ramza supports or flexes; specialists own their lanes"},
+    {"band": "C", "protected": ["Time Mage", "Mystic", "Geomancer", "Dragoon", "Orator"], "expectation": "Ramza bridges lanes without being best control/frontline/caster at once"},
+    {"band": "D", "protected": ["Samurai", "Ninja", "Summoner", "Bard", "Dancer"], "expectation": "Ramza remains strong but still needs planned build pieces"},
+    {"band": "E", "protected": ["Vanguard", "Necromancer", "older specialists"], "expectation": "final Ramza top-tier broad but not ornamentalizing late or old specialists"}
+  ],
+  "review_request": [
+    "Are the pinned synthetic A5 anchors specific enough for W2 planning?",
+    "Does A1 cover P0/P1/P5 across 0-E plus P2/P3/P4/P6 wall tests?",
+    "Does the GPT A3 ceiling stack miss a stronger plausible stack?",
+    "Do Ramza rows preserve specialist protection?",
+    "Did W2 avoid premature pass/fail claims?"
+  ]
+}
