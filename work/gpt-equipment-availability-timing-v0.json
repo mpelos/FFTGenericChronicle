@@ -1,0 +1,209 @@
+{
+  "schema_version": "equipment-availability-timing-v0",
+  "status": "accepted_w3_equipment_availability_timing_provisional",
+  "date": "2026-06-22",
+  "source_docs": [
+    "docs/job-balance/31-campaign-gameplay-validation-v1.md",
+    "docs/job-balance/50-campaign-journey-bundle-v0.md",
+    "docs/job-balance/51-progression-and-build-input-ledger-v0.md",
+    "docs/job-balance/52-squire-chemist-concrete-v0.md",
+    "docs/job-balance/53-knight-archer-concrete-v0.md",
+    "docs/job-balance/54-monk-thief-concrete-v0.md",
+    "docs/job-balance/55-orator-dragoon-concrete-v0.md",
+    "docs/job-balance/56-samurai-ninja-concrete-v0.md",
+    "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+    "docs/job-balance/58-physical-foundation-rsm-concrete-v0.md",
+    "docs/formula-balance/01-principles.md",
+    "docs/formula-balance/11-validated-policy-v0.2.md"
+  ],
+  "external_fallback_references": [
+    {
+      "label": "GameFAQs PS Shop Guide by SMaxson",
+      "url": "https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/30462",
+      "use": "fallback shop-category and representative availability texture only"
+    },
+    {
+      "label": "GameFAQs WotL Equipment List by just_call_me_ash",
+      "url": "https://gamefaqs.gamespot.com/psp/937312-final-fantasy-tactics-the-war-of-the-lions/faqs/76070/equipment-list",
+      "use": "fallback outfitter categories only"
+    },
+    {
+      "label": "GameFAQs WotL Weapons section by just_call_me_ash",
+      "url": "https://gamefaqs.gamespot.com/psp/937312-final-fantasy-tactics-the-war-of-the-lions/faqs/76070/weapons",
+      "use": "fallback family availability examples only"
+    }
+  ],
+  "scope_policy": {
+    "adds_new_equipment": false,
+    "changes_prices_or_gil": false,
+    "changes_gil_rewards": false,
+    "changes_shop_economy": false,
+    "changes_equipment_values": false,
+    "changes_formula_bundle": false,
+    "item_level_records_authoritative": false,
+    "shop_stock_reward_timing_authoritative": false,
+    "availability_claims_t1_pending": true,
+    "fallback_references_authoritative_for_ivc": false
+  },
+  "practically_online_conditions": {
+    "native_identity": [
+      "active job plausibly available",
+      "job can equip existing family natively",
+      "existing family has provisional campaign availability route",
+      "inventory state supports ordinary use without changing prices, rewards, or economy"
+    ],
+    "export_identity": [
+      "donor job plausibly available",
+      "support ability plausibly learned and equipped",
+      "receiving job has a build reason to spend support slot",
+      "existing family has provisional campaign availability route",
+      "inventory state supports ordinary use without changing prices, rewards, or economy"
+    ]
+  },
+  "family_timing": [
+    {
+      "family": "heavy_armor",
+      "native_identity": ["Knight", "Vanguard"],
+      "export_piece": "Equip Armor",
+      "doc51_target_band": "C",
+      "practical_online_band": "C",
+      "availability_read": "existing shop family across campaign tiers",
+      "boundary": "changes armor class only; no price edits; cloth/leather fragility must matter first",
+      "required_gates": ["T2.1", "T6xPS", "F5"]
+    },
+    {
+      "family": "shield",
+      "native_identity": ["Knight", "shield-frontline bodies"],
+      "export_piece": "Equip Shield",
+      "doc51_target_band": "C",
+      "practical_online_band": "C",
+      "availability_read": "existing shop family across campaign tiers",
+      "boundary": "no price edits; no free mitigation layer; check evasion stacks",
+      "required_gates": ["T2.1", "T4", "T6xPS"]
+    },
+    {
+      "family": "bow_crossbow",
+      "native_identity": ["Archer"],
+      "export_piece": "Equip Bow",
+      "doc51_target_band": "C",
+      "practical_online_band": "C",
+      "availability_read": "ordinary existing ranged weapon route",
+      "boundary": "no guns; active Archer owns Band B ranged identity first",
+      "required_gates": ["T2.1", "F5", "T4"]
+    },
+    {
+      "family": "gun",
+      "native_identity": ["Chemist", "Orator"],
+      "export_piece": "Equip Guns",
+      "doc51_target_band": "C/D",
+      "practical_online_band": "D for export; C only for native or job-specific rows if proven",
+      "availability_read": "existing narrow shop texture; PA-independent pressure in current bundle",
+      "boundary": "no price edits; high-risk low-stat damage patch",
+      "required_gates": ["T2.1", "F5", "T4"]
+    },
+    {
+      "family": "polearm",
+      "native_identity": ["Dragoon"],
+      "export_piece": "Equip Polearms",
+      "doc51_target_band": "C/D",
+      "practical_online_band": "C/D",
+      "availability_read": "existing reach weapon route with vertical/thrust-map relevance",
+      "boundary": "no price edits; Dragoon remains spear home before export",
+      "required_gates": ["T2.1", "F5", "T4", "T5"]
+    },
+    {
+      "family": "katana",
+      "native_identity": ["Samurai"],
+      "export_piece": "Equip Katana",
+      "doc51_target_band": "D",
+      "practical_online_band": "D",
+      "availability_read": "existing trade-city/shop texture; Samurai and Brave-linked depth are pacing gates",
+      "boundary": "no price edits; export route cannot make Samurai only a support stop",
+      "required_gates": ["T2.1", "F5", "T4"]
+    },
+    {
+      "family": "knight_sword",
+      "native_identity": ["Vanguard", "final Ramza where applicable"],
+      "export_piece": "Equip Knight Swords",
+      "doc51_target_band": "E",
+      "practical_online_band": "E",
+      "availability_read": "premium or irregular existing equipment route, not normal shop family in fallback references",
+      "boundary": "no price edits; optional and cuttable if sword dominance returns",
+      "required_gates": ["T2.1", "F5", "T6xPS"]
+    },
+    {
+      "family": "ninja_blade",
+      "native_identity": ["Ninja"],
+      "export_piece": "active Ninja innate two-hit; learned Dual Wield separate",
+      "doc51_target_band": "D/E",
+      "practical_online_band": "D native; D/E learned engine",
+      "availability_read": "existing advanced weapon family",
+      "boundary": "no price edits; learned Dual Wield spends support and cannot stack with another support",
+      "required_gates": ["T2.1", "F5", "T4"]
+    },
+    {
+      "family": "throw_inventory",
+      "native_identity": ["Ninja"],
+      "export_piece": "Throw Mastery",
+      "doc51_target_band": "D/E",
+      "practical_online_band": "D ordinary route; E premium categories",
+      "availability_read": "uses existing inventory categories",
+      "boundary": "no new thrown items; no price edits; high-impact categories require inventory-pressure rows",
+      "required_gates": ["T4", "T9", "F5", "T2.1"]
+    },
+    {
+      "family": "consumables",
+      "native_identity": ["Chemist"],
+      "export_piece": "Throw Item, Item Lore, Auto-Potion",
+      "doc51_target_band": "A/B and C",
+      "practical_online_band": "0/A basic item actions; C sustain exports",
+      "availability_read": "basic item floor exists; stronger item tiers are availability facts, not tuning levers",
+      "boundary": "no price edits; Auto-Potion Potion-only 30 HP, post-damage survivor-only, no Hi/X-Potion, no Item Lore",
+      "required_gates": ["T3", "T3xT5", "T9", "T2.1"]
+    },
+    {
+      "family": "tactical_reequip",
+      "native_identity": ["Chemist utility"],
+      "export_piece": "Reequip",
+      "doc51_target_band": "C/D",
+      "practical_online_band": "C/D",
+      "availability_read": "uses existing spare inventory only",
+      "boundary": "no price edits; final behavior deferred; no free optimizer loop",
+      "required_gates": ["T2.1", "equipment_timing"]
+    }
+  ],
+  "native_before_export_rules": {
+    "bow_crossbow": "Archer must have useful Band B active ranged role before non-Archers borrow bows.",
+    "polearm": "Dragoon must have useful Jump/reach play before non-Dragoons build around spears.",
+    "katana": "Samurai must have active katana/Iaido value before Equip Katana is a generic route.",
+    "gun": "Orator and Chemist gun texture must not turn into universal low-stat damage patch.",
+    "heavy_armor_shield": "Knight and Vanguard-style durability must not become default patch for every fragile build.",
+    "knight_sword": "Premium sword access must not recreate late-game sword monopoly.",
+    "ninja_blade_two_hit": "Active Ninja may be strong, but learned Dual Wield cannot become the only rational physical engine."
+  },
+  "required_w4_rows": [
+    "Band C armor/shield route",
+    "Band C bow route",
+    "Band C/D gun route",
+    "Band C/D polearm route",
+    "Band D katana route",
+    "Band D/E dual-wield route",
+    "Band D/E Throw route",
+    "Band E knight-sword route",
+    "Band C consumable route"
+  ],
+  "open_follow_up": [
+    "capture verified IVC item/equipment records through T1",
+    "replace fallback examples with IVC-authoritative family availability",
+    "draft prerequisite-tree and JP-cost producer",
+    "populate W4/T2.1 incidence using practical-online bands",
+    "re-run W5/F5 for jobs whose real equipment profile changes"
+  ],
+  "claude_review_request": [
+    "Are the no-new-equipment and no-gil/price-edit constraints strict enough?",
+    "Does family/tier abstraction avoid pretending we have verified IVC item data?",
+    "Do practical-online bands preserve native job identity before exports?",
+    "Are Equip Guns and Equip Knight Swords delayed enough?",
+    "Is this sufficient input for the prerequisite-tree and JP-cost draft?"
+  ]
+}
