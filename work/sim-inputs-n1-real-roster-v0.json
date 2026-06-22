@@ -1,0 +1,545 @@
+{
+  "schema_version": "n1_real_roster_extension_v0",
+  "artifact": "N1 Real-Roster Simulation Extension V0",
+  "status": "accepted_by_claude_review",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "source_formula_bundle_version": "sim-inputs-v0.2.1",
+  "parent_bundle_sha256": "d57c4688b2c1f656ad0094cdfc47564dec87f62b671c845b619aecb5ae6a8c95",
+  "source_formula_bundle_policy": "Read formula constants, families, armor response, magic, RSM constants, and stress engines from parent only; this N1 file carries roster profiles only.",
+  "source_documents": [
+    "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+    "docs/job-balance/62-w4-t21-populated-incidence-plan-v0.md",
+    "docs/job-balance/63-w4-t21-populated-incidence-v0.md"
+  ],
+  "source_files": {
+    "vanguard_ramza_concrete_json": {
+      "path": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "status": "accepted_w3_vanguard_ramza_concrete_provisional",
+      "sha256": "e04fc2f98c4b215fc32aea4303b01dc56454ffa72db71cec137a62fd356aeb8c"
+    }
+  },
+  "scope_boundaries": [
+    "No formula constants.",
+    "No copied family data.",
+    "No copied armor-response data.",
+    "No rsm_constants block.",
+    "No stress_engines block.",
+    "No JP Boost multiplier.",
+    "No Gil or economy fields.",
+    "No new equipment records."
+  ],
+  "profile_policy": {
+    "purpose": "W5/F5 real-roster party/build selection, not final data-mod implementation records.",
+    "ramza_profile_by_band": {
+      "0": "Ramza Chapter 1",
+      "A": "Ramza Chapter 1",
+      "B": "Ramza Chapter 2",
+      "C": "Ramza Chapter 3",
+      "D": "Ramza Chapter 3",
+      "E": "Ramza Chapter 4"
+    },
+    "late_replacement_profiles": {
+      "Vanguard": [
+        "E"
+      ]
+    },
+    "w5_selection_rule": "Construct explicit scenarios from these profiles; do not infer Ramza/Vanguard through generic job growth or the parent jobs table.",
+    "vanguard_ai_assumption": "N3 carry-forward: W5 may model Decisive Strike setup payoff only as an AI-behavior assumption, not as proven enemy/player routing."
+  },
+  "real_roster_profiles": {
+    "Ramza Chapter 1": {
+      "kind": "unique_protagonist_chapter_profile",
+      "source": "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+      "source_json": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "source_profile_key": "chapter_1",
+      "online_bands": [
+        "0",
+        "A"
+      ],
+      "stats": {
+        "hp": 150,
+        "pa": 4,
+        "ma": 4,
+        "spd": 6
+      },
+      "defense_proxy": {
+        "primary_armor_class": "leather",
+        "status": "W5 simulation assumption only; doc57 does not finalize Ramza equipment class.",
+        "stress_armor_classes": []
+      },
+      "native_families_this_pass": [
+        "sword"
+      ],
+      "native_knight_sword": false,
+      "native_staff_rod_pole_ma_crush": false,
+      "actions_available": [
+        {
+          "chapter": 1,
+          "name": "Squire fundamentals",
+          "kind": "inherited_squire_values",
+          "source": "docs/job-balance/52-squire-chemist-concrete-v0.md",
+          "jp": "inherited"
+        },
+        {
+          "chapter": 1,
+          "name": "Tailwind",
+          "kind": "self_ct",
+          "ct_gain": 8,
+          "target": "self",
+          "per_target_round_cap": 1,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Speed stat, no ally Rally replacement"
+        }
+      ]
+    },
+    "Ramza Chapter 2": {
+      "kind": "unique_protagonist_chapter_profile",
+      "source": "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+      "source_json": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "source_profile_key": "chapter_2",
+      "online_bands": [
+        "B"
+      ],
+      "stats": {
+        "hp": 280,
+        "pa": 8,
+        "ma": 7,
+        "spd": 7
+      },
+      "defense_proxy": {
+        "primary_armor_class": "leather",
+        "status": "W5 simulation assumption only; doc57 does not finalize Ramza equipment class.",
+        "stress_armor_classes": []
+      },
+      "native_families_this_pass": [
+        "sword"
+      ],
+      "native_knight_sword": false,
+      "native_staff_rod_pole_ma_crush": false,
+      "actions_available": [
+        {
+          "chapter": 1,
+          "name": "Squire fundamentals",
+          "kind": "inherited_squire_values",
+          "source": "docs/job-balance/52-squire-chemist-concrete-v0.md",
+          "jp": "inherited"
+        },
+        {
+          "chapter": 1,
+          "name": "Tailwind",
+          "kind": "self_ct",
+          "ct_gain": 8,
+          "target": "self",
+          "per_target_round_cap": 1,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Speed stat, no ally Rally replacement"
+        },
+        {
+          "chapter": 2,
+          "name": "Steel",
+          "kind": "brave_up",
+          "brave_delta": 6,
+          "brave_cap": 80,
+          "duration": "battle-scoped",
+          "target": "self or one ally",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "weaker than Orator Praise"
+        },
+        {
+          "chapter": 2,
+          "name": "Chant",
+          "kind": "sacrifice_heal",
+          "ally_heal": 35,
+          "ramza_hp_cost": 15,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no revive, no status clear, no Faith scaling"
+        }
+      ]
+    },
+    "Ramza Chapter 3": {
+      "kind": "unique_protagonist_chapter_profile",
+      "source": "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+      "source_json": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "source_profile_key": "chapter_3_mid",
+      "online_bands": [
+        "C",
+        "D"
+      ],
+      "stats": {
+        "hp": 308,
+        "pa": 9,
+        "ma": 8,
+        "spd": 7
+      },
+      "defense_proxy": {
+        "primary_armor_class": "leather",
+        "status": "W5 simulation assumption only; doc57 does not finalize Ramza equipment class.",
+        "stress_armor_classes": [
+          "mail"
+        ]
+      },
+      "native_families_this_pass": [
+        "sword"
+      ],
+      "native_knight_sword": false,
+      "native_staff_rod_pole_ma_crush": false,
+      "actions_available": [
+        {
+          "chapter": 1,
+          "name": "Squire fundamentals",
+          "kind": "inherited_squire_values",
+          "source": "docs/job-balance/52-squire-chemist-concrete-v0.md",
+          "jp": "inherited"
+        },
+        {
+          "chapter": 1,
+          "name": "Tailwind",
+          "kind": "self_ct",
+          "ct_gain": 8,
+          "target": "self",
+          "per_target_round_cap": 1,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Speed stat, no ally Rally replacement"
+        },
+        {
+          "chapter": 2,
+          "name": "Steel",
+          "kind": "brave_up",
+          "brave_delta": 6,
+          "brave_cap": 80,
+          "duration": "battle-scoped",
+          "target": "self or one ally",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "weaker than Orator Praise"
+        },
+        {
+          "chapter": 2,
+          "name": "Chant",
+          "kind": "sacrifice_heal",
+          "ally_heal": 35,
+          "ramza_hp_cost": 15,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no revive, no status clear, no Faith scaling"
+        },
+        {
+          "chapter": 3,
+          "name": "Spellblade",
+          "kind": "hybrid_sword",
+          "pressure_multiplier": 0.85,
+          "formula": "floor((PA + MA) / 2) * sword_effective_wp",
+          "damage_type": "swing",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "single target; no elemental/status rider in this pass"
+        },
+        {
+          "chapter": 3,
+          "name": "Ward",
+          "kind": "single_magic_mitigation",
+          "incoming_magic_hit_multiplier": 0.85,
+          "duration": "one magic hit",
+          "target": "self or one ally",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Shell replacement"
+        }
+      ]
+    },
+    "Ramza Chapter 4": {
+      "kind": "unique_protagonist_chapter_profile",
+      "source": "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+      "source_json": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "source_profile_key": "chapter_4",
+      "online_bands": [
+        "E"
+      ],
+      "stats": {
+        "hp": 473,
+        "pa": 12,
+        "ma": 12,
+        "spd": 8
+      },
+      "defense_proxy": {
+        "primary_armor_class": "leather",
+        "status": "W5 simulation assumption only; doc57 does not finalize Ramza equipment class.",
+        "stress_armor_classes": [
+          "mail"
+        ]
+      },
+      "native_families_this_pass": [
+        "sword"
+      ],
+      "native_knight_sword": false,
+      "native_staff_rod_pole_ma_crush": false,
+      "actions_available": [
+        {
+          "chapter": 1,
+          "name": "Squire fundamentals",
+          "kind": "inherited_squire_values",
+          "source": "docs/job-balance/52-squire-chemist-concrete-v0.md",
+          "jp": "inherited"
+        },
+        {
+          "chapter": 1,
+          "name": "Tailwind",
+          "kind": "self_ct",
+          "ct_gain": 8,
+          "target": "self",
+          "per_target_round_cap": 1,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Speed stat, no ally Rally replacement"
+        },
+        {
+          "chapter": 2,
+          "name": "Steel",
+          "kind": "brave_up",
+          "brave_delta": 6,
+          "brave_cap": 80,
+          "duration": "battle-scoped",
+          "target": "self or one ally",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "weaker than Orator Praise"
+        },
+        {
+          "chapter": 2,
+          "name": "Chant",
+          "kind": "sacrifice_heal",
+          "ally_heal": 35,
+          "ramza_hp_cost": 15,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no revive, no status clear, no Faith scaling"
+        },
+        {
+          "chapter": 3,
+          "name": "Spellblade",
+          "kind": "hybrid_sword",
+          "pressure_multiplier": 0.85,
+          "formula": "floor((PA + MA) / 2) * sword_effective_wp",
+          "damage_type": "swing",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "single target; no elemental/status rider in this pass"
+        },
+        {
+          "chapter": 3,
+          "name": "Ward",
+          "kind": "single_magic_mitigation",
+          "incoming_magic_hit_multiplier": 0.85,
+          "duration": "one magic hit",
+          "target": "self or one ally",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no Shell replacement"
+        },
+        {
+          "chapter": 4,
+          "name": "Shout",
+          "kind": "self_ct_and_brave",
+          "ct_gain": 12,
+          "brave_delta": 6,
+          "brave_cap": 80,
+          "target": "self",
+          "per_round_cap": 1,
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "no PA/MA stat stack"
+        },
+        {
+          "chapter": 4,
+          "name": "Arc Blade",
+          "kind": "hybrid_sword",
+          "pressure_multiplier": 1.0,
+          "formula": "floor((PA + MA) / 2) * sword_effective_wp",
+          "damage_type": "swing",
+          "ct": 0,
+          "mp": 0,
+          "jp": 0,
+          "limits": "single target; no line/AoE Holy Sword clone"
+        },
+        {
+          "chapter": 4,
+          "name": "Ultima",
+          "kind": "unique_magic_damage",
+          "K": 22,
+          "formula": "K * MA * max(0.60, caster_faith * target_faith)",
+          "mp": 40,
+          "ct": 4,
+          "jp": 0,
+          "limits": "small area; below dedicated Black Mage high spell; Shell/Faith/Reflect policy applies"
+        }
+      ],
+      "stress_stats": {
+        "hp": 572,
+        "pa": 13,
+        "ma": 13,
+        "spd": 9
+      }
+    },
+    "Vanguard": {
+      "kind": "late_replacement_profile",
+      "source": "docs/job-balance/57-vanguard-ramza-concrete-v0.md",
+      "source_json": "work/gpt-vanguard-ramza-concrete-v0.json",
+      "source_profile_key": "Vanguard",
+      "online_bands": [
+        "E"
+      ],
+      "armor_class": "plate",
+      "stats": {
+        "hp": 516,
+        "pa": 12,
+        "ma": 6,
+        "spd": 7
+      },
+      "native_families_this_pass": [
+        "sword",
+        "spear",
+        "axe",
+        "fists"
+      ],
+      "native_knight_sword": false,
+      "support_gated_knight_sword": "deferred Equip Knight Swords only",
+      "actions_available": [
+        {
+          "name": "Breach",
+          "kind": "crush_guard_pressure",
+          "eligible_routes": [
+            "axe",
+            "fists",
+            "shield-crush posture"
+          ],
+          "pressure_multiplier": 0.75,
+          "exposure_mark": true,
+          "ct": 0,
+          "mp": 0,
+          "jp": 220,
+          "band": "E",
+          "limits": "no sword/spear modal rider; setup and guard pressure, not raw damage"
+        },
+        {
+          "name": "Intercede",
+          "kind": "ally_protection",
+          "ally_incoming_multiplier": 0.75,
+          "vanguard_chip_fraction_of_original": 0.25,
+          "duration": "one nearby ally direct hit",
+          "ct": 0,
+          "mp": 0,
+          "jp": 260,
+          "band": "E",
+          "limits": "nearby ally only; no global cover"
+        },
+        {
+          "name": "Aegis Stance",
+          "kind": "local_mitigation_stance",
+          "incoming_hit_multiplier": 0.85,
+          "vanguard_outgoing_multiplier": 0.75,
+          "duration": "until Vanguard next turn",
+          "ct": 0,
+          "mp": 0,
+          "jp": 320,
+          "band": "E",
+          "limits": "self/adjacent allies; no stacking with Protect/Shell/Kiyomori-like mitigation"
+        },
+        {
+          "name": "Sunder Guard",
+          "kind": "guard_exposure_setup",
+          "pressure_multiplier": 0.45,
+          "shield_weapon_guard_multiplier": 0.6,
+          "exposure_mark": true,
+          "ct": 0,
+          "mp": 0,
+          "jp": 380,
+          "band": "E",
+          "limits": "does not affect class/accessory evasion and does not delete equipment"
+        },
+        {
+          "name": "Commanding Challenge",
+          "kind": "soft_challenge",
+          "soft_challenge_bonus": 25,
+          "ignored_target_output_multiplier": 0.85,
+          "duration": "until target action or Vanguard next turn",
+          "ct": 0,
+          "mp": 0,
+          "jp": 420,
+          "band": "E",
+          "limits": "local mark only; no hard boss lock or forced AI script"
+        },
+        {
+          "name": "Decisive Strike",
+          "kind": "setup_finisher",
+          "setup_pressure_multiplier": 1.2,
+          "no_setup_pressure_multiplier": 0.75,
+          "required_setup_marks": [
+            "Breach",
+            "Sunder Guard",
+            "Commanding Challenge"
+          ],
+          "ct": 0,
+          "mp": 0,
+          "jp": 600,
+          "band": "E",
+          "limits": "no instant KO, no Holy Sword clone, no free range"
+        }
+      ],
+      "exposure_mark": {
+        "response_delta_by_armor": {
+          "plate": 0.06,
+          "mail": 0.05,
+          "leather": 0.03,
+          "cloth": 0.0
+        },
+        "response_cap": 1.15,
+        "duration": "next one direct physical hit or target's next turn"
+      }
+    }
+  },
+  "rsm_boundary_values_from_doc57": {
+    "Vanguard Intervention": "deferred local ally-protection reaction; no global cover or extra-attack loop unless T10 approves",
+    "Vanguard Last Stand": "deferred critical survival; no practical immortality",
+    "Equip Knight Swords": "deferred E support, optional and cuttable",
+    "Vanguard Training": "deferred Vanguard-action specialist support only",
+    "Armor Discipline": "deferred plate/shield support; no mitigation immunity stack",
+    "Vanguard March": "deferred formation movement only",
+    "Ramza RSM": "deferred by chapter and subject to per-band specialist checks"
+  },
+  "w5_required_outputs": {
+    "axes": [
+      "damage",
+      "sustain",
+      "control",
+      "mobility",
+      "safety-defense",
+      "dominance-risk"
+    ],
+    "additional_outputs": [
+      "floor_proxy_per_weak_family",
+      "belief_oil_named_risk_column"
+    ],
+    "risk_register_tags": "Carry 12-risk register IDs from work/gpt-w4-t21-populated-incidence-v0.json w5_handoff_rows."
+  }
+}
