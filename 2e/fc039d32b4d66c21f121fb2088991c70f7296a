@@ -1,0 +1,19 @@
+.gitignore
+  s_c08f9ea70d3af2::t_2e55353e845181 79-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "2efc039d32b4d66c21f121fb2088991c70f7296a",
+  "prompts": {},
+  "sessions": {
+    "s_c08f9ea70d3af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8120ec5d-2a13-42b5-a831-b8f4409276c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
