@@ -1,0 +1,29 @@
+work/gpt-physical-foundation-rsm-concrete-v0.json
+  s_fce6b25a5764ca::t_c5fd9467b47c6c 3
+  s_fce6b25a5764ca::t_0e30f93800add5 1-2,4-51,93-207,210,216-236,238-242
+  s_fce6b25a5764ca::t_88a58fd2cb9680 52-92
+  s_fce6b25a5764ca::t_019d5daedc2640 208-209,211-215
+  s_fce6b25a5764ca::t_846ac0e44b3dbe 237
+docs/job-balance/58-physical-foundation-rsm-concrete-v0.md
+  s_fce6b25a5764ca::t_343c0f5068b135 499-503
+  s_fce6b25a5764ca::t_c5fd9467b47c6c 3
+  s_fce6b25a5764ca::t_0e30f93800add5 1-2,4-48,79-107,125-309,313-376,379-380,384-408,412-498,504-530
+  s_fce6b25a5764ca::t_ad65c1367f934e 49-78,108-124
+  s_fce6b25a5764ca::t_fb993fd67e3dbb 310-312,377-378,381-383,409-411
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "dd1c6b21b0c6b61d63bd9214bd65df0437308e01",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
