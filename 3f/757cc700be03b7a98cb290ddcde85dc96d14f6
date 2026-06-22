@@ -1,0 +1,25 @@
+work/gpt-campaign-milestone-note-v0.json
+  s_fce6b25a5764ca::t_eb8e8074c6a559 3-8
+  s_fce6b25a5764ca::t_d8d6aeae925adc 25-34,75
+  s_fce6b25a5764ca::t_222e2582588386 1-2,9-24,35-74,76-82
+docs/job-balance/48-milestone-note-v0.md
+  s_fce6b25a5764ca::t_eb8e8074c6a559 3,144-155
+  s_fce6b25a5764ca::t_222e2582588386 1-2,4-28,30-53,58-78,80-125,130-143
+  s_fce6b25a5764ca::t_d8d6aeae925adc 29,54-57,79,126-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3f757cc700be03b7a98cb290ddcde85dc96d14f6",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
