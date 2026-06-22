@@ -14,6 +14,51 @@ to find a robust primary source for battle action context in FFT Ivalice Chronic
 CT resolution works as a fallback, but it is too fragile to be the primary long-term solution for a
 full battle mechanics redesign.
 
+## Fresh-Session Setup Checklist
+
+If you are starting from a fresh GPT session, do this first:
+
+1. Get the latest repo state:
+
+```powershell
+cd D:\Projects\FFTGenericChronicle
+git pull --rebase origin main
+git status --short --branch
+```
+
+2. Confirm you have the forecast/action-context tooling:
+
+```powershell
+Test-Path tools\scan_live_forecast_values.py
+Test-Path tools\scan_live_unit_pointers.py
+Test-Path tools\analyze_pointer_scan_triplet.py
+```
+
+3. Confirm the latest handoff/tooling commit is present:
+
+```text
+8923342 Add live action-context probe tooling and handoff
+```
+
+4. Ignore unrelated untracked sprite files if they exist. They were intentionally not part of this
+   investigation:
+
+```text
+docs/modding/08-sprite-asset-pipeline.md
+work/handoff-to-gpt-2026-06-21-part2.md
+work/sprite-extract/
+```
+
+5. Paths in this handoff are from the original Windows machine. On another machine, verify the game
+   and Reloaded paths before running live commands:
+
+```text
+D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt
+C:\Reloaded-II\
+```
+
+Most scripts have `--log`, `--pid`, `--process-name`, or PowerShell parameters if paths differ.
+
 ## Read This First
 
 Read in this order:
@@ -61,6 +106,9 @@ Useful evidence files from the latest live run:
 - `work/live_unit_pointer_scan_diff.baseline-vs-pending-braver.md`
 - `work/live_unit_pointer_scan_diff.pending-vs-post-braver.md`
 - `work/live_unit_pointer_scan_triplet.braver.md`
+
+If time is short, read only this file plus `docs/modding/09-hook-register-context-probe.md`; then
+skim `work/live_unit_pointer_scan_triplet.braver.md` to understand the main false positive.
 
 ## Baseline Architecture Already Proven
 
@@ -120,6 +168,14 @@ New settings in `work/battle-runtime-settings.hook-register-probe.json`:
 
 `RuntimeSettingsValidator.cs` validates/warns for these noisy read-only settings.
 
+Important live-deploy detail:
+
+- `prepare-live-mapping.ps1` has an `-EnableModInAppConfig` switch, but the user explicitly does
+  not want the agent to use it.
+- Tell the user which mods to enable in Reloaded-II instead.
+- Running `prepare-live-mapping.ps1` without `-EnableModInAppConfig` is acceptable: it builds/deploys
+  and archives logs, but does not enable mods.
+
 ### External scanner tooling
 
 New / updated tools:
@@ -148,6 +204,16 @@ New / updated tools:
   - Searches live memory for clusters containing unit pointers plus forecast values such as damage,
     hit percent, modifier percent, HP/MP, ratios, and text (`Braver`).
   - This is meant for the action preview screen, before confirmation.
+
+Scanner dependency to remember:
+
+- `--unit-id Name=0xID` resolves pointers from the latest `[UNIT ptr=...] id=...` lines in
+  `battleprobe_log.txt`.
+- If a scanner warns that it cannot resolve a unit id, the runtime log is stale or missing unit
+  observations. Make sure the game was launched through Reloaded-II with the code mod enabled and
+  the observe-only profile deployed, then let the battle sit long enough for `[UNIT]` lines to log.
+- If necessary, pass explicit pointers with `--unit Name=0xPTR`, copied from the latest `[UNIT]`
+  lines in the log.
 
 ## Latest Live Test: Cloud Braver -> Beowulf
 
@@ -319,6 +385,16 @@ python tools\scan_live_forecast_values.py `
 
 If the UI values differ, update `damage`, `hit`, `mod`, HP/MP values accordingly.
 
+If this command prints warnings about missing unit ids, do not continue the test yet. Fix pointer
+resolution first by checking the fresh log:
+
+```powershell
+Select-String -Path "D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt" -Pattern "\[UNIT ptr=.*id=0x32|\[UNIT ptr=.*id=0x1F" | Select-Object -Last 10
+```
+
+Then either wait for the runtime to log units or rerun the scan with explicit `--unit Cloud=0x...`
+and `--unit Beowulf=0x...`.
+
 ### Step B - preview
 
 User selects:
@@ -340,6 +416,9 @@ work\live_forecast_scan.preview-beowulf.*
 ```
 
 The important condition: do not press Confirm yet. This is the strongest window.
+
+This is the highest-value capture. If the user accidentally confirms before the scan, do not treat
+the pending scan as a replacement; ask for another preview attempt.
 
 ### Step C - pending after confirmation
 
@@ -397,6 +476,20 @@ Then compare:
 
 There is not yet a dedicated triplet analyzer for forecast scans, but the JSON has groups and can be
 inspected directly. Add one if useful, following `tools/analyze_pointer_scan_triplet.py`.
+
+### Step E - target-swap preview, if Beowulf preview has candidates
+
+If the Beowulf preview scan finds promising clusters, repeat only the baseline/preview pieces with
+Cloud Braver targeting Agrias instead of Beowulf:
+
+```text
+forecast baseline agrias pronto
+preview Agrias <damage> <hit> <mod>
+```
+
+Why: this distinguishes real target context from "next unit in timeline" / current-turn cache. A
+true forecast/action object should swap Beowulf references/values for Agrias references/values when
+the target changes while Cloud and Braver stay constant.
 
 ## Expected Outcomes
 
@@ -459,6 +552,45 @@ Hypothesis D: the known `0x15E417BC8` region is not the action object.
 - Do not chase it as the primary pending Braver context unless new target-change tests contradict
   this.
 
+## How To Interpret Forecast Scan Output
+
+Start with `work\live_forecast_scan.preview-*.md`:
+
+- Check `Pattern Hits`.
+  - If `unit:Cloud:ptr64` or target unit hits are zero, the scan did not resolve pointers or the UI
+    forecast object does not store raw unit pointers.
+  - If `value:damage:*` hits are huge, prefer clusters that also contain unit or text hits.
+- Check `Candidate Clusters`.
+  - Best candidate: a small span containing a Cloud unit hit, target unit hit, and damage/hit/mod or
+    `Braver` text.
+  - Medium candidate: unit + damage only, or target + damage + text.
+  - Weak candidate: only common numeric values like `100`/`125`; these are very noisy.
+- Compare baseline vs preview manually first.
+  - Anything already present in baseline is probably permanent UI/cache state.
+  - Anything that appears only in preview is worth deeper probing.
+- Compare preview vs pending.
+  - If `153` disappears but Cloud/target/action remains, pending likely stores intent without
+    forecast damage.
+  - If the same cluster remains pending, the game may store forecast damage in the pending action.
+- Compare target swap.
+  - A real target object should change when target changes from Beowulf to Agrias.
+  - A timeline/current-turn cache may keep Beowulf even when Agrias is the preview target.
+
+If the scan finds only numbers but no unit pointers, extend the search in the next pass:
+
+- actor/target char ids as bytes/words: Cloud `0x32`, Beowulf `0x1F`, Agrias `0x1E`
+- target panel HP/MP values
+- action name text: `Braver`
+- possible action id, if discovered later
+- tile coordinates / facing / height, if the UI reveals them
+
+If there are too many false positives, reduce the search:
+
+- remove `--include-byte-values` unless specifically hunting ids
+- increase `--min-distinct-kinds` to `3`
+- focus on `damage`, `Braver`, and unit pointers first
+- use a smaller `--near-bytes`, e.g. `0x100`
+
 ## Current Warnings
 
 - Keep CT fallback, but do not build the whole redesign on CT.
@@ -467,6 +599,23 @@ Hypothesis D: the known `0x15E417BC8` region is not the action object.
 - The stable HP hook is too late for caster context in delayed actions.
 - Pointer-only search may miss objects that store actor index, target index, target tile, or copied
   forecast structs instead of raw unit pointers.
+
+## Failure Modes And Recovery
+
+- Game not launched through Reloaded-II:
+  - no fresh runtime log or no code mod module; ask the user to launch through Reloaded-II with the
+    code mod enabled.
+- Scanner cannot resolve unit ids:
+  - inspect latest `[UNIT]` lines; pass explicit `--unit Name=0xPTR` if needed.
+- User confirms preview too early:
+  - pending scan is still useful, but repeat preview; preview is the main target.
+- The UI damage value changes because equipment/data mod/profile differs:
+  - use the user's visible numbers in `--value damage=... --value hit=... --value mod=...`.
+- The data mod is off:
+  - that is acceptable for this observe-only investigation. The code mod is the important one.
+- The profile is too noisy:
+  - keep the capture short, then close the game. The probe profile is intentionally not for normal
+    play.
 
 ## Verification Commands
 
@@ -483,4 +632,3 @@ Full gate, if time permits:
 ```powershell
 powershell -ExecutionPolicy Bypass -File codemod\run-offline-checks.ps1
 ```
-
