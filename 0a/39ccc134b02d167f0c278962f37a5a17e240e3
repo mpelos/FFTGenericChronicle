@@ -1,0 +1,19 @@
+docs/job-balance/01-cross-job-build-principles.md
+  s_fce6b25a5764ca::t_86cf7e603f1af9 223-232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "0a39ccc134b02d167f0c278962f37a5a17e240e3",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
