@@ -1,0 +1,242 @@
+{
+  "schema_version": "physical-foundation-rsm-concrete-provisional-v0",
+  "status": "accepted_w3_physical_foundation_rsm_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "bundle_commit": "030211e430b0a78a8462db5f6ae1ab50fc71c7f6",
+  "bundle_sha256": "b990e5f1a1a6a1eb3fc6584bf1d116467b5a725059b0b33025e633ca6c27d71d",
+  "scope": {
+    "jobs": [
+      "Squire",
+      "Chemist",
+      "Knight",
+      "Archer",
+      "Monk",
+      "Thief",
+      "Orator",
+      "Dragoon",
+      "Samurai",
+      "Ninja",
+      "Vanguard",
+      "Ramza"
+    ],
+    "slots": ["reaction", "support", "movement"],
+    "excluded": [
+      "exact prerequisite tree",
+      "final JP economy",
+      "equipment shop and gil timing",
+      "caster RSM",
+      "performer RSM",
+      "Necromancer RSM",
+      "monster scope",
+      "W4/W5 pass fail verdicts"
+    ]
+  },
+  "shared_policy": {
+    "reaction_chance_formula": "min(brave / 100, trigger_cap)",
+    "one_roll_per_triggering_action": true,
+    "no_reaction_recursion": true,
+    "damage_reactions_do_not_trigger_reactions": true,
+    "strongest_single_mitigation_channel": true,
+    "accuracy_model": {
+      "status": "reviewer_derived_t4_assumption_not_bundle_authoritative",
+      "concentration_evasive_hit_rate": 0.75,
+      "facing": "multiplicative",
+      "rounding": "round_style_not_floor_only",
+      "class_evade": "non_directional",
+      "front_layers": ["shield", "accessory", "weapon"],
+      "side_layers": ["shield"],
+      "rear_layers": ["class"]
+    }
+  },
+  "slot_model": {
+    "reaction_slots_per_unit": 1,
+    "support_slots_per_unit": 1,
+    "movement_slots_per_unit": 1,
+    "two_support_rows_are_theoretical_probes_unless_one_effect_is_native_or_innate": true,
+    "notes": [
+      "Brawler plus Martial Discipline is not a legal single-unit build because both are support skills.",
+      "Samurai knight_sword plus Doublehand is not a legal Samurai build because it requires Equip Knight Swords plus Doublehand.",
+      "Dual Wield plus Attack Boost is buildable only for native active Ninja with innate two-hit melee; learned Dual Wield consumes the support slot."
+    ]
+  },
+  "atlas_consultation": {
+    "source_surfaces": [
+      "docs/reference/README.md",
+      "docs/reference/fft-vanilla-ability-effect-index.md",
+      "docs/reference/fft-vanilla-command-skillset-effect-map.md",
+      "docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md",
+      "docs/reference/fft-vanilla-status-effect-map.md"
+    ],
+    "effect_families_checked": [
+      "reaction",
+      "support",
+      "movement",
+      "defense",
+      "accuracy",
+      "damage_boost",
+      "equipment_unlock",
+      "jp_exp",
+      "healing",
+      "revive",
+      "timing",
+      "throw"
+    ],
+    "vanilla_overlap_read": {
+      "reaction_defense": ["Parry", "Shirahadori", "Reflexes", "Archer's Bane", "Vanish", "Auto-Potion", "Dragonheart"],
+      "reaction_retaliation": ["Counter", "Counter Tackle", "Bonecrusher", "First Strike", "Nature's Wrath"],
+      "equipment_unlock_supports": ["Equip Heavy Armor", "Equip Shields", "Equip Katana", "Equip Crossbows", "Equip Polearms", "Equip Guns", "Reequip"],
+      "damage_support_engines": ["Brawler", "Doublehand", "Dual Wield", "Attack Boost", "Concentration"],
+      "movement": ["Movement +1", "Movement +2", "Movement +3", "Jump +1", "Jump +2", "Jump +3", "Ignore Elevation", "Ignore Terrain", "Lifefont", "Teleport", "Fly", "Treasure Hunter"]
+    }
+  },
+  "mitigation_channel_members": [
+    "Grit",
+    "Parry",
+    "Brace",
+    "Arrow Guard",
+    "Reflexes",
+    "Brace Landing",
+    "Intervention",
+    "Armor Discipline",
+    "Protect",
+    "Shell",
+    "Kiyomori",
+    "Aegis Stance",
+    "Intercede"
+  ],
+  "rsm_by_job": {
+    "Squire": [
+      {"name": "Grit", "slot": "reaction", "band": "A/B", "trigger_cap": 0.65, "effect": "next_direct_hit_x0.90", "limits": "one hit; mitigation channel"},
+      {"name": "JP Boost", "slot": "support", "band": "A", "jp_multiplier": 1.25, "limits": "pacing only; no combat stats"},
+      {"name": "Basic Training", "slot": "support", "band": "B/C", "action_multiplier": 1.1, "limits": "Squire/Fundaments actions only; excludes Ultima"},
+      {"name": "Move +1", "slot": "movement", "band": "A", "move_bonus": 1, "limits": "no terrain or elevation bypass"}
+    ],
+    "Chemist": [
+      {"name": "Throw Item", "slot": "support", "band": "A/B", "range_bonus": 2, "limits": "items only; stock and gil gated"},
+      {"name": "Auto-Potion", "slot": "reaction", "band": "C", "trigger_cap": 0.7, "heal_hp": 30, "round_cap": 1, "limits": "post-damage survivor-only Potion; no Item Lore"},
+      {"name": "Item Lore", "slot": "support", "band": "C", "hp_item_multiplier": 1.3, "ether_multiplier": 1.2, "limits": "does not modify Auto-Potion"},
+      {"name": "Safeguard", "slot": "support", "band": "C", "effect": "blocks battle-scoped equipment break/steal", "limits": "no generic mitigation"},
+      {"name": "Reequip", "slot": "support", "band": "C/D", "effect": "tactical equipment swap hook", "limits": "implementation deferred"},
+      {"name": "Move-Find Item", "slot": "movement", "band": "B/C", "effect": "campaign treasure hook", "limits": "no combat mobility value"}
+    ],
+    "Knight": [
+      {"name": "Parry", "slot": "reaction", "band": "B/C", "trigger_cap": 0.6, "direct_physical_multiplier": 0.6, "limits": "mitigation channel; no magic/status/area"},
+      {"name": "Brace", "slot": "reaction", "band": "B/C", "trigger_cap": 0.65, "direct_physical_multiplier": 0.8, "limits": "mitigation channel"},
+      {"name": "Equip Armor", "slot": "support", "band": "C", "effect": "heavy armor access", "limits": "armor profile change only"},
+      {"name": "Equip Shield", "slot": "support", "band": "C", "effect": "shield access", "limits": "T4 evasion proof pending"},
+      {"name": "Defensive Training", "slot": "support", "band": "C/D", "effect": "Arts of War/guard effect duration +1 protected action", "limits": "no all-damage reduction"},
+      {"name": "Shield March", "slot": "movement", "band": "C", "move_bonus": 1, "limits": "shield or heavy posture; no terrain/elevation bypass"}
+    ],
+    "Archer": [
+      {"name": "Arrow Guard", "slot": "reaction", "band": "B/C", "trigger_cap": 0.65, "missile_multiplier": 0.5, "limits": "mitigation channel; missile only"},
+      {"name": "Speed Save", "slot": "reaction", "band": "C/D", "trigger_cap": 0.55, "ct_gain": 4, "limits": "once per round; no Speed stat"},
+      {"name": "Equip Bow", "slot": "support", "band": "C", "effect": "longbow/crossbow access", "limits": "no guns"},
+      {"name": "Concentration", "slot": "support", "band": "C/D", "evasive_hit_rate_floor": 0.75, "limits": "physical weapon/Archer actions only"},
+      {"name": "Bow Mastery", "slot": "support", "band": "C", "damage_multiplier": 1.1, "hit_bonus": 0.05, "limits": "bow/crossbow only"},
+      {"name": "Jump +1", "slot": "movement", "band": "B", "jump_bonus": 1, "limits": "no Move bonus"}
+    ],
+    "Monk": [
+      {"name": "Counter", "slot": "reaction", "band": "B/C", "trigger_cap": 0.7, "retaliation_multiplier": 0.75, "limits": "adjacent only; does not prevent hit"},
+      {"name": "First Strike", "slot": "reaction", "band": "D", "trigger_cap": 0.45, "retaliation_multiplier": 0.7, "limits": "adjacent direct weapon only"},
+      {"name": "Brawler", "slot": "support", "band": "C/D", "unarmed_multiplier": 1.25, "limits": "unarmed/fists only"},
+      {"name": "Martial Discipline", "slot": "support", "band": "C", "action_multiplier": 1.1, "limits": "Monk actions only"},
+      {"name": "Lifefont", "slot": "movement", "band": "C", "heal_fraction": 0.08, "heal_cap": 40, "limits": "HP only; requires voluntary movement"}
+    ],
+    "Thief": [
+      {"name": "Sticky Fingers", "slot": "reaction", "band": "C", "trigger_cap": 0.6, "effect": "battle-scoped steal/economy response", "limits": "no mitigation"},
+      {"name": "Light Fingers", "slot": "support", "band": "C", "steal_hit_bonus": 0.15, "limits": "Steal only; no Concentration stacking"},
+      {"name": "Poach", "slot": "support", "band": "deferred", "effect": "monster/economy route", "limits": "out of current scope"},
+      {"name": "Move +2", "slot": "movement", "band": "C", "move_bonus": 2, "limits": "no terrain/elevation bypass"},
+      {"name": "Treasure Hunter", "slot": "movement", "band": "C", "effect": "campaign treasure hook", "limits": "no combat mobility value"}
+    ],
+    "Orator": [
+      {"name": "Bravery Surge", "slot": "reaction", "band": "C/D", "trigger_cap": 0.6, "brave_delta": 4, "battle_cap": 80, "limits": "battle-scoped only"},
+      {"name": "Faith Surge", "slot": "reaction", "band": "C/D", "trigger_cap": 0.6, "faith_delta": 4, "battle_cap": 80, "limits": "battle-scoped vulnerability lever"},
+      {"name": "Equip Guns", "slot": "support", "band": "C/D", "effect": "gun access", "limits": "shop/gil gated"},
+      {"name": "Tame", "slot": "support", "band": "deferred", "effect": "monster route", "limits": "out of scope"},
+      {"name": "Beast Tongue", "slot": "support", "band": "deferred", "effect": "monster route", "limits": "out of scope"},
+      {"name": "Social Positioning", "slot": "movement", "band": "C", "move_bonus": 1, "speech_hit_bonus": 0.05, "limits": "Orator/speech only"}
+    ],
+    "Dragoon": [
+      {"name": "Dragonheart", "slot": "reaction", "band": "C/D", "trigger_cap": 0.35, "reraise_hp_fraction": 0.2, "battle_cap": 1, "limits": "no re-trigger loop"},
+      {"name": "Brace Landing", "slot": "reaction", "band": "C", "trigger_cap": 0.6, "next_hit_multiplier": 0.85, "limits": "Jump route only; mitigation channel"},
+      {"name": "Equip Polearms", "slot": "support", "band": "C/D", "effect": "spear/polearm access", "limits": "shop/gil/map gated"},
+      {"name": "Jump Training", "slot": "support", "band": "C", "horizontal_bonus": 1, "vertical_bonus": 1, "limits": "no CT or damage bonus"},
+      {"name": "Jump +1", "slot": "movement", "band": "B/C", "jump_bonus": 1, "limits": "vertical answer"},
+      {"name": "Jump +2", "slot": "movement", "band": "C", "jump_bonus": 2, "limits": "vertical answer"},
+      {"name": "Jump +3", "slot": "movement", "band": "D", "jump_bonus": 3, "limits": "advanced vertical answer"},
+      {"name": "Ignore Elevation", "slot": "movement", "band": "D/E", "effect": "ignore vertical movement limit", "limits": "no Move bonus or terrain bypass"}
+    ],
+    "Samurai": [
+      {"name": "Shirahadori", "slot": "reaction", "band": "D/E", "trigger_cap": 0.55, "effect": "block eligible direct weapon hit", "limits": "no magic/status/area/guns/Throw/Jump/specials"},
+      {"name": "Bonecrusher", "slot": "reaction", "band": "D", "trigger_cap": 0.65, "retaliation_multiplier": 0.85, "limits": "survive first"},
+      {"name": "Equip Katana", "slot": "support", "band": "D", "effect": "katana access", "limits": "stock/gil gated"},
+      {"name": "Doublehand", "slot": "support", "band": "D/E", "multiplier": 1.8, "limits": "no offhand, no shield, no Dual Wield"},
+      {"name": "Iaido Focus", "slot": "support", "band": "D", "iaido_hit_bonus": 0.05, "limits": "Iaido only"},
+      {"name": "Waterwalking", "slot": "movement", "band": "C/D", "effect": "water traversal", "limits": "map dependent"},
+      {"name": "Blade Step", "slot": "movement", "band": "D", "effect": "Samurai stance/position hook", "limits": "final rule deferred"}
+    ],
+    "Ninja": [
+      {"name": "Vanish", "slot": "reaction", "band": "D/E", "trigger_cap": 0.45, "duration_actions": 1, "limits": "no stealth damage bonus or loop"},
+      {"name": "Reflexes", "slot": "reaction", "band": "D", "trigger_cap": 0.55, "direct_weapon_multiplier": 0.7, "limits": "mitigation channel"},
+      {"name": "Dual Wield", "slot": "support", "band": "D/E", "hit_count": 2, "limits": "no fists, Throw, Iaido, spells, reactions, specials, Doublehand"},
+      {"name": "Throw Mastery", "slot": "support", "band": "D", "damage_multiplier": 1.1, "range_bonus": 1, "limits": "Throw only"},
+      {"name": "Move +3", "slot": "movement", "band": "D/E", "move_bonus": 3, "limits": "no terrain/elevation bypass"},
+      {"name": "Ignore Terrain", "slot": "movement", "band": "D", "effect": "ignore terrain cost/effects", "limits": "no Move +3 or elevation bypass"}
+    ],
+    "Vanguard": [
+      {"name": "Intervention", "slot": "reaction", "band": "E", "trigger_cap": 0.6, "ally_incoming_multiplier": 0.8, "vanguard_chip_fraction": 0.2, "limits": "local adjacent ally; no global cover"},
+      {"name": "Last Stand", "slot": "reaction", "band": "E", "trigger_cap": 0.45, "hp_floor": 1, "battle_cap": 1, "limits": "panic survival only"},
+      {"name": "Equip Knight Swords", "slot": "support", "band": "E", "effect": "knight sword access", "limits": "optional and cuttable"},
+      {"name": "Vanguard Training", "slot": "support", "band": "E", "action_multiplier": 1.1, "limits": "Vanguard actions only"},
+      {"name": "Armor Discipline", "slot": "support", "band": "E", "mitigation_multiplier": 0.9, "limits": "mitigation channel; not multiplicative"},
+      {"name": "Vanguard March", "slot": "movement", "band": "E", "move_bonus": 1, "limits": "heavy/formation posture only"}
+    ],
+    "Ramza": [
+      {"name": "unique exportable RSM", "slot": "reaction/support/movement", "band": "0-E", "effect": "none accepted in this producer", "limits": "Ramza uses generic learned RSM through normal build system"}
+    ]
+  },
+  "simulation_rows": [
+    {"id": "RSM-SQUIRE-BASIC-TRAINING", "kind": "isolated_support", "formula": "fixed_action * 1.10", "inputs": {"throw_stone": 12, "dash": 18, "first_aid": 20}, "expected": {"throw_stone": 13, "dash": 19, "first_aid": 22}},
+    {"id": "RSM-CHEMIST-ITEM-LORE", "kind": "isolated_support", "formula": "hp_items * 1.30; ether_items * 1.20", "expected": {"potion": 39, "hi_potion": 91, "x_potion": 195, "ether": 24, "hi_ether": 60}},
+    {"id": "RSM-CHEMIST-AUTO-POTION", "kind": "reaction_boundary", "formula": "post_damage_survivor_only Potion 30, trigger cap 0.70, round cap 1", "expected": {"heal_hp": 30, "trigger_cap": 0.7, "round_cap": 1}},
+    {"id": "RSM-KNIGHT-EQUIP-ARMOR-RESPONSE", "kind": "armor_identity", "incoming": 120, "expected": {"swing": {"cloth": 120, "plate": 78}, "thrust": {"cloth": 120, "plate": 78}, "crush": {"cloth": 120, "plate": 138}, "missile": {"cloth": 120, "plate": 96}}},
+    {"id": "RSM-DEFENSIVE-STACK-STRONGEST-SINGLE", "kind": "mitigation_stack", "incoming": 120, "channels": {"armor_discipline": 108, "aegis_stance": 102, "protect": 80, "parry": 72, "incorrect_product": 36}, "expected": {"accepted_result": 72}},
+    {"id": "RSM-ARCHER-BOW-MASTERY-LATE", "kind": "isolated_support_damage", "host": "Archer", "phase": "late", "family": "longbow", "expected": {"baseline": [114, 148, 131, 137], "bow_mastery": [125, 163, 144, 150]}},
+    {"id": "RSM-ARCHER-CONCENTRATION-EVASIVE-LATE", "kind": "accuracy_support", "host": "Archer", "phase": "late", "family": "longbow", "hit_rate": 0.75, "expected": [85.5, 111, 98.25, 102.75]},
+    {"id": "RSM-MONK-BRAWLER-MID", "kind": "isolated_support_damage_plus_theoretical_two_support_probe", "host": "Monk", "phase": "mid", "family": "fists", "achievability": {"brawler": "legal single support", "brawler_plus_martial": "theoretical probe only; two support slots"}, "buildable_ceiling": "brawler", "expected": {"baseline": [80, 68, 71, 71], "brawler": [100, 85, 88, 88], "brawler_plus_martial": [110, 93, 97, 97]}},
+    {"id": "RSM-MONK-BRAWLER-STRESS", "kind": "theoretical_two_support_probe", "host": "Monk", "phase": "stress", "family": "fists", "achievability": {"brawler": "legal single support", "brawler_plus_martial": "theoretical probe only; two support slots"}, "buildable_ceiling": "brawler", "expected": {"baseline": [172, 145, 152, 152], "brawler": [215, 182, 190, 190], "brawler_plus_martial": [237, 200, 209, 209]}},
+    {"id": "RSM-SAMURAI-DOUBLEHAND-KATANA", "kind": "isolated_support_damage", "host": "Samurai", "phase": "late", "family": "katana", "expected": {"baseline": [105, 121, 153, 162], "doublehand": [189, 218, 277, 291]}},
+    {"id": "RSM-KNIGHT-DOUBLEHAND-KNIGHT-SWORD-LATE", "kind": "legal_single_support_damage", "host": "Knight", "phase": "late", "family": "knight_sword", "achievability": "legal because Knight has native knight_sword and spends support slot on Doublehand", "expected": {"baseline": [104, 120, 152, 160], "doublehand": [187, 216, 273, 288]}},
+    {"id": "RSM-SAMURAI-DOUBLEHAND-KNIGHT-SWORD-STRESS", "kind": "stat_ceiling_probe_not_single_unit_build", "host": "Samurai", "phase": "stress", "family": "knight_sword", "achievability": "not legal on Samurai; requires Equip Knight Swords plus Doublehand support", "expected": {"baseline": [130, 150, 190, 200], "doublehand": [234, 270, 342, 360]}},
+    {"id": "RSM-NINJA-DUAL-WIELD-NINJA-BLADE-LATE", "kind": "isolated_and_native_ninja_stack_support_damage", "host": "Ninja", "phase": "late", "family": "ninja_blade", "achievability": {"dual_wield_attack_boost": "legal only on active Ninja with innate two-hit melee; not legal for learned Dual Wield off-Ninja"}, "expected": {"single": [92, 107, 135, 143], "dual_wield": [184, 214, 270, 286], "dual_wield_attack_boost": [246, 286, 362, 380]}},
+    {"id": "RSM-NINJA-DUAL-WIELD-NINJA-BLADE-STRESS", "kind": "native_ninja_convergence_stack_damage", "host": "Ninja", "phase": "stress", "family": "ninja_blade", "achievability": {"dual_wield_attack_boost": "legal only on active Ninja with innate two-hit melee; not legal for learned Dual Wield off-Ninja"}, "expected": {"single": [109, 126, 160, 169], "dual_wield": [218, 252, 320, 338], "dual_wield_attack_boost": [292, 338, 428, 450]}},
+    {"id": "RSM-NINJA-DUAL-WIELD-KNIFE-STRESS", "kind": "native_ninja_convergence_stack_damage", "host": "Ninja", "phase": "stress", "family": "knife", "achievability": {"dual_wield_attack_boost": "legal only on active Ninja with innate two-hit melee; not legal for learned Dual Wield off-Ninja"}, "expected": {"single": [108, 171, 150, 157], "dual_wield": [216, 342, 300, 314], "dual_wield_attack_boost": [288, 456, 400, 420]}},
+    {"id": "RSM-NINJA-THROW-MASTERY-LATE", "kind": "isolated_support_damage", "host": "Ninja", "phase": "late", "formula": "Throw value * 1.10", "expected": {"ninja_blades": {"baseline": [113, 145, 129, 134], "throw_mastery": [124, 159, 142, 148]}, "knight_swords": {"baseline": [122, 157, 140, 145], "throw_mastery": [135, 173, 154, 160]}}},
+    {"id": "RSM-VANGUARD-INTERCEDE-INTERVENTION", "kind": "disambiguation", "incoming": 120, "expected": {"intercede_action": {"ally": 90, "chip": 30}, "intervention_reaction": {"ally": 96, "chip": 24}}},
+    {"id": "RSM-VANGUARD-TRAINING", "kind": "isolated_support_damage", "host": "Vanguard", "phase": "late", "source": "doc57 provisional Vanguard stats", "expected": {"breach_axe": {"baseline": [112, 92, 97, 97], "vanguard_training": [123, 101, 107, 107]}, "decisive_sword_setup": {"baseline": [149, 172, 218, 230], "vanguard_training": [164, 190, 240, 253]}, "decisive_spear_setup": {"baseline": [150, 237, 208, 218], "vanguard_training": [165, 261, 229, 239]}}},
+    {"id": "RSM-LIFEFONT-HEALING", "kind": "movement_healing", "formula": "min(floor(max_hp * 0.08), 40)", "expected": {"hp_150": 12, "hp_280": 22, "hp_430": 34, "hp_520": 40}},
+    {"id": "RSM-RAMZA-BREADTH", "kind": "specialist_protection", "expected": {"unique_exportable_rsm": "none", "reason": "Ramza remains action-led and must borrow RSM through normal cross-job planning"}}
+  ],
+  "movement_ranking": [
+    {"name": "Move +1", "band": "A", "solves": "early comfort", "does_not_solve": "terrain/elevation/late reach"},
+    {"name": "Jump +1", "band": "B", "solves": "early vertical maps", "does_not_solve": "horizontal reach"},
+    {"name": "Shield March", "band": "C", "solves": "heavy formation tempo", "does_not_solve": "terrain/elevation"},
+    {"name": "Lifefont", "band": "C", "solves": "bruiser attrition while moving", "does_not_solve": "burst survival or terrain"},
+    {"name": "Move +2", "band": "C", "solves": "midgame skirmisher reach", "does_not_solve": "terrain/elevation"},
+    {"name": "Social Positioning", "band": "C", "solves": "speech/gun positioning", "does_not_solve": "general traversal"},
+    {"name": "Jump +2/+3", "band": "C/D", "solves": "vertical identity", "does_not_solve": "horizontal reach"},
+    {"name": "Ignore Terrain", "band": "D", "solves": "terrain-cost maps", "does_not_solve": "raw range and elevation"},
+    {"name": "Ignore Elevation", "band": "D/E", "solves": "height maps", "does_not_solve": "terrain and horizontal reach"},
+    {"name": "Move +3", "band": "D/E", "solves": "elite raw reach", "does_not_solve": "terrain/elevation"},
+    {"name": "Vanguard March", "band": "E", "solves": "heavy formation entry and holding", "does_not_solve": "general map skip"}
+  ],
+  "open_review_questions": [
+    "Should Ramza remain with no unique exportable RSM in this pass?",
+    "Is the Brawler plus Martial Discipline theoretical probe labeled clearly enough as non-buildable?",
+    "Is Armor Discipline acceptable as a 0.90 strongest-single mitigation channel member?",
+    "Should Brace survive alongside Parry or be cut as redundant?",
+    "Are Move +3 and Ignore Elevation bounded enough against the future Teleport row?"
+  ]
+}
