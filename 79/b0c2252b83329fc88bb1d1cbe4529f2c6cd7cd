@@ -1,0 +1,25 @@
+work/gpt-equipment-availability-timing-v0.json
+  s_fce6b25a5764ca::t_7407b25922d176 44-45,52,59
+  s_fce6b25a5764ca::t_0ef7ba2eadff69 1-2,4-43,46-51,53-58,60-209
+  s_fce6b25a5764ca::t_ad9590d42e31a4 3
+docs/job-balance/59-equipment-availability-timing-v0.md
+  s_fce6b25a5764ca::t_0ef7ba2eadff69 1-2,4-96,100,114-119,121-127,129-147,149-225
+  s_fce6b25a5764ca::t_ad9590d42e31a4 3
+  s_fce6b25a5764ca::t_7407b25922d176 97-99,101-113,120,128,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "79b0c2252b83329fc88bb1d1cbe4529f2c6cd7cd",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
