@@ -1,0 +1,313 @@
+{
+  "schema_version": "knight-archer-concrete-provisional-v0",
+  "status": "accepted_w3_knight_archer_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "purpose": "Second W3 physical/foundation concrete action-value producer, covering the first-specialist Knight/Archer pair.",
+  "scope": {
+    "jobs": ["Knight", "Archer"],
+    "included": [
+      "Knight action values",
+      "Knight stat-pressure boundary values",
+      "Archer action values",
+      "T6 guard/armor-response boundary rows",
+      "T4 shield-break accuracy rows",
+      "Band B first-specialist damage checks"
+    ],
+    "excluded": [
+      "final reaction/support/movement values",
+      "final equipment-unlock pricing",
+      "final prerequisite tree",
+      "separate Rend Helm implementation split",
+      "full AI/overwatch implementation",
+      "full real-roster F5 verdict"
+    ]
+  },
+  "knight_output_stacking_rule": {
+    "rule": "same output-pressure channel per outgoing action; use the strongest single active multiplier and do not multiply Rend Weapon with Rend Power",
+    "rend_weapon_plus_rend_power_weapon_action": {
+      "before": 100,
+      "after": 75,
+      "not_after": 63.75
+    },
+    "rend_power_only_physical_action": {
+      "before": 100,
+      "after": 85
+    },
+    "rend_magick_channel": "separate magic/healing output channel; non-stacking within that channel"
+  },
+  "knight_actions": [
+    {
+      "name": "Guarded Strike",
+      "kind": "weapon_damage_plus_guard",
+      "pressure_multiplier": 0.85,
+      "ct": 0,
+      "mp": 0,
+      "jp": 120,
+      "limits": "current weapon only; next incoming direct weapon hit before Knight's next turn is reduced by 15%; does not stack with itself"
+    },
+    {
+      "name": "Rend Weapon",
+      "kind": "weapon_output_pressure",
+      "pressure_multiplier": 0.5,
+      "weapon_output_multiplier": 0.75,
+      "duration": "next two weapon actions",
+      "ct": 0,
+      "mp": 0,
+      "jp": 150,
+      "limits": "armed enemies only; does not delete inventory equipment; does not compound multiplicatively with Rend Power on the same target, stronger applicable physical-output reduction applies"
+    },
+    {
+      "name": "Rend Armor",
+      "kind": "armor_exposure",
+      "pressure_multiplier": 0.5,
+      "response_delta_by_armor": {"plate": 0.12, "mail": 0.10, "leather": 0.06, "cloth": 0.0},
+      "response_cap": 1.2,
+      "duration": "next two physical hits or target's next turn, whichever comes first",
+      "ct": 0,
+      "mp": 0,
+      "jp": 180,
+      "limits": "non-stacking; setup action, not universal party requirement"
+    },
+    {
+      "name": "Shield Break",
+      "kind": "guard_evasion_break",
+      "pressure_multiplier": 0.35,
+      "shield_weapon_evasion_multiplier": 0.5,
+      "duration": "next two direct attacks or target's next turn, whichever comes first",
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "limits": "only shield/weapon guard layers; does not erase class or accessory evasion; deliberate guard-break naming because it targets evasion layers rather than a stat or output value"
+    },
+    {
+      "name": "Rend MP",
+      "kind": "resource_pressure",
+      "pressure_multiplier": 0.35,
+      "mp_damage_formula": "min(30, floor(target_max_mp * 0.25))",
+      "ct": 0,
+      "mp": 0,
+      "jp": 160,
+      "limits": "anti-caster resource pressure; no HP burst plan"
+    },
+    {
+      "name": "Rend Speed",
+      "kind": "tempo_stat_pressure",
+      "pressure_multiplier": 0.35,
+      "speed_delta": -1,
+      "duration": "until target's next action",
+      "ct": 0,
+      "mp": 0,
+      "jp": 240,
+      "limits": "non-stacking; no Slow replacement"
+    },
+    {
+      "name": "Rend Power",
+      "kind": "physical_output_pressure",
+      "pressure_multiplier": 0.35,
+      "physical_output_multiplier": 0.85,
+      "duration": "next two PA/weapon physical actions",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "limits": "weaker than Rend Weapon against armed targets but broader; does not compound multiplicatively with Rend Weapon on the same target, stronger applicable physical-output reduction applies"
+    },
+    {
+      "name": "Rend Magick",
+      "kind": "magic_output_pressure",
+      "pressure_multiplier": 0.35,
+      "magic_output_multiplier": 0.85,
+      "duration": "next two MA/Faith actions",
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "limits": "separate magic/healing-output axis; does not prevent casting and does not replace Silence"
+    },
+    {
+      "name": "Crushing Blow",
+      "kind": "crush_guard_pressure",
+      "required_damage_type": "crush",
+      "pressure_multiplier": 0.85,
+      "ct": 0,
+      "mp": 0,
+      "jp": 260,
+      "limits": "uses fists or other current crush route; below Monk's protected fist identity"
+    },
+    {
+      "name": "Rend Helm",
+      "kind": "folded_boundary",
+      "status": "folded_into_Rend_Armor_for_this_W3_pass",
+      "limits": "may split out later only by dividing the existing Rend Armor exposure budget, not by adding another stacking vulnerability"
+    },
+    {
+      "name": "Challenge",
+      "kind": "deferred_ai_control",
+      "status": "deferred_pending_T8_T10_ai_targeting_proof",
+      "limits": "no hard taunt or boss lock accepted in this pass"
+    }
+  ],
+  "archer_actions": [
+    {
+      "name": "Quick Shot",
+      "kind": "low_commitment_bow_shot",
+      "pressure_multiplier": 0.75,
+      "hit_bonus": 0.1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 90,
+      "limits": "bow/crossbow only; lower expected damage than normal shot at ordinary hit rates"
+    },
+    {
+      "name": "Aimed Shot",
+      "kind": "delayed_payoff_shot",
+      "pressure_multiplier": 1.35,
+      "hit_bonus": 0.15,
+      "resolution_delay_ticks": 2,
+      "ct": 2,
+      "mp": 0,
+      "jp": 180,
+      "limits": "fails if target leaves the chosen panel or line; same-tick unsafe; uses normal Charging self-risk while queued"
+    },
+    {
+      "name": "Pinning Shot",
+      "kind": "movement_tempo_pressure",
+      "pressure_multiplier": 0.7,
+      "ct_damage": 12,
+      "move_penalty": -1,
+      "duration": "until target's next action",
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "limits": "no Stop, no Immobilize, no hard lock"
+    },
+    {
+      "name": "Piercing Shot",
+      "kind": "penetrating_line_shot",
+      "pressure_multiplier": 1.1,
+      "penetration_bonus": 0.2,
+      "resolution_delay_ticks": 1,
+      "ct": 1,
+      "mp": 0,
+      "jp": 320,
+      "limits": "bow/crossbow only; line or exposed-target requirement; does not help guns; uses normal Charging self-risk while queued"
+    },
+    {
+      "name": "High-Ground Shot",
+      "kind": "height_reward_shot",
+      "pressure_multiplier": 1.15,
+      "hit_bonus": 0.1,
+      "height_advantage_required": 2,
+      "ct": 0,
+      "mp": 0,
+      "jp": 180,
+      "limits": "map-dependent; no bonus on flat maps"
+    },
+    {
+      "name": "Covering Shot",
+      "kind": "deferred_overwatch_interrupt",
+      "status": "deferred_pending_T5_T8_T10_interrupt_proof",
+      "limits": "no overwatch lock accepted in this pass"
+    }
+  ],
+  "rsm_boundary_values": {
+    "Parry": "deferred to RSM/T4/T6xPS producer; must be weapon/facing/equipment bounded",
+    "Equip Armor": "deferred to RSM/equipment producer; doc 51 band C",
+    "Equip Shield": "deferred to RSM/equipment producer; doc 51 band C",
+    "Concentration": "deferred to RSM/T4 producer; must not mean all attacks always hit",
+    "Equip Bow": "deferred to RSM/equipment producer; doc 51 band C",
+    "Bow Mastery": "deferred to RSM/F5 producer; bow/crossbow only"
+  },
+  "simulation_rows": {
+    "early_unlock_warning_damage": {
+      "read": "If Knight/Archer appear too early, their basic attacks already beat starter Squire texture; this supports Band B first-specialist timing.",
+      "knight_sword_family_sword": {"plate": 31, "mail": 36, "leather": 45, "cloth": 48},
+      "archer_longbow": {"plate": 38, "mail": 49, "leather": 43, "cloth": 45},
+      "archer_crossbow": {"plate": 38, "mail": 46, "leather": 42, "cloth": 43}
+    },
+    "mid_basic_attack_damage": {
+      "phase": "mid",
+      "knight_sword_family_sword": {"plate": 78, "mail": 90, "leather": 114, "cloth": 120},
+      "knight_fists": {"plate": 80, "mail": 68, "leather": 71, "cloth": 71},
+      "archer_longbow": {"plate": 76, "mail": 99, "leather": 87, "cloth": 91},
+      "archer_crossbow": {"plate": 85, "mail": 103, "leather": 94, "cloth": 97},
+      "monk_fists_reference": {"plate": 80, "mail": 68, "leather": 71, "cloth": 71}
+    },
+    "knight_mid_action_damage": {
+      "Guarded Strike sword x0.85": {"plate": 66, "mail": 76, "leather": 96, "cloth": 102},
+      "Rend Weapon sword x0.50": {"plate": 39, "mail": 45, "leather": 57, "cloth": 60},
+      "Rend Armor sword x0.50": {"plate": 39, "mail": 45, "leather": 57, "cloth": 60},
+      "Shield/stat Rend sword x0.35": {"plate": 27, "mail": 31, "leather": 39, "cloth": 42},
+      "Crushing Blow fists x0.85": {"plate": 68, "mail": 57, "leather": 60, "cloth": 60}
+    },
+    "archer_mid_action_damage": {
+      "Quick Shot longbow x0.75": {"plate": 57, "mail": 74, "leather": 65, "cloth": 68},
+      "Quick Shot crossbow x0.75": {"plate": 64, "mail": 77, "leather": 71, "cloth": 73},
+      "Aimed Shot longbow x1.35": {"plate": 102, "mail": 133, "leather": 118, "cloth": 123},
+      "Aimed Shot crossbow x1.35": {"plate": 115, "mail": 140, "leather": 127, "cloth": 132},
+      "Pinning Shot longbow x0.70": {"plate": 53, "mail": 69, "leather": 61, "cloth": 63},
+      "Pinning Shot crossbow x0.70": {"plate": 59, "mail": 72, "leather": 66, "cloth": 68},
+      "Piercing Shot longbow x1.10 pen+0.20": {"plate": 89, "mail": 108, "leather": 99, "cloth": 102},
+      "Piercing Shot crossbow x1.10 pen+0.20": {"plate": 100, "mail": 114, "leather": 107, "cloth": 109},
+      "High-Ground Shot longbow x1.15": {"plate": 87, "mail": 113, "leather": 100, "cloth": 105},
+      "High-Ground Shot crossbow x1.15": {"plate": 98, "mail": 119, "leather": 108, "cloth": 112}
+    },
+    "rend_armor_t6_response_rows": {
+      "response_delta_by_armor": {"plate": 0.12, "mail": 0.10, "leather": 0.06, "cloth": 0.0},
+      "response_cap": 1.2,
+      "base_damage_per_hit": 100,
+      "rows": [
+        {"armor": "plate", "type": "swing", "base_response": 0.65, "after_rend": 0.77, "projected_damage": 77},
+        {"armor": "plate", "type": "crush", "base_response": 1.15, "after_rend": 1.20, "projected_damage": 120},
+        {"armor": "mail", "type": "missile", "base_response": 1.10, "after_rend": 1.20, "projected_damage": 120},
+        {"armor": "leather", "type": "thrust", "base_response": 0.95, "after_rend": 1.01, "projected_damage": 101},
+        {"armor": "cloth", "type": "swing", "base_response": 1.00, "after_rend": 1.00, "projected_damage": 100}
+      ]
+    },
+    "shield_break_t4_rows": {
+      "base_hit": 80,
+      "class_evade": 10,
+      "shield_evade": 30,
+      "accessory_evade": 10,
+      "weapon_evade": 0,
+      "shield_evasion_multiplier_after_break": 0.5,
+      "rows": [
+        {"facing": "front", "before": 45, "after": 55},
+        {"facing": "side", "before": 50, "after": 61},
+        {"facing": "rear", "before": 72, "after": 72}
+      ]
+    },
+    "rend_weapon_enemy_offense_rows": {
+      "weapon_output_multiplier": 0.75,
+      "rows": [
+        {"incoming_weapon_damage": 80, "after_rend_weapon": 60},
+        {"incoming_weapon_damage": 120, "after_rend_weapon": 90}
+      ]
+    },
+    "knight_stat_pressure_rows": {
+      "rows": [
+        {"effect": "Rend Weapon plus Rend Power same action", "before": 100, "after": 75, "not_after": 63.75},
+        {"effect": "Rend Power physical output", "before": 100, "after": 85},
+        {"effect": "Rend Magick magic/healing output", "before": 100, "after": 85},
+        {"effect": "Rend Speed speed", "before": 7, "after": 6},
+        {"effect": "Rend MP max MP 80", "before": 80, "after": 60},
+        {"effect": "Rend MP max MP 140", "before": 140, "after": 110}
+      ]
+    },
+    "pinning_shot_tempo_rows": {
+      "ct_damage": 12,
+      "move_penalty": -1,
+      "rows": [
+        {"target_ct_before": 78, "target_ct_after": 66},
+        {"target_ct_before": 10, "target_ct_after": 0}
+      ]
+    }
+  },
+  "review_questions": [
+    "Are Knight action values useful enough for active Knight before Equip Armor/Shield exports?",
+    "Is Rend Armor's armor-specific delta capped at 1.20 too setup-efficient or appropriately modest?",
+    "Does Shield Break respect T4 by only reducing shield/weapon guard layers?",
+    "Do Rend MP, Rend Speed, Rend Power, and Rend Magick cover the vanilla stat-down family without replacing Mystic, Time Mage, Orator, or caster-control jobs?",
+    "Are Archer's Quick/Aimed/Pinning/Piercing/High-Ground values enough to make active Archer useful without making Concentration necessary?",
+    "Should Challenge and Covering Shot remain deferred, or is a bounded concrete value needed now?"
+  ]
+}
