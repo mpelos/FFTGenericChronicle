@@ -1,0 +1,23 @@
+docs/job-balance/54-monk-thief-concrete-v0.md
+  s_fce6b25a5764ca::t_b6087f2c36a181 3,94-98,206-222
+  s_fce6b25a5764ca::t_04a9d59c93da31 1-2,4-93,99-205,223-314
+work/gpt-monk-thief-concrete-v0.json
+  s_fce6b25a5764ca::t_b7d24392080043 3,159,171,183,192,207-222
+  s_fce6b25a5764ca::t_04a9d59c93da31 1-2,4-158,160-170,172-182,184-191,193-206,223-316
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "e6f60617c7a2c1ad9a29d317492632ad0f5c4ed2",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
