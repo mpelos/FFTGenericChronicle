@@ -1,0 +1,26 @@
+docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md
+  s_fce6b25a5764ca::t_8ed4e32cb109f6 1-2,4-69,87-122,124-169,174-204,212,226-262,281-284,286-347
+  s_fce6b25a5764ca::t_67f0e29ef3ef14 70-86,205-211,213-225,263-280,285
+  s_fce6b25a5764ca::t_50e585fbdc8082 3
+  s_fce6b25a5764ca::t_311338e9cafcc6 123,170-173
+work/gpt-prerequisite-tree-jp-cost-v0.json
+  s_fce6b25a5764ca::t_311338e9cafcc6 43,61
+  s_fce6b25a5764ca::t_67f0e29ef3ef14 62-68,84-86,94-96,98
+  s_fce6b25a5764ca::t_8ed4e32cb109f6 1-42,44-60,69-83,87-93,97,99-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d1d3cd511f8efc17b77a809b7a6ef8ddd0bad988",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
