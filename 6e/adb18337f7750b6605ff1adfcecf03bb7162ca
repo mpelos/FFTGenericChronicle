@@ -1,0 +1,39 @@
+docs/job-balance/58-physical-foundation-rsm-concrete-v0.md
+  s_fce6b25a5764ca::t_ad5ae1cc2710ec 73,223,226-228,510-511,518
+  s_fce6b25a5764ca::t_173aa5aedece09 46,90,96,234,332,337,362
+  s_fce6b25a5764ca::t_8f6745c4c09fec 392
+work/gpt-campaign-journey-bundle-v0.json
+  s_fce6b25a5764ca::t_7ff1589489a431 121-122,131,144,146,154
+docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md
+  s_fce6b25a5764ca::t_13c982e609af88 15,50,101-102,179,322-323
+work/gpt-physical-foundation-rsm-concrete-v0.json
+  s_fce6b25a5764ca::t_173aa5aedece09 27,115,155,163,173
+  s_fce6b25a5764ca::t_8238b5ea38869a 6-7,111
+docs/job-balance/50-campaign-journey-bundle-v0.md
+  s_fce6b25a5764ca::t_173aa5aedece09 65
+  s_fce6b25a5764ca::t_1dddd513021979 62-63,67-68,87,110,116,122,148
+work/gpt-prerequisite-tree-jp-cost-v0.json
+  s_fce6b25a5764ca::t_0bb9b9b32c04f0 20-21
+docs/job-balance/31-campaign-gameplay-validation-v1.md
+  s_fce6b25a5764ca::t_4173a55056102e 100,122-123,126-128,130-131,158,209,219-220,358,433-435,556,725-726,739-740,977
+  s_fce6b25a5764ca::t_173aa5aedece09 217,557,759,785,813
+docs/job-balance/51-progression-and-build-input-ledger-v0.md
+  s_fce6b25a5764ca::t_966f0097ade858 69-70,82,89-90,106-107,371-372
+  s_fce6b25a5764ca::t_173aa5aedece09 68,121,139,145-148,150,155-156,226,243,249,253,282,352,356-357,359,361-362,393
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "6eadb18337f7750b6605ff1adfcecf03bb7162ca",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
