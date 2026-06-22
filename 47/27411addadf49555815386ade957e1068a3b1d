@@ -1,0 +1,71 @@
+docs/job-balance/00-high-level-direction.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 181,185,402,427
+docs/job-balance/30-roster-completion-and-infra-sprint-plan.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 43,51,70,72,74,83
+  s_c08f9ea70d3af2::t_bea35d64432c3f 15
+docs/job-balance/03-job-roster-and-role-map.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 30,112,124,164,205,228
+docs/job-balance/12-vanilla-skill-status-reference.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 137
+docs/job-balance/02-job-design-protocol.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 606
+docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 130
+work/gpt-t10-action-economy-v0.json
+  s_c08f9ea70d3af2::t_5cafa18298fda7 207
+docs/job-balance/14-enemy-offense-disarm-model-schema.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 23
+docs/job-balance/23-deferred-campaign-economy-policy.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 35
+work/gpt-campaign-milestone-note-v0.json
+  s_c08f9ea70d3af2::t_13824ec8d2a673 28
+work/gpt-prerequisite-tree-jp-cost-v0.json
+  s_c08f9ea70d3af2::t_13824ec8d2a673 50
+docs/job-balance/15-targeting-challenge-model-schema.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 25,158
+docs/job-balance/57-vanguard-ramza-concrete-v0.md
+  s_c08f9ea70d3af2::t_bea35d64432c3f 9
+docs/job-balance/36-action-economy-model-schema.md
+  s_c08f9ea70d3af2::t_bea35d64432c3f 10
+docs/job-balance/33-mitigation-stack-composition-schema.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 35
+docs/job-balance/29-vanguard-v1-proposal.md
+  s_c08f9ea70d3af2::t_ead98aa254036b 95
+  s_c08f9ea70d3af2::t_13824ec8d2a673 1-94,96-427
+work/t10-action-economy-scenarios-v0.json
+  s_c08f9ea70d3af2::t_5cafa18298fda7 594,602-603,615
+  s_c08f9ea70d3af2::t_bea35d64432c3f 10
+docs/job-balance/51-progression-and-build-input-ledger-v0.md
+  s_c08f9ea70d3af2::t_bea35d64432c3f 21
+docs/job-balance/49-vanguard-rename-decision-v0.md
+  s_c08f9ea70d3af2::t_bea35d64432c3f 7
+docs/job-balance/07-validation-infrastructure-roadmap.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 449
+docs/job-balance/13-armor-response-model-schema.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 31
+docs/job-balance/47-campaign-validation-readiness-v0.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 65,121,190,229
+docs/job-balance/48-milestone-note-v0.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 55,74
+docs/job-balance/31-campaign-gameplay-validation-v1.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 104,131,245,414,425,497,531,536,555,705,717
+  s_c08f9ea70d3af2::t_bea35d64432c3f 21
+docs/job-balance/32-campaign-artifacts-provisional-v0.md
+  s_c08f9ea70d3af2::t_13824ec8d2a673 58,70,128-129,152,168,196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "4727411addadf49555815386ade957e1068a3b1d",
+  "prompts": {},
+  "sessions": {
+    "s_c08f9ea70d3af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8120ec5d-2a13-42b5-a831-b8f4409276c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
