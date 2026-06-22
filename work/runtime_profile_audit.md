@@ -119,7 +119,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.custom-formula-demo.json`
 - Intent: Compute damage from resolved attacker PA and target Faith while preserving engine-owned death.
 - Live mutation: rewrites HP when CT attacker context is present, never below MinHpFloor
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=10, deathWrite=False/0, minHpFloor=1, actorProbe=False, ctResolver=True/4000ms, counterResolver=True/1500ms, hookRegs=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=10, deathWrite=False/0, minHpFloor=1, actorProbe=False, ctResolver=True/7000ms, counterResolver=True/1500ms, hookRegs=False/0
 - Errors: none
 
 ### death-test-hp-only

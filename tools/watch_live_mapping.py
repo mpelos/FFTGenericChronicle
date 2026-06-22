@@ -83,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("log", nargs="?", type=Path, default=DEFAULT_LOG)
     p.add_argument("--runtime-events", type=int, default=1, help="Minimum [RUNTIME] lines to wait for.")
     p.add_argument("--runtime-attacker-source", action="append", default=[], help="Specific [RUNTIME] attacker source that must appear at least once, e.g. ct-reset or counter-inversion; can be repeated.")
-    p.add_argument("--ct-runtime-attackers", type=int, default=0, help="Minimum [RUNTIME] attacker resolutions with source=ct-reset.")
+    p.add_argument("--ct-runtime-attackers", type=int, default=0, help="Minimum [RUNTIME] attacker resolutions with a CT source (ct-reset or ct-low).")
     p.add_argument("--counter-runtime-attackers", type=int, default=0, help="Minimum [RUNTIME] attacker resolutions with source=counter-inversion.")
     p.add_argument("--action-signals", type=int, default=0, help="Minimum [RUNTIME] lines with a nonzero action.signal.")
     p.add_argument("--require-action-signal", action="append", default=[], help="Specific action.signal value that must appear at least once; can be repeated.")
@@ -172,7 +172,7 @@ def main() -> int:
     print(f"watching {args.log}")
     print(
         f"waiting for current runtime header, {required_runtime_events} [RUNTIME] event(s), "
-        f"{required_ct_runtime_attackers} CT-reset runtime attacker(s), "
+        f"{required_ct_runtime_attackers} CT runtime attacker(s), "
         f"{required_counter_runtime_attackers} counter runtime attacker(s), "
         f"{required_action_signal_events} action signal event(s), "
         f"{required_target_slot_present_events} target slot present event(s), "
@@ -260,7 +260,7 @@ def main() -> int:
             and state.has_current_header
             and state.runtime_events >= required_runtime_events
             and has_required_runtime_attacker_sources(state, required_runtime_attacker_sources)
-            and runtime_attacker_source_count(state, "ct-reset") >= required_ct_runtime_attackers
+            and runtime_ct_attacker_source_count(state) >= required_ct_runtime_attackers
             and runtime_attacker_source_count(state, "counter-inversion") >= required_counter_runtime_attackers
             and state.action_signal_events >= required_action_signal_events
             and has_required_action_signals(state, required_action_signals)
@@ -574,10 +574,10 @@ def describe_state(
             f"{', '.join(missing_attacker_sources)}; "
             f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
         )
-    ct_runtime_attackers = runtime_attacker_source_count(state, "ct-reset")
+    ct_runtime_attackers = runtime_ct_attacker_source_count(state)
     if ct_runtime_attackers < required_ct_runtime_attackers:
         return (
-            f"current runtime loaded; waiting for CT-reset runtime attacker evidence "
+            f"current runtime loaded; waiting for CT runtime attacker evidence "
             f"({ct_runtime_attackers}/{required_ct_runtime_attackers}); "
             f"{state.runtime_events} [RUNTIME] event(s){evidence_suffix(state)}"
         )
@@ -806,6 +806,14 @@ def runtime_attacker_source_count_map(state: LogState) -> dict[str, int]:
 
 def runtime_attacker_source_count(state: LogState, source: str) -> int:
     return runtime_attacker_source_count_map(state).get(normalize_runtime_attacker_source(source), 0)
+
+
+def runtime_ct_attacker_source_count(state: LogState) -> int:
+    return sum(
+        count
+        for source, count in state.runtime_attacker_source_counts
+        if normalize_runtime_attacker_source(source).startswith("ct-")
+    )
 
 
 def action_var_count_map(state: LogState) -> dict[str, int]:

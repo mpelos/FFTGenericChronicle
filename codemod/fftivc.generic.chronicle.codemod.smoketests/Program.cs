@@ -825,6 +825,14 @@ internal static class Program
         Check(ctContextResult.ShouldRewrite, "CT context formula should rewrite");
         Check(ctContextResult.FinalDamage == 182, $"CT context formula expected 182, got {ctContextResult.FinalDamage}");
 
+        var ctLowContextResult = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "t.ct + a.ct + a.sourceCt * 100 + a.sourceCounter * 1000",
+        }, catalog).Evaluate(new DamageEvent(target with { Ct = 70 }, 50, 49, 1, attacker with { Ct = 12 }, "ct-low"));
+        Check(ctLowContextResult.ShouldRewrite, "CT-low context formula should rewrite");
+        Check(ctLowContextResult.FinalDamage == 182, $"CT-low context formula expected 182, got {ctLowContextResult.FinalDamage}");
+
         var counterContextResult = new BattleFormulaEngine(new RuntimeSettings
         {
             RewriteObservedDamage = true,
@@ -1792,6 +1800,36 @@ internal static class Program
         };
         var ctStaleResolved = new BattleContextResolver(ctSettings).ResolveRecentAttacker(ctTarget, ctStaleObs, now);
         Check(ctStaleResolved.Unit is null, "CT resolver should ignore a stale CT drop (older than CtDropWindowMs) and fall through");
+
+        // If the exact drop was missed, a recently hook-touched unit with near-reset CT is still a
+        // useful conservative fallback for live tests. Poll-only/stale low-CT units stay ignored.
+        var ctLowSettings = new RuntimeSettings
+        {
+            ResolveAttackerByCt = true,
+            ResolveAttackerByLowCtFallback = true,
+            CtLowFallbackMaxCt = 25,
+            CtLowFallbackWindowMs = 1000,
+            InferAttackerFromRecentUnits = false,
+        };
+        var ctLowObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, now),
+            [ctJustActed.Ptr] = new UnitObservation(ctJustActed with { Ct = 8 }, TickAgo(120)),
+            [ctCharging.Ptr] = new UnitObservation(ctCharging, TickAgo(20)), // recent but CT too high
+        };
+        var ctLowResolved = new BattleContextResolver(ctLowSettings).ResolveRecentAttacker(ctTarget, ctLowObs, now);
+        Check(ctLowResolved.Unit?.Ptr == ctJustActed.Ptr, $"CT-low fallback should pick the recent low-CT unit (0x4200), got 0x{ctLowResolved.Unit?.Ptr:X}");
+        Check(ctLowResolved.Source == "ct-low", $"CT-low fallback source expected ct-low, got {ctLowResolved.Source}");
+        Check(ctLowResolved.Summary.Contains("ctLowCandidates="), "CT-low fallback summary should list low-CT candidates");
+
+        var ctLowStaleObs = new Dictionary<nint, UnitObservation>
+        {
+            [ctTarget.Ptr] = new UnitObservation(ctTarget, now),
+            [ctJustActed.Ptr] = new UnitObservation(ctJustActed with { Ct = 8 }, TickAgo(2000)),
+        };
+        var ctLowStaleResolved = new BattleContextResolver(ctLowSettings).ResolveRecentAttacker(ctTarget, ctLowStaleObs, now);
+        Check(ctLowStaleResolved.Unit is null, "CT-low fallback should ignore stale low-CT candidates");
+        Check(ctLowStaleResolved.Summary.Contains("ctCandidates=none"), "CT miss summary should say when no CT-drop candidates exist");
 
         // Counterattacks do not reset CT. If B was just damaged by A and then A takes damage, resolve B
         // by inverting the previous resolved damage pair.
