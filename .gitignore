@@ -76,6 +76,17 @@ codemod/**/bin/
 codemod/**/obj/
 codemod/_build/
 
+# === Regenerable reviewer outputs (re-created by running work/*_check.py) ===
+work/claude-*.json
+work/claude_sweep_*.txt
+work/sim_inputs_*_stats.json
+
+# === Stale superseded sim result dumps (v0/v0.1; current reference = v0.2.1) ===
+work/gpt-sim-v0-results.csv
+work/gpt-sim-v0-results.json
+work/gpt-sim-v0.1-results.csv
+work/gpt-sim-v0.1-results.json
+
 # === OS / editor cruft ===
 Thumbs.db
 ehthumbs.db
