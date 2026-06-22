@@ -1,0 +1,36 @@
+docs/job-balance/52-squire-chemist-concrete-v0.md
+  s_fce6b25a5764ca::t_cc4bbf97fc1850 155,251
+  s_fce6b25a5764ca::t_480b443f77172e 12-14,35-37,66,69,85-86,157,179,221,232,249,264-265
+  s_fce6b25a5764ca::t_9318ea66f2fa9b 32-33,145-146
+work/gpt-squire-chemist-concrete-v0.json
+  s_fce6b25a5764ca::t_cc4bbf97fc1850 152,162,177,240,271
+  s_fce6b25a5764ca::t_480b443f77172e 19,100,172
+docs/job-balance/32-campaign-artifacts-provisional-v0.md
+  s_fce6b25a5764ca::t_d40ac95a85e395 18
+  s_fce6b25a5764ca::t_137969664ae991 9,24-28,54,60,66,89,141-142,148,160-161,178,211,275-276
+work/gpt-campaign-milestone-note-v0.json
+  s_fce6b25a5764ca::t_0390267521ba67 37,45
+docs/job-balance/48-milestone-note-v0.md
+  s_fce6b25a5764ca::t_0390267521ba67 19-22,73,92-93,108
+work/gpt-campaign-validation-readiness-v0.json
+  s_fce6b25a5764ca::t_00ddc6eb1e93f0 146-148,178
+docs/job-balance/47-campaign-validation-readiness-v0.md
+  s_fce6b25a5764ca::t_00ddc6eb1e93f0 25-28,66,181,187
+  s_fce6b25a5764ca::t_9318ea66f2fa9b 225
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "7c6225a7f008ff7e02156badc03dce6ef653b33d",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
