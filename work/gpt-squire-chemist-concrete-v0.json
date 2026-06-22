@@ -1,0 +1,276 @@
+{
+  "schema_version": "squire-chemist-concrete-provisional-v0",
+  "status": "accepted_w3_squire_chemist_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "source_t3_bundle": "work/gpt-t3-healing-attrition-v0.json",
+  "purpose": "First W3 physical/foundation concrete action-value producer for the Band 0/A starter pair.",
+  "scope": {
+    "jobs": ["Squire", "Chemist"],
+    "included": [
+      "Squire action values",
+      "Chemist item action values",
+      "Chemist gun and Quick Draw warning rows",
+      "Auto-Potion boundary values for later RSM review"
+    ],
+    "excluded": [
+      "final RSM pricing and incidence",
+      "exact prerequisite tree",
+      "final shop and gil economy",
+      "full real-roster F5 verdict"
+    ]
+  },
+  "squire_actions": [
+    {
+      "name": "Throw Stone",
+      "kind": "fixed_chip",
+      "raw_power": 12,
+      "damage_type": "crush",
+      "ct": 0,
+      "mp": 0,
+      "jp": 50,
+      "range_note": "short ranged chip",
+      "limits": "low fixed value; no scaling damage plan"
+    },
+    {
+      "name": "Dash",
+      "kind": "fixed_body_check",
+      "raw_power": 18,
+      "damage_type": "crush",
+      "ct": 0,
+      "mp": 0,
+      "jp": 70,
+      "range_note": "adjacent only",
+      "limits": "exposure required; lower than ordinary early weapon attacks into most targets"
+    },
+    {
+      "name": "First Aid",
+      "kind": "active_heal",
+      "raw_heal": 20,
+      "ct": 0,
+      "mp": 0,
+      "jp": 80,
+      "range_note": "adjacent only",
+      "limits": "no revive; weaker than Potion"
+    },
+    {
+      "name": "Focus",
+      "kind": "next_basic_attack_setup",
+      "pressure_multiplier": 1.1,
+      "hit_bonus": 0.1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 120,
+      "limits": "non-stacking; next basic attack only; expires after one attack or one round"
+    },
+    {
+      "name": "Rally",
+      "kind": "minor_tempo",
+      "ct_gain": 8,
+      "ct": 0,
+      "mp": 0,
+      "jp": 180,
+      "range_note": "adjacent ally, no self-target",
+      "limits": "once per target per round; too small to replace Haste or Time Mage tempo"
+    },
+    {
+      "name": "Weapon Drill",
+      "kind": "current_weapon_training_strike",
+      "pressure_multiplier": 0.7,
+      "ct": 0,
+      "mp": 0,
+      "jp": 250,
+      "riders": {
+        "swing": "plus 0.10 hit rate on this strike only",
+        "thrust": "plus 0.05 penetration on this strike only",
+        "crush": "minor shove or guard-pressure rider on this strike only"
+      },
+      "limits": "uses current weapon family; lower damage than ordinary attack; no free modal toolbox"
+    }
+  ],
+  "chemist_actions": [
+    {
+      "name": "Potion",
+      "kind": "item_heal",
+      "raw_heal": 30,
+      "ct": 0,
+      "mp": 0,
+      "jp": 30,
+      "band": "0/A",
+      "limits": "single-target item stock and gil"
+    },
+    {
+      "name": "Phoenix Down",
+      "kind": "item_revive",
+      "revive_hp": 20,
+      "ct": 0,
+      "mp": 0,
+      "jp": 90,
+      "band": "0/A",
+      "limits": "low HP revive; item stock and positioning"
+    },
+    {
+      "name": "Basic condition items",
+      "kind": "status_clear",
+      "clears": ["Poison", "Blind", "Silence"],
+      "ct": 0,
+      "mp": 0,
+      "jp": 80,
+      "band": "A",
+      "limits": "reactive cure only; no prevention and no broad Esuna replacement"
+    },
+    {
+      "name": "Field Salve",
+      "kind": "stabilize",
+      "raw_heal": 15,
+      "clears": ["Poison", "Oil"],
+      "ct": 0,
+      "mp": 0,
+      "jp": 120,
+      "band": "A/B",
+      "range_note": "range 1 or adjacent",
+      "limits": "worse than Potion for pure HP; tactical cleanup item"
+    },
+    {
+      "name": "Ether",
+      "kind": "item_mp_restore",
+      "raw_mp": 20,
+      "ct": 0,
+      "mp": 0,
+      "jp": 150,
+      "band": "B",
+      "limits": "scarcer item economy; single target"
+    },
+    {
+      "name": "Hi-Potion",
+      "kind": "item_heal",
+      "raw_heal": 70,
+      "ct": 0,
+      "mp": 0,
+      "jp": 200,
+      "band": "B/C",
+      "limits": "shop-tier gated; not a Band A floor tool"
+    },
+    {
+      "name": "Hi-Ether",
+      "kind": "item_mp_restore",
+      "raw_mp": 50,
+      "ct": 0,
+      "mp": 0,
+      "jp": 450,
+      "band": "C/D",
+      "limits": "deep caster support route; shop-tier gated"
+    },
+    {
+      "name": "X-Potion",
+      "kind": "item_heal",
+      "raw_heal": 150,
+      "ct": 0,
+      "mp": 0,
+      "jp": 500,
+      "band": "D/E",
+      "limits": "late item stock and gil; not Auto-Potion eligible in this pass"
+    },
+    {
+      "name": "Quick Draw",
+      "kind": "gun_utility",
+      "requires": "gun equipped and gun shop tier unlocked",
+      "pressure_multiplier": 0.7,
+      "ct": 0,
+      "mp": 0,
+      "jp": 260,
+      "band": "B+",
+      "limits": "lower damage than normal gun attack; no gun damage steroid"
+    },
+    {
+      "name": "Smoke Bomb",
+      "kind": "deferred",
+      "status": "deferred_pending_T4_targeting_accuracy_proof"
+    }
+  ],
+  "rsm_boundary_values": {
+    "Auto-Potion": {
+      "band": "C",
+      "trigger_chance": 0.7,
+      "per_round_cap": 1,
+      "eligible_item": "Potion only",
+      "raw_heal": 30,
+      "item_lore_interaction": "not affected",
+      "resource_consumed_on_trigger": true,
+      "reaction_timing": "post-damage survivor-only"
+    },
+    "Throw Item": {
+      "band": "A/B",
+      "value_status": "range/incidence deferred to RSM producer",
+      "constraint": "must not erase item positioning pressure"
+    },
+    "Item Lore": {
+      "band": "C",
+      "value_status": "deferred to RSM producer",
+      "constraint": "must not affect Auto-Potion in this pass"
+    }
+  },
+  "simulation_rows": {
+    "squire_early_basic_attack_damage": {
+      "phase": "early",
+      "attacker": "Squire",
+      "source": "tools/sim_damage.py with work/sim-inputs-v0.2.1.json",
+      "rows": {
+        "sword": {"plate": 20, "mail": 24, "leather": 30, "cloth": 32},
+        "knife": {"plate": 20, "mail": 33, "leather": 28, "cloth": 30},
+        "axe_expected": {"plate": 28, "mail": 23, "leather": 25, "cloth": 25},
+        "flail_expected": {"plate": 34, "mail": 28, "leather": 30, "cloth": 30},
+        "fists": {"plate": 9, "mail": 7, "leather": 8, "cloth": 8}
+      }
+    },
+    "squire_early_utility_damage": {
+      "phase": "early",
+      "attacker": "Squire",
+      "rows": {
+        "Throw Stone fixed 12 crush": {"plate": 13, "mail": 11, "leather": 12, "cloth": 12},
+        "Dash fixed 18 crush": {"plate": 20, "mail": 17, "leather": 18, "cloth": 18},
+        "Weapon Drill sword 0.70": {"plate": 14, "mail": 16, "leather": 21, "cloth": 22},
+        "Weapon Drill axe 0.70 expected": {"plate": 20, "mail": 16, "leather": 17, "cloth": 17},
+        "Weapon Drill flail 0.70 expected": {"plate": 24, "mail": 19, "leather": 21, "cloth": 21},
+        "Weapon Drill knife 0.70": {"plate": 14, "mail": 23, "leather": 20, "cloth": 21}
+      }
+    },
+    "chemist_gun_warning_rows": {
+      "source": "tools/sim_damage.py with work/sim-inputs-v0.2.1.json",
+      "read": "early gun damage is too high for Band 0/A and is a shop-tier warning, not accepted starter access",
+      "early_normal_gun": {"plate": 36, "mail": 39, "leather": 37, "cloth": 38},
+      "early_quick_draw_0.70": {"plate": 25, "mail": 27, "leather": 26, "cloth": 26},
+      "mid_normal_gun": {"plate": 81, "mail": 89, "leather": 85, "cloth": 86},
+      "mid_quick_draw_0.70": {"plate": 57, "mail": 62, "leather": 59, "cloth": 60}
+    },
+    "starter_healing_races": {
+      "max_hp": 150,
+      "resolution_delay_ticks": 0,
+      "threat_tick": 1,
+      "rows": [
+        {"option": "First Aid", "hp_before": 40, "incoming_damage": 60, "final_hp": 0, "survives": false},
+        {"option": "Potion", "hp_before": 40, "incoming_damage": 60, "final_hp": 10, "survives": true},
+        {"option": "First Aid", "hp_before": 50, "incoming_damage": 45, "final_hp": 25, "survives": true},
+        {"option": "Potion", "hp_before": 50, "incoming_damage": 45, "final_hp": 35, "survives": true},
+        {"option": "Hi-Potion", "hp_before": 40, "incoming_damage": 60, "final_hp": 50, "survives": true}
+      ]
+    },
+    "auto_potion_boundary_rows": {
+      "trigger_chance": 0.7,
+      "raw_heal": 30,
+      "per_round_cap": 1,
+      "rows": [
+        {"hp_before": 100, "incoming_damage": 60, "hp_after_damage": 40, "reaction_can_resolve": true, "timed_expected_heal": 21},
+        {"hp_before": 100, "incoming_damage": 120, "hp_after_damage": -20, "reaction_can_resolve": false, "timed_expected_heal": 0},
+        {"hp_before": 150, "incoming_damage": 40, "hp_after_damage": 110, "reaction_can_resolve": true, "timed_expected_heal": 21}
+      ]
+    }
+  },
+  "review_questions": [
+    "Are the Squire fixed and setup values low enough to preserve starter texture without making Squire a trap?",
+    "Is Chemist correctly defined as item-first in Band 0/A with guns held to Band B+ shop timing?",
+    "Are Potion, First Aid, and Phoenix Down values enough for floor play without creating infinite sustain?",
+    "Is the Auto-Potion boundary acceptable for later RSM review, or should Auto-Potion stay entirely out of this producer?",
+    "Does Weapon Drill remain narrow enough, or should it be deferred before acceptance?"
+  ]
+}
