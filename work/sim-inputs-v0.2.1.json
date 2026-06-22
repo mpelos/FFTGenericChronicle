@@ -978,7 +978,6 @@
       "last_stand_battle_cap": 1
     },
     "support_effects": {
-      "jp_boost_multiplier": 1.25,
       "basic_training_action_multiplier": 1.1,
       "throw_item_range_bonus": 2,
       "item_lore_healing_multiplier": 1.3,
