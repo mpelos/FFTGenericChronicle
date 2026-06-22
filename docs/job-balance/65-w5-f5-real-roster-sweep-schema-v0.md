@@ -1,6 +1,6 @@
 # W5 F5 Real-Roster Sweep Schema V0
 
-Status: Revised pending Claude review
+Status: Accepted
 Date: 2026-06-22
 Depends on:
 - `docs/job-balance/31-campaign-gameplay-validation-v1.md`
@@ -58,6 +58,7 @@ Each `rows[]` entry must contain:
 - `required_axes`
 - `units`
 - `floor_envelope`
+- `proxy_axis_provenance`
 - `totals`
 - `top_source`
 - `floor_proxy_per_weak_family`
@@ -72,6 +73,9 @@ Each `units[]` entry must contain:
 - `job_or_profile`
 - `role`
 - `primary_family`
+- `action_id`
+- `derivation`
+- `axis_provenance`
 - `engine`
 - `damage`
 - `area_damage`
@@ -92,6 +96,85 @@ Each `units[]` entry must contain:
 
 The output JSON must repeat the tolerance block and `effwp_rounding = none` so Claude's independent
 checker can bind to the artifact itself, not only to this prose document.
+
+## Reproducibility Conventions
+
+The JSON `method` block must expose the following machine-checkable conventions:
+
+- `damage_conventions`;
+- `ramza_chapter_phase_map`;
+- `magic_area_constants`.
+
+### Physical Damage Convention
+
+Physical weapon values are recomputed per armor class before any armor-mix weighting:
+
+```text
+raw_pressure = routine(attacker stats, family WP, phase scalar) * pressure/support multiplier
+per_armor_damage = floor(raw_pressure * engine_multiplier * response_layers[armor])
+delivered_per_action = hit_count * hit_rate * sum(armor_mix[armor] * per_armor_damage)
+```
+
+The floor happens before the armor-mix weighted average. Doublehand, Jump, Attack Boost probes, and
+similar pressure changes must be inside the per-armor floor. Multi-hit engines apply `hit_count`
+after the per-armor floor and armor-mix weighting. Imported accepted tables must already obey this
+convention.
+
+### Ramza Chapter Phase Map
+
+N1 Ramza profiles are chapter-fixed, not row-band-fixed:
+
+| Profile | Phase scalar |
+| --- | --- |
+| `Ramza Chapter 1` | `early` |
+| `Ramza Chapter 2` | `mid` |
+| `Ramza Chapter 3` | `mid` |
+| `Ramza Chapter 4` | `late` |
+
+Band D rows that use `Ramza Chapter 3` therefore still use the C3 mid profile. Band E rows that use
+`Ramza Chapter 4` use the late profile.
+
+### Action Identity And Derivation
+
+Every unit must carry `action_id` and `derivation`.
+
+This is mandatory when `primary_family` is a weapon label but the modeled value is a skill, setup,
+or hybrid action. Examples:
+
+- Squire starter utility: `Fundaments:Dash`, fixed 18, not a normal flail hit;
+- Geomancer Oil: `Geomancy:Magma Surge/Oil setup`, not a normal axe hit;
+- Ramza hybrid rows: sword family plus Spellblade, Arc Blade, or Ultima proxy;
+- Archer utility rows: bow family plus aimed, pinning, or piercing action.
+
+`derivation` must name the source file or accepted row, the formula or lookup rule, and any constants
+needed to recompute the value.
+
+### Magic And Area Constants
+
+Magic and area rows must not appear as unexplained constants. The output JSON must pin the exact
+`ma`, `k`, rounding rule, per-target value, expected target count, and total for caster rows used in
+W5.
+
+Current W5 spell constants use:
+
+```text
+single-target magic neutral = round(ma * k * 0.6)
+area magic per_target = round(ma * k * 0.6)
+area normalized_total = per_target * expected_targets
+```
+
+The result JSON's `method.magic_area_constants` is the binding table for Black Magic, White Magic,
+Summon, Meteor, and Ramza's chapter 4 Ultima proxy in this sweep.
+
+### Proxy Axis Provenance
+
+Non-damage axes are proxies. W5 must make that explicit instead of pretending they are exact game
+formula outputs.
+
+Each row must include `proxy_axis_provenance` for `sustain`, `control`, `mobility`, and `safety`.
+Each non-zero contribution must cite the accepted concrete document or JSON row that justifies the
+proxy. This is especially binding for `W5-P5-D-CONV`, whose fail call depends on `339` sustain and
+`265` safety-defense.
 
 ## Required Axes
 
@@ -122,8 +205,14 @@ Each damage-capable `units[]` entry must report:
 damage.per_hit
 damage.hit_count
 damage.engine_multiplier
+damage.hit_rate
+damage.action_multiplier
 damage.delivered_per_action = per_hit * hit_count * engine_multiplier
 ```
+
+This is a display identity for W5 unit rows, not a replacement for the per-armor physical formula
+above. Reviewers must recompute physical weapon values from the per-armor formula when validating
+floored weapon rows.
 
 Interpretation rules:
 
@@ -131,6 +220,9 @@ Interpretation rules:
 - innate or learned dual-wield/two-hit engines use `hit_count = 2` and
   `engine_multiplier = 1.0`;
 - Doublehand uses `hit_count = 1` and `engine_multiplier = 1.8`;
+- action-modeled rows such as Guarded Strike, Pinning Shot, Piercing Shot, Spellblade/Ward, or
+  explicit accuracy rows must expose `action_multiplier` and/or `hit_rate` in `damage` even when the
+  accepted source table already has the factor baked into `delivered_per_action`;
 - Attack Boost rows use their multiplier only inside `STRESS-PROBE` rows and never become canon
   ceilings in this schema;
 - volatile-family self-viability may credit its own expected or maximum value, but it does not
@@ -197,6 +289,9 @@ damage, sustain, control, mobility, safety
 For the dominance `damage` axis, single-target engines use `damage.delivered_per_action`; area
 engines use the realistic `area_damage.normalized_total`; a hybrid unit uses
 `max(damage.delivered_per_action, area_damage.normalized_total)`.
+
+`top_source` and `top_source.share` use that same per-unit primary damage axis. W5 must not add two
+alternative actions from the same unit together when identifying the largest damage source.
 
 A unit or build is dominant when it is best or tied in at least three of those five axes and is not
 worst in any of the five axes. It is not required to be strictly best in all axes, and being best in
