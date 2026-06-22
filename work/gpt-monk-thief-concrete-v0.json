@@ -1,0 +1,316 @@
+{
+  "schema_version": "monk-thief-concrete-provisional-v0",
+  "status": "accepted_w3_monk_thief_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "purpose": "Third W3 physical/foundation concrete action-value producer, covering Monk and Thief.",
+  "scope": {
+    "jobs": ["Monk", "Thief"],
+    "included": [
+      "Monk action values",
+      "Monk healing/revive/status-clear boundaries",
+      "Thief action values",
+      "Thief battle-scoped steal/equipment suppression boundaries",
+      "Charm and Doom status boundaries",
+      "Band B/C damage checks"
+    ],
+    "excluded": [
+      "final RSM pricing and incidence",
+      "exact prerequisite tree",
+      "permanent steal/economy rewards",
+      "monster/poach behavior",
+      "full real-roster F5 verdict"
+    ]
+  },
+  "monk_actions": [
+    {
+      "name": "Pummel",
+      "kind": "reliable_close_strike",
+      "pressure_multiplier": 0.95,
+      "hit_bonus": 0.1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 120,
+      "band": "B",
+      "limits": "adjacent only; lower on-hit damage than normal attack"
+    },
+    {
+      "name": "Cyclone",
+      "kind": "close_area_impact",
+      "pressure_multiplier": 0.75,
+      "area_shape": "small self-centered area",
+      "ct": 0,
+      "mp": 0,
+      "jp": 180,
+      "band": "B",
+      "limits": "exposure-priced; not safe general AoE"
+    },
+    {
+      "name": "Aurablast",
+      "kind": "short_range_force",
+      "pressure_multiplier": 0.8,
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "B/C",
+      "limits": "short range and height/line constrained; lower than melee"
+    },
+    {
+      "name": "Shockwave",
+      "kind": "line_ground_impact",
+      "pressure_multiplier": 0.9,
+      "ct": 0,
+      "mp": 0,
+      "jp": 360,
+      "band": "B/C",
+      "limits": "grounded/line restriction; not a Dragoon reach replacement"
+    },
+    {
+      "name": "Doom Fist",
+      "kind": "status_pressure_strike",
+      "pressure_multiplier": 0.5,
+      "status": "Doom",
+      "status_base_chance": 0.4,
+      "countdown": 3,
+      "ct": 0,
+      "mp": 0,
+      "jp": 300,
+      "band": "C",
+      "limits": "adjacent; immunity respected; status attempt with chip"
+    },
+    {
+      "name": "Purification",
+      "kind": "status_clear",
+      "clears": ["Poison", "Blind", "Immobilize"],
+      "ct": 0,
+      "mp": 0,
+      "jp": 240,
+      "band": "C",
+      "range_note": "self or adjacent ally",
+      "limits": "does not clear Charm, Stop, Stone, Doom, KO, Undead, or Silence"
+    },
+    {
+      "name": "Chakra",
+      "kind": "active_heal",
+      "raw_heal": 40,
+      "mp_restore": 0,
+      "ct": 0,
+      "mp": 0,
+      "jp": 350,
+      "band": "C",
+      "range_note": "self or adjacent single target",
+      "limits": "HP-only in this pass; MP restore deferred to T9"
+    },
+    {
+      "name": "Revive",
+      "kind": "active_revive",
+      "revive_hp": 40,
+      "ct": 0,
+      "mp": 0,
+      "jp": 500,
+      "band": "C/D",
+      "range_note": "adjacent only",
+      "limits": "frontline exposure; no range safety and no item stock cost"
+    }
+  ],
+  "thief_actions": [
+    {
+      "name": "Steal Gil",
+      "kind": "mug_economy",
+      "pressure_multiplier": 0.7,
+      "battle_scoped_gil_tag": true,
+      "ct": 0,
+      "mp": 0,
+      "jp": 80,
+      "band": "B",
+      "limits": "low-stakes mug action; permanent reward deferred"
+    },
+    {
+      "name": "Steal Heart",
+      "kind": "charm_control",
+      "pressure_multiplier": 0.25,
+      "status": "Charm",
+      "status_base_chance": 0.35,
+      "side_rear_status_chance": 0.45,
+      "duration": "until one controlled action or damage break",
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "C",
+      "limits": "no gender restriction; bounded control, not Orator replacement"
+    },
+    {
+      "name": "Steal Helm",
+      "kind": "folded_boundary",
+      "status": "folded_into_Steal_Armor_for_this_W3_pass",
+      "limits": "may split out later only by dividing the existing Steal Armor exposure budget"
+    },
+    {
+      "name": "Steal Armor",
+      "kind": "armor_suppression",
+      "pressure_multiplier": 0.35,
+      "response_delta_by_armor": {"plate": 0.1, "mail": 0.08, "leather": 0.04, "cloth": 0.0},
+      "response_cap": 1.15,
+      "duration": "one physical hit or target's next turn, whichever comes first",
+      "ct": 0,
+      "mp": 0,
+      "jp": 350,
+      "band": "C/D",
+      "limits": "battle-scoped suppression; applies only on steal success, not on normal weapon hit; permanent reward deferred"
+    },
+    {
+      "name": "Steal Shield",
+      "kind": "shield_suppression",
+      "pressure_multiplier": 0.35,
+      "shield_evasion_multiplier": 0.0,
+      "duration": "one direct attack or target's next turn, whichever comes first",
+      "ct": 0,
+      "mp": 0,
+      "jp": 350,
+      "band": "C/D",
+      "limits": "shield layer only; applies only on steal success, not on normal weapon hit"
+    },
+    {
+      "name": "Steal Weapon",
+      "kind": "weapon_output_suppression",
+      "pressure_multiplier": 0.35,
+      "weapon_output_multiplier": 0.6,
+      "duration": "one weapon action or target's next turn, whichever comes first",
+      "ct": 0,
+      "mp": 0,
+      "jp": 500,
+      "band": "C/D",
+      "limits": "battle-scoped; applies only on steal success, not on normal weapon hit; no permanent deletion here"
+    },
+    {
+      "name": "Steal Accessory",
+      "kind": "accessory_suppression",
+      "ct": 0,
+      "mp": 0,
+      "jp": 500,
+      "band": "D",
+      "limits": "battle-scoped accessory suppression; applies only on steal success; no numeric catalog value yet"
+    },
+    {
+      "name": "Steal EXP",
+      "kind": "deferred_economy",
+      "status": "deferred_pending_campaign_economy_policy",
+      "limits": "no combat value accepted in this pass"
+    }
+  ],
+  "steal_accuracy_boundary": {
+    "base_steal_rate": 0.55,
+    "front_penalty_pp": -10,
+    "side_rear_bonus_pp": 10,
+    "light_fingers_interaction": "deferred",
+    "concentration_interaction": "none in this pass",
+    "boss_protected_policy": "deferred immunity/resistance row",
+    "suppression_effects_apply_on": "steal success only; Steal Armor, Steal Shield, Steal Weapon, and Steal Accessory do not apply suppression on a normal weapon hit"
+  },
+  "thief_vs_knight_relationship": {
+    "thief": "stronger successful shield/weapon burst, later band, accuracy-gated, positional, one attack/action/turn duration",
+    "knight": "weaker per application on shield/weapon pressure, earlier band, more reliable, longer duration",
+    "armor_note": "Thief Steal Armor is weaker than Knight Rend Armor: lower deltas and response cap 1.15 instead of 1.20"
+  },
+  "doom_fist_counterplay_boundary": {
+    "status": "T8 required before final campaign acceptance",
+    "counterplay_required": "Doom immunity or removal handling must exist before Doom becomes common enemy pressure",
+    "purification_interaction": "Purification does not clear Doom in this pass"
+  },
+  "orator_forward_note": {
+    "steal_heart_scope": "temporary Charm only",
+    "orator_differentiation_needed": "later Orator social control should differentiate through recruit policy, Brave/Faith, speech range, or broader morale axes"
+  },
+  "rsm_boundary_values": {
+    "Counter": "deferred to RSM/T4/T10 producer; melee exposure only",
+    "First Strike": "deferred to RSM producer; D band and non-negating if retained",
+    "Brawler": "deferred to RSM/F5 producer; doc 51 C/D and not Band B",
+    "Lifefont": "deferred to RSM/T3 producer; no attrition erasure",
+    "Sticky Fingers": "deferred to RSM/economy producer",
+    "Light Fingers": "deferred to RSM/economy producer",
+    "Move +2": "deferred to movement incidence producer; doc 51 C",
+    "Treasure Hunter": "deferred to campaign economy producer"
+  },
+  "simulation_rows": {
+    "mid_basic_attack_damage": {
+      "phase": "mid",
+      "monk_fists": {"plate": 80, "mail": 68, "leather": 71, "cloth": 71},
+      "thief_knife": {"plate": 50, "mail": 79, "leather": 69, "cloth": 72},
+      "thief_fists_fallback": {"plate": 46, "mail": 38, "leather": 40, "cloth": 40}
+    },
+    "monk_mid_action_damage": {
+      "normal fists": {"plate": 80, "mail": 68, "leather": 71, "cloth": 71},
+      "Pummel fists x0.95": {"plate": 76, "mail": 64, "leather": 67, "cloth": 67},
+      "Cyclone fists x0.75": {"plate": 60, "mail": 51, "leather": 53, "cloth": 53},
+      "Aurablast fists x0.80": {"plate": 64, "mail": 54, "leather": 56, "cloth": 56},
+      "Shockwave fists x0.90": {"plate": 72, "mail": 61, "leather": 63, "cloth": 63},
+      "Doom Fist fists x0.50": {"plate": 40, "mail": 34, "leather": 35, "cloth": 35}
+    },
+    "monk_sustain_rows": {
+      "healing_race_max_hp": 280,
+      "rows": [
+        {"option": "no heal", "hp_before": 70, "incoming_damage": 90, "final_hp": 0, "survives": false},
+        {"option": "Potion", "hp_before": 70, "incoming_damage": 90, "final_hp": 10, "survives": true},
+        {"option": "Chakra", "hp_before": 70, "incoming_damage": 90, "final_hp": 20, "survives": true},
+        {"option": "Hi-Potion", "hp_before": 70, "incoming_damage": 90, "final_hp": 50, "survives": true}
+      ],
+      "revive_comparison": [
+        {"option": "Phoenix Down", "revive_hp": 20},
+        {"option": "Monk Revive", "revive_hp": 40},
+        {"option": "Raise on 280 max HP", "revive_hp": 70}
+      ]
+    },
+    "thief_mid_action_damage": {
+      "normal knife": {"plate": 50, "mail": 79, "leather": 69, "cloth": 72},
+      "Steal Gil knife x0.70": {"plate": 35, "mail": 55, "leather": 48, "cloth": 50},
+      "equipment steal knife x0.35": {"plate": 17, "mail": 27, "leather": 24, "cloth": 25},
+      "Steal Heart knife x0.25": {"plate": 12, "mail": 19, "leather": 17, "cloth": 18}
+    },
+    "steal_armor_t6_response_rows": {
+      "response_delta_by_armor": {"plate": 0.1, "mail": 0.08, "leather": 0.04, "cloth": 0.0},
+      "response_cap": 1.15,
+      "base_damage_per_hit": 100,
+      "rows": [
+        {"armor": "plate", "type": "swing", "base_response": 0.65, "after_steal": 0.75, "projected_damage": 75},
+        {"armor": "plate", "type": "crush", "base_response": 1.15, "after_steal": 1.15, "projected_damage": 115},
+        {"armor": "mail", "type": "missile", "base_response": 1.10, "after_steal": 1.15, "projected_damage": 115},
+        {"armor": "leather", "type": "thrust", "base_response": 0.95, "after_steal": 0.99, "projected_damage": 99},
+        {"armor": "cloth", "type": "swing", "base_response": 1.00, "after_steal": 1.00, "projected_damage": 100}
+      ]
+    },
+    "steal_shield_t4_rows": {
+      "base_hit": 80,
+      "class_evade": 10,
+      "shield_evade": 30,
+      "accessory_evade": 10,
+      "shield_evasion_multiplier_after_steal": 0.0,
+      "rows": [
+        {"facing": "front", "before": 45, "after": 65},
+        {"facing": "side", "before": 50, "after": 72},
+        {"facing": "rear", "before": 72, "after": 72}
+      ]
+    },
+    "steal_weapon_output_rows": {
+      "weapon_output_multiplier": 0.6,
+      "rows": [
+        {"incoming_weapon_damage": 80, "after_steal_weapon": 48},
+        {"incoming_weapon_damage": 120, "after_steal_weapon": 72}
+      ]
+    },
+    "steal_heart_status_rows": {
+      "rows": [
+        {"row": "base Charm chance", "value": 0.35},
+        {"row": "side/rear Charm chance", "value": 0.45},
+        {"row": "duration", "value": "until one controlled action or damage break"}
+      ]
+    }
+  },
+  "review_questions": [
+    "Does Monk Band B remain damage/positioning only, with Chakra and Revive safely held to C/C-D?",
+    "Do Monk action values preserve the protected fist identity without making every weapon family irrelevant?",
+    "Do Purification, Chakra, and Revive remain distinct from Chemist and White Mage lanes?",
+    "Are Thief steal/equipment values useful but not stronger than Knight's frontline control?",
+    "Is Steal Heart bounded enough to avoid replacing Orator/Mystic/Time control?",
+    "Are economy and permanent rewards clearly deferred?"
+  ]
+}
