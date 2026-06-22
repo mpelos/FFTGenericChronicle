@@ -103,7 +103,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.hook-register-probe.json`
 - Intent: Log a short burst of x64 register snapshots at the stable battle_base_ptr hook.
 - Live mutation: no HP/MP rewrites
-- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False, ctResolver=False/0ms, counterResolver=False/0ms, hookRegs=True/24
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False, ctResolver=False/0ms, counterResolver=False/0ms, hookRegs=True/2000
 - Errors: none
 
 ### engine-death-test

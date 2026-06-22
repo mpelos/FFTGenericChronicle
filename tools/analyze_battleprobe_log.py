@@ -49,6 +49,11 @@ CTX_RE = re.compile(r"\[CTX ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)"
 RUNTIME_RE = re.compile(r"\[RUNTIME ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 RUNTIME_MP_RE = re.compile(r"\[RUNTIME-MP ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
 HOOK_REGS_RE = re.compile(r"\[HOOK-REGS count=(\d+) ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)")
+HOOK_REGS_EVENT_RE = re.compile(
+    r"\[HOOK-REGS-EVENT kind=(?P<kind>[a-z]+) event=(?P<event>\d+) hookCount=(?P<count>\d+) "
+    r"hookPtr=(?P<hook_ptr>0x[0-9A-F]+) targetPtr=(?P<target_ptr>0x[0-9A-F]+) id=(?P<id>0x[0-9A-F]{2})\] "
+    r"(?P<body>.+)"
+)
 REWRITE_EVENT_RE = re.compile(
     r"\[(?P<tag>(?:MP-)?REWRITE(?:-DRY-RUN|-FAILED|-SKIP|-ECHO-SKIP)?) "
     r"ptr=(0x[0-9A-F]+) id=(0x[0-9A-F]{2})\] (?P<body>.+)"
@@ -265,6 +270,19 @@ def parse_runtime_contexts(runtime_contexts: list[tuple[str, str]]) -> list[dict
 
 
 def parse_hook_register_line(line: str, line_no: int) -> dict[str, object] | None:
+    if m := HOOK_REGS_EVENT_RE.search(line):
+        return {
+            "line": line_no,
+            "kind": m.group("kind"),
+            "event": int(m.group("event")),
+            "count": parse_int(m.group("count")),
+            "ptr": m.group("target_ptr"),
+            "hook_ptr": m.group("hook_ptr"),
+            "id": m.group("id"),
+            "body": m.group("body"),
+            "registers": parse_hook_registers(m.group("body")),
+        }
+
     m = HOOK_REGS_RE.search(line)
     if not m:
         return None
@@ -1123,6 +1141,7 @@ def render_hook_register_summary(hook_register_events: list[dict[str, object]]) 
         return lines
 
     touched = Counter(str(event.get("id", "?")) for event in hook_register_events)
+    kinds = Counter(str(event.get("kind", "continuous")) for event in hook_register_events)
     classifications: Counter[str] = Counter()
     for event in hook_register_events:
         registers = event.get("registers", {})
@@ -1135,17 +1154,19 @@ def render_hook_register_summary(hook_register_events: list[dict[str, object]]) 
             classifications[classification] += 1
 
     lines.append(f"- Snapshots: {len(hook_register_events)}")
+    lines.append("- Kinds: " + ", ".join(f"`{kind}`={count}" for kind, count in kinds.most_common()))
     lines.append("- Touched ids: " + ", ".join(f"`{unit_id}`={count}" for unit_id, count in touched.most_common()))
     lines.append("- Register classifications: " + ", ".join(f"`{name}`={count}" for name, count in classifications.most_common(12)))
     lines.append("")
 
     lines.append("### First Snapshots")
-    lines.append("| Hook Count | Ptr | Id | Registers |")
-    lines.append("| ---: | --- | --- | --- |")
+    lines.append("| Kind | Event | Hook Count | Ptr | Hook Ptr | Id | Registers |")
+    lines.append("| --- | ---: | ---: | --- | --- | --- | --- |")
     for event in hook_register_events[:12]:
         lines.append(
             "| "
-            f"{event.get('count', '?')} | `{event.get('ptr', '?')}` | `{event.get('id', '?')}` | "
+            f"{event.get('kind', 'continuous')} | {event.get('event', '')} | {event.get('count', '?')} | "
+            f"`{event.get('ptr', '?')}` | `{event.get('hook_ptr', '')}` | `{event.get('id', '?')}` | "
             f"`{event.get('body', '-')}` |"
         )
     lines.append("")

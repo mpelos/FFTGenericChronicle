@@ -440,7 +440,7 @@ def inspect_log(
                         trace_var_counts[variable] = trace_var_counts.get(variable, 0) + 1
         if actor_probe_event := parse_actor_probe_line(line, line_no):
             actor_probe_events.append(actor_probe_event)
-        if HOOK_REGS_RE.search(line):
+        if "[HOOK-REGS" in line:
             hook_register_probe_events += 1
         if REWRITE_EVENT_RE.search(line):
             rewrite_events += 1

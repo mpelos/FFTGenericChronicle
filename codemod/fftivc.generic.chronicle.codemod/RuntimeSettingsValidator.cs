@@ -79,8 +79,22 @@ internal static class RuntimeSettingsValidator
             report.Error("SuppressOwnRewriteEchoWindowMs", "SuppressOwnRewriteEchoWindowMs must be nonnegative.");
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbeEventMaxLogs < 0)
+            report.Error("HookRegisterProbeEventMaxLogs", "HookRegisterProbeEventMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbeStackSlots < 0 || settings.HookRegisterProbeStackSlots > 64)
+            report.Error("HookRegisterProbeStackSlots", "HookRegisterProbeStackSlots must be within 0..64.");
+        if (settings.HookRegisterProbePointerScanBytes < 0 || settings.HookRegisterProbePointerScanBytes > 0x2000)
+            report.Error("HookRegisterProbePointerScanBytes", "HookRegisterProbePointerScanBytes must be within 0..0x2000.");
+        if (settings.HookRegisterProbePointerMaxLogs < 0)
+            report.Error("HookRegisterProbePointerMaxLogs", "HookRegisterProbePointerMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbePointerMaxPointersPerRoot < 0 || settings.HookRegisterProbePointerMaxPointersPerRoot > 64)
+            report.Error("HookRegisterProbePointerMaxPointersPerRoot", "HookRegisterProbePointerMaxPointersPerRoot must be within 0..64.");
         if (settings.HookRegisterProbe)
             report.Warn("HookRegisterProbe", "hook register probe is for short RE captures only; keep HookRegisterProbeMaxLogs low.");
+        if (settings.HookRegisterProbeOnHpEvent || settings.HookRegisterProbeOnMpEvent || settings.HookRegisterProbeOnCtDrop)
+            report.Warn("HookRegisterProbeOnEvent", "event-correlated hook register snapshots are for short RE captures only.");
+        if (settings.HookRegisterProbePointerScanBytes > 0)
+            report.Warn("HookRegisterProbePointerScanBytes", "pointer scans are read-only but noisy; use only for short controlled RE captures.");
         if (settings.UnknownDiffStart < 0 || settings.UnknownDiffStart >= RawSize)
             report.Error("UnknownDiffStart", $"UnknownDiffStart must be within 0..0x{RawSize - 1:X}.");
         if (settings.UnknownDiffEnd < settings.UnknownDiffStart || settings.UnknownDiffEnd >= RawSize)
