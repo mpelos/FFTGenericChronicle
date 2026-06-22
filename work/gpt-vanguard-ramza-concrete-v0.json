@@ -1,0 +1,293 @@
+{
+  "schema_version": "vanguard-ramza-concrete-provisional-v0",
+  "status": "accepted_w3_vanguard_ramza_concrete_provisional",
+  "date": "2026-06-22",
+  "source_formula_bundle": "work/sim-inputs-v0.2.1.json",
+  "effective_wp_rounding": "none",
+  "purpose": "Sixth W3 physical/foundation concrete action-value producer, covering Vanguard and Ramza chapter values.",
+  "scope": {
+    "jobs": ["Vanguard", "Ramza"],
+    "included": [
+      "provisional Vanguard roster row",
+      "Vanguard action values",
+      "Vanguard mitigation and exposure rows",
+      "provisional Ramza chapter rows",
+      "Ramza chapter action values",
+      "Ramza per-band specialist-protection rows"
+    ],
+    "excluded": [
+      "final reaction/support/movement values",
+      "final multipliers",
+      "final equipment records",
+      "final challenge AI behavior",
+      "final cover/intercept implementation",
+      "final Ramza equipment",
+      "full W4/W5 incidence verdicts"
+    ]
+  },
+  "provisional_roster_rows": {
+    "Vanguard": {
+      "armor_class": "plate",
+      "late": {"hp": 516, "pa": 12, "ma": 6, "spd": 7},
+      "native_families_this_pass": ["sword", "spear", "axe", "fists"],
+      "native_knight_sword": false,
+      "support_gated_knight_sword": "deferred Equip Knight Swords only"
+    },
+    "Ramza": {
+      "chapter_1": {"band": "0/A", "hp": 150, "pa": 4, "ma": 4, "spd": 6},
+      "chapter_2": {"band": "B/C", "hp": 280, "pa": 8, "ma": 7, "spd": 7},
+      "chapter_3_mid": {"band": "C/D", "hp": 308, "pa": 9, "ma": 8, "spd": 7},
+      "chapter_4": {"band": "E", "hp": 473, "pa": 12, "ma": 12, "spd": 8},
+      "chapter_4_stress": {"band": "E/stress", "hp": 572, "pa": 13, "ma": 13, "spd": 9},
+      "native_staff_rod_pole_ma_crush": false
+    }
+  },
+  "vanguard_actions": [
+    {
+      "name": "Breach",
+      "kind": "crush_guard_pressure",
+      "eligible_routes": ["axe", "fists", "shield-crush posture"],
+      "pressure_multiplier": 0.75,
+      "exposure_mark": true,
+      "ct": 0,
+      "mp": 0,
+      "jp": 220,
+      "band": "E",
+      "limits": "no sword/spear modal rider; setup and guard pressure, not raw damage"
+    },
+    {
+      "name": "Intercede",
+      "kind": "ally_protection",
+      "ally_incoming_multiplier": 0.75,
+      "vanguard_chip_fraction_of_original": 0.25,
+      "duration": "one nearby ally direct hit",
+      "ct": 0,
+      "mp": 0,
+      "jp": 260,
+      "band": "E",
+      "limits": "nearby ally only; no global cover"
+    },
+    {
+      "name": "Aegis Stance",
+      "kind": "local_mitigation_stance",
+      "incoming_hit_multiplier": 0.85,
+      "vanguard_outgoing_multiplier": 0.75,
+      "duration": "until Vanguard next turn",
+      "ct": 0,
+      "mp": 0,
+      "jp": 320,
+      "band": "E",
+      "limits": "self/adjacent allies; no stacking with Protect/Shell/Kiyomori-like mitigation"
+    },
+    {
+      "name": "Sunder Guard",
+      "kind": "guard_exposure_setup",
+      "pressure_multiplier": 0.45,
+      "shield_weapon_guard_multiplier": 0.6,
+      "exposure_mark": true,
+      "ct": 0,
+      "mp": 0,
+      "jp": 380,
+      "band": "E",
+      "limits": "does not affect class/accessory evasion and does not delete equipment"
+    },
+    {
+      "name": "Commanding Challenge",
+      "kind": "soft_challenge",
+      "soft_challenge_bonus": 25,
+      "ignored_target_output_multiplier": 0.85,
+      "duration": "until target action or Vanguard next turn",
+      "ct": 0,
+      "mp": 0,
+      "jp": 420,
+      "band": "E",
+      "limits": "local mark only; no hard boss lock or forced AI script"
+    },
+    {
+      "name": "Decisive Strike",
+      "kind": "setup_finisher",
+      "setup_pressure_multiplier": 1.2,
+      "no_setup_pressure_multiplier": 0.75,
+      "required_setup_marks": ["Breach", "Sunder Guard", "Commanding Challenge"],
+      "ct": 0,
+      "mp": 0,
+      "jp": 600,
+      "band": "E",
+      "limits": "no instant KO, no Holy Sword clone, no free range"
+    }
+  ],
+  "vanguard_exposure_mark": {
+    "response_delta_by_armor": {"plate": 0.06, "mail": 0.05, "leather": 0.03, "cloth": 0.0},
+    "response_cap": 1.15,
+    "duration": "next one direct physical hit or target's next turn"
+  },
+  "ramza_chapter_actions": [
+    {
+      "chapter": 1,
+      "name": "Squire fundamentals",
+      "kind": "inherited_squire_values",
+      "source": "docs/job-balance/52-squire-chemist-concrete-v0.md",
+      "jp": "inherited"
+    },
+    {
+      "chapter": 1,
+      "name": "Tailwind",
+      "kind": "self_ct",
+      "ct_gain": 8,
+      "target": "self",
+      "per_target_round_cap": 1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "no Speed stat, no ally Rally replacement"
+    },
+    {
+      "chapter": 2,
+      "name": "Steel",
+      "kind": "brave_up",
+      "brave_delta": 6,
+      "brave_cap": 80,
+      "duration": "battle-scoped",
+      "target": "self or one ally",
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "weaker than Orator Praise"
+    },
+    {
+      "chapter": 2,
+      "name": "Chant",
+      "kind": "sacrifice_heal",
+      "ally_heal": 35,
+      "ramza_hp_cost": 15,
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "no revive, no status clear, no Faith scaling"
+    },
+    {
+      "chapter": 3,
+      "name": "Spellblade",
+      "kind": "hybrid_sword",
+      "pressure_multiplier": 0.85,
+      "formula": "floor((PA + MA) / 2) * sword_effective_wp",
+      "damage_type": "swing",
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "single target; no elemental/status rider in this pass"
+    },
+    {
+      "chapter": 3,
+      "name": "Ward",
+      "kind": "single_magic_mitigation",
+      "incoming_magic_hit_multiplier": 0.85,
+      "duration": "one magic hit",
+      "target": "self or one ally",
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "no Shell replacement"
+    },
+    {
+      "chapter": 4,
+      "name": "Shout",
+      "kind": "self_ct_and_brave",
+      "ct_gain": 12,
+      "brave_delta": 6,
+      "brave_cap": 80,
+      "target": "self",
+      "per_round_cap": 1,
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "no PA/MA stat stack"
+    },
+    {
+      "chapter": 4,
+      "name": "Arc Blade",
+      "kind": "hybrid_sword",
+      "pressure_multiplier": 1.0,
+      "formula": "floor((PA + MA) / 2) * sword_effective_wp",
+      "damage_type": "swing",
+      "ct": 0,
+      "mp": 0,
+      "jp": 0,
+      "limits": "single target; no line/AoE Holy Sword clone"
+    },
+    {
+      "chapter": 4,
+      "name": "Ultima",
+      "kind": "unique_magic_damage",
+      "K": 22,
+      "formula": "K * MA * max(0.60, caster_faith * target_faith)",
+      "mp": 40,
+      "ct": 4,
+      "jp": 0,
+      "limits": "small area; below dedicated Black Mage high spell; Shell/Faith/Reflect policy applies"
+    }
+  ],
+  "rsm_boundary_values": {
+    "Vanguard Intervention": "deferred local ally-protection reaction; no global cover or extra-attack loop unless T10 approves",
+    "Vanguard Last Stand": "deferred critical survival; no practical immortality",
+    "Equip Knight Swords": "deferred E support, optional and cuttable",
+    "Vanguard Training": "deferred Vanguard-action specialist support only",
+    "Armor Discipline": "deferred plate/shield support; no mitigation immunity stack",
+    "Vanguard March": "deferred formation movement only",
+    "Ramza RSM": "deferred by chapter and subject to per-band specialist checks"
+  },
+  "simulation_rows": {
+    "vanguard_baseline_late": {
+      "sword": {"plate": 124, "mail": 144, "leather": 182, "cloth": 192},
+      "spear": {"plate": 125, "mail": 198, "leather": 173, "cloth": 181},
+      "axe_expected": {"plate": 149, "mail": 123, "leather": 130, "cloth": 130},
+      "fists": {"plate": 110, "mail": 93, "leather": 97, "cloth": 97}
+    },
+    "vanguard_action_damage_late": {
+      "Breach axe x0.75": {"plate": 112, "mail": 92, "leather": 97, "cloth": 97},
+      "Breach fists x0.75": {"plate": 82, "mail": 70, "leather": 73, "cloth": 73},
+      "Sunder Guard sword x0.45": {"plate": 56, "mail": 64, "leather": 82, "cloth": 86},
+      "Sunder Guard axe x0.45": {"plate": 67, "mail": 55, "leather": 58, "cloth": 58},
+      "Decisive Strike sword x1.20 setup": {"plate": 149, "mail": 172, "leather": 218, "cloth": 230},
+      "Decisive Strike spear x1.20 setup": {"plate": 150, "mail": 237, "leather": 208, "cloth": 218},
+      "Decisive Strike axe x1.20 setup": {"plate": 179, "mail": 148, "leather": 156, "cloth": 156},
+      "Decisive Strike sword x0.75 no_setup": {"plate": 93, "mail": 108, "leather": 136, "cloth": 144}
+    },
+    "vanguard_mitigation_rows": {
+      "incoming_direct_hit": 120,
+      "no_protection": {"ally_final_damage": 120, "vanguard_chip": 0},
+      "Intercede": {"ally_final_damage": 90, "vanguard_chip": 30},
+      "Aegis Stance": {"ally_final_damage": 102, "vanguard_chip": 0},
+      "both_eligible_stronger_single_channel": {"ally_final_damage": 90, "vanguard_chip": 30}
+    },
+    "vanguard_exposure_rows": [
+      {"armor": "plate", "type": "swing", "base_response": 0.65, "after_mark": 0.71, "projected_damage": 71},
+      {"armor": "plate", "type": "crush", "base_response": 1.15, "after_mark": 1.15, "projected_damage": 115},
+      {"armor": "mail", "type": "missile", "base_response": 1.10, "after_mark": 1.15, "projected_damage": 115},
+      {"armor": "leather", "type": "thrust", "base_response": 0.95, "after_mark": 0.98, "projected_damage": 98},
+      {"armor": "cloth", "type": "swing", "base_response": 1.00, "after_mark": 1.00, "projected_damage": 100}
+    ],
+    "ramza_weapon_and_hybrid_rows": {
+      "chapter_1_ramza_sword": {"plate": 20, "mail": 24, "leather": 30, "cloth": 32},
+      "squire_early_sword_reference": {"plate": 20, "mail": 24, "leather": 30, "cloth": 32},
+      "chapter_2_ramza_sword": {"plate": 62, "mail": 72, "leather": 91, "cloth": 96},
+      "chapter_3_ramza_sword_mid": {"plate": 70, "mail": 81, "leather": 102, "cloth": 108},
+      "chapter_3_spellblade_x0.85": {"plate": 53, "mail": 61, "leather": 77, "cloth": 81},
+      "chapter_4_ramza_sword": {"plate": 124, "mail": 144, "leather": 182, "cloth": 192},
+      "chapter_4_arc_blade_x1.00": {"plate": 124, "mail": 144, "leather": 182, "cloth": 192}
+    },
+    "ramza_magic_rows_faith_70_70": {
+      "chapter_4_ultima_K22_late": 158,
+      "chapter_4_ultima_K22_stress": 171,
+      "black_mage_K26_late_reference": 234,
+      "black_mage_K26_stress_reference": 280
+    }
+  },
+  "claude_review_questions": [
+    "Is Vanguard's action package distinct enough from Knight's Rend suite, given both share plate and sword/fists rows?",
+    "Are Intercede and Aegis Stance strong enough to make Vanguard exciting without creating a mitigation stack problem?",
+    "Is Decisive Strike x1.20 acceptable because it is setup-gated, local, and not a ranged Holy Sword clone?",
+    "Does Ramza's chapter table preserve the per-band specialist-protection rule?",
+    "Is Ultima K22/MP40/CT4 strong enough for final Ramza while staying below Black Mage burst?"
+  ]
+}
