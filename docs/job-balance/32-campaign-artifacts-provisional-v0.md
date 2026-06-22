@@ -55,7 +55,7 @@ stat blocks.
 | P0 naive/thematic | B | First specialist access. | Knight or Archer, White or Black Mage, Chemist/Squire holdover, Ramza flexible. | Basic specialist actions before strong exports. | Floor row. First specialists should feel better even without optimized RSM. | If active jobs are weak until passives are learned, floor fails. | Needs active-job viability rows. |
 | P0 naive/thematic | C | Midgame branch available. | Mixed party with one branch such as Geomancer, Dragoon, Mystic, Orator, or Summoner. | Mostly on-job actions, few cross-job optimizations. | Floor row. Wrong early branch should remain recoverable. | Midgame branch should not require restarting a unit's whole route. | Needs campaign matrix expansion. |
 | P0 naive/thematic | D | Advanced jobs visible but not fully mastered. | One advanced job or strong midgame job; older specialists remain. | Some RSM rewards, but not optimized stack. | Floor row. Thematic parties should become stronger, not obsolete. | If Samurai/Ninja/Time rewards are required, floor fails. | Needs A3 comparison. |
-| P0 naive/thematic | E | Late rewards available if pursued. | Ramza final plus any mix of old specialists and late jobs. | Late job tools may appear, but not mandatory. | Floor row. Older favorite jobs still have rational uses. | Necromancer/Special Knight/Ramza must not be required for viability. | Needs late rows. |
+| P0 naive/thematic | E | Late rewards available if pursued. | Ramza final plus any mix of old specialists and late jobs. | Late job tools may appear, but not mandatory. | Floor row. Older favorite jobs still have rational uses. | Necromancer/Vanguard/Ramza must not be required for viability. | Needs late rows. |
 | P1 balanced | 0 | Squire/Chemist only. | Ramza/Squire, Squire frontline, Squire ranged/utility, Chemist, Squire trainee. | Basic items, basic physical actions. | Baseline reference. | Raw start should not demand perfect item economy. | Provisional pass. |
 | P1 balanced | A | Starter plus first unlock direction. | Ramza, Chemist, physical trainee, caster trainee, ranged/utility trainee. | Fixed-JP routing, Move +1 useful, Items reliable. | Baseline reference. | No support tax can become mandatory for normal progression. | Needs JP pacing ledger. |
 | P1 balanced | B | First specialists. | Knight, Archer, White Mage, Black Mage, Ramza flexible. | One specialist action line per unit; few exports. | Baseline reference. | Archer must not be a dead-end; White/Chemist both matter. | Needs active viability checks. |
@@ -67,7 +67,7 @@ stat blocks.
 | P5 optimizer rush | B | Rush first specialist exports. | Knight shell, Archer/Thief utility, Monk or caster trainee, Chemist/White, Ramza. | Early armor/shield, Concentration/Brawler candidates, Chakra/Revive candidates. | Ceiling row. | Deep secondary on shallow chassis; early strong reaction. | W1/W2/W4. |
 | P5 optimizer rush | C | Rush midgame control/resource branches. | Knight/Monk/Dragoon, Time/Mystic, Geomancer/Orator, Black/Summoner, Ramza. | Haste/Slow, Chakra, Throw Item, Equip Guns/Bow/Polearms candidates, early MP tools. | Ceiling row. | Time snowball, sustain compression, equipment unlock detours. | W2/W3/W6/W9/W10. |
 | P5 optimizer rush | D | Rush advanced RSM. | Ninja/Samurai/Time/Summoner or performer plus Ramza. | Dual Wield, Doublehand, Swiftspell, Teleport, Move +3, Shirahadori/Vanish candidates. | Ceiling row. | Physical/caster/mobility convergence. | W3/W4/W5/W6/W7. |
-| P5 optimizer rush | E | Rush late replacements and Ramza final. | Ramza final, Special Knight, Necromancer, Ninja/Samurai, Time/Summoner or healer. | Late vanguard, dark-state, top RSM, premium equipment unlocks. | Ceiling row. | Late jobs become mandatory or erase specialists. | W8/W10. |
+| P5 optimizer rush | E | Rush late replacements and Ramza final. | Ramza final, Vanguard, Necromancer, Ninja/Samurai, Time/Summoner or healer. | Late vanguard, dark-state, top RSM, premium equipment unlocks. | Ceiling row. | Late jobs become mandatory or erase specialists. | W8/W10. |
 
 ### Wall-Test Rows
 
@@ -125,8 +125,8 @@ band where a piece should be allowed to matter in ordinary play without overgrin
 | Bard/Dancer | Shared RSM | RSM | D/E | Non-performers if too broad. | T2.1. | Must remain performance-oriented and gender-parity-safe. |
 | Necromancer | Dark state/drain/doom | Action | E | Late casters. | T3/T5/T8/T9. | Late reward, not default caster secondary. |
 | Necromancer | Corpse/undead package | Action/Support | E | Control parties. | T3xT5xT8/T10 if acting bodies. | Optional sub-kit; non-acting default. |
-| Special Knight | Vanguard/protection package | Action | E | Late frontlines. | T6xPS/T6xT7/T8/F5. | Late vanguard, not better everything. |
-| Special Knight | Equip Knight Swords / Intervention / Armor Discipline | RSM | E | Every late frontline if too broad. | T2.1/F5/T6xPS/T10. | Cut if sword dominance returns. |
+| Vanguard | Vanguard/protection package | Action | E | Late frontlines. | T6xPS/T6xT7/T8/F5. | Late vanguard, not better everything. |
+| Vanguard | Equip Knight Swords / Intervention / Armor Discipline | RSM | E | Every late frontline if too broad. | T2.1/F5/T6xPS/T10. | Cut if sword dominance returns. |
 | Ramza | Chapter progression | Unique action/chassis | 0-E by chapter | Always present. | A1/A3/F5 as needed. | Broad, not specialist-dominant before final. |
 
 ## A3 - GPT First-Pass Five-Unit Optimizer Stack Sheet
@@ -149,7 +149,7 @@ deep job depth practical earlier than intended.
 | B | Durable Knight body carrying Monk damage secondary, Archer range, White/Black support/offense, Ramza flexible. | Optimizer-realistic if first specialists unlock normally. | Knight + Monk secondary can compress damage onto a durable chassis. Early `Brawler`, `Concentration`, `Equip Armor`, `Equip Shield`, or Doublehand would compound it. | Damage compression begins here. Full damage+sustain+revive compression shifts to Band C once Chakra/Revive are available. |
 | C | Durable frontline with Protect/Shell/plate/shield/Parry-style stack, Time controller, Summoner/Black area or burst, Orator/Archer utility, Ramza hybrid. | Optimizer-realistic with moderate route knowledge. | Mitigation stack is the scariest low-JP break; Time Haste/Quick and Summoner target count are the next layer. | First high-priority campaign stress row is T6xPS mitigation, not late physical damage. |
 | D | Ninja or Samurai physical engine, Time/Summoner caster, Bard/Dancer optional global support, older specialist or Dragoon, Ramza strong hybrid. | Optimizer-realistic if advanced jobs open here; grind-only if reached during Band C encounters. | Dual Wield, Doublehand, Attack Boost/Brawler/Concentration, Swiftspell, Teleport, Move +3, Shirahadori, Vanish, performance global value. | Highest convergence band; must be guarded by T2/T10/T11/T6xPS. |
-| E | Ramza final, Special Knight vanguard, Necromancer dark control, Ninja/Samurai physical engine, Time/Summoner/White support caster or Bard. | Optimizer-realistic late. | Equip Knight Swords, Intervention, Aegis, dark-state finishers, corpse state, premium mobility, top physical support stack. | Late stack can be very strong; test shifts to whether older specialists still earn slots. |
+| E | Ramza final, Vanguard vanguard, Necromancer dark control, Ninja/Samurai physical engine, Time/Summoner/White support caster or Bard. | Optimizer-realistic late. | Equip Knight Swords, Intervention, Aegis, dark-state finishers, corpse state, premium mobility, top physical support stack. | Late stack can be very strong; test shifts to whether older specialists still earn slots. |
 
 ### GPT Ceiling Hypotheses To Reconcile With Claude
 
@@ -165,7 +165,7 @@ deep job depth practical earlier than intended.
    Attack Boost, Brawler, Concentration, and premium equipment supports.
 7. The most likely Band D break is not raw Ninja alone. It is Ninja/Samurai physical engine plus
    Time Mage mobility/action economy plus one global sustain/protection layer.
-8. Special Knight is acceptable only if its protection tools are more formation-local than Time
+8. Vanguard is acceptable only if its protection tools are more formation-local than Time
    Mage/White Mage/Bard global support.
 9. Necromancer is acceptable only if dark-state actions are condition-gated and not the default
    answer to bosses or durable enemies.
@@ -193,7 +193,7 @@ deep job depth practical earlier than intended.
 | Ninja | Critical. | `Dual Wield`, `Move +3`, `Vanish`. | Multi-hit, mobility, and untargetability can converge. | T2.1/F5/T5xT8; no default physical route. |
 | Bard/Dancer | Medium. | Performance global effects, shared movement if too broad. | Party-wide effects can become default infrastructure. | T11xT5/T2.1; interruption and parity. |
 | Necromancer | Medium/high late. | Dark-state secondary, drain, corpse/undead. | Late conditional control can become default if too reliable. | T3xT5xT8/T9/T8; condition-gated. |
-| Special Knight | Critical late. | Protection RSM, `Equip Knight Swords`, vanguard actions. | Can patch every frontline and revive sword dominance. | T6xPS/T6xT7/T2.1/F5; formation-local. |
+| Vanguard | Critical late. | Protection RSM, `Equip Knight Swords`, vanguard actions. | Can patch every frontline and revive sword dominance. | T6xPS/T6xT7/T2.1/F5; formation-local. |
 | Ramza | Always high by presence. | Chapter hybrid breadth. | Ramza is mandatory party member and can over-cover roles. | Per-band Ramza rows; no specialist dominance before final. |
 
 ## A5 - Representative Encounter Row Set

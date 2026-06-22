@@ -6,7 +6,7 @@ Depends on:
 - `docs/job-balance/00-high-level-direction.md`
 - `docs/job-balance/01-cross-job-build-principles.md`
 - `docs/job-balance/02-job-design-protocol.md`
-- `docs/job-balance/29-special-knight-v1-proposal.md`
+- `docs/job-balance/29-vanguard-v1-proposal.md`
 - `docs/job-balance/49-vanguard-rename-decision-v0.md`
 - `docs/job-balance/50-campaign-journey-bundle-v0.md`
 - `docs/job-balance/51-progression-and-build-input-ledger-v0.md`

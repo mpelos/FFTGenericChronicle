@@ -22,7 +22,7 @@ instead of hard-locking encounters, erasing movement, or becoming a mandatory de
 The immediate consumers are:
 
 - Knight `Challenge`;
-- future defender, controller, Orator, Time Mage, Necromancer, Special Knight, or Ramza effects
+- future defender, controller, Orator, Time Mage, Necromancer, Vanguard, or Ramza effects
   that alter enemy target selection;
 - status interactions that affect AI attention or control.
 
@@ -155,7 +155,7 @@ The first bundle includes rows for:
 - invisible/AI-ignored challenger being ineligible.
 
 These rows validate targeting-policy machinery. They do not set final values for Knight, Orator,
-Time Mage, Necromancer, Special Knight, Ramza, or any status effect.
+Time Mage, Necromancer, Vanguard, Ramza, or any status effect.
 
 ## Expected Counter Output
 

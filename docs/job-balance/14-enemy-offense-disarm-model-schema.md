@@ -20,7 +20,7 @@ family. The immediate consumers are:
 
 - Knight `Rend Weapon`;
 - counterplay such as Chemist `Safeguard`;
-- future Thief, Orator, Special Knight, or controller effects that pressure enemy equipment or
+- future Thief, Orator, Vanguard, or controller effects that pressure enemy equipment or
   weapon output.
 
 ## Source Notes

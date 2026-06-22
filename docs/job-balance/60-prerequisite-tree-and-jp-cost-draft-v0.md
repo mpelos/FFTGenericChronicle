@@ -127,7 +127,7 @@ multi-job grind while preserving the FFT pleasure of planning a route through se
 | Bard | D | Orator Lv3 + Geomancer Lv3 | Performer route requires social/control plus map/hybrid commitment. |
 | Dancer | D | Orator Lv3 + Geomancer Lv3 | Same depth as Bard; gender restriction affects active job only, not R/S/M access depth. |
 | Necromancer | E | Mystic Lv4 + Black Mage Lv4 + Time Mage Lv3 + Summoner Lv3 | Late dark/state caster; one of the last jobs, not a midgame caster shortcut. |
-| Vanguard | E | Knight Lv5 + Dragoon Lv3 + Samurai Lv3 + Squire Lv3 | Late special knight; elite physical protection without copying Holy Knight. |
+| Vanguard | E | Knight Lv5 + Dragoon Lv3 + Samurai Lv3 + Squire Lv3 | Late vanguard; elite physical protection without copying Holy Knight. |
 | Ramza chapter job | story | chapter state, not generic prerequisites | Ramza evolves by story and borrows normal R/S/M through the shared build system. |
 
 ### Tree Guardrails

@@ -32,7 +32,7 @@ Concrete examples:
 - Thief `Steal Gil`, `Steal EXP`, permanent equipment theft, `Poach`, `Treasure Hunter`, and
   `Sticky Fingers` if it grants permanent loot;
 - Orator recruitment, `Defraud`, `Tame`, `Beast Tongue`, and permanent Brave/Faith speech;
-- future campaign-economy hooks from Bard, Dancer, Necromancer, Special Knight, or Ramza.
+- future campaign-economy hooks from Bard, Dancer, Necromancer, Vanguard, or Ramza.
 
 ## Current Phase Policy
 

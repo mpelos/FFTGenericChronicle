@@ -134,7 +134,7 @@ Before continuing any job proposal after this point:
 - Necromancer should consult all `undead`, `instant_ko`, `drain`, `healing`, `revive`,
   `status_add`, `status_clear`, `timing`, and KO/defeat-state entries before its V1 proposal is
   accepted.
-- Special Knight should consult unique sword skills, `equipment_break`, `damage`, `status_add`,
+- Vanguard should consult unique sword skills, `equipment_break`, `damage`, `status_add`,
   `defense`, and `support` identity before its V1 proposal is drafted.
 - Ramza should consult Squire/Ramza Squire, Knight, White Mage, Black Mage, Mystic, Time Mage, and
   hybrid damage/support rows before its chapter-scaling identity is drafted.

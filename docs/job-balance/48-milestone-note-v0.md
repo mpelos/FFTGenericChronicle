@@ -52,7 +52,7 @@ Current evidence proves:
 
 - the intended generic-job roster and replacement jobs are defined;
 - Calculator is replaced by Necromancer;
-- Mime is replaced by Special Knight;
+- Mime is replaced by Vanguard;
 - Bard/Dancer gender restriction is preserved only for job access, with reaction/support/movement
   parity;
 - the key mechanic validation gates exist and have been accepted as reproducible models with
@@ -71,7 +71,7 @@ Current evidence does not yet prove:
 
 - a fresh-game party of four generics plus Ramza progresses cleanly from Band 0 through Band E;
 - exact JP, prerequisites, equipment timing, and fixed-JP progression pacing are healthy;
-- Squire/Chemist/Knight/Archer/Monk/Thief/Orator/Dragoon/Samurai/Ninja/Special Knight have
+- Squire/Chemist/Knight/Archer/Monk/Thief/Orator/Dragoon/Samurai/Ninja/Vanguard have
   complete concrete action values;
 - candidate reaction/support/movement values are safe in real cross-job builds;
 - real-roster F5 confirms no dominant route across damage, sustain, control, mobility, and

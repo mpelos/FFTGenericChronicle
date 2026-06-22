@@ -603,7 +603,7 @@ Any mismatch is a hard failure.
 Do not design these kits before the generic ecosystem is mapped:
 
 - Necromancer, replacing Calculator;
-- Special Knight, replacing Mime;
+- Vanguard, replacing Mime;
 - Ramza's final Chapter 4 form.
 
 They should appear in the role map with placeholder role and status, but detailed skill design is

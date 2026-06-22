@@ -18,7 +18,7 @@ Depends on:
 - `docs/job-balance/25-ninja-v1-proposal.md`
 - `docs/job-balance/26-bard-dancer-v1-proposal.md`
 - `docs/job-balance/27-necromancer-v1-proposal.md`
-- `docs/job-balance/29-special-knight-v1-proposal.md`
+- `docs/job-balance/29-vanguard-v1-proposal.md`
 - `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
 
 ## Purpose
@@ -101,7 +101,7 @@ build power reachable ahead of the encounter band that should gate it
 | B - First specialization | The player picks first real party roles. | Knight, Archer, White Mage, Black Mage, Monk, Thief, early Time Mage tools. | Several first-specialist choices are viable without guide routing. | Roles become distinct before global build pieces arrive. |
 | C - Midgame branching | The party can branch into hybrid, control, reach, speech, and larger magic plans. | Time Mage, Mystic, Geomancer, Orator, Dragoon, Summoner. | Physical, magical, hybrid, and control parties all have a plausible path. | No single branch solves every need or skips intended weaknesses. |
 | D - Advanced build crafting | High-value support/reaction/movement pieces and late combat identities appear. | Samurai, Ninja, Bard, Dancer, deeper Time/Mystic/Summoner rewards. | A thematic party can improve without rebuilding every unit from scratch. | Strong builds feel earned; no universal support/movement/reaction convergence. |
-| E - Late reward integration | Replacement jobs and Ramza's final identity enter the top tier. | Necromancer, Special Knight, Chapter 4 Ramza. | Older specialist jobs still have reasons to appear in final parties. | Late jobs are exciting without erasing generic specialist identities. |
+| E - Late reward integration | Replacement jobs and Ramza's final identity enter the top tier. | Necromancer, Vanguard, Chapter 4 Ramza. | Older specialist jobs still have reasons to appear in final parties. | Late jobs are exciting without erasing generic specialist identities. |
 
 The intended curve is not "early jobs bad, late jobs good." The intended curve is:
 
@@ -128,7 +128,7 @@ grind makes Band D or E power practical during Band B or C encounters, the campa
 without a dedicated JP acceleration support.
 
 Equipment availability is also a pacing lever. A job with broad equipment access is not fully online
-until the relevant equipment family can plausibly appear. Special Knight, Ninja, Samurai,
+until the relevant equipment family can plausibly appear. Vanguard, Ninja, Samurai,
 Dragoon, Archer, Chemist, Orator, and caster weapon access all need equipment-tier checks before
 final campaign acceptance.
 
@@ -242,7 +242,7 @@ Expected healthy path:
 - Band C: the player can branch into Time/Mystic control, Dragoon reach, Geomancer hybrid, Orator
   guns/speech, or Summoner area magic without abandoning the whole party plan.
 - Band D: Samurai/Ninja/Bard/Dancer add powerful but role-specific rewards.
-- Band E: Necromancer, Special Knight, and Ramza final form are top-tier options, not mandatory
+- Band E: Necromancer, Vanguard, and Ramza final form are top-tier options, not mandatory
   replacements for the whole party.
 
 Failure signs:
@@ -411,7 +411,7 @@ Expected posture:
 - midgame Ramza can bridge physical, support, and magic without becoming the best in each lane;
 - Chapter 4 Ramza may be top-tier and comparable to the strongest jobs;
 - Ramza's final hybrid identity should not invalidate Knight, White Mage, Black Mage, Time Mage,
-  Monk, Archer, or Special Knight inside their protected niches.
+  Monk, Archer, or Vanguard inside their protected niches.
 
 Required checks by band:
 
@@ -422,7 +422,7 @@ Required checks by band:
 | B | Can Ramza support the party without replacing the first specialist choices? |
 | C | Does Ramza's hybrid path create options without being the best control/caster/frontline at once? |
 | D | Does Ramza still need cross-job build planning, or does his chapter kit solve too much alone? |
-| E | Is final Ramza broad and powerful but still meaningfully different from Special Knight and generic casters? |
+| E | Is final Ramza broad and powerful but still meaningfully different from Vanguard and generic casters? |
 
 ## Cross-Job Timing Invariants
 
@@ -494,7 +494,7 @@ The player should keep choosing between mobility identities:
 - Time Mage teleportation;
 - Ninja skirmisher mobility;
 - performer positioning;
-- Special Knight formation movement.
+- Vanguard formation movement.
 
 If one movement skill is correct for most builds, campaign traversal and job identity collapse.
 
@@ -528,12 +528,12 @@ They fail if the safest answer to hard enemies is usually to deny actions until 
 
 ### I10 - Late Jobs Must Be Powerful, Not Mandatory
 
-Necromancer and Special Knight are allowed to be exciting late rewards.
+Necromancer and Vanguard are allowed to be exciting late rewards.
 
 They fail if:
 
 - every caster wants Necromancy as secondary;
-- every frontline wants Special Knight protection tools;
+- every frontline wants Vanguard protection tools;
 - either job becomes the best generic shell for multiple older identities;
 - either job is required to make late-game parties feel complete.
 
@@ -552,7 +552,7 @@ The table below binds each campaign risk to the validation gate that must eventu
 | W5 - Advanced physical convergence | T2/T2.1, F5, T6xT7 | Do Dual Wield, Doublehand, Attack Boost, Brawler, or premium equipment unlocks dominate physical builds? |
 | W6 - Caster economy convergence | T9, T10, F4, T2/T2.1 | Do caster speed, MP, and damage supports collapse into one best package? |
 | W7 - Global performer default | T11xT5, T3xT5xT11, T2/T2.1 | Does a Bard/Dancer slot become default party infrastructure? |
-| W8 - Late replacement overreach | T3xT5xT8, T6xPS, T6xT7, T8, F5 | Do Necromancer, Special Knight, or late Ramza delete older specialist reasons to exist? |
+| W8 - Late replacement overreach | T3xT5xT8, T6xPS, T6xT7, T8, F5 | Do Necromancer, Vanguard, or late Ramza delete older specialist reasons to exist? |
 | W9 - Grind-to-break pacing | A1/A2/A3/A4, T2/T2.1 | Can JP acquisition or deliberate grind move deep RSM power into early encounter bands? |
 | W10 - Equipment-tier breakpoints | A1/A2/A3/A4, F5 | Does equipment availability bring late weapon or armor identity online too early? |
 
@@ -702,7 +702,7 @@ Risk:
 
 ```text
 Necromancer becomes default late caster secondary
-Special Knight becomes default late frontline shell
+Vanguard becomes default late frontline shell
 Ramza becomes best generalist before final campaign
 ```
 
@@ -714,7 +714,7 @@ Required proof:
 
 - Band E party rows with old specialist jobs still present;
 - T3xT5xT8 for corpse/undead mechanics;
-- T6xPS/T6xT7/T8 for Special Knight protection and guard pressure;
+- T6xPS/T6xT7/T8 for Vanguard protection and guard pressure;
 - Ramza chapter rows against protected generic niches.
 
 ### W9 - Grind-To-Break Pacing

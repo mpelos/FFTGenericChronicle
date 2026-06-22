@@ -32,7 +32,7 @@ The immediate consumers are:
 - Summoner `Golem` and `Carbuncle` if represented as percent protection or routing;
 - Samurai `Kiyomori`-style protection draws;
 - Mystic `Mana Shield` or magic-defense posture if percent-based;
-- Special Knight `Aegis Stance`, `Intercede`, `Intervention`, and `Armor Discipline`;
+- Vanguard `Aegis Stance`, `Intercede`, `Intervention`, and `Armor Discipline`;
 - campaign stress row `GCV-SYN-C-MITIGATION-STACK` from
   `docs/job-balance/32-campaign-artifacts-provisional-v0.md`.
 

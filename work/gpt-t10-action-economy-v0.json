@@ -204,7 +204,7 @@
       "net_action_delta": 1,
       "party_grant_count": 1,
       "target_grant_counts": {
-        "special_knight": 1
+        "vanguard": 1
       },
       "event_outcomes": [
         "intervention_counter:success"

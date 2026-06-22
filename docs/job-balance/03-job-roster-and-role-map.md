@@ -27,7 +27,7 @@ In scope:
 
 - generic player jobs from `work/baseline_jobs.csv` rows `74-93`;
 - Arithmetician as the slot replaced by Necromancer;
-- Mime as the slot replaced by Special Knight;
+- Mime as the slot replaced by Vanguard;
 - Ramza's unique chapter-progressing job.
 
 Out of scope:
@@ -109,7 +109,7 @@ Deliberate exceptions must be documented in the relevant job proposal.
 | Arithmetician | Replace with Necromancer | `late-reward` | `dark-magic`, `undead` | magical | `cloth` | current slot: `pole`, `book`, `fists`; final TBD | crush/magic/spirit/drain TBD | Calculator is removed. Necromancer should be a late dark caster/debuffer; exact kit is deferred. |
 | Bard | Keep fantasy, rewrite kit | `performer` | `support`, `instrument` | hybrid | `cloth` | `instrument`, `bag`, `fists` | missile/crush | Performance support job; action identity differs from Dancer, but reaction/support/move must match Dancer exactly. |
 | Dancer | Keep fantasy, rewrite kit | `performer` | `debuff`, `cloth_weapon` | hybrid | `cloth` | `cloth_weapon`, `bag`, `knife`, `fists` | swing/crush/thrust | Performance pressure job; action identity differs from Bard, but reaction/support/move must match Bard exactly. |
-| Mime | Replace with Special Knight | `late-reward` | `elite-knight`, `TBD` | physical | old slot has no normal armor; final TBD | current slot: `fists`; final TBD | TBD | Mime is removed. Replacement should be a late special knight comparable in value to Holy Knight but not a clone; exact kit deferred. |
+| Mime | Replace with Vanguard | `late-reward` | `elite-knight`, `TBD` | physical | old slot has no normal armor; final TBD | current slot: `fists`; final TBD | TBD | Mime is removed. Replacement should be a late vanguard comparable in value to Holy Knight but not a clone; exact kit deferred. |
 | Ramza | Rewrite unique job | `protagonist` | `hybrid`, `leadership` | hybrid | chapter-dependent TBD | knight/mage hybrid access TBD | swing/crush/thrust/magic TBD | Ramza should evolve by chapter and reach top-tier value by Chapter 4 through flexibility, not specialist dominance. |
 
 ## Formula Ecology Checks
@@ -121,7 +121,7 @@ Current native access from the roster supplies every v0.2 physical mode:
 - `swing`: Squire, Knight, Geomancer, Samurai, Ninja, Dancer, Ramza TBD;
 - `thrust`: Squire, Chemist, Thief, Orator, Dragoon, Ninja, Dancer, Ramza TBD;
 - `crush`: Squire, Chemist, Monk, mage staves/rods/poles/books, Geomancer, Ninja, Bard, Dancer,
-  Necromancer slot TBD, Special Knight TBD, Ramza TBD; generic `fists` access is not enough by
+  Necromancer slot TBD, Vanguard TBD, Ramza TBD; generic `fists` access is not enough by
   itself to claim job identity;
 - `missile`: Chemist, Archer, Orator, Bard.
 
@@ -161,7 +161,7 @@ The role map should preserve:
 - Geomancer as the main hybrid terrain physical route;
 - Mystic as the broad MA-crush/status route;
 - Bard/Dancer as performer jobs with shared global build pieces;
-- Necromancer and Special Knight as late jobs deferred until the base ecosystem is clear.
+- Necromancer and Vanguard as late jobs deferred until the base ecosystem is clear.
 
 ## Risk Flags For Later Design
 
@@ -202,7 +202,7 @@ against the user's gender policy.
 
 ### R6 - Replacements Must Be Designed Late
 
-Necromancer and Special Knight are deliberately deferred.
+Necromancer and Vanguard are deliberately deferred.
 
 Designing them before the generic ecosystem is mapped would risk using them to patch holes that
 basic jobs should solve.
@@ -225,7 +225,7 @@ The following are intentionally not decided here:
 - exact growth values inside the physical/magical/hybrid profiles;
 - exact Bard/Dancer active stat and equipment parity;
 - exact Necromancer kit;
-- exact Special Knight kit;
+- exact Vanguard kit;
 - exact Ramza chapter-by-chapter kit.
 
 Next accepted step after this role map should be targeted job-group proposals, beginning with the

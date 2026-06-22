@@ -18,7 +18,7 @@ Depends on:
 - `docs/job-balance/25-ninja-v1-proposal.md`
 - `docs/job-balance/26-bard-dancer-v1-proposal.md`
 - `docs/job-balance/27-necromancer-v1-proposal.md`
-- `docs/job-balance/29-special-knight-v1-proposal.md`
+- `docs/job-balance/29-vanguard-v1-proposal.md`
 - `docs/job-balance/31-campaign-gameplay-validation-v1.md`
 - `docs/job-balance/47-campaign-validation-readiness-v0.md`
 - `docs/job-balance/49-vanguard-rename-decision-v0.md`

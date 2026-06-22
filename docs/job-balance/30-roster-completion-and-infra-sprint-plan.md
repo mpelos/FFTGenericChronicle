@@ -12,7 +12,7 @@ Depends on:
 - `docs/job-balance/23-deferred-campaign-economy-policy.md`
 - `docs/job-balance/27-necromancer-v1-proposal.md`
 - `docs/job-balance/28-foundation-reconciliation-v1.md`
-- `docs/job-balance/29-special-knight-v1-proposal.md`
+- `docs/job-balance/29-vanguard-v1-proposal.md`
 
 ## Purpose
 
@@ -40,7 +40,7 @@ Covered jobs:
 - Ninja;
 - Bard and Dancer, with shared reaction/support/movement parity;
 - Necromancer as the Calculator replacement;
-- Special Knight as the Mime replacement.
+- Vanguard as the Mime replacement.
 
 The foundation jobs have also been reconciled against the accepted vanilla ability/status atlas.
 
@@ -48,7 +48,7 @@ The foundation jobs have also been reconciled against the accepted vanilla abili
 
 - Every generic job has a provisional role, identity boundary, and V1 skill-direction document.
 - Calculator is removed and replaced by Necromancer.
-- Mime is removed and replaced by Special Knight.
+- Mime is removed and replaced by Vanguard.
 - Bard and Dancer remain gender-restricted, but their reaction/support/movement records must be
   identical.
 - Gender-based equipment restrictions are removed outside Bard/Dancer job access.
@@ -67,11 +67,11 @@ design.
 | T2.0 build-incidence harness | Built / dual-gated on empty bundle | Harness plumbing for secondary/reaction/support/movement incidence, equip unlocks, mandatory-piece checks, late support pull. |
 | T2.1 populated build incidence | Pending concrete accepted-provisional builds | Real incidence math for mandatory-piece checks and late support pull after concrete job builds exist. |
 | T3/T3xT5 healing timing | Built / dual-gated | Squire/Chemist recovery, White Mage healing/revive, Monk Chakra/Revive, Auto-Potion, recovery races. |
-| T4 accuracy/evasion | Built / dual-gated | Archer reliability, Knight/Special Knight guard checks, status hit rates, evasion/immunity risks. |
+| T4 accuracy/evasion | Built / dual-gated | Archer reliability, Knight/Vanguard guard checks, status hit rates, evasion/immunity risks. |
 | T5 CT/timing | Built / dual-gated | Archer Aim/overwatch, Time Mage tempo, Dragoon timing, performance ticks, stance duration. |
-| T6xT7 offense/armor composition | Built / dual-gated | Knight Rend follow-up, Special Knight temporary exposure, disarm/armor-response interactions. |
+| T6xT7 offense/armor composition | Built / dual-gated | Knight Rend follow-up, Vanguard temporary exposure, disarm/armor-response interactions. |
 | T8 targeting/control | Built / dual-gated | Challenge, Intercede, undead control, Reflect routing setup, AI/targetability-sensitive skills. |
-| T6xPS mitigation stacking | Built / dual-gated | Protect/Shell/Wall, Knight guard, Special Knight Aegis/Intervention, practical-immunity checks. |
+| T6xPS mitigation stacking | Built / dual-gated | Protect/Shell/Wall, Knight guard, Vanguard Aegis/Intervention, practical-immunity checks. |
 | T8xSR spell routing | Built / dual-gated | Reflect, spell redirection, decoy/routing effects. |
 | T9 resource/MP economy | Built / dual-gated | Chemist Ether, caster MP economy, Time/Mystic resources, Necromancer Syphon. |
 | T10 action economy | Built / dual-gated | Quick, Critical: Quick, overwatch extra attacks, raised-body actions, Intervention if it grants extra attacks. |
@@ -80,7 +80,7 @@ design.
 | T11xT5 sustained area throughput | Built / dual-gated | Bard/Dancer performances, auras, zones, repeated mapwide or large-area effects. |
 | T3xT5xT11 sustained HP area effects | Built / dual-gated | Bard healing, Dancer attrition, repeated HP recovery/damage over target count and duration. |
 | T3xT5xT8 corpse/undead state composition | Built / dual-gated | Necromancer corpse/raise sub-kit, undead targetability/control/expiry. |
-| Real-roster F5 re-sim | Required during concrete value passes | Any new or materially changed job chassis, starting with Special Knight, must run on its actual roster row and not only formula anchor jobs. |
+| Real-roster F5 re-sim | Required during concrete value passes | Any new or materially changed job chassis, starting with Vanguard, must run on its actual roster row and not only formula anchor jobs. |
 
 ## Infra Sprint Completion
 

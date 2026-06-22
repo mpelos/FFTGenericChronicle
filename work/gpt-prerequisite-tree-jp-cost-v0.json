@@ -47,7 +47,7 @@
     {"job": "Bard", "band": "D", "requirements": [{"job": "Orator", "depth": "Lv3"}, {"job": "Geomancer", "depth": "Lv3"}], "notes": "male performer route; same depth as Dancer"},
     {"job": "Dancer", "band": "D", "requirements": [{"job": "Orator", "depth": "Lv3"}, {"job": "Geomancer", "depth": "Lv3"}], "notes": "female performer route; same depth as Bard"},
     {"job": "Necromancer", "band": "E", "requirements": [{"job": "Mystic", "depth": "Lv4"}, {"job": "Black Mage", "depth": "Lv4"}, {"job": "Time Mage", "depth": "Lv3"}, {"job": "Summoner", "depth": "Lv3"}], "notes": "late dark/state caster"},
-    {"job": "Vanguard", "band": "E", "requirements": [{"job": "Knight", "depth": "Lv5"}, {"job": "Dragoon", "depth": "Lv3"}, {"job": "Samurai", "depth": "Lv3"}, {"job": "Squire", "depth": "Lv3"}], "notes": "late special knight"},
+    {"job": "Vanguard", "band": "E", "requirements": [{"job": "Knight", "depth": "Lv5"}, {"job": "Dragoon", "depth": "Lv3"}, {"job": "Samurai", "depth": "Lv3"}, {"job": "Squire", "depth": "Lv3"}], "notes": "late vanguard"},
     {"job": "Ramza chapter job", "band": "story", "requirements": [{"story_state": "chapter progression"}], "notes": "not unlocked through generic job tree"}
   ],
   "cost_tiers": [

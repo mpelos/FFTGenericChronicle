@@ -62,7 +62,7 @@ implementation data.
 | Mechanic gates | Full accepted gate set across docs 08-17 and 33-41, including T2/T3/T4/T5/T6/T7/T8 and composition gates. | Ready as mechanic-level tooling. |
 | Campaign model | Docs 31-32 define bands, party journeys, A1-A5 artifacts, detour risks, and synthetic encounter families. | Ready as provisional structure, not final proof. |
 | Concrete cluster values | Docs 42-46 accepted. | Ready for covered clusters. |
-| Physical/foundation concrete values | Squire, Chemist, Knight, Archer, Monk, Thief, Orator, Dragoon, Samurai, Ninja, and Special Knight still mostly have V1 identity, not full numeric action values. | Missing producer step. |
+| Physical/foundation concrete values | Squire, Chemist, Knight, Archer, Monk, Thief, Orator, Dragoon, Samurai, Ninja, and Vanguard still mostly have V1 identity, not full numeric action values. | Missing producer step. |
 | Prerequisites, JP, equipment | A2 ledger is provisional and has no exact prerequisite tree, JP costs, JP gain, fixed-JP routing impact, or equipment availability timing. | Missing producer step. |
 | RSM values | Most reaction/support/movement and equipment-unlock candidates are deferred until T2.1. | Missing producer step. |
 | Formula-v1 | T1 Windows weapon dump is missing. | Final numeric acceptance not ready. |
@@ -118,7 +118,7 @@ T1 Windows weapon dump -> formula-v1 input bundle -> formula-v1 scenario rerun
 ```
 
 F5 must use actual roster rows, not only anchor jobs such as Archer, Black Mage, Geomancer, or
-Knight. This matters especially for Summoner, Time Mage, Bard/Dancer, Necromancer, Special Knight,
+Knight. This matters especially for Summoner, Time Mage, Bard/Dancer, Necromancer, Vanguard,
 and Ramza.
 
 ## Primary Quantified F5 Dominance Vector
@@ -187,7 +187,7 @@ Do not start by globally nerfing swords, all summons, all Faith, or all elementa
 | 8 | Equipment-tier breakpoints | Equipment availability and weapon timing can create hidden spikes or dead zones independent of job unlocks. | A2/W3 plus F5 real-roster re-sim. |
 | 9 | Mobility convergence | Teleport, Move +3, Ignore Elevation, Fly, and terrain mobility can become correct for most builds. | T2.1 movement incidence. |
 | 10 | Sustain compression | Chemist, White Mage, Monk, Bard, and Necromancer recovery can overlap too cheaply. | T3/T3xT5/T3xT5xT11 plus W5 sustain axis. |
-| 11 | Late-job replacement pressure | Necromancer, Special Knight, and final Ramza must not erase older specialists. | Band E W5 comparisons. |
+| 11 | Late-job replacement pressure | Necromancer, Vanguard, and final Ramza must not erase older specialists. | Band E W5 comparisons. |
 | 12 | Bard/Dancer global performance | Global value must matter without becoming mandatory infrastructure or a gender advantage. | T11xT5/T3xT5xT11 plus P6 row. |
 
 ## Ramza Dominance Rows
@@ -226,7 +226,7 @@ This readiness map does not decide final:
 - physical/foundation action values;
 - RSM values;
 - Ramza chapter values;
-- Special Knight real row;
+- Vanguard real row;
 - Necromancer real row;
 - campaign pass/fail.
 

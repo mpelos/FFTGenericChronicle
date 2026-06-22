@@ -446,7 +446,7 @@ The following can continue without waiting for the new harnesses:
 - growth-profile philosophy documents;
 - JP economy philosophy documents;
 - Bard/Dancer parity planning;
-- Necromancer and Special Knight high-level constraints, as long as they avoid final concrete values.
+- Necromancer and Vanguard high-level constraints, as long as they avoid final concrete values.
 
 The following should pause after document 06 unless the user explicitly accepts accumulating more
 provisional concrete docs:

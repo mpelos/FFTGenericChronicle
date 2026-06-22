@@ -28,7 +28,7 @@ The immediate consumers are:
 - Knight `Rend Armor`, `Shield Break`, and `Crushing Blow`;
 - Archer `Piercing Shot`;
 - future Monk anti-plate or guard-breaking techniques;
-- later Geomancer, Mystic, Samurai, Dragoon, or Special Knight response effects if they alter
+- later Geomancer, Mystic, Samurai, Dragoon, or Vanguard response effects if they alter
   physical mitigation.
 
 ## Source Notes

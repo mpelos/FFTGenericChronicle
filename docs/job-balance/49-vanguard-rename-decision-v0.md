@@ -4,7 +4,7 @@ Status: Accepted after Claude cold re-review
 Date: 2026-06-21
 Depends on:
 - `docs/job-balance/03-job-roster-and-role-map.md`
-- `docs/job-balance/29-special-knight-v1-proposal.md`
+- `docs/job-balance/29-vanguard-v1-proposal.md`
 - `docs/job-balance/47-campaign-validation-readiness-v0.md`
 - `work/gpt-vanguard-rename-decision-v0.json`
 

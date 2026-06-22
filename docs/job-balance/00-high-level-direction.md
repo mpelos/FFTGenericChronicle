@@ -178,11 +178,11 @@ High-level direction:
 The exact Necromancer kit is intentionally not decided yet. It should be one of the last jobs
 designed, after the generic job ecosystem is clearer.
 
-### Mime Becomes Special Knight
+### Mime Becomes Vanguard
 
 Mime will not be preserved.
 
-The replacement job is a new special knight-style job.
+The replacement job is a new vanguard-style job.
 
 High-level direction:
 
@@ -399,7 +399,7 @@ The job rebalance should proceed in this order:
 4. Tune JP, equipment compatibility, growth profiles, multipliers, and prerequisites around those
    roles.
 5. Design advanced jobs after the base ecosystem is understood.
-6. Design Necromancer, Special Knight, and Ramza's final chapter identity late in the process.
+6. Design Necromancer, Vanguard, and Ramza's final chapter identity late in the process.
 7. Simulate representative parties and build combinations.
 8. Iterate with Claude review before promoting decisions from proposal to accepted.
 
@@ -424,7 +424,7 @@ The following are intentionally not decided by the user at this stage:
 - exact JP costs;
 - exact prerequisite changes;
 - exact Necromancer mechanics;
-- exact Special Knight identity;
+- exact Vanguard identity;
 - exact Ramza chapter-by-chapter skill list;
 - exact attribute targets for each job.
 
