@@ -1,6 +1,6 @@
 # Vanguard Rename Decision V0
 
-Status: Proposed for Claude hash-match review
+Status: Accepted after Claude cold re-review
 Date: 2026-06-21
 Depends on:
 - `docs/job-balance/03-job-roster-and-role-map.md`

@@ -1,6 +1,6 @@
 {
   "artifact": "vanguard_rename_decision_v0",
-  "status": "proposed_for_claude_hash_match_review",
+  "status": "accepted_after_claude_cold_review",
   "date": "2026-06-21",
   "decision": {
     "old_placeholder": "Special Knight",
