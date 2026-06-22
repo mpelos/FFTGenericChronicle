@@ -1,0 +1,21 @@
+docs/job-balance/51-progression-and-build-input-ledger-v0.md
+  s_fce6b25a5764ca::t_901e42f75528fa 1-2,4-5,8-39,57-124,133-146,148-161,163-165,169-186,188-358,360-407
+  s_fce6b25a5764ca::t_fe86ed61f7dacb 6-7,40-56,125-132,147,162,166-168,187,359
+  s_fce6b25a5764ca::t_3dc572ad879253 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3bd13c99bada610404f37a7d4fced4e3f3d6c269",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
