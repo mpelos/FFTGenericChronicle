@@ -1,0 +1,31 @@
+docs/job-balance/75-orator-redesign-v1.md
+  s_fce6b25a5764ca::t_741487b54e7f43 3,20,160-161,211,229-231,961-962,965,1008
+  s_fce6b25a5764ca::t_5690e507855123 1-2,4-19,21-159,162-210,212-228,232-960,963-964,966-1007,1009-1019
+docs/job-balance/74-orator-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_53e3ddbcfb9dc5 505-508
+  s_fce6b25a5764ca::t_b425c591b106ad 3,495-504,509-513
+docs/job-balance/02-job-design-protocol.md
+  s_fce6b25a5764ca::t_16fe7a1f94d711 88,90,387-432,607-610
+  s_fce6b25a5764ca::t_3d2b290545aa7f 89,339,342,344-350,352,366-386,593-595,602-603
+  s_fce6b25a5764ca::t_aff37fd18be95d 338,340-341,343,351,353-365,591-592,596-601,604-606
+docs/job-balance/01-cross-job-build-principles.md
+  s_fce6b25a5764ca::t_55b0a530a25683 292-314
+  s_fce6b25a5764ca::t_5061f6936f98db 254,256,258-264,273,279-280,286,330-348
+  s_fce6b25a5764ca::t_040cceb2725084 253,255,257,265-272,274-278,281-285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "6eb8f4c3fbea5044fc6c68f886a277b924b8de8b",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
