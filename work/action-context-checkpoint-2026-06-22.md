@@ -2015,3 +2015,41 @@ Pass/fail interpretation:
   `0x2F2EC1`, `0x2F37A2`, and `0x2F3884`.
 - Crash on load/action: disable or bisect landmark probes by profile, because the hooks are too
   invasive at one of the candidate RVAs.
+
+## 2026-06-23 Live Baseline: KO Landmark RVA Correction
+
+First `baseline autosave` attempt with `ko-landmark-probe` did not proceed to Rush.
+
+Captured snapshots:
+
+- `work\live-captures\battleprobe_log.ko-landmark-baseline-autosave.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-landmark-baseline-autosave.bad-rva-skips.snapshot.txt`.
+
+What happened:
+
+- The profile loaded and the two target-cache hooks installed:
+  - `0x2D7AC0`;
+  - `0x2D7AEC`.
+- The KO-field hooks were skipped by `ExpectedBytes` validation because several JSON `Rva` values
+  had been entered with incorrect decimal conversions:
+  - `0x30A6D3`;
+  - `0x30A908`;
+  - `0x30A912`;
+  - `0x30AAFC`;
+  - `0x30D42A`;
+  - `0x30D433`;
+  - `0x30D43C`.
+
+Fix applied:
+
+- Corrected decimal RVAs in `work\battle-runtime-settings.ko-landmark-probe.json`.
+- Reinstalled the corrected settings to:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`.
+- Cleared the active game log.
+
+Important instruction:
+
+- The first baseline is setup-validation evidence only.
+- Do not use it to judge the static KO candidates.
+- The game must be restarted through Reloaded so the corrected landmark hooks install at startup,
+  then the autosave baseline should be captured again before previewing/confirming Rush.

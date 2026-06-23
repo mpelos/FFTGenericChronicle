@@ -49,7 +49,7 @@
     {
       "Name": "ko-write-1f5",
       "Enabled": true,
-      "Rva": 3180243,
+      "Rva": 3188435,
       "BaseRegister": "rdi",
       "Access": "write +0x1F5 byte FF",
       "ExpectedBytes": "C6 87 F5 01 00 00 FF",
@@ -58,7 +58,7 @@
     {
       "Name": "ko-write-61",
       "Enabled": true,
-      "Rva": 3180808,
+      "Rva": 3189000,
       "BaseRegister": "rdi",
       "Access": "write +0x61 dword",
       "ExpectedBytes": "89 5F 61",
@@ -67,7 +67,7 @@
     {
       "Name": "ko-write-1ef",
       "Enabled": true,
-      "Rva": 3180818,
+      "Rva": 3189010,
       "BaseRegister": "rdi",
       "Access": "write +0x1EF dword",
       "ExpectedBytes": "89 9F EF 01 00 00",
@@ -76,7 +76,7 @@
     {
       "Name": "death-state-write-1bb",
       "Enabled": true,
-      "Rva": 3181308,
+      "Rva": 3189500,
       "BaseRegister": "rax",
       "Access": "write +0x1BB byte 02",
       "ExpectedBytes": "C6 80 BB 01 00 00 02",
@@ -85,7 +85,7 @@
     {
       "Name": "ko-read-1ef",
       "Enabled": true,
-      "Rva": 3191850,
+      "Rva": 3200042,
       "BaseRegister": "rdi",
       "Access": "read +0x1EF byte",
       "ExpectedBytes": "8A 8F EF 01 00 00",
@@ -94,7 +94,7 @@
     {
       "Name": "ko-mask-write-1ef",
       "Enabled": true,
-      "Rva": 3191859,
+      "Rva": 3200051,
       "BaseRegister": "rdi",
       "Access": "write +0x1EF byte masked",
       "ExpectedBytes": "88 8F EF 01 00 00",
@@ -103,7 +103,7 @@
     {
       "Name": "ko-write-61-late",
       "Enabled": true,
-      "Rva": 3191868,
+      "Rva": 3200060,
       "BaseRegister": "rdi",
       "Access": "write +0x61 byte",
       "ExpectedBytes": "88 4F 61",
