@@ -155,6 +155,22 @@ PROFILES: tuple[ProfileSpec, ...] = (
         ),
     ),
     ProfileSpec(
+        "ko-hp-apply-probe",
+        REPO / "work/battle-runtime-settings.ko-hp-apply-probe.json",
+        "observe-only KO HP-apply lifecycle RE capture",
+        "Hook the 0x30A51C state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.",
+        "no HP/MP rewrites",
+        (
+            "observe_only_death_capture",
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+            "immediate_action_probe_observe_only",
+            "landmark_probe_observe_only",
+        ),
+    ),
+    ProfileSpec(
         "engine-death-test",
         REPO / "work/battle-runtime-settings.engine-death-test.json",
         "live architecture proof",

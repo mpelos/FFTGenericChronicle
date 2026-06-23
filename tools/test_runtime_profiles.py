@@ -25,6 +25,7 @@ def main() -> int:
         "ko-pre-damage-probe",
         "immediate-action-ko-boundary-probe",
         "ko-landmark-probe",
+        "ko-hp-apply-probe",
         "engine-death-test",
         "custom-formula-demo",
         "death-test-hp-only",
@@ -93,6 +94,25 @@ def main() -> int:
     check(profiles.truthy(landmark_probe, "LogImmediateActionCandidatesOnEvent"), "KO landmark probe must keep immediate action ranking")
     check(not profiles.truthy(landmark_probe, "RewriteObservedDamage"), "KO landmark probe must not rewrite HP damage")
     check(landmark_probe.get("MinHpFloor", 0) == 0, "KO landmark probe must leave vanilla KO untouched")
+
+    hp_apply_probe = get(rows, "ko-hp-apply-probe")
+    check(profiles.truthy(hp_apply_probe, "LandmarkProbeEnabled"), "KO HP apply probe must enable landmark hooks")
+    hp_apply_names = {
+        str(probe.get("Name", ""))
+        for probe in hp_apply_probe.get("LandmarkProbes", [])
+        if probe.get("Enabled")
+    }
+    for name in [
+        "pre-death-status-test-61",
+        "death-state-write-1bb-early",
+        "hp-raw-sum-test",
+        "hp-write-clamped-30",
+        "ko-write-1f5",
+    ]:
+        check(name in hp_apply_names, f"KO HP apply probe must include {name}")
+    check(profiles.truthy(hp_apply_probe, "LogHpEventProbe"), "KO HP apply probe must keep HP event evidence")
+    check(not profiles.truthy(hp_apply_probe, "RewriteObservedDamage"), "KO HP apply probe must not rewrite HP damage")
+    check(hp_apply_probe.get("MinHpFloor", 0) == 0, "KO HP apply probe must leave vanilla KO untouched")
 
     killflag = get(rows, "death-test-killflag")
     check(profiles.truthy(killflag, "CauseDeathOnZeroHp"), "legacy killflag probe should preserve its KO-flag write")

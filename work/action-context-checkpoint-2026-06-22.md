@@ -2136,3 +2136,98 @@ Recommended next work:
    post-zero lifecycle markers.
 3. The next live proof should answer whether custom lethal damage can force entry into the same
    engine-owned KO path when vanilla damage would leave HP above zero.
+
+## 2026-06-23 Offline Analysis: KO HP-Apply Lifecycle
+
+New generated report:
+
+- `work\ko_lifecycle_disassembly_analysis.md`;
+- generator: `tools\analyze_ko_lifecycle_disasm.py`.
+
+Python dependencies used locally:
+
+- `capstone`;
+- `pefile`.
+
+Disassembly read:
+
+- The live stack RVAs `0x2F3799`, `0x2F37A2`, `0x2F3884`, and `0x2F2EC1` are scheduler/dispatch
+  frames.
+- Static direct call/jump search found no direct call to `0x30A51C`; the scheduler uses an indirect
+  `call qword ptr [rbx]`, consistent with the live stack.
+- The state-apply routine around `0x30A51C` computes and applies HP/MP-like unit state.
+- In the relevant HP path:
+  - `0x30A673`: reads current HP from `rdi+0x30`;
+  - `0x30A685..0x30A698`: computes signed HP delta, floors at zero, caps at max HP;
+  - `0x30A6B6`: compares old HP with clamped HP;
+  - `0x30A6C3`: writes clamped HP to `rdi+0x30`;
+  - `0x30A6D3`: writes `FF` to `rdi+0x1F5`.
+
+Important conclusion:
+
+- `0x30A6D3` is after the HP write, so it is not the earliest damage/KO decision point.
+- The next live question is whether KO/status state is already armed before the HP write.
+- Two earlier instructions are now high-value:
+  - `0x30A595`: tests `rdx+0x61` bit `0x20`;
+  - `0x30A5C0`: writes `r13b` to `rdx+0x1BB`.
+- If those fire before `0x30A6C3` with `+0x61=0x20` / `+0x1BB=1`, then vanilla has already
+  entered a KO lifecycle before HP is committed.
+- If not, an HP-write proof at `0x30A6C3` may be sufficient to make downstream engine code process
+  custom lethal HP as normal KO.
+
+Prepared next profile:
+
+- `work\battle-runtime-settings.ko-hp-apply-probe.json`;
+- active deployed settings:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`;
+- deployed settings SHA256:
+  `B40A7DBB6E4DEF96B13C3340C3DCB1203E9E2460EC6F806C86F6745C0508A35B`.
+
+Profile probes:
+
+- `0x30A595`: `pre-death-status-test-61`, base `rdx`, expected `44 84 62 61`;
+- `0x30A5C0`: `death-state-write-1bb-early`, base `rdx`, expected `44 88 AA BB 01 00 00`;
+- `0x30A673`: `hp-read-current-30`, base `rdi`, expected `0F B7 57 30`;
+- `0x30A68C`: `hp-raw-sum-test`, base `rdi`, expected `85 C0`;
+- `0x30A6B6`: `hp-change-compare-old-new`, base `rdi`, expected `41 3B D7`;
+- `0x30A6C3`: `hp-write-clamped-30`, base `rdi`, expected `66 44 89 7F 30`;
+- `0x30A6D3`: `ko-write-1f5`, base `rdi`, expected `C6 87 F5 01 00 00 FF`;
+- `0x30AAFC`: `reraise-death-state-write-1bb`, base `rax`, expected
+  `C6 80 BB 01 00 00 02`.
+
+Validation:
+
+```text
+python tools\analyze_ko_lifecycle_disasm.py
+python -m json.tool work\battle-runtime-settings.ko-hp-apply-probe.json
+python tools\report_runtime_profiles.py
+python tools\test_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.ko-hp-apply-probe.json
+```
+
+Additional byte validation against the installed `FFT_enhanced.exe` passed for all eight profile
+landmarks.
+
+Next live test:
+
+1. Open the game through Reloaded after the new profile is active.
+2. Load the same autosave before Ramza Rush on the low-HP Ninja.
+3. Wait 1-2 seconds and report `baseline hp-apply autosave`.
+4. Preview Ramza `Rush` on the Ninja and report preview damage.
+5. Confirm Rush.
+6. Before Ramza Wait, report whether the Ninja died and the shown number.
+7. Finish Ramza Wait and report whether Reraise makes Ninja active.
+
+Decision target:
+
+- The key ordering is:
+  - `pre-death-status-test-61`;
+  - `death-state-write-1bb-early`;
+  - `hp-read-current-30`;
+  - `hp-raw-sum-test`;
+  - `hp-write-clamped-30`;
+  - `ko-write-1f5`.
+- If the first two already show KO state before `hp-write-clamped-30`, the custom lethal proof
+  should not rely on HP write alone.
+- If KO state appears only after or because of `hp-write-clamped-30`, the next proof can target a
+  controlled custom HP-write hook at or before `0x30A6C3`.
