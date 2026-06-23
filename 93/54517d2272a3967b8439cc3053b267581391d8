@@ -1,0 +1,20 @@
+docs/formula-balance/13-brave-faith-combat-policy-v0.md
+  s_fce6b25a5764ca::t_ed1b2a394895d5 1-2,5,7-121,140-171,175-240,242-256,259-261,268-339
+  s_fce6b25a5764ca::t_ca669d4a85b02d 3-4,6,122-139,172-174,241,257-258,262-267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "9354517d2272a3967b8439cc3053b267581391d8",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
