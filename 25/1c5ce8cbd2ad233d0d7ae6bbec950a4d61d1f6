@@ -1,0 +1,29 @@
+docs/job-balance/71-archer-good-job-rediscussion-v0.md
+  s_c08f9ea70d3af2::t_f2b9ca89117562 3
+  s_c08f9ea70d3af2::t_2b02572843fa8d 23-24
+  s_fce6b25a5764ca::t_4a191d37bbf6fc 1-2,4-22,25-398
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "251c5ce8cbd2ad233d0d7ae6bbec950a4d61d1f6",
+  "prompts": {},
+  "sessions": {
+    "s_c08f9ea70d3af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8120ec5d-2a13-42b5-a831-b8f4409276c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
