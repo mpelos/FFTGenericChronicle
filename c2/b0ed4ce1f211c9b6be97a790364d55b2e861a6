@@ -1,0 +1,20 @@
+docs/job-balance/74-orator-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_b7df2c798c8de5 3
+  s_fce6b25a5764ca::t_7336cc51d65158 1-2,4-494
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "c2b0ed4ce1f211c9b6be97a790364d55b2e861a6",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
