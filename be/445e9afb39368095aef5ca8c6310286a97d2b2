@@ -1,0 +1,29 @@
+docs/job-balance/58-physical-foundation-rsm-concrete-v0.md
+  s_fce6b25a5764ca::t_12dc6009fee2b9 23,129,132,135-149,158-159
+work/sim-inputs-v0.2.1.json
+  s_fce6b25a5764ca::t_ad7f54e120695a 928-929
+work/gpt-physical-foundation-rsm-concrete-v0.json
+  s_fce6b25a5764ca::t_6c894302011124 36-37
+docs/formula-balance/08-scenario-set-v0.md
+  s_fce6b25a5764ca::t_3945a816288b38 142,145-153
+docs/job-balance/15-targeting-challenge-model-schema.md
+  s_fce6b25a5764ca::t_cf439d64f2d861 9,128-146
+docs/job-balance/10-healing-attrition-model-schema.md
+  s_fce6b25a5764ca::t_a00b8aeda5943e 9,61-66,132-134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "be445e9afb39368095aef5ca8c6310286a97d2b2",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
