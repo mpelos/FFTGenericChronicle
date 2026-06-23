@@ -20,6 +20,7 @@ Depends on:
 - `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
 - `docs/reference/fft-vanilla-status-effect-map.md`
 - `docs/formula-balance/11-validated-policy-v0.2.md`
+- `docs/formula-balance/13-brave-faith-combat-policy-v0.md`
 - `work/sim-inputs-v0.2.1.json`
 - `work/gpt-physical-foundation-rsm-concrete-v0.json`
 
@@ -125,11 +126,26 @@ Important consequences:
 
 ## Shared Reaction Policy
 
-Unless a row says otherwise, reactions use:
+The old shared trigger formula is superseded:
 
 ```text
-trigger chance = min(Brave / 100, trigger_cap)
+old trigger chance = min(Brave / 100, trigger_cap)
 ```
+
+Per `docs/formula-balance/13-brave-faith-combat-policy-v0.md`, there is no longer a universal
+reaction trigger formula. Every reaction must declare a trigger identity before its final chance can
+be accepted. Current `trigger_cap` values remain provisional caps and incidence-test inputs only;
+they are not final trigger chances.
+
+Allowed trigger identities include:
+
+- `brave_resolve`;
+- `critical_state`;
+- `item_reflex`;
+- `equipment_guard`;
+- `focus_training`;
+- `faith_arcane`;
+- `movement_reflex`.
 
 Global reaction rules:
 
@@ -139,8 +155,8 @@ Global reaction rules:
 - one round-cap trigger for ordinary capped reactions unless a stricter cap is listed;
 - the strongest single mitigation channel applies; mitigation channels do not multiply.
 
-This deliberately keeps Brave meaningful without letting high-Brave stacking turn defensive
-reactions into practical immunity.
+The strongest-single-channel rule and the trigger-identity model deliberately keep reactions from
+becoming practical immunity or a universal "raise Brave on everyone" requirement.
 
 ## Strongest Single Mitigation Channel
 

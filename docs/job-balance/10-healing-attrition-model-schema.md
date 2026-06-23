@@ -6,6 +6,7 @@ Depends on:
 - `docs/job-balance/05-squire-chemist-v1-proposal.md`
 - `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/08-build-incidence-benchmark-schema.md`
+- `docs/formula-balance/13-brave-faith-combat-policy-v0.md`
 - `work/sim-inputs-v0.2.1.json`
 - `work/t3-healing-attrition-scenarios-v0.json`
 
@@ -56,6 +57,12 @@ faith_factor_floor = 0.60
 
 This keeps healing and damage faith assumptions aligned until a later accepted document changes
 them.
+
+Per `docs/formula-balance/13-brave-faith-combat-policy-v0.md`, non-item healing expected to remain
+combat-useful across the campaign must scale through a visible lever such as attributes, level
+bands, max HP percentage, missing HP, equipment, or another accepted system variable. Item healing
+is the exception because Potion/Hi-Potion/X-Potion progression already provides campaign scaling,
+and Auto-Potion-style reactions consume that item progression rather than scaling through Faith.
 
 ## Pinned Bundle
 
@@ -121,6 +128,10 @@ faith_factor = max(faith_factor_floor, (caster_faith / 100) * (target_faith / 10
 raw_heal = floor(K * MA * faith_factor)
 expected_heal = effective_heal
 ```
+
+Magical revive and Raise-style recovery may require a more generous floor than ordinary magical
+damage or status reliability. That is an anti-frustration tuning question for a later revive row,
+not a reason to make all Faith-based magic ignore Faith.
 
 For automatic reactions:
 

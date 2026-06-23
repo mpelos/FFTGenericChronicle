@@ -139,8 +139,18 @@ it should not remove the relevant shared rows without documenting why.
 | `S-LATE-MAGIC` | Late | `A-MAG` | `T-DURABLE`, `T-MAGIC` | late spell/rod/staff context | Does magic coexist with instant physical routes? |
 | `S-LATE-JOBLOCK` | Late | `A-JOBLOCK` | `T-LIGHT`, `T-DURABLE` | job-native equipment only and borrowed skillset context | Is the job-locked family worth using? |
 | `S-STRESS-SUPPORTS` | Stress | family-best plausible attacker | `T-DURABLE`, `T-EVASIVE` | no support, Attack Boost, Two Hands, Two Swords, Martial Arts where legal | Does a support engine collapse balance? |
-| `S-STRESS-BRAVE-FAITH` | Stress | relevant physical or magical user | `T-MAGIC`, `T-DURABLE` | normal Brave/Faith and high/low extremes | Does Brave/Faith optimization break the formula? |
+| `S-STRESS-BRAVE-FAITH` | Stress | relevant physical or magical user | `T-MAGIC`, `T-DURABLE` | Brave 30/70/85/97 and Faith 30/70/85/97 cases | Does Brave/Faith optimization break the formula or reaction/status ecology? |
 | `S-STRESS-ACCURACY` | Stress | `A-RANGE`, `A-FAST` | `T-EVASIVE` | evadable, Direct/unevadable if legal | Does expected damage remain honest after hit rate? |
+
+`S-STRESS-BRAVE-FAITH` must separate these lenses:
+
+- Brave-scaling weapon families use continuous Brave values, especially `30`, `70`, `85`, and `97`.
+- Morale, challenge, and reaction-susceptibility rows may use Brave bands if the accepted mechanic
+  is banded.
+- Magic damage, magical healing, and faith-facing status rows use Faith values `30`, `70`, `85`,
+  and `97` with the accepted Faith floor unless a later policy supersedes it.
+- `Faith`-status/Oil-style setup spikes may be included as combo stress rows, but only as
+  multi-action setup checks rather than normal one-action benchmarks.
 
 ## Required Equipment Contexts
 

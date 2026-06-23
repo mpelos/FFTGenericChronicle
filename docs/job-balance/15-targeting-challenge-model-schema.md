@@ -6,6 +6,7 @@ Depends on:
 - `docs/job-balance/06-knight-archer-v1-proposal.md`
 - `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/12-vanilla-skill-status-reference.md`
+- `docs/formula-balance/13-brave-faith-combat-policy-v0.md`
 - `docs/reference/fft-vanilla-ability-effect-index.md`
 - `docs/reference/fft-vanilla-status-effect-map.md`
 - `work/t8-targeting-challenge-scenarios-v0.json`
@@ -123,6 +124,26 @@ candidate_score = tactical_score
 The bonus is additive. It can redirect close decisions, but it must be beatable by lethal
 opportunities, self-preservation, mission objectives, invalid targeting, or status/control
 overrides.
+
+### Step 4a - Brave-Band Susceptibility
+
+Per `docs/formula-balance/13-brave-faith-combat-policy-v0.md`, target-pressure effects may use
+Brave as a named susceptibility modifier when the mechanic is about aggression, pride,
+retaliation, or refusal to back down.
+
+T8 rows that model Brave-sensitive challenge must declare the actor's Brave band:
+
+| Brave band | Suggested value | Challenge implication |
+| --- | ---: | --- |
+| low | 30 | less likely to accept direct bait; may remain vulnerable to fear or panic effects |
+| normal | 70 | baseline challenge bonus |
+| high | 85 | more susceptible to boldness, retaliation, honor, or duel-bait pressure |
+| extreme | 97 | stress case for overcommitment and forced-offense reliability |
+
+The Brave modifier changes the challenge bonus or hit reliability only for named target-pressure
+mechanics. It does not create a passive global AI rule, passive damage vulnerability, or passive
+defensive benefit. Lethal opportunities, self-preservation, objectives, ineligible targets,
+forced-target immunity, and control-state overrides still apply.
 
 ### Step 5 - Deterministic Selection
 

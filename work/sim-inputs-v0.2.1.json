@@ -925,7 +925,8 @@
   "rsm_constants": {
     "version": "physical_foundation_rsm_v0_proposed",
     "reaction_policy": {
-      "chance_formula": "min(brave / 100, trigger_cap)",
+      "chance_formula": "SUPERSEDED by docs/formula-balance/13-brave-faith-combat-policy-v0.md: no universal reaction trigger formula",
+      "trigger_model": "per-reaction trigger identity; concrete chances require RSM/job re-sim",
       "one_roll_per_triggering_action": true,
       "no_reaction_recursion": true,
       "damage_reactions_do_not_trigger_reactions": true,
