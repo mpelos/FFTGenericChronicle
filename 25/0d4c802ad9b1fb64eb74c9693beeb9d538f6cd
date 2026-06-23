@@ -1,0 +1,20 @@
+docs/job-balance/72-monk-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_208ae3b8a78bf8 1-2,4-425
+  s_fce6b25a5764ca::t_8720b0fdb8fce7 3,426-427
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "250d4c802ad9b1fb64eb74c9693beeb9d538f6cd",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
