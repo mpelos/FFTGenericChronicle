@@ -2053,3 +2053,86 @@ Important instruction:
 - Do not use it to judge the static KO candidates.
 - The game must be restarted through Reloaded so the corrected landmark hooks install at startup,
   then the autosave baseline should be captured again before previewing/confirming Rush.
+
+## 2026-06-23 Live Test: Corrected KO Landmark Rush/Reraise
+
+Validated run after restarting through Reloaded with corrected decimal RVAs.
+
+Captured snapshots:
+
+- `work\live-captures\battleprobe_log.ko-landmark-baseline-autosave.corrected-rvas.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-landmark-preview-ramza-rush-ninja-50.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-landmark-resolved-ramza-rush-ninja-ko-before-wait.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-landmark-after-ramza-wait-ninja-reraise.snapshot.txt`.
+
+User-observed sequence:
+
+1. Baseline autosave: Ramza active before Rush.
+2. Preview: `Ramza Rush -> Ninja`, predicted damage `50`.
+3. Resolution before Ramza Wait: Ninja died, shown number `33`, Ramza still active.
+4. After Ramza Wait: next active Ninja, because Reraise revived him.
+
+Probe validation:
+
+- Corrected baseline: `9` landmark hooks installed, `0` skips, `0` hits before action.
+- Preview: still `9` hooks installed, `0` skips, `0` landmark hits.
+- KO resolution before Wait: `1` landmark hit.
+- After Wait/Reraise: `3` total landmark hits.
+
+KO hit before Wait:
+
+- `[LANDMARK-HIT event=1 id=3 name=ko_write_1f5 rva=0x30A6D3]`;
+- instruction writes byte `FF` to target `+0x1F5`;
+- base unit was the Ninja at `0x141855EE0`;
+- captured fields at the hit:
+  - `hp=0`;
+  - `ct=101`;
+  - `dmg1C4=33`;
+  - `chg1D8=130`;
+  - `f1E5=128`;
+  - `f1EF=32`;
+  - `b8=0`, `ba=0`, `bb=1`;
+  - raw `+0x30=0000`, `+0x1C4=2100`, `+0x1D8=8200`, `+0x1EF=2000`,
+    `+0x1F5=1000`.
+
+Interpretation:
+
+- Preview does not execute these KO landmarks.
+- The first KO landmark observed for the lethal Rush is `ko_write_1f5`.
+- At that point HP is already zero and the displayed/applied damage slot has `33`.
+- This makes `0x30A6D3` a strong engine-owned KO-state mutation landmark, but probably not the
+  earliest pre-commit damage arithmetic site.
+- `+0x1C4` continues to be the concrete shown/applied damage field for this immediate action.
+
+Reraise/revive hits after Wait:
+
+- `[LANDMARK-HIT event=2 id=3 name=ko_write_1f5 rva=0x30A6D3]`;
+- `[LANDMARK-HIT event=3 id=6 name=death_state_write_1bb rva=0x30AAFC]`;
+- both captured at the same timestamp with the Ninja revived:
+  - `hp=28`;
+  - `ct=1`;
+  - `dmg1C4=0`;
+  - `f1E5=72`;
+  - `f1EF=0`;
+  - `b8=1`, `ba=0`, `bb=2`;
+  - raw `+0x30=1C00`, `+0x1BB=0211`, `+0x1F1=0100`, `+0x1F5=FF00`.
+
+Interpretation:
+
+- Reraise is a separate revive/state-machine transition, not ordinary healing evidence.
+- `death_state_write_1bb` was not observed during the immediate pre-Wait KO snapshot, but did
+  execute during the Reraise transition.
+- `ko_write_1f5` fires both on KO and on revive/Reraise, so it is a lifecycle landmark, not a
+  death-only marker.
+- `+0x1BB`/`bb` remains a useful phase/death-state byte, but its semantics must be interpreted with
+  the broader lifecycle (`1` during KO, `2` after Reraise) instead of as a simple dead/alive boolean.
+
+Recommended next work:
+
+1. Do offline disassembly/control-flow analysis around `0x30A6D3`, `0x30AAFC`, and their callers
+   (`0x2F3884`, `0x2F37A2`, `0x2F2EC1`) to find the branch/call site that decides whether to enter
+   the KO lifecycle.
+2. Prepare a proof profile that observes or safely hooks the pre-KO decision point, not just the
+   post-zero lifecycle markers.
+3. The next live proof should answer whether custom lethal damage can force entry into the same
+   engine-owned KO path when vanilla damage would leave HP above zero.
