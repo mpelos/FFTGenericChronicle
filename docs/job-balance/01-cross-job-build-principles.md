@@ -255,9 +255,11 @@ movement, defense, targeting, accuracy, or vulnerability, it should normally be 
 visible status with clear feedback. If the engine cannot show the effect, prefer a vanilla status,
 a direct stat change, an instant effect, or a simpler ability over hidden state.
 
-Recovery skills should keep some relevance across the game. Fixed HP recovery attached directly to a
-skill, such as a basic heal or Chakra-style action, should scale with attributes, level band, max HP,
-or another visible progression hook while staying modest for the current chapter. Item-based recovery
+Damage and recovery skills should keep some relevance across the game. Direct skill damage or
+healing should not be a literal fixed value forever unless a later design pass explicitly approves
+that exception. Even starter utility such as chip damage, shove damage, basic healing, or
+Chakra-style recovery should scale modestly with attributes, level band, max HP, weapon tier, or
+another visible progression hook while staying bounded for the current chapter. Item-based recovery
 is different: reactions or skills that consume items can scale through item progression itself. This
 is why the vanilla `Auto-Potion` idea works when it follows the player's available item tier instead
 of using a flat late-game value.

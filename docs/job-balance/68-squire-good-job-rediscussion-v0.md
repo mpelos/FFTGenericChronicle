@@ -17,7 +17,7 @@ This document revisits Squire under the updated good-job premises:
 - learned skills should feel useful and readable;
 - strong combos are healthy when they require real setup, opportunity cost, or party coordination;
 - persistent combat math changes should be visible in battle;
-- direct fixed recovery should scale modestly instead of dying after the early game;
+- direct damage and recovery should use modest scaling formulas instead of dying after the early game;
 - reactions should not all become Brave optimization problems;
 - no Gil values are changed;
 - no new equipment is added.
@@ -37,8 +37,8 @@ late damage engine or a mandatory support package for every physical unit.
 
 | Skill | Slot | Base value | With `Basic Training` | Guardrail |
 | --- | --- | --- | --- | --- |
-| `Throw Stone` | Action | fixed 12 crush chip | fixed 18 crush chip | Utility, finisher, positioning pressure; intentionally non-scaling. |
-| `Dash` | Action | fixed 18 crush body-check | fixed 27 crush body-check | Adjacent only; remains positional pressure, not a weapon replacement. |
+| `Throw Stone` | Action | scaling crush chip | stronger scaling crush chip | Utility, finisher, positioning pressure; intentionally low-ceiling. |
+| `Dash` | Action | scaling crush body-check | stronger scaling crush body-check | Adjacent only; remains positional pressure, not a weapon replacement. |
 | `First Aid` | Action | scaling adjacent heal | scaling adjacent heal, still capped | No revive; never exceeds the current Potion-tier safety cap. |
 | `Focus` | Action | visible Focus; next physical action x1.40, +10 hit, +10 crit | visible Focus; next physical action x1.50, +15 hit, +15 crit | Single-use; non-stacking; expires at end of next turn. |
 | `Rally` | Action | range 2 ally gains +20 CT | range 2 ally gains +25 CT | Ally-only; no self-target; once per target per round; not Haste. |
@@ -48,6 +48,50 @@ late damage engine or a mandatory support package for every physical unit.
 | `Move +1` | Movement | Move +1 | - | Early mobility floor; intentionally outclassed later. |
 
 ## Skill Notes
+
+### Throw Stone
+
+`Throw Stone` should remain chip utility, but it should not be a literal flat damage value forever.
+
+Provisional formula target:
+
+```text
+raw_damage = 8 + floor(Level / 5) + floor(PA / 2)
+with Basic Training = floor(raw_damage * 1.50)
+```
+
+Rules:
+
+- crush chip damage;
+- short ranged utility;
+- can finish weak targets or turn/pressure positioning;
+- must stay below a real ranged damage plan;
+- final data should keep it low-ceiling even when scaled.
+
+The intent is that `Throw Stone` still feels like a starter utility action in the late game without
+becoming a bow, gun, spell, or weapon replacement.
+
+### Dash
+
+`Dash` should remain an adjacent body-check, but it also needs modest scaling.
+
+Provisional formula target:
+
+```text
+raw_damage = 12 + floor(Level / 4) + PA
+with Basic Training = floor(raw_damage * 1.40)
+```
+
+Rules:
+
+- adjacent only;
+- crush body-check damage;
+- may carry shove, facing, or formation pressure if implementation supports it;
+- should stay below ordinary weapon pressure in most normal attack contexts;
+- final data should treat the positional rider as part of its value.
+
+The intent is that `Dash` remains useful when adjacency and positioning matter, not that it becomes a
+primary melee attack.
 
 ### First Aid
 
@@ -152,8 +196,8 @@ It is an explicit Squire-action upgrade table:
 
 | Squire action | Trained result |
 | --- | --- |
-| `Throw Stone` | fixed 18 crush chip |
-| `Dash` | fixed 27 crush body-check |
+| `Throw Stone` | `floor(raw_damage * 1.50)` |
+| `Dash` | `floor(raw_damage * 1.40)` |
 | `First Aid` | same scaling formula, still capped below Potion-tier healing |
 | `Focus` | x1.50, +15 hit, +15 crit |
 | `Rally` | +25 CT |
