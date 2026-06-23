@@ -250,10 +250,67 @@ spends an action, CT, MP, item stock, positioning, JP, or a reaction/support/mov
 change the tactical situation enough for the player to notice. Generic Chronicle should avoid
 over-conservative values that are technically balanced but emotionally dead.
 
+### Skill Value And Action Economy
+
+Every skill must justify the resource it consumes.
+
+For every combat action that spends a unit's turn, the design must answer:
+
+- why would the player use this instead of a basic attack, a kill attempt, a heal, or another
+  available high-impact action?
+- what changes in the battle immediately or predictably because this action was used?
+- what target, map state, party setup, or enemy profile makes this the right action?
+- if the skill were removed, what job fantasy, build route, or battle plan would meaningfully break?
+
+For every campaign, economy, roster, monster, breeding, poach, recruitment, or long-term build
+action, the design must answer a different question:
+
+- what durable game value does this create outside the current damage race?
+- why is that value worth spending a combat turn, JP, item stock, risk, or setup time?
+- what prevents it from becoming mandatory grind or a dead menu option?
+- what part of FFT's long-term planning would be lost if this skill disappeared?
+
+Low numerical changes, low hit rates, delayed payoff, and setup actions are allowed only when the
+payoff is large enough for the layer they belong to. A weak combat action is not repaired by being
+safe, thematic, or technically balanced. A campaign action is not required to beat attacking inside
+one battle, but it must produce meaningful campaign, economy, roster, monster, or build-planning
+value. If a skill is neither worth a turn in battle nor meaningful outside battle, it is failing its
+role.
+
+This applies especially to controller, support, and debuff jobs. Their turns do not need to deal
+damage, but a combat-facing turn must produce tactical value comparable to spending the turn on
+damage: denying a dangerous action, creating a kill window, enabling a major party combo, preventing
+a real loss, or changing target priority. A campaign-facing turn can instead be justified by
+protecting a core long-term system such as monster recruitment, breeding, poaching, roster shaping,
+or permanent build planning.
+
 Persistent effects on units must be readable in battle. If a temporary effect changes damage,
 movement, defense, targeting, accuracy, or vulnerability, it should normally be represented by a
 visible status with clear feedback. If the engine cannot show the effect, prefer a vanilla status,
 a direct stat change, an instant effect, or a simpler ability over hidden state.
+
+### Creative Mechanics And Readability
+
+Generic Chronicle should keep creating interesting mechanics. The lesson from early Knight and
+Archer work is not "avoid new mechanics"; it is "make new mechanics legible enough for FFT play."
+
+When a prior proposal has a good idea but too much complexity, the revision should preserve the
+valuable part before cutting it. The design should identify:
+
+- the fantasy or tactical interaction worth preserving;
+- the smallest visible form that delivers that interaction;
+- which extra marks, states, exceptions, or stacking rules can be removed;
+- whether an existing vanilla status, direct stat change, equipment change, tile telegraph, or
+  immediate effect can express the mechanic more cleanly.
+
+Any new status, mark, charge, zone, wound, exposure, or conditional flag must be visible to the
+player. If the player cannot look at the battlefield and know who is affected, what the effect means,
+and when it will end or be consumed, the mechanic is too opaque for the main job design.
+
+Complexity should be budgeted. A job can have a small signature vocabulary, but it should not ask the
+player to track many overlapping custom states with different durations, triggers, owners, and
+consumption rules. If a design needs that much bookkeeping, merge states, reuse vanilla statuses, or
+convert the mechanic into an immediate effect.
 
 Damage and recovery skills should keep some relevance across the game. Direct skill damage or
 healing should not be a literal fixed value forever unless a later design pass explicitly approves
@@ -269,6 +326,26 @@ important reactions scale only from Brave, the correct late-game behavior become
 everyone. Reactions should instead have varied defensive identities and costs: Brave, equipment,
 shield access, evasion, armor profile, damage type, positioning, CT, HP threshold, status context, or
 job identity can all matter, as long as the resulting behavior remains understandable.
+
+### Core System Preservation
+
+Do not remove a core FFT subsystem by accidentally treating it as out of scope.
+
+If a skill supports a larger campaign system, the redesign must preserve a route for that system or
+explicitly move the whole system to a named later pass. The current skill may be reworked, delayed,
+or moved to another job, but the proposal must state how the player will still access the system.
+
+Protected systems include:
+
+- monster recruitment and breeding;
+- monster-facing speech such as `Tame` and `Beast Tongue`;
+- `Poach` and monster-item routing;
+- Brave and Faith recruitment/build variance;
+- permanent roster and campaign-facing choices that are part of FFT's build-planning pleasure.
+
+"Monsters are out of current combat scope" means monster combat balance may wait. It does not mean
+monster recruitment, breeding, Beast Tongue, Tame, Poach, or their access route can silently vanish
+from the mod.
 
 ## Unhealthy Build Patterns
 

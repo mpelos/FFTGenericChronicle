@@ -85,6 +85,9 @@ Supported damage modes:
 Formula v0.2 coupling:
 
 Action skillset goals:
+Mechanic preservation list:
+Per-skill turn-value audit:
+Visibility and complexity audit:
 Reaction skills:
 Support skills:
 Movement skills:
@@ -332,6 +335,101 @@ required tax.
 Detailed job proposals must show at least one viable party plan that uses the job and at least
 one viable party plan that does not, unless the job is Ramza-only or explicitly story-bound.
 
+### Gate G4 - Skill Value
+
+A proposal fails if a skill consumes a turn, slot, JP, item stock, or campaign opportunity without
+creating meaningful value in its intended layer.
+
+Combat-facing action skills must answer:
+
+- what is the immediate or predictable battle impact?
+- why is that impact worth the turn cost?
+- what common situation makes this better than attacking?
+- what counter, cost, miss risk, or target restriction keeps it from becoming automatic?
+- what system, job identity, or build route would break if the skill were removed?
+
+Campaign-facing action skills must answer:
+
+- what long-term value is created for economy, roster, recruitment, breeding, poach, unlocks, or
+  build planning?
+- why is that value worth the turn, JP, risk, or opportunity cost?
+- why does the action not become mandatory grind?
+- why does the action not become a dead option once combat optimization is understood?
+- what system would become poorer or disappear if the skill were removed?
+
+If the answer is only "it is thematic", "it might matter after several low-impact uses", "it is
+safe", or "it has a small modifier", the skill fails the gate. Combat setup is allowed only when it
+creates a meaningful payoff window that a reasonable player would plan around. Campaign setup is
+allowed when it protects or enriches a real long-term FFT system, even if it is not the strongest
+combat action in the current battle.
+
+### Gate G5 - Core System Preservation
+
+A proposal fails if it removes an existing FFT campaign or roster subsystem without naming the
+replacement route.
+
+The job pass may defer monster balance, economy tuning, or permanent-state tuning, but it must not
+delete access to systems such as:
+
+- monster recruitment and breeding;
+- `Tame`;
+- `Beast Tongue`;
+- `Poach`;
+- permanent recruit routes;
+- Brave/Faith variance and long-term build planning.
+
+When a skill is cut, moved, or deferred, the proposal must state one of:
+
+- the subsystem remains available through another named skill or job;
+- the subsystem is moved to a named future pass with an explicit access promise;
+- the user explicitly approved removing that subsystem.
+
+### Gate G6 - Preserve Good Mechanics Through Revision
+
+A proposal fails if a revision discards useful mechanics only because the previous version was too
+complex.
+
+When revising or rejecting an earlier package, the new proposal must include a mechanic preservation
+list:
+
+- mechanics worth preserving;
+- why each mechanic was valuable;
+- what made the old expression too complex, opaque, weak, or dominant;
+- the simpler visible expression being kept, merged, moved, or reworked;
+- mechanics being fully cut, with a reason stronger than "this is easier."
+
+Knight and Archer are the reference warning: their early redesigns contained valuable ideas, but
+some status and mark tracking could become hard for the player to follow. Future passes should
+simplify those ideas, not erase the creativity.
+
+### Gate G7 - Visible State And Complexity Budget
+
+A proposal fails if it depends on hidden marks, invisible state, or too many overlapping custom
+tracking rules.
+
+Every new status, mark, wound, exposure, charge, tile zone, forced-target rule, delayed threat, or
+conditional flag must define:
+
+- the player-visible representation;
+- who or what carries it: unit, tile, equipment slot, action, or party state;
+- duration or expiration timing;
+- stacking rules;
+- consumption rules;
+- whether multiple units can apply or consume it;
+- what happens if the target dies, moves, becomes illegal, is cured, or the source changes jobs.
+
+If the engine cannot show the state clearly, the proposal must use one of these alternatives:
+
+- reuse an existing visible vanilla status;
+- use a direct stat, CT, HP, MP, equipment, or position change;
+- make the effect immediate instead of persistent;
+- fold the mechanic into a simpler existing state;
+- cut the mechanic.
+
+As a default readability budget, a normal job should use only a small signature vocabulary of custom
+visible states. Exceeding that budget requires an explicit explanation of why the job remains easy to
+read in battle.
+
 ## Benchmark Population Integrity
 
 Percentage gates are only meaningful if the benchmark populations are representative.
@@ -489,6 +587,27 @@ Each action should state at least one reason to choose it and one reason not to 
 - weapon requirement;
 - positional exposure;
 - friendly-fire or target restrictions.
+
+Each action must also include a skill-value audit. Use the combat lens for combat-facing actions and
+the campaign lens for campaign/economy/roster actions.
+
+| Question | Required answer |
+| --- | --- |
+| If combat-facing, why use this instead of attacking? | Name the target profile, battle state, or party setup where this is the better turn. |
+| If campaign-facing, why spend resources on this? | Name the economy, roster, monster, breeding, poach, recruitment, unlock, or long-term build value. |
+| What immediate, predictable, or durable impact does it create? | Damage swing, denied action, kill window, protection, positioning change, combo setup, item access, recruit access, breeding access, poach access, or another explicit campaign-system payoff. |
+| What makes the payoff visible? | Visible status, clear number, CT movement, equipment change, HP/MP swing, obvious AI/control change, roster change, item acquisition, unlock, or other durable feedback. |
+| What prevents spam or mandatory grind? | Accuracy, immunity, CT/MP/item cost, range, position, target limits, duration, counterplay, opportunity cost, encounter limits, roster limits, or campaign pacing. |
+| What breaks if this skill is removed? | Job identity, monster/breeding/poach route, build route, counterplay route, economy route, or nothing. If nothing breaks, cut or merge it. |
+
+Debuffs and setup actions need special scrutiny. A low-impact debuff that does not change the next
+turns enough to beat attacking is not a tactical choice if it is presented as a combat action. If a
+caster can be killed faster by damage than by spending a turn on a tiny Faith change, that Faith
+action is underdesigned unless it has a separate, explicit long-term build purpose.
+
+Actions that create new states must also pass Gate G7. A clever action that requires the player to
+remember invisible marks, hidden durations, or several similar custom flags is not acceptable even if
+the math is balanced.
 
 Pure vertical replacement is a warning unless the action is intentionally a late-game upgrade with
 a real cost.

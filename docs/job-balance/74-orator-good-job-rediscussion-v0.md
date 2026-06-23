@@ -1,6 +1,6 @@
 # Orator Good-Job Rediscussion V0
 
-Status: Accepted (GPT/Claude consensus) -- pending Marcelo validation
+Status: Needs revision after Marcelo validation
 Date: 2026-06-23
 Scope: Orator only
 
@@ -492,3 +492,22 @@ Claude approved the Orator package for artifact writing on 2026-06-23, requiring
 - distinguish Orator `Condemn` from Monk `Doom Fist`.
 
 Those requirements are incorporated in this artifact.
+
+Marcelo rejected this package on 2026-06-23. The rejection is not a request for numeric tuning only;
+it identifies a process failure:
+
+- `Tame` and `Beast Tongue` cannot be removed in a way that deletes monster recruitment, breeding,
+  and `Poach` access. Those systems are essential FFT texture.
+- `Stall` at CT -15 looks too weak for spending an Orator turn.
+- `Praise`, `Intimidate`, `Preach`, and `Enlighten` are too small to justify action cost as written,
+  and the broader permanent Brave/Faith policy must be reopened so recruited characters are not
+  permanently advantaged or disadvantaged by starting Brave/Faith.
+- Every Orator combat action must be re-audited against the basic question: why spend the turn on
+  this instead of attacking, killing, healing, or taking another high-impact action? Orator
+  campaign/roster actions must instead justify their long-term value to recruitment, monster
+  systems, breeding, poach, or build planning.
+- Future Orator revision must preserve the social-control identity while making each turn produce
+  meaningful battle impact.
+
+This document remains useful as a record of the rejected GPT/Claude proposal, but it is not accepted
+for the current mod direction.
