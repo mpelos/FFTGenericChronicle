@@ -26,7 +26,7 @@ internal sealed class SettingsValidationReport
 
 internal static class RuntimeSettingsValidator
 {
-    private const int RawSize = 0x180;
+    private const int RawSize = 0x200;
 
     public static SettingsValidationReport Validate(RuntimeSettings settings, ItemCatalog catalog)
     {
@@ -91,10 +91,63 @@ internal static class RuntimeSettingsValidator
             report.Error("HookRegisterProbePointerMaxPointersPerRoot", "HookRegisterProbePointerMaxPointersPerRoot must be within 0..64.");
         if (settings.HookRegisterProbe)
             report.Warn("HookRegisterProbe", "hook register probe is for short RE captures only; keep HookRegisterProbeMaxLogs low.");
-        if (settings.HookRegisterProbeOnHpEvent || settings.HookRegisterProbeOnMpEvent || settings.HookRegisterProbeOnCtDrop)
+        if (settings.HookRegisterProbeOnHpEvent ||
+            settings.HookRegisterProbeOnMpEvent ||
+            settings.HookRegisterProbeOnCtDrop ||
+            settings.HookRegisterProbeOnActionBoundary)
             report.Warn("HookRegisterProbeOnEvent", "event-correlated hook register snapshots are for short RE captures only.");
         if (settings.HookRegisterProbePointerScanBytes > 0)
             report.Warn("HookRegisterProbePointerScanBytes", "pointer scans are read-only but noisy; use only for short controlled RE captures.");
+        if (settings.LandmarkProbeMaxLogs < 0)
+            report.Error("LandmarkProbeMaxLogs", "LandmarkProbeMaxLogs must be nonnegative.");
+        if (settings.LandmarkProbeStackSlots < 0 || settings.LandmarkProbeStackSlots > 64)
+            report.Error("LandmarkProbeStackSlots", "LandmarkProbeStackSlots must be within 0..64.");
+        if (settings.LandmarkProbeEnabled)
+        {
+            report.Warn("LandmarkProbeEnabled", "landmark hooks are targeted RE probes; use only for short controlled captures.");
+            if (settings.LandmarkProbes.Count(probe => probe.Enabled) == 0)
+                report.Error("LandmarkProbes", "LandmarkProbeEnabled requires at least one enabled LandmarkProbe.");
+        }
+        foreach (var probe in settings.LandmarkProbes)
+        {
+            probe.Normalize();
+            if (!probe.TryValidate(out string error))
+                report.Error($"LandmarkProbes.{probe.TraceName}", error);
+        }
+        if (settings.HpEventProbeMaxLogs < 0)
+            report.Error("HpEventProbeMaxLogs", "HpEventProbeMaxLogs must be nonnegative.");
+        if (settings.HpEventProbeDiffMax < 0 || settings.HpEventProbeDiffMax > 256)
+            report.Error("HpEventProbeDiffMax", "HpEventProbeDiffMax must be within 0..256.");
+        if (settings.LogHpEventProbe)
+            report.Warn("LogHpEventProbe", "HP event raw diffs are noisy; use only for short controlled RE captures.");
+        if (settings.HpEventProbeDumpRaw)
+            report.Warn("HpEventProbeDumpRaw", "raw HP event dumps are verbose; keep HpEventProbeMaxLogs low.");
+        if (settings.ActionBoundaryProbeMaxLogs < 0)
+            report.Error("ActionBoundaryProbeMaxLogs", "ActionBoundaryProbeMaxLogs must be nonnegative.");
+        if (settings.ActionBoundaryProbeDiffMax < 0 || settings.ActionBoundaryProbeDiffMax > 128)
+            report.Error("ActionBoundaryProbeDiffMax", "ActionBoundaryProbeDiffMax must be within 0..128.");
+        if (settings.LogActionBoundaryProbe)
+            report.Warn("LogActionBoundaryProbe", "action boundary probes are noisy; use only for short controlled RE captures.");
+        if (settings.PendingActionCandidateMaxUnits <= 0)
+            report.Error("PendingActionCandidateMaxUnits", "PendingActionCandidateMaxUnits must be greater than zero.");
+        else if (settings.PendingActionCandidateMaxUnits > settings.MaxTrackedBattleUnits)
+            report.Warn("PendingActionCandidateMaxUnits", "candidate logging above MaxTrackedBattleUnits is usually unnecessary.");
+        if (settings.ImmediateActionCandidateMaxUnits <= 0)
+            report.Error("ImmediateActionCandidateMaxUnits", "ImmediateActionCandidateMaxUnits must be greater than zero.");
+        else if (settings.ImmediateActionCandidateMaxUnits > settings.MaxTrackedBattleUnits)
+            report.Warn("ImmediateActionCandidateMaxUnits", "candidate logging above MaxTrackedBattleUnits is usually unnecessary.");
+        if (settings.LogImmediateActionCandidatesOnEvent && !settings.LogActionStateChanges)
+            report.Warn("LogImmediateActionCandidatesOnEvent", "LogActionStateChanges is recommended so candidate stateAgeMs is meaningful.");
+        if (settings.PendingActionResolveWindowMs <= 0 || settings.PendingActionResolveWindowMs > 60_000)
+            report.Error("PendingActionResolveWindowMs", "PendingActionResolveWindowMs must be within 1..60000.");
+        else if (settings.PendingActionResolveWindowMs > 5000)
+            report.Warn("PendingActionResolveWindowMs", "wide pending-action resolve windows increase false-positive attribution risk.");
+        if (settings.PendingActionMaxBatchEvents <= 0 || settings.PendingActionMaxBatchEvents > 64)
+            report.Error("PendingActionMaxBatchEvents", "PendingActionMaxBatchEvents must be within 1..64.");
+        if (settings.PendingActionStaleMs <= 0 || settings.PendingActionStaleMs > 300_000)
+            report.Error("PendingActionStaleMs", "PendingActionStaleMs must be within 1..300000.");
+        if (settings.TrackPendingActions && !settings.LogActionStateChanges)
+            report.Warn("TrackPendingActions", "LogActionStateChanges is recommended while validating pending-action tracker decisions.");
         if (settings.UnknownDiffStart < 0 || settings.UnknownDiffStart >= RawSize)
             report.Error("UnknownDiffStart", $"UnknownDiffStart must be within 0..0x{RawSize - 1:X}.");
         if (settings.UnknownDiffEnd < settings.UnknownDiffStart || settings.UnknownDiffEnd >= RawSize)
@@ -533,6 +586,8 @@ internal static class RuntimeSettingsValidator
         context.Set("a.sourceCt", 1);
         context.Set("attacker.sourceCounter", 1);
         context.Set("a.sourceCounter", 1);
+        context.Set("attacker.sourcePending", 1);
+        context.Set("a.sourcePending", 1);
         AddActionVariables(context, settings);
         AddSlotVariables(context, "slot", settings.EquipmentSlots, catalog, preferWeapon: false);
         AddSlotVariables(context, "targetSlot", settings.EquipmentSlots, catalog, preferWeapon: false);
@@ -687,7 +742,33 @@ internal static class RuntimeSettingsValidator
         {
             context.Set($"{prefix}.present", 1);
             context.Set($"{prefix}.sourceVanillaDamage", 1);
+            context.Set($"{prefix}.sourcePending", 1);
             context.Set($"{prefix}.signal", 1);
+            context.Set($"{prefix}.id", 1);
+            context.Set($"{prefix}.actionId", 1);
+            context.Set($"{prefix}.batch", 1);
+            context.Set($"{prefix}.batchEvent", 1);
+            context.Set($"{prefix}.batchMaxEvents", 8);
+            context.Set($"{prefix}.batchAgeMs", 100);
+            context.Set($"{prefix}.score", 100);
+            context.Set($"{prefix}.observedHpLoss", 20);
+            context.Set($"{prefix}.targetCacheDamage", 20);
+            context.Set($"{prefix}.currentTargetCacheDamage", 20);
+            context.Set($"{prefix}.recentTargetCacheDamage", 20);
+            context.Set($"{prefix}.damageCacheMatch", 1);
+            context.Set($"{prefix}.currentDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentDamageCacheMatch", 1);
+            context.Set($"{prefix}.exactDamageCacheMatch", 1);
+            context.Set($"{prefix}.currentExactDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentExactDamageCacheMatch", 1);
+            context.Set($"{prefix}.lethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.currentLethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentLethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.hasCurrentTargetMetadata", 1);
+            context.Set($"{prefix}.confidenceDamageCache", 1);
+            context.Set($"{prefix}.confidenceRecentDamageCache", 1);
+            context.Set($"{prefix}.confidenceLethalClampDamageCache", 1);
+            context.Set($"{prefix}.confidenceRecentResolve", 1);
             context.Set($"{prefix}.vanillaDamage", 20);
             context.Set($"{prefix}.vanillaDamageAbs", 20);
             context.Set($"{prefix}.vanillaHealing", 0);

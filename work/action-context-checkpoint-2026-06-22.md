@@ -63,31 +63,40 @@ The deployed runtime settings are:
 
 They were copied from:
 
-`work/battle-runtime-settings.action-context-probe.json`
+`work/battle-runtime-settings.immediate-action-ko-boundary-probe.json`
 
-The old game log was archived to:
+The pre-KO-probe game log was archived to:
 
-`work/live-captures/battleprobe_log.pre-pending-action-probe.20260622-230137.txt`
+`work/live-captures/battleprobe_log.pre-immediate-action-ko-boundary-probe.20260623-154450.txt`
 
 Offline checks passed after the latest probe changes:
 
 ```powershell
-codemod\run-offline-checks.ps1
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+python tools\report_runtime_profiles.py
+python tools\test_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.immediate-action-ko-boundary-probe.json
 ```
 
 The profile is observe-only:
 
 - no HP rewrite;
 - no MP rewrite;
+- `MinHpFloor=0`, `CauseDeathOnZeroHp=false`;
 - CT diagnostics enabled;
+- HP event raw-diff probe enabled;
 - hook register event probes enabled;
 - actor probe enabled;
-- new pending-action candidate logging enabled.
+- pending-action candidate logging enabled.
+- ranked immediate-action candidate logging enabled.
 
-New log line added by the latest code:
+Important log lines from the latest code:
 
 ```text
+[HP-EVENT-PROBE kind=... event=N ptr=0x... prevHp=... currentHp=... delta=... appliedHpLoss=... rawForecastDamage=... lethal=... hpClamp=... action=...] diff=...
 [PENDING-ACTION-CANDIDATES kind=damage event=N target=0x.../id=0x.. now=...] ...
+[IMMEDIATE-ACTION-CANDIDATES kind=damage event=N target=0x.../id=0x.. appliedHpLoss=... rawTargetForecastDamage=... hpClamp=...] ...
 ```
 
 It prints, for registered units at each HP/MP event:
@@ -102,8 +111,11 @@ It prints, for registered units at each HP/MP event:
 - `b8` = `unit+0x1B8`
 - `bb` = `unit+0x1BB`
 
-The next live test should answer whether a charged-action caster is still visible as pending at the
-exact HP-write event.
+The latest live test answered the first KO-state question. The next engineering step is to improve
+lethal event attribution and search for a pre-damage / engine-owned KO application path.
+
+Note: after the KO live result, the lethal-aware target-cache fix and immediate-action candidate
+probe were implemented, validated, and deployed to Reloaded-II with the game closed.
 
 ## Known Live Unit Pointers
 
@@ -703,8 +715,10 @@ Prototype success criteria:
 2. When Cloud transitions from pending to cleared (`s61=0`, `f1EF=0`, `t18D=255`) while retaining
    `act=258`, the tracker opens a short "resolving batch" window for Cloud/Cross Slash.
 3. The following HP writes for Agrias and Ninja are attributed to that same Cloud/Cross Slash batch.
-4. Target-side `dmg1C4` matches the observed HP loss for each target when available:
-   `115` for Agrias and `273` for Ninja in the latest test.
+4. Target-side `dmg1C4` represents raw formula/preview damage for each target when available:
+   `115` for Agrias and `273` for Ninja in the latest nonlethal test. For lethal hits, the applied
+   HP loss may be clamped to the target's previous HP, so `dmg1C4` can be greater than the observed
+   HP delta and still be correct evidence.
 5. CT is not used as the primary attribution signal for this delayed action. CT can remain as a
    fallback for immediate actions or unresolved edge cases.
 
@@ -714,3 +728,1290 @@ Custom battle formulas need reliable formula context. The final formula engine n
 `action`, and `target` at the moment damage is applied. The current HP hook already gives target and
 final damage, but not delayed-action caster. The tracker is the next offline implementation needed
 to bridge that gap before testing formula rewrites on charged skills.
+
+## 2026-06-23 Update: PendingActionTracker Offline Prototype
+
+The observe-first `PendingActionTracker` prototype has now been implemented in the codemod runtime.
+
+It is still diagnostic only:
+
+- no HP/MP rewrites;
+- no change to the existing CT/context resolver;
+- no formula behavior changes;
+- only new tracker/cache/match log lines.
+
+Main new log families:
+
+```text
+[PENDING-ACTION-TRACK enter|update|resolve-open|resolve-close|abandon ...]
+[PENDING-ACTION-TARGET enter|reenter|update|clear|drop ...]
+[PENDING-ACTION-MATCH ...]
+```
+
+What the next live capture should prove:
+
+1. Cloud enters the tracker as a pending action owner when `s61` and `f1EF` carry bit `0x08` and
+   `act=258`.
+2. The tracker opens a resolving batch when Cloud transitions to cleared pending flags while still
+   retaining `act=258`.
+3. Agrias and Ninja HP damage events match that same batch.
+4. Current or recent target cache evidence validates damage values when available:
+   - current cache: `dmg1C4` still present at HP write;
+   - recent cache: `dmg1C4` was seen earlier and has cleared before HP write.
+5. If a match fails, the logs include enough state to tell whether the tracker missed:
+   - pending entry;
+   - clear/resolve-open;
+   - active batch window;
+   - target-cache validation.
+
+Hardening added before the next live test:
+
+- Pending flags are treated as bit `0x08`, not exact byte equality, because `+0x61` is also a
+  status byte.
+- Before every positive HP damage match, the runtime refreshes all registered units with a `0x200`
+  action probe snapshot. This reduces dependence on unit polling order and protects the first AoE HP
+  event.
+- The live action-context profile now uses a `5000ms` resolve window and `16` max batch events. This
+  is deliberately wide for observe-only capture.
+- The tracker retains recent target-side `dmg1C4` evidence after the live field clears, so single
+  target delayed actions like Braver can still be validated if the target cache vanished before
+  resolution.
+- `[HOOK-REGS-EVENT ...]` now includes `hookAgeMs`, so register evidence can be weighted by how old
+  the latest hook snapshot was when the polling layer noticed the HP/MP/CT event.
+
+Primary expected live sequence for Cross Slash AoE:
+
+```text
+[PENDING-ACTION-TRACK enter caster=Cloud act=258 ...]
+[PENDING-ACTION-TRACK update caster=Cloud act=258 ...]
+[PENDING-ACTION-TRACK resolve-open batch=N caster=Cloud act=258 ...]
+[PENDING-ACTION-MATCH ... target=Agrias ... resolved=Cloud ... batch=N ... confidence=damage-cache|recent-damage-cache]
+[PENDING-ACTION-MATCH ... target=Ninja ... resolved=Cloud ... batch=N ... confidence=damage-cache|recent-damage-cache|recent-resolve]
+```
+
+If this sequence appears cleanly, the next implementation step is to make pending-action batch
+resolution available to `BattleContextResolver` as a primary delayed-action source, keeping CT as
+fallback. If it does not appear, inspect the `trackedPending`, `trackedResolving`, `activeBatches`,
+`currentCache`, `recentCache`, and `hookAgeMs` fields before choosing the next hook/search path.
+
+## 2026-06-23 Live Result: PendingActionTracker Cross Slash Proof
+
+The pending-action tracker live probe succeeded on the migrated save / current PC.
+
+Controlled action:
+
+- Cloud used Cross Slash on Agrias.
+- Preview damage shown by user: `187`.
+- Resolution hit:
+  - Ninja: `288 -> 15 = 273`.
+  - Agrias: `470 -> 283 = 187`.
+  - Next active unit: Ramza.
+
+Key artifacts:
+
+- `work/live-captures/battleprobe_log.pending-tracker-live-baseline-cloud-active.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-tracker-live-preview-cross-slash-agrias-187.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-tracker-live-confirmed-before-cloud-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-tracker-live-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/battleprobe_analysis.md`
+
+Important log sequence:
+
+```text
+[PENDING-ACTION-TARGET enter target=Agrias dmg1C4=187/chg1D8=2/f1E5=128]
+[PENDING-ACTION-TRACK enter caster=Cloud act=258 s61=8/t18D=2/f1EF=8]
+[PENDING-ACTION-TRACK update caster=Cloud act=258 t18D=2 -> 1]
+[PENDING-ACTION-TARGET enter target=Ninja dmg1C4=273/chg1D8=2/f1E5=128/bb=2]
+[PENDING-ACTION-TARGET enter target=Agrias dmg1C4=187/chg1D8=2/f1E5=128/bb=2]
+[PENDING-ACTION-TRACK resolve-open batch=1 caster=Cloud act=258 clear=s61=0/t18D=255/f1EF=0]
+[DAMAGE Ninja] 288 -> 15 = 273
+[PENDING-ACTION-MATCH event=1 target=Ninja resolved=Cloud source=pending-clear batch=1 act=258 confidence=damage-cache]
+[DAMAGE Agrias] 470 -> 283 = 187
+[PENDING-ACTION-MATCH event=2 target=Agrias resolved=Cloud source=pending-clear batch=1 act=258 confidence=damage-cache]
+```
+
+Crucial comparison:
+
+- Pending-action tracker resolved both HP events to Cloud/Cross Slash, batch `1`, confidence
+  `damage-cache`.
+- Existing CT-low fallback resolved both HP events incorrectly to an enemy unit
+  `0x1418544E0/id=0x82`.
+- `HOOK-REGS-EVENT` had `hookAgeMs=2915`, so the register snapshot was stale and misleading for
+  this delayed-resolution attribution.
+
+Conclusion:
+
+The internal pending-action table is now proven stronger than CT for delayed charged AoE context.
+Next implementation step: expose pending-action batch matches as primary attacker/action context for
+damage events, and keep CT as fallback only when no pending-action batch match exists.
+
+## 2026-06-23 Implementation: Pending Action as Primary HP Context
+
+Implemented the next step after the Cross Slash proof:
+
+- `PendingActionTracker.MatchHpEvent` now returns structured `PendingActionMatch` data in addition
+  to log lines.
+- Positive HP events now prefer a pending-action match for `DamageEvent.Attacker`,
+  `DamageEvent.AttackerSource`, and `DamageEvent.Action`.
+- CT / low-CT / counter resolution still runs, but when pending context exists it is logged as
+  fallback diagnostic context instead of becoming the primary attacker.
+- Pending matches create an `ActionSignal` with `source=pending-clear`, `signal/id/actionId`,
+  batch metadata, observed HP loss, target-cache damage, and confidence booleans.
+- As a final pre-live hardening pass, pending matches only become primary HP context when the
+  current or recent target damage cache matches the observed HP loss. `recent-resolve` matches
+  remain diagnostic and are logged as `pendingRejected=.../reason=no-damage-cache-match`.
+- Formula context now exposes `attacker.sourcePending`, `a.sourcePending`,
+  `action.sourcePending`, plus common pending action variables such as `action.batchEvent`,
+  `action.targetCacheDamage`, and `action.damageCacheMatch`.
+- `RuntimeSettingsValidator` knows these variables, so settings can use them without false
+  unknown-variable failures.
+
+Validation:
+
+```text
+dotnet build codemod/fftivc.generic.chronicle.codemod/fftivc.generic.chronicle.codemod.csproj
+dotnet build codemod/fftivc.generic.chronicle.codemod.smoketests/fftivc.generic.chronicle.codemod.smoketests.csproj
+dotnet run --project codemod/fftivc.generic.chronicle.codemod.smoketests/fftivc.generic.chronicle.codemod.smoketests.csproj
+python tools/test_runtime_profiles.py
+dotnet run --project codemod/fftivc.generic.chronicle.codemod.settingsvalidate/fftivc.generic.chronicle.codemod.settingsvalidate.csproj
+dotnet run --project codemod/fftivc.generic.chronicle.codemod.settingsvalidate/fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work/battle-runtime-settings.action-context-probe.json
+```
+
+All passed. The action-context probe profile still emits the expected hook-register warnings because
+it intentionally enables short-capture RE probes.
+
+Deployment:
+
+- Installed to `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod` with
+  `work\battle-runtime-settings.action-context-probe.json`.
+- Previous deployed settings backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-112149`.
+- Final double-check deploy backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-124521`.
+- Final deployed DLL timestamp/hash:
+  `2026-06-23 12:45:18`, sha256 prefix `DA4F7B18CFC3C5C1`.
+- Pre-deploy game log backup:
+  `work\live-captures\battleprobe_log.pre-pending-primary-deploy.20260623-112243.txt`.
+- The live `battleprobe_log.txt` was cleared after backup so the next capture starts from a clean
+  file.
+- Next live run must restart/launch FFT through Reloaded so the newly deployed DLL is loaded.
+
+## 2026-06-23 Live Result: Pending Action as Primary Context
+
+The post-implementation live test succeeded. The newly deployed build promoted pending-action
+matches to primary HP context while preserving CT-low as fallback diagnostics.
+
+Controlled action:
+
+- User baseline: Cloud active.
+- Preview: Cross Slash on Agrias, `187`.
+- Resolution:
+  - Ninja: `288 -> 15 = 273`.
+  - Agrias: `470 -> 283 = 187`.
+  - Next active unit: Ramza.
+
+Artifacts:
+
+- `work/live-captures/battleprobe_log.pending-primary-live-baseline.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-primary-live-preview-cross-slash-agrias-187.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-primary-live-confirmed-before-cloud-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-primary-live-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/battleprobe_analysis.md`
+
+Key log facts:
+
+```text
+[PENDING-ACTION-TARGET enter target=Agrias dmg1C4=187/chg1D8=2/f1E5=128]
+[PENDING-ACTION-TRACK enter caster=Cloud act=258 s61=8/t18D=2/f1EF=8]
+[PENDING-ACTION-TRACK resolve-open batch=1 caster=Cloud act=258]
+[DAMAGE Ninja] 288 -> 15 = 273
+[PENDING-ACTION-MATCH event=1 target=Ninja resolved=Cloud source=pending-clear batch=1 act=258 confidence=damage-cache observed=273]
+[CTX Ninja] resolved=Cloud source=pending-clear pending=batch=1/act=258/event=1/16/confidence=damage-cache fallback=enemy-0x82 fallbackSource=ct-low
+[DAMAGE Agrias] 470 -> 283 = 187
+[PENDING-ACTION-MATCH event=2 target=Agrias resolved=Cloud source=pending-clear batch=1 act=258 confidence=damage-cache observed=187]
+[CTX Agrias] resolved=Cloud source=pending-clear pending=batch=1/act=258/event=2/16/confidence=damage-cache fallback=enemy-0x82 fallbackSource=ct-low
+```
+
+Analyzer summary:
+
+- HP damage events: `2`.
+- Context resolved: `2/2`.
+- Both contexts resolved to `0x1418562E0/id=0x32` with `source=pending-clear`.
+- Both pending matches had `confidence=damage-cache`, so the final no-cache guard allowed them as
+  primary context.
+- CT-low fallback still chose `0x1418544E0/id=0x82` with `seen=2916ms`, proving again that CT-low
+  is unsafe for delayed charged AoE attribution.
+- No HP/MP rewrites occurred because the action-context profile is observe-only.
+
+Conclusion:
+
+The primary delayed-action context path is live-proven for Cross Slash AoE: `DamageEvent.Attacker`
+and `DamageEvent.Action` can now carry Cloud/Cross Slash (`act=258`) when the HP event resolves.
+Next implementation/test step should move from attribution to formula behavior: deploy a dry-run
+profile with `RewriteObservedDamage=true`, `DryRunRewrites=true`, `LogResolvedRuntimeContext=true`,
+and a harmless formula that references `attacker.sourcePending` and `action.id`.
+
+## 2026-06-23 Setup: Pending Context Formula Dry Run
+
+Prepared and deployed the next live-safe formula proof.
+
+New files:
+
+- `work/battle-runtime-settings.pending-context-dry-run.json`
+- `work/runtime-simulation.pending-context-dry-run.json`
+
+Profile intent:
+
+- `DryRunRewrites=true`, so no HP writes occur.
+- `RewriteObservedDamage=true` and `LogResolvedRuntimeContext=true`, so the runtime emits formula
+  traces and dry-run decisions.
+- Formula:
+
+```text
+if(event.isDamage && attacker.sourcePending && action.sourcePending && action.id == 258,
+   vanillaDamage + 10,
+   vanillaDamage)
+```
+
+Expected Cross Slash evidence:
+
+- Ninja vanilla `273` should dry-run as `finalDamage=283`.
+- Agrias vanilla `187` should dry-run as `finalDamage=197`.
+- Both `[RUNTIME ...]` traces should include `attacker=...:pending-clear`,
+  `action=pending-action-258:source=pending-clear:signal=258`,
+  `trace.pending=1`, `trace.actionid=258`, and `trace.damagecachematch=1`.
+- `[REWRITE-DRY-RUN ...]` should appear, but no `[REWRITE ...]` / `[REWRITE-VERIFY ...]` should
+  appear.
+
+Offline validation:
+
+```text
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.pending-context-dry-run.json
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj -- work\battle-runtime-settings.pending-context-dry-run.json work\runtime-simulation.pending-context-dry-run.json
+```
+
+Both passed. The simulation proves pending Cross Slash produces `finalDamage=197` for Agrias, while
+the same event through `ct-low` stays at vanilla `187`.
+
+Deployment:
+
+- Installed to `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod`.
+- Deployed settings backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-130207`.
+- Pre-dry-run log backup:
+  `work\live-captures\battleprobe_log.pre-pending-context-dry-run.20260623-130220.txt`.
+- The live `battleprobe_log.txt` was cleared for the next run.
+
+## 2026-06-23 Live Result: Pending Context Formula Dry Run
+
+The formula dry-run proof succeeded.
+
+Controlled action:
+
+- User baseline: Cloud active.
+- Preview: Cross Slash on Agrias, `187`.
+- Resolution:
+  - Ninja: `288 -> 15 = 273`.
+  - Agrias: `470 -> 283 = 187`.
+  - Next active unit: Ramza.
+
+Artifacts:
+
+- `work/live-captures/battleprobe_log.pending-context-dry-run-baseline.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-context-dry-run-preview-cross-slash-agrias-187.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-context-dry-run-confirmed-before-cloud-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.pending-context-dry-run-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/battleprobe_analysis.md`
+
+Key result:
+
+```text
+[RUNTIME Ninja] attacker=Cloud:pending-clear action=pending-action-258:source=pending-clear:signal=258
+vars=trace.pending=1,trace.actionpending=1,trace.actionid=258,trace.batchevent=1,trace.damagecachematch=1,trace.observedhploss=273
+final=283:FinalDamageFormula
+[REWRITE-DRY-RUN Ninja] vanillaDamage=273 finalDamage=283 HP 15->5
+
+[RUNTIME Agrias] attacker=Cloud:pending-clear action=pending-action-258:source=pending-clear:signal=258
+vars=trace.pending=1,trace.actionpending=1,trace.actionid=258,trace.batchevent=2,trace.damagecachematch=1,trace.observedhploss=187
+final=197:FinalDamageFormula
+[REWRITE-DRY-RUN Agrias] vanillaDamage=187 finalDamage=197 HP 283->273
+```
+
+Analyzer summary:
+
+- Runtime contexts parsed: `2`.
+- Attacker sources: `pending-clear=2`.
+- Action: `pending-action-258`, signal `258`, source `pending-clear`.
+- Rewrite events: `2`.
+- Rewrite status: `dry-run=2`.
+- Concrete HP rewrites: `0`.
+- HP after dry-run remained at the engine-observed values (`Ninja=15`, `Agrias=283`) in subsequent
+  action-state samples, proving no managed memory write occurred.
+
+Conclusion:
+
+The pending-action context is now live-proven through the full runtime formula path. JSON formulas can
+read `attacker.sourcePending`, `action.sourcePending`, `action.id`, `action.batchEvent`, and
+`action.damageCacheMatch` to make damage decisions for delayed charged actions. The next risk to test
+is no longer basic context plumbing; it is real rewrite behavior with a conservative non-lethal
+formula, or broader attribution coverage across other delayed actions.
+
+## 2026-06-23 Research Roadmap Recalibration
+
+The investigation compass has been consolidated in:
+
+- `work/combat-redesign-research-roadmap.md`
+
+Key recalibration:
+
+- CT fallback is now treated as diagnostic-only. The research objective is to retire CT as a combat
+  context source by replacing it with memory/action-context resolution.
+- Braver and Cross Slash are recorded as proven delayed-action baselines.
+- KO/lethal custom damage is a blocking requirement for the combat redesign, not a later polish
+  item. `MinHpFloor=1` remains only a temporary safety mode.
+- Repeating Cross Slash dry-runs has low value unless it tests a new gate. The highest-value next
+  research tracks are KO/pre-damage discovery, CT retirement, action-family breadth, and equipment
+  context.
+
+## 2026-06-23 Setup: KO / Pre-Damage Observe-Only Probe
+
+Prepared the next high-yield live test for the combat redesign roadmap.
+
+New profile:
+
+- `work/battle-runtime-settings.ko-pre-damage-probe.json`
+
+Profile intent:
+
+- Observe-only: no HP/MP rewrites, no `MinHpFloor`, no death-state writes.
+- Capture two known nonlethal delayed AoE HP events from Cloud Cross Slash.
+- Then capture one real vanilla lethal KO, ideally Ramza killing the Ninja left at low HP.
+- Emit richer evidence than prior death captures:
+  - `[HP-EVENT-PROBE ...]` with applied HP loss, raw forecast damage, lethal/clamp
+    classification, and raw pre/post diff;
+  - `[HP-EVENT-PRE-RAW ...]` / `[HP-EVENT-POST-RAW ...]` for short controlled event count;
+  - `[DEATH-DUMP]`, `[DEATH-DIFF]`, and `[DEATH-FOLLOW]`;
+  - hook register event snapshots, stack slots, and pointer scans;
+  - actor probe across the full `0x00..0x1FF` unit snapshot;
+  - pending-action tracker logs for the Cross Slash baseline.
+
+Runtime instrumentation update:
+
+- The standard unit snapshot copied by the hook was widened from `0x180` to `0x200`, matching the
+  action/pending fields used in the delayed-action investigation.
+- Added opt-in HP event raw-diff logging:
+  - `LogHpEventProbe`
+  - `HpEventProbeMaxLogs`
+  - `HpEventProbeDiffMax`
+  - `HpEventProbeDumpRaw`
+
+Validation:
+
+```text
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+python tools\report_runtime_profiles.py
+python tools\test_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.ko-pre-damage-probe.json
+```
+
+All passed. The profile validation emits expected RE-capture warnings for hook register probes,
+pointer scans, and raw HP event dumps.
+
+Deployment:
+
+- Installed to `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod`.
+- Deployed settings backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-135207`.
+- Pre-probe log backup:
+  `work\live-captures\battleprobe_log.pre-ko-pre-damage-probe.20260623-135217.txt`.
+- The live `battleprobe_log.txt` at the local Steam install was cleared after backup.
+
+## 2026-06-23 Live Result: KO / Pre-Damage Observe-Only Probe
+
+The KO probe succeeded and captured both the known Cross Slash nonlethal baseline and a real
+vanilla KO.
+
+Artifacts:
+
+- `work/live-captures/battleprobe_log.ko-pre-damage-baseline-cloud-active.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-preview-cross-slash-agrias-187.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-confirmed-before-cloud-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-preview-ramza-rush-ninja-50.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-resolved-ramza-rush-ninja-ko.snapshot.txt`
+- `work/live-captures/battleprobe_log.ko-pre-damage-resolved-ramza-rush-ninja-ko-followup.snapshot.txt`
+- `work/battleprobe_analysis.ko-pre-damage.md`
+
+User-observed sequence:
+
+- Baseline: Cloud active.
+- Preview: Cloud Cross Slash on Agrias, `187`.
+- Resolution: Agrias `-187`, Ninja `-273`, next active Ramza.
+- Preview KO: Ramza Rush on Ninja, preview `50`.
+- Resolution KO: Ninja died. Preview/raw formula damage was `50`; applied HP loss was clamped by
+  the target's remaining HP, so the observed HP event was `15 -> 0 = 15`. Next active remained
+  Ramza while waiting for Wait confirmation.
+
+Cross Slash baseline remained good:
+
+- Ninja: `[DAMAGE ptr=0x141855EE0 id=0x80] 288 -> 15 = 273`.
+- Agrias: `[DAMAGE ptr=0x1418560E0 id=0x1E] 470 -> 283 = 187`.
+- Both events matched Cloud/Cross Slash through `source=pending-clear`, `action.id=258`,
+  `confidence=damage-cache`.
+- CT fallback was stale/wrong during this same sequence and remains diagnostic-only.
+
+KO evidence:
+
+```text
+[DAMAGE ptr=0x141855EE0 id=0x80] 15 -> 0 = 15 sampleAgeMs=19
+[HP-EVENT-PROBE kind=damage event=3 ptr=0x141855EE0 id=0x80 prevHp=15 currentHp=0 delta=15 lethal=1 overkill=0 maxHp=288 team=0 foe=0 ct=101 action=s61=32/t18D=255/act=0/f1EF=32/dmg1C4=50/chg1D8=130/f1E5=128/b8=0/ba=0/bb=1] diff=+0x30:0F->00 +0x61:00->20 +0x63:21->20 +0x18C:00->01 +0x1BB:00->01 +0x1DB:00->20 +0x1EF:00->20 +0x1F1:01->00 +0x1F5:FF->10
+[DEATH-DIFF ptr=0x141855EE0 id=0x80] alive->dead +0x30:0F->00 +0x61:00->20 +0x63:21->20 +0x18C:00->01 +0x1BB:00->01 +0x1DB:00->20 +0x1EF:00->20 +0x1F1:01->00 +0x1F5:FF->10
+```
+
+Note: the captured log predates the clarified probe fields. In a new build, the same event should
+also show approximately `appliedHpLoss=15`, `rawForecastDamage=50`, `hpClamp=1`, and
+`rawForecastOverkill=35`.
+
+Important interpretation:
+
+- Real KO is a coordinated state transition, not only `HP=0` and not only `+0x61`.
+- The observed death-state diff touched at least `+0x30`, `+0x61`, `+0x63`, `+0x18C`, `+0x1BB`,
+  `+0x1DB`, `+0x1EF`, `+0x1F1`, and `+0x1F5`.
+- No delayed `[DEATH-FOLLOW]` changes appeared in the follow-up window; the observed unit-local
+  death transition happened on the first HP-zero frame.
+- This strengthens the earlier conclusion that post-damage HP reconciliation is not enough for
+  custom lethal damage. The preferred route is still a pre-damage hook or a call/replication of the
+  engine's KO routine.
+
+Action-context caveat discovered by the KO event:
+
+- The preview/action cache for Ramza Rush on Ninja was `dmg1C4=50`, representing raw formula damage
+  before HP clamping. The HP event delta was `15` because the target had `15` HP remaining and
+  vanilla clamped the applied loss to current HP.
+- The previous pending/damage-cache matcher required exact `observedAppliedLoss == cachedRawDamage`,
+  so it rejected lethal events where the target cache was still correct evidence.
+- For lethal events, the resolver should treat `cachedDamage >= prevHp && currentHp == 0 &&
+  observed == prevHp` as a strong target-cache match.
+- The source/caster for immediate Rush was visible as a candidate clue (`Ramza` with `act=147`), but
+  the current resolver did not promote it to primary context. Do not treat this as solved yet.
+
+Next implementation direction:
+
+1. Add lethal-aware target-cache matching so vanilla clamps do not cause false negatives.
+2. Continue CT retirement by finding a current-action memory source for immediate actions such as
+   Ramza Rush, rather than relying on CT.
+3. Search for the pre-commit damage value or engine KO routine boundary before attempting custom
+   lethal writes.
+
+## 2026-06-23 Implementation: Lethal-Aware Target Cache Matching
+
+Implemented the first offline fix from the KO result.
+
+Runtime change:
+
+- `[HP-EVENT-PROBE]` now logs applied HP loss/gain separately from raw target-side forecast damage,
+  plus `hpClamp` and `rawForecastOverkill`, so future captures do not confuse formula damage with
+  HP-capped applied loss.
+- `PendingActionTracker` now treats a lethal clamped HP event as valid target-cache evidence when:
+  - current HP is `0`;
+  - observed HP loss is positive;
+  - cached raw forecast/formula damage is at least the observed applied loss.
+- Exact matches and lethal-clamp matches are tracked separately.
+- Positive matches can now report confidence:
+  - `damage-cache`
+  - `recent-damage-cache`
+  - `damage-cache-lethal-clamp`
+  - `recent-damage-cache-lethal-clamp`
+  - `recent-resolve`
+
+New formula/log variables exposed through `action.*` and `act.*`:
+
+- `exactDamageCacheMatch`
+- `currentExactDamageCacheMatch`
+- `recentExactDamageCacheMatch`
+- `lethalClampDamageCacheMatch`
+- `currentLethalClampDamageCacheMatch`
+- `recentLethalClampDamageCacheMatch`
+- `confidenceLethalClampDamageCache`
+
+Important limitation:
+
+- This does not solve immediate Rush attribution by itself. In the captured Rush KO event there was
+  no pending resolving batch, so the next unknown is still the source/caster context for immediate
+  actions. The new logic prevents the probe from discarding good target-cache evidence when a
+  source context is otherwise available.
+
+Validation:
+
+```text
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+python tools\test_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.ko-pre-damage-probe.json
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.pending-context-dry-run.json
+```
+
+All passed. Two earlier parallel command attempts hit transient `.NET Host` file locks while building
+the same project concurrently; rerunning the commands sequentially passed.
+
+Deployment status:
+
+- Not yet deployed after this local fix.
+- Before the next live capture, close FFT and run the normal build/deploy flow with
+  `work\battle-runtime-settings.ko-pre-damage-probe.json` or the next probe profile.
+
+Next implementation direction:
+
+1. Add or tune logging around immediate-action candidates so the next Rush/basic-action capture can
+   promote a caster/action source without CT.
+2. Search around the HP application boundary for a pre-commit damage value or engine KO routine.
+3. Only after one of those paths is understood, attempt a custom lethal application test.
+
+## 2026-06-23 Setup: Immediate Action / KO Boundary Probe
+
+Implemented and deployed the next observe-only live probe.
+
+New profile:
+
+- `work/battle-runtime-settings.immediate-action-ko-boundary-probe.json`
+
+Profile intent:
+
+- Repeat the known high-yield sequence:
+  1. Cloud active baseline.
+  2. Cloud Cross Slash on Agrias, preview `187`.
+  3. Resolve Cross Slash: Agrias `-187`, Ninja `-273`, next active Ramza.
+  4. Ramza Rush on the low-HP Ninja, preview expected raw formula damage around `50`.
+  5. Resolve Rush KO.
+- Preserve all KO/pre-damage evidence from the previous profile.
+- Add explicit raw-vs-applied HP event fields:
+  - `appliedHpLoss`
+  - `appliedHpGain`
+  - `rawForecastDamage`
+  - `hpClamp`
+  - `rawForecastOverkill`
+- Add ranked `[IMMEDIATE-ACTION-CANDIDATES ...]` event logs with:
+  - candidate role: `target`, `source-like`, or `context`;
+  - score;
+  - `seenAgeMs`;
+  - `ctDropAgeMs`;
+  - `stateAgeMs`;
+  - action state fields such as `act`, `s61`, `t18D`, `f1EF`, `dmg1C4`, `chg1D8`, `f1E5`, `bb`;
+  - exact-applied and lethal-clamp cache flags.
+
+What this test is meant to discover:
+
+- Whether immediate Rush/basic actions expose a usable memory source for `caster=Ramza` and
+  `action=Rush` without treating CT as the final answer.
+- Whether the target-side raw formula damage and HP-capped applied loss are cleanly separated in the
+  log.
+- Whether hook/register evidence is fresh enough for immediate actions, unlike the stale delayed
+  Cross Slash register evidence.
+- Which candidate fields are most promising for the next resolver prototype.
+
+Validation:
+
+```text
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.immediate-action-ko-boundary-probe.json
+python tools\report_runtime_profiles.py
+python tools\test_runtime_profiles.py
+```
+
+All passed. The profile validator emits expected short-RE warnings for hook registers, pointer
+scans, and HP event raw dumps.
+
+Deployment:
+
+- FFT was not running at deploy time.
+- Installed DLL:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.dll`.
+- Deployed DLL timestamp/hash:
+  `2026-06-23 15:44:59`, sha256
+  `2EC19577EE16D687C4A340353E2E2C30662A085428C69F46491FDC1CF97284BF`.
+- Installed runtime settings:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`.
+- Deployed settings backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-154502`.
+- Pre-probe live log backup:
+  `work\live-captures\battleprobe_log.pre-immediate-action-ko-boundary-probe.20260623-154450.txt`.
+- Active live log path on this PC:
+  `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`.
+- The active live log was cleared before deploy.
+
+Next live instructions for the user:
+
+1. Launch FFT through Reloaded-II with only:
+   - `fftivc.utility.modloader`
+   - `fftivc.generic.chronicle.codemod`
+2. Load the same battle/save and stop when Cloud is active. Report:
+   - `baseline: Cloud ativo`
+3. Select Cross Slash on Agrias and report preview damage:
+   - expected: `preview: Cross Slash na Agrias, dano 187`
+4. Confirm the action, stop before Cloud's Wait, and report:
+   - `confirmado: antes do Wait do Cloud`
+5. Let Cross Slash resolve and report:
+   - expected: `resolveu Cross Slash: Agrias -187, Ninja -273, próximo ativo Ramza`
+6. With Ramza active, use Rush on the low-HP Ninja and report preview:
+   - expected raw preview around `50`
+7. Resolve Rush and report:
+   - whether Ninja died;
+   - applied damage shown by the game;
+   - next active unit.
+
+After each user report, capture a snapshot of the active log before asking for the next action.
+
+## 2026-06-23 Live Result: Immediate Action / KO Boundary Probe
+
+The deployed immediate-action / KO-boundary profile was run successfully. It captured the known
+Cross Slash delayed AoE baseline, a lethal immediate Rush, and an unexpected but useful Reraise
+revive.
+
+Captured artifacts:
+
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-baseline-cloud-active.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-preview-cross-slash-agrias-187.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-confirmed-before-cloud-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-preview-ramza-rush-ninja-50.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-resolved-ramza-rush-ninja-ko-before-wait.snapshot.txt`
+- `work/live-captures/battleprobe_log.immediate-ko-boundary-after-ramza-wait-ninja-reraise.snapshot.txt`
+
+User-observed sequence:
+
+- Baseline: Cloud active.
+- Preview: Cloud Cross Slash on Agrias, `187`.
+- Confirmed: stopped before Cloud's Wait.
+- Resolution: Agrias `-187`, Ninja `-273`, next active Ramza.
+- Preview KO: Ramza Rush on Ninja, preview `50`.
+- Resolution KO: Ninja died, number shown by the game was `33`, Ramza still active before Wait.
+- After Ramza Wait: next active Ninja, because Ninja had Reraise and revived.
+
+Cross Slash delayed AoE remained clean:
+
+- Cloud entered the pending tracker as caster `act=258`.
+- The resolving batch opened for Cloud/Cross Slash and closed with `events=2`.
+- Ninja:
+  - HP event: `288 -> 15 = 273`;
+  - `appliedHpLoss=273`;
+  - `rawForecastDamage=273`;
+  - `hpClamp=0`.
+- Agrias:
+  - HP event: `470 -> 283 = 187`;
+  - `appliedHpLoss=187`;
+  - `rawForecastDamage=187`;
+  - `hpClamp=0`.
+
+Immediate Rush / KO evidence:
+
+- Preview target cache on Ninja entered as `dmg1C4=50/chg1D8=130/f1E5=128/bb=2`.
+- At execution, Ramza appeared with `act=147` and `ba=1`.
+- Just before the HP-zero frame, the Ninja target cache changed from `dmg1C4=50` to `dmg1C4=33`.
+- The game showed `33`, matching the final execution cache rather than the first preview cache.
+- The HP event was:
+
+```text
+[DAMAGE ptr=0x141855EE0 id=0x80] 15 -> 0 = 15 sampleAgeMs=12
+[HP-EVENT-PROBE kind=damage event=3 ptr=0x141855EE0 id=0x80 prevHp=15 currentHp=0 delta=15 appliedHpLoss=15 appliedHpGain=0 rawForecastDamage=33 lethal=1 hpClamp=1 overkill=0 rawForecastOverkill=18 maxHp=288 team=0 foe=0 ct=101 action=s61=32/t18D=255/act=0/f1EF=32/dmg1C4=33/chg1D8=130/f1E5=128/b8=0/ba=0/bb=1]
+```
+
+Important correction to the earlier KO interpretation:
+
+- The first preview cache can be stale by execution time.
+- For Rush, the useful execution-time raw damage was `33`, not the earlier preview `50`.
+- The HP event still applied only `15` because the target had `15` HP.
+- Therefore the current event model should distinguish:
+  - preview/raw-at-selection cache;
+  - execution-time target cache;
+  - applied HP loss after vanilla current-HP clamp.
+
+Immediate-action candidate result:
+
+- The candidate logger did expose the true actor as:
+  - `Ramza`, pointer `0x141855CE0`, id `0x03`;
+  - `role=source-like`;
+  - `act=147`;
+  - `stateAgeMs=1170`;
+  - `ba=1`.
+- However, Cloud also appeared as a stale `source-like` candidate with `act=258`, `ba=1`, and the
+  same score. This means the current candidate score is useful as evidence but not yet a reliable
+  resolver.
+- The next resolver/probe should demote stale previous-action holders and add a tie-break that can
+  distinguish the current immediate actor from old delayed-action owners.
+- The target-side cache did correctly mark the KO as `lethalClamp=1` on the Ninja candidate.
+
+Reraise / revive evidence:
+
+After Ramza's Wait, Ninja revived and became the next active unit.
+
+```text
+[HP-EVENT-PROBE kind=healing event=4 ptr=0x141855EE0 id=0x80 prevHp=0 currentHp=28 delta=28 appliedHpLoss=0 appliedHpGain=28 rawForecastDamage=0 lethal=0 hpClamp=0 ... ct=1 action=s61=0/t18D=255/act=0/f1EF=0/dmg1C4=0/chg1D8=0/f1E5=72/b8=1/ba=0/bb=2]
+```
+
+The revive diff reversed many of the KO-state fields through the engine:
+
+- `+0x30:00->1C`;
+- `+0x41:65->01`;
+- `+0x61:20->00`;
+- `+0x63:20->21`;
+- `+0x1B8:00->01`;
+- `+0x1BB:01->02`;
+- `+0x1C4:21->00`;
+- `+0x1C6:00->1C`;
+- `+0x1D8:82->00`;
+- `+0x1DB:20->00`;
+- `+0x1DD:00->01`;
+- `+0x1E0:00->20`;
+- `+0x1E5:80->48`;
+- `+0x1EF:20->00`;
+- `+0x1F1:00->01`;
+- `+0x1F5:10->FF`.
+
+Implications:
+
+- The probe is robust enough to separate execution raw damage from HP-capped applied loss.
+- Lethal-clamp detection works on the live KO event.
+- Immediate-action source resolution is not solved yet, but the needed signal is likely present:
+  Ramza's `act=147` appears close to the HP event.
+- Candidate scoring needs stale-action suppression before CT can be fully retired for immediate
+  actions.
+- Reraise confirms that death/revive state transitions are engine-owned multi-field transitions.
+  This strengthens the case against manual post-damage HP/flag patching for custom lethal damage.
+
+Next offline direction:
+
+1. Build an offline parser/report over this capture to compare candidate freshness, action fields,
+   and target cache state at the Rush HP event.
+2. Tune immediate-action candidate scoring so Ramza/Rush wins over stale Cloud/Cross Slash without
+   using CT as causality.
+3. Search for a pre-commit damage value or KO routine boundary using the `50 -> 33 -> applied 15`
+   transition as the guide.
+4. Treat Reraise as separate revive-state evidence, not as a normal heal source attribution test.
+
+## 2026-06-23 Implementation: Immediate Candidate Freshness Scoring
+
+Implemented the first offline fix from the immediate Rush KO capture.
+
+Runtime/logging change:
+
+- Added action-age tracking separate from generic action-state age:
+  - `actionIdAgeMs`: how long the current `act` value has been present for that unit;
+  - `activeActionAgeMs`: how long the current active action signature `act>0 && ba!=0` has been
+    present.
+- `[IMMEDIATE-ACTION-CANDIDATES ...]` now logs:
+  - `actionIdAgeMs`;
+  - `activeActionAgeMs`;
+  - `freshAct`;
+  - `freshActive`;
+  - `staleAct`;
+  - `staleActive`.
+- Candidate scoring now rewards fresh action ids / fresh active-action signatures and penalizes old
+  stale action holders.
+- Added a testable `ImmediateActionCandidateScoring` helper instead of keeping the scoring as
+  ad-hoc inline logging code.
+
+Why this fixes the Rush/Cloud tie:
+
+- In the live Rush KO, Ramza's `act=147` appeared close to the HP event.
+- Cloud still retained stale `act=258` from the earlier Cross Slash.
+- The old score saw both as `source-like`.
+- The new score distinguishes "fresh current action" from "old retained action id", so the same
+  scenario ranks Ramza/Rush above stale Cloud/Cross Slash without using CT as causality.
+
+Validation:
+
+```text
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+python tools\test_runtime_profiles.py
+python tools\report_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.immediate-action-ko-boundary-probe.json
+```
+
+All passed. The profile validator still emits the expected five short-RE warnings for this noisy
+probe profile.
+
+Deployment status:
+
+- Historical note: this scoring-only change was not deployed at this point in the investigation.
+  It was superseded by the later action-boundary deployment and live validation below.
+
+Updated next direction:
+
+1. Live-validate the new candidate ranking if it remains a blocker.
+2. In parallel, start the pre-commit damage / KO routine boundary search using the captured
+   `50 -> 33 -> applied 15` Rush transition.
+3. Do not promote immediate candidates to primary action context until the fresh-action ranking has
+   at least one live validation or stronger offline evidence from another immediate action capture.
+
+## 2026-06-23 Offline Analysis: Rush KO Boundary Timeline
+
+Added a dedicated offline analyzer:
+
+- `tools/analyze_immediate_action_boundary.py`
+- smoke test: `tools/test_immediate_action_boundary.py`
+- generated report: `work/battleprobe_analysis.immediate-ko-boundary.md`
+
+The analyzer parses the full immediate KO/Reraise snapshot and reconstructs the timing around the
+Rush event from `[ACTION-STATE]`, `[PENDING-ACTION-TARGET]`, `[HP-EVENT-PROBE]`, and
+`[IMMEDIATE-ACTION-CANDIDATES]` lines.
+
+Key derived boundary intervals from the live capture:
+
+| Marker | Line | Delta from previous | Delta from preview |
+| --- | ---: | ---: | ---: |
+| preview cache `50` | 208 | `0 ms` | `0 ms` |
+| Ramza `act=147` appears | 212 | `108798 ms` | `108798 ms` |
+| execution cache `33` | 218 | `1108 ms` | `109906 ms` |
+| HP zero / KO flags | 220 | `62 ms` | `109968 ms` |
+| Ramza post-hit `bb=1` | 234 | `1671 ms` | `111639 ms` |
+| Reraise HP restore | 241 | `142114 ms` | `253752 ms` |
+
+Important re-rank result for event 3, the Rush KO:
+
+- Old score tied Ramza/Rush and stale Cloud/Cross Slash at `1300`.
+- Offline action-age scoring ranks:
+  - Ramza `0x141855CE0/id=0x03`, `act=147`, `freshAct/freshActive`, new score `2150`;
+  - Cloud `0x1418562E0/id=0x32`, `act=258`, `staleAct/staleActive`, new score `-250`;
+  - Ninja target lethal cache remains visible as `lethalClamp`.
+
+This was strong offline evidence that the new freshness scoring fixed the specific Ramza-vs-Cloud
+tie. The later action-boundary live validation confirmed the same result for the covered Rush case.
+
+The useful KO boundary is now narrower:
+
+- `dmg1C4=50` is selection/preview-time evidence.
+- `dmg1C4=33` is execution-time raw damage and appears about `62 ms` before HP zero/KO flags in the
+  current polling capture.
+- HP zero, KO status fields, and death diff happen together at line `220`/`222`/`223`/`225`.
+
+Next technical focus:
+
+1. Search for the pre-commit damage value / engine KO routine around the execution-cache `33` to
+   HP-zero transition.
+2. If a live validation is needed, deploy the current build and confirm that the next
+   `[IMMEDIATE-ACTION-CANDIDATES]` line logs `freshAct/freshActive` for the acting unit and
+   `staleAct/staleActive` for previous action holders.
+3. Keep Reraise as revive-state evidence, not as a regular healing attribution test.
+
+## 2026-06-23 Implementation: Action Boundary Probe
+
+Prepared the next surgical live probe for the narrowed `dmg1C4=33 -> HP zero / KO flags` boundary.
+
+Runtime/logging change:
+
+- Added `[ACTION-BOUNDARY ...]` lines for changes in a focused set of offsets:
+  - HP: `+0x30/+0x31`;
+  - status/pending/death: `+0x61`, `+0x63`, `+0x18C`, `+0x1DB`, `+0x1EF`, `+0x1F1`, `+0x1F5`;
+  - action/target cache: `+0x18D`, `+0x1A0..+0x1A3`, `+0x1B8..+0x1BB`,
+    `+0x1C4..+0x1C7`, `+0x1D8`, `+0x1DD`, `+0x1E0`, `+0x1E5`.
+- Each line includes:
+  - `event`;
+  - `now`;
+  - `touch`;
+  - `hookAgeMs`;
+  - `reason`, such as `forecast-damage-change`, `hp-zero`, `phase-change`,
+    `status-pending-change`, `death-state-change`;
+  - compact `prev=` and `curr=` field summaries;
+  - short byte diff.
+- Added optional hook-register snapshots on action-boundary events through
+  `HookRegisterProbeOnActionBoundary`.
+- `tools/analyze_immediate_action_boundary.py` now parses `[ACTION-BOUNDARY]` lines.
+- `tools/test_immediate_action_boundary.py` validates the analyzer on a synthetic
+  Ramza-fresh / Cloud-stale / KO-boundary sample.
+
+Profile change:
+
+- `work/battle-runtime-settings.immediate-action-ko-boundary-probe.json` now enables:
+  - `LogActionBoundaryProbe=true`;
+  - `ActionBoundaryProbeMaxLogs=96`;
+  - `ActionBoundaryProbeDiffMax=32`;
+  - `HookRegisterProbeOnActionBoundary=true`.
+
+Validation:
+
+```text
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
+python tools\test_immediate_action_boundary.py
+python tools\report_runtime_profiles.py
+python tools\test_runtime_profiles.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.immediate-action-ko-boundary-probe.json
+```
+
+All passed. The immediate-action/KO-boundary profile now emits six expected short-RE warnings:
+
+- hook register probe;
+- event-correlated hook registers;
+- pointer scans;
+- HP event probe;
+- raw HP dumps;
+- action boundary probe.
+
+Deployment status:
+
+- Deployed to Reloaded-II on `2026-06-23 16:29`.
+- Target:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod`.
+- Runtime settings installed:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`.
+- Existing deployed settings were backed up as:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-162921`.
+- Deployed DLL:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.dll`;
+  SHA256 `2C923CD8B243D4297E70F036257A0EE80EE80C94F92418DBA2A4A1989BF49CA5`.
+- Previous live log was archived as:
+  `work\live-captures\battleprobe_log.pre-action-boundary-probe.20260623-162934.txt`.
+- Active live log was cleared:
+  `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`.
+
+Next live validation goal, if used:
+
+- Repeat only the high-yield Cloud Cross Slash -> Ramza Rush KO path.
+- Confirm these lines around Rush:
+  - target cache selection: `dmg1C4=50`;
+  - action boundary: `forecast-damage-change` to `dmg1C4=33`;
+  - action boundary: `hp-zero,status-pending-change,death-state-change`;
+  - immediate candidates: Ramza `freshAct/freshActive`, stale Cloud `staleAct/staleActive`.
+
+## 2026-06-23 Live Result: Action Boundary KO Validation
+
+The deployed `[ACTION-BOUNDARY]` probe was live-validated with the same high-yield path:
+
+1. Cloud active baseline.
+2. Cross Slash preview on Agrias: `187`.
+3. Confirmed before Cloud Wait.
+4. Cross Slash resolved: Agrias `-187`, Ninja `-273`, next active Ramza.
+5. Ramza Rush preview on low-HP Ninja: `50`.
+6. Rush resolved lethal: Ninja died, Ramza still active before Wait.
+7. After Ramza Wait: next active Ninja because Reraise revived him.
+
+Captured snapshots:
+
+- `work\live-captures\battleprobe_log.action-boundary-baseline-cloud-active.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-preview-cross-slash-agrias-187.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-confirmed-before-cloud-wait.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-preview-ramza-rush-ninja-50.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-resolved-ramza-rush-ninja-ko-before-wait.snapshot.txt`
+- `work\live-captures\battleprobe_log.action-boundary-after-ramza-wait-ninja-reraise.snapshot.txt`
+
+Generated analysis:
+
+- `work\battleprobe_analysis.action-boundary-ko.md`
+
+Important correction:
+
+- The game-visible/raw execution value for Rush is `33`.
+- The applied HP loss is `15` because the Ninja had only `15` HP remaining.
+- The preview value was `50`; the engine changed the target cache to `33` before HP reached zero.
+
+Critical Rush KO boundary:
+
+```text
+preview cache:     dmg1C4=50/chg1D8=130/f1E5=128/bb=2
+Ramza action:      act=147/ba=1
+execution cache:   dmg1C4=33/chg1D8=130/f1E5=128/bb=0
+HP zero / KO:      hp 15 -> 0, s61 0 -> 32, f1EF 0 -> 32, bb 0 -> 1
+HP event:          rawForecastDamage=33, appliedHpLoss=15, hpClamp=1, rawForecastOverkill=18
+```
+
+The action-boundary probe captured the exact short boundary:
+
+- `event=47`: Ninja target cache entered preview value `50`.
+- `event=52`: Ninja target cache changed `50 -> 33`.
+- `event=53`: HP zero and KO/death fields landed together:
+  `+0x30:0F->00 +0x61:00->20 +0x63:21->20 +0x18C:00->01 +0x1BB:00->01 +0x1DB:00->20 +0x1EF:00->20 +0x1F1:01->00 +0x1F5:FF->10`.
+
+Immediate-action scoring validation:
+
+- Ramza/Rush won the candidate ranking live:
+  - pointer `0x141855CE0`, id `0x03`;
+  - `act=147`;
+  - `actionIdAgeMs=1179`;
+  - `activeActionAgeMs=1179`;
+  - `freshAct=1`;
+  - `freshActive=1`;
+  - score `2150`.
+- Stale Cloud/Cross Slash was demoted:
+  - pointer `0x1418562E0`, id `0x32`;
+  - `act=258`;
+  - `actionIdAgeMs=434376`;
+  - `activeActionAgeMs=434376`;
+  - `staleAct=1`;
+  - `staleActive=1`;
+  - score `-250`.
+
+This validates the freshness scoring concept for the covered immediate Rush case and removes the
+specific Ramza-vs-stale-Cloud tie as a blocker for this path. It does not yet prove all immediate
+actions or all action families.
+
+Reraise evidence:
+
+- After Ramza Wait, Ninja revived and became active:
+  `0 -> 28`, `f1E5=72`, `b8=1`, `bb=2`.
+- The revive boundary reversed the KO state through an engine-owned multi-field transition:
+  `+0x30:00->1C +0x61:20->00 +0x63:20->21 +0x1B8:00->01 +0x1BB:01->02 +0x1C4:21->00 +0x1D8:82->00 +0x1DB:20->00 +0x1EF:20->00 +0x1F1:00->01 +0x1F5:10->FF`.
+- Continue treating Reraise/revive as state-machine evidence, not ordinary healing attribution.
+
+Analyzer fix:
+
+- `tools\analyze_immediate_action_boundary.py` now finds Rush KO semantically by looking for
+  lethal damage with `rawForecastDamage=33`, `appliedHpLoss=15`, and `hpClamp=1`, instead of
+  assuming a fixed event id. In this capture Rush KO is event `5`, not event `3`.
+
+Updated next direction:
+
+1. Start offline/static search around the `dmg1C4=33 -> HP zero / KO flags` boundary.
+2. Look for a pre-commit damage value or engine-owned KO routine that can be reused for custom
+   lethal damage.
+3. Keep CT fallback as diagnostic-only. For the covered Rush case, memory freshness evidence is
+   already better than CT.
+4. Do not attempt custom lethal damage until the pre-commit/KO path has a concrete hook or routine
+   candidate.
+
+## 2026-06-23 Offline Result: KO Boundary Static Targets
+
+After the action-boundary live validation, the static scan was rerun against the actual local
+install:
+
+- executable:
+  `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe`;
+- generated report:
+  `work\static_code_pattern_scan.local.md`;
+- result: the local build matches known anchors:
+  - `battle_base_ptr` at `0x226D98`;
+  - `damage_mult_2` at `0x30A685`;
+  - `jp_multiplier` at `0x283754`;
+  - `xp_multiplier` at `0x283767`;
+  - `min_spd_jmp_mov` at `0x36027F`;
+  - the older direct `damage_multiplier` AOB is still absent from the static file.
+
+New analyzer:
+
+- `tools\analyze_ko_boundary_static_targets.py`;
+- generated:
+  `work\ko_boundary_static_target_analysis.md`.
+
+The analyzer semantically selects the Rush KO event by:
+
+- `rawForecastDamage=33`;
+- `appliedHpLoss=15`;
+- `lethal=1`;
+- `hpClamp=1`.
+
+It then extracts hook-register snapshots, stack addresses, module RVAs, static byte contexts, and
+probable unit-field memory accesses near the live stack caller window.
+
+Important live-to-static correlation:
+
+- The hook snapshot attached to the execution cache, KO boundary, and HP event is identical.
+- `rcx`, `rdi`, and `hookPtr` identify Ramza.
+- `targetPtr` identifies the Ninja.
+- Therefore the current hook snapshot is action-context evidence, not the exact HP write
+  instruction.
+- The useful live stack addresses are:
+  - `0x1402F2EC1` / RVA `0x2F2EC1`;
+  - `0x1402F37A2` / RVA `0x2F37A2`;
+  - `0x1402F3884` / RVA `0x2F3884`.
+- These sit below `damage_mult_2` and are best treated as action-resolution caller landmarks.
+
+Static targets discovered near `damage_mult_2`:
+
+- `0x30A6D3`: probable `rdi+0x1F5` write, `C6 87 F5 01 00 00 FF`;
+- `0x30A908`: probable `rdi+0x61` write, `89 5F 61`;
+- `0x30A912`: probable `rdi+0x1EF` write, `89 9F EF 01 00 00`;
+- `0x30AAFC`: probable `rax+0x1BB` write, `C6 80 BB 01 00 00 02`;
+- `0x30D42A`: probable `rdi+0x1EF` read, `8A 8F EF 01 00 00`;
+- `0x30D433`: probable `rdi+0x1EF` mask/write, `88 8F EF 01 00 00`;
+- `0x30D43C`: probable `rdi+0x61` write, `88 4F 61`;
+- `0x2D7AC0` / `0x2D7AEC`: probable `rbx+0x1C4` target-cache writes.
+
+Interpretation:
+
+- The exact HP write/KO commit is still not proven.
+- However, the static search now has concrete candidate RVAs around KO/death-state fields instead
+  of a broad "search damage code" task.
+- The `0x30A6D3 / 0x30A912 / 0x30D43C` cluster is the current highest-value static lead for
+  understanding engine-owned KO state mutation.
+
+Probe improvement deployed:
+
+- `codemod\fftivc.generic.chronicle.codemod\Mod.cs` now stores the main module base/size and
+  labels module addresses in hook-register snapshots as `module+0xRVA`.
+- The probe now includes landmarks for:
+  - the live KO stack RVAs;
+  - `damage_mult_2`;
+  - target-cache `+0x1C4` candidates;
+  - KO/death-state field candidates near `damage_mult_2`.
+- Deployed to:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod`;
+- DLL timestamp after deploy:
+  `2026-06-23 17:16:44`;
+- active runtime settings were preserved.
+
+Validation:
+
+```text
+python tools\analyze_ko_boundary_static_targets.py --exe "C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe" --output work\ko_boundary_static_target_analysis.md
+python -m py_compile tools\analyze_ko_boundary_static_targets.py tools\scan_static_code_patterns.py
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj --no-restore
+python tools\test_immediate_action_boundary.py
+python tools\test_static_code_patterns.py
+dotnet publish codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj -c Release -o "C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod" --no-restore
+```
+
+Next direction:
+
+1. Do not run another generic Cross Slash/Rush repetition just to see the same boundary again.
+2. Use the next live run only to validate one of the static leads or to collect deeper stack/context
+   around the `0x30A6D3`, `0x30A912`, `0x30D43C`, and `0x2D7AC0/0x2D7AEC` candidates.
+3. The best next engineering task is to decide whether these RVAs can be safely hooked or used as
+   return-address classifiers to narrow the real pre-commit/KO routine.
+
+## 2026-06-23 Implementation: KO Landmark Probe
+
+Prepared the next live probe for the autosave-before-Rush test.
+
+New runtime feature:
+
+- `LandmarkProbeEnabled`;
+- `LandmarkProbeMaxLogs`;
+- `LandmarkProbeStackSlots`;
+- `LandmarkProbes[]`.
+
+Behavior:
+
+- Installs read-only asm hooks at configured module RVAs.
+- Each hit writes register state into a native ring buffer.
+- The polling thread emits `[LANDMARK-HIT ...]` only when the configured base register reads as a
+  valid battle unit, avoiding log budget waste on unrelated non-unit hits.
+- The hook hot path does not call managed code and does not write game state.
+- Each configured RVA has `ExpectedBytes`; if the local executable bytes do not match, the hook is
+  skipped and logged as `[LANDMARK-SKIP ...]`.
+
+New profile:
+
+- `work\battle-runtime-settings.ko-landmark-probe.json`;
+- deployed active settings:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`.
+
+Hooked landmarks:
+
+- `0x2D7AC0`: `target-cache-write-1c4`, base `rbx`, expected `40 88 BB C4 01 00 00`;
+- `0x2D7AEC`: `target-cache-init-1c4`, base `rbx`, expected `66 C7 83 C4 01 00 00 40 50`;
+- `0x30A6D3`: `ko-write-1f5`, base `rdi`, expected `C6 87 F5 01 00 00 FF`;
+- `0x30A908`: `ko-write-61`, base `rdi`, expected `89 5F 61`;
+- `0x30A912`: `ko-write-1ef`, base `rdi`, expected `89 9F EF 01 00 00`;
+- `0x30AAFC`: `death-state-write-1bb`, base `rax`, expected `C6 80 BB 01 00 00 02`;
+- `0x30D42A`: `ko-read-1ef`, base `rdi`, expected `8A 8F EF 01 00 00`;
+- `0x30D433`: `ko-mask-write-1ef`, base `rdi`, expected `88 8F EF 01 00 00`;
+- `0x30D43C`: `ko-write-61-late`, base `rdi`, expected `88 4F 61`.
+
+Important correction:
+
+- The lightweight static decoder originally reported some overlapping starts:
+  `0x30A911` and `0x30D432`.
+- Direct byte inspection corrected the hookable starts to `0x30A912` and `0x30D433`.
+- `0x30D43C` was confirmed as the correct start for `88 4F 61`.
+
+Deployment:
+
+- DLL deployed to:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.dll`;
+- SHA256:
+  `8CEB0F281E72A4B3AFC8F3EB68B4A3AF41F2A3FC4A6325AE37F56A6A4C4C3342`;
+- active game log cleared:
+  `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`.
+
+Validation:
+
+```text
+dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj --no-restore
+python tools\test_runtime_profiles.py
+python tools\test_static_code_patterns.py
+python tools\test_immediate_action_boundary.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.ko-landmark-probe.json
+```
+
+Expected live test:
+
+1. Load the autosave that starts before Ramza confirms Rush on the low-HP Ninja.
+2. Wait 1-2 seconds and report `baseline autosave`.
+3. Preview Rush on the Ninja and report the preview damage.
+4. Confirm Rush.
+5. Report KO/Reraise outcome.
+
+Decision target:
+
+- If `target-cache-*` hits on the Ninja before HP zero, they are candidates for the execution damage
+  cache/pre-commit value.
+- If `ko-write-*` hits on the Ninja at the KO frame, the static KO-field cluster is probably inside
+  or immediately adjacent to engine-owned KO state mutation.
+
+Next test plan:
+
+Question:
+
+- Do the byte-verified static RVAs actually execute on the low-HP Ninja during the Rush KO?
+- If yes, which landmark happens before the `dmg1C4=33 -> HP zero / KO flags` boundary, and which
+  happens as part of the engine-owned KO state mutation?
+
+Why this is the right next test:
+
+- Cross Slash attribution, Rush immediate-action freshness, raw-vs-applied lethal clamp, and the
+  vanilla KO field diff are already proven.
+- Repeating the full Cross Slash setup would mostly reproduce known evidence.
+- The unsolved redesign blocker is still custom lethal damage: we need either a pre-commit damage
+  interception point or a safe engine-owned KO path.
+- The static pass produced concrete candidates; the live test now needs to validate those
+  candidates, not rediscover the same HP event.
+
+Setup:
+
+- Use the autosave if it loads before Ramza confirms Rush.
+- Required state:
+  - Cross Slash has already left the Ninja at low HP;
+  - Ninja is still alive;
+  - Ramza can still preview/confirm Rush;
+  - Rush has not already been confirmed.
+- The active deployed profile is `ko-landmark-probe`, observe-only, with no HP/MP rewrites.
+
+User steps:
+
+1. Open the game through Reloaded.
+2. Load the autosave.
+3. Wait 1-2 seconds and report `baseline autosave`.
+4. Preview Ramza `Rush` on the Ninja and report the preview damage.
+5. Confirm Rush.
+6. Report whether the Ninja died, the shown damage if visible, and whether Reraise activated.
+7. Close the game and report that it is closed so the final log can be captured.
+
+Artifacts to capture after the test:
+
+- Active game log:
+  `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`;
+- copy to `work\live-captures\...ko-landmark...snapshot.txt`;
+- analyze for:
+  - `[LANDMARK-HOOK ...]` install success/skips;
+  - `[LANDMARK-HIT ... target-cache-* ...]`;
+  - `[LANDMARK-HIT ... ko-write-* ...]`;
+  - `[ACTION-BOUNDARY]`;
+  - `[HP-EVENT-PROBE]`;
+  - `[IMMEDIATE-ACTION-CANDIDATES]`.
+
+Pass/fail interpretation:
+
+- Strong pass: one or more landmark hits show the Ninja as the base unit and bracket the KO
+  boundary. This gives us a concrete hook family to inspect next.
+- Partial pass: target-cache landmarks hit the Ninja but KO-field landmarks do not. Focus next on
+  pre-commit/cache mutation and add deeper stack capture there.
+- Partial pass: KO-field landmarks hit the Ninja but target-cache landmarks do not. Focus next on
+  engine-owned KO routine/state mutation, not pre-commit damage.
+- Negative result: no relevant landmark hits on the Ninja. Treat these static sites as adjacent or
+  unrelated for this action; next work should use deeper stack return-address classifiers from
+  `0x2F2EC1`, `0x2F37A2`, and `0x2F3884`.
+- Crash on load/action: disable or bisect landmark probes by profile, because the hooks are too
+  invasive at one of the candidate RVAs.

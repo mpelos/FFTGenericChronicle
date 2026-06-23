@@ -1,0 +1,119 @@
+{
+  "scenarios": [
+    {
+      "name": "pending-cross-slash-agrias",
+      "previousHp": 470,
+      "currentHp": 283,
+      "vanillaDamage": 187,
+      "eventIndex": 2,
+      "eventSeed": 258187,
+      "attackerSource": "pending-clear",
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 197,
+        "desiredHp": 273,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "attacker=0x1418562E0:pending-clear",
+          "action=pending-action-258:source=pending-clear:signal=258",
+          "trace.pending=1",
+          "trace.actionid=258",
+          "final=197:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x1418560E0",
+        "charId": 30,
+        "level": 50,
+        "hp": 283,
+        "maxHp": 470,
+        "mp": 87,
+        "maxMp": 87,
+        "team": 0,
+        "isFoe": false,
+        "pa": 13,
+        "ma": 11,
+        "speed": 9,
+        "ct": 57
+      },
+      "attacker": {
+        "ptr": "0x1418562E0",
+        "charId": 50,
+        "level": 49,
+        "hp": 378,
+        "maxHp": 378,
+        "mp": 92,
+        "maxMp": 92,
+        "team": 0,
+        "isFoe": false,
+        "pa": 10,
+        "ma": 13,
+        "speed": 9,
+        "ct": 37
+      },
+      "action": {
+        "name": "pending-action-258",
+        "source": "pending-clear",
+        "variables": {
+          "signal": 258,
+          "id": 258,
+          "actionId": 258,
+          "batch": 1,
+          "batchEvent": 2,
+          "batchMaxEvents": 16,
+          "observedHpLoss": 187,
+          "targetCacheDamage": 187,
+          "damageCacheMatch": 1
+        }
+      }
+    },
+    {
+      "name": "ct-low-fallback-does-not-trigger-pending-formula",
+      "previousHp": 470,
+      "currentHp": 283,
+      "vanillaDamage": 187,
+      "eventIndex": 3,
+      "eventSeed": 187003,
+      "attackerSource": "ct-low",
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 187,
+        "desiredHp": 283,
+        "ruleName": "FinalDamageFormula",
+        "traceContains": [
+          "attacker=0x1418544E0:ct-low",
+          "action=none",
+          "trace.pending=0",
+          "trace.actionid=0",
+          "final=187:FinalDamageFormula"
+        ]
+      },
+      "target": {
+        "ptr": "0x1418560E0",
+        "charId": 30,
+        "level": 50,
+        "hp": 283,
+        "maxHp": 470,
+        "team": 0,
+        "isFoe": false,
+        "pa": 13,
+        "ma": 11,
+        "speed": 9,
+        "ct": 57
+      },
+      "attacker": {
+        "ptr": "0x1418544E0",
+        "charId": 130,
+        "level": 50,
+        "hp": 247,
+        "maxHp": 247,
+        "team": 3,
+        "isFoe": true,
+        "pa": 13,
+        "ma": 34,
+        "speed": 8,
+        "ct": 24
+      }
+    }
+  ]
+}

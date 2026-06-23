@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -37,25 +37,38 @@ public class Mod : ModBase
     private ItemCatalog _itemCatalog = ItemCatalog.Empty("");
     private BattleFormulaEngine _formulaEngine = null!;
     private BattleContextResolver _contextResolver = null!;
+    private readonly PendingActionTracker _pendingActionTracker = new();
     private DateTime _settingsLastWriteUtc = DateTime.MinValue;
     private string _catalogPath = "";
     private DateTime _catalogLastWriteUtc = DateTime.MinValue;
     private long _lastRuntimeReloadCheckTick;
 
     private const string BattleBasePtr = "0F B7 41 30 66 89 42 0C"; // movzx eax,[rcx+0x30]; rcx=unit (stable)
-    private const int DUMP = 0x180;       // copy 0x00..0x17F (stats + wider suspected gear/action region)
+    private const int DUMP = 0x200;       // copy 0x00..0x1FF (stats + suspected gear/action/death region)
     private const int B_PTR = DUMP;       // native pointer-sized: rcx unit pointer
     private const int B_COUNT = DUMP + 8;
     private const int B_REGS = B_COUNT + 8;
     private const int REGISTER_COUNT = 16;
     private const int B_SIZE = B_REGS + (REGISTER_COUNT * 8);
+    private const int LANDMARK_RING_SIZE = 128;
+    private const int LANDMARK_RING_MASK = LANDMARK_RING_SIZE - 1;
+    private const int LANDMARK_SLOT_SIZE = 0x90;
+    private const int L_COUNT = 0;
+    private const int L_EVENTS = 0x10;
+    private const int L_SEQ = 0;
+    private const int L_ID = 4;
+    private const int L_REGS = 8;
+    private const int LANDMARK_BUFFER_SIZE = L_EVENTS + (LANDMARK_RING_SIZE * LANDMARK_SLOT_SIZE);
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
     ];
     private nint _buf;
+    private nint _landmarkBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _hook;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
+    private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
     private volatile bool _running = true;
 
@@ -64,6 +77,11 @@ public class Mod : ModBase
     private readonly Dictionary<nint, long> _lastHpSampleTick = new();
     private readonly Dictionary<nint, long> _lastMpSampleTick = new();
     private readonly Dictionary<nint, string> _lastActionProbeState = new();
+    private readonly Dictionary<nint, long> _lastActionProbeChangeTick = new();
+    private readonly Dictionary<nint, int> _lastActionProbeActionId = new();
+    private readonly Dictionary<nint, long> _lastActionProbeActionIdChangeTick = new();
+    private readonly Dictionary<nint, int> _lastActionProbeActiveActionId = new();
+    private readonly Dictionary<nint, long> _lastActionProbeActiveActionChangeTick = new();
     private readonly Dictionary<nint, string> _seen = new();  // unit pointer -> last stat line (re-log if it changes)
     private readonly HashSet<nint> _dumped = new();           // unit pointer -> emitted full struct dump
     private readonly Dictionary<nint, byte[]> _lastRaw = new();
@@ -74,15 +92,51 @@ public class Mod : ModBase
     private readonly Dictionary<nint, byte[]> _deathCaptureRaw = new();  // unit -> raw at last death/follow tick (delayed-flag diff)
     private readonly Dictionary<nint, int> _deathCaptureFollow = new();  // unit -> remaining post-death follow-up dump ticks
     private readonly HashSet<nint> _deathCaptured = new();               // unit -> already captured this death (until revived)
+    private readonly Dictionary<nint, byte[]> _lastObservedRaw = new();   // unit -> previous poll/hook raw for HP-event diffs
     private readonly ValueRewriteEchoGuard _hpRewriteEchoGuard = new("HP");
     private readonly ValueRewriteEchoGuard _mpRewriteEchoGuard = new("MP");
     private long _battleEventIndex;
+    private long _lastHookObservationTick;
     private int _pollErrorCount;
     private int _registryLimitLogCount;
     private int _hookRegisterProbeLogs;
     private int _hookRegisterProbeEventLogs;
     private int _hookRegisterPointerScanLogs;
+    private int _hpEventProbeLogs;
+    private int _actionBoundaryProbeLogs;
+    private int _landmarkProbeLogs;
+    private int _lastLandmarkProbeSequence;
     private long _probeEventIndex;
+    private nint _moduleBase;
+    private int _moduleSize;
+
+    private static readonly int[] ActionBoundaryOffsets =
+    [
+        0x30, 0x31, 0x61, 0x63,
+        0x18C, 0x18D,
+        0x1A0, 0x1A1, 0x1A2, 0x1A3,
+        0x1B8, 0x1B9, 0x1BA, 0x1BB,
+        0x1C4, 0x1C5, 0x1C6, 0x1C7,
+        0x1D8, 0x1DB, 0x1DD, 0x1E0, 0x1E5, 0x1EF, 0x1F1, 0x1F5,
+    ];
+
+    private static readonly (int Rva, string Name)[] CodeLandmarks =
+    [
+        (0x226D98, "battle-base-ptr"),
+        (0x2D7AC0, "target-cache-write-1c4"),
+        (0x2D7AEC, "target-cache-init-1c4"),
+        (0x2F2EC1, "ko-stack-outer"),
+        (0x2F37A2, "ko-stack-mid"),
+        (0x2F3884, "ko-stack-inner"),
+        (0x30A685, "damage-mult-2"),
+        (0x30A6D3, "ko-write-1f5"),
+        (0x30A908, "ko-write-61"),
+        (0x30A911, "ko-write-1ef"),
+        (0x30AAFC, "death-state-write-1bb"),
+        (0x30D42A, "ko-read-1ef"),
+        (0x30D432, "ko-mask-write-1ef"),
+        (0x30D43C, "ko-write-61-late"),
+    ];
 
     public Mod(ModContext context)
     {
@@ -103,6 +157,8 @@ public class Mod : ModBase
         {
             var module = Process.GetCurrentProcess().MainModule;
             nint baseAddr = module?.BaseAddress ?? 0;
+            _moduleBase = baseAddr;
+            _moduleSize = module?.ModuleMemorySize ?? 0;
 
             var ctl = _modLoader.GetController<IStartupScanner>();
             if (ctl is null || !ctl.TryGetTarget(out var scanner) || scanner is null)
@@ -112,6 +168,7 @@ public class Mod : ModBase
 
             _buf = Marshal.AllocHGlobal(B_SIZE);
             for (int i = 0; i < B_SIZE; i++) Marshal.WriteByte(_buf, i, 0);
+            InstallLandmarkProbesIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -138,6 +195,172 @@ public class Mod : ModBase
 
         new MemoryTableProbeRunner(scanner, moduleBase, _settings.MemoryTableProbes, Line, Flush).Install();
         Flush();
+    }
+
+    private void InstallLandmarkProbesIfEnabled(nint moduleBase)
+    {
+        if (!_settings.LandmarkProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[LANDMARK-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        var enabled = _settings.LandmarkProbes
+            .Where(probe => probe.Enabled)
+            .ToList();
+        if (enabled.Count == 0)
+            return;
+
+        _landmarkBuf = Marshal.AllocHGlobal(LANDMARK_BUFFER_SIZE);
+        for (int i = 0; i < LANDMARK_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_landmarkBuf, i, 0);
+
+        Line($"[LANDMARK] configured={_settings.LandmarkProbes.Count} enabled={enabled.Count} ring={LANDMARK_RING_SIZE}");
+        int id = 1;
+        foreach (var probe in enabled)
+        {
+            probe.Normalize();
+            string name = probe.TraceName;
+            if (!probe.TryValidate(out string error))
+            {
+                Line($"[LANDMARK-SKIP {name}] {error}");
+                continue;
+            }
+
+            nint address = moduleBase + probe.Rva;
+            if (!ValidateLandmarkBytes(address, probe, out string byteError))
+            {
+                Line($"[LANDMARK-SKIP {name}] rva=0x{probe.Rva:X} {byteError}");
+                continue;
+            }
+
+            try
+            {
+                var asm = BuildLandmarkHookAsm(id);
+                _landmarkHooks.Add(_hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate());
+                _landmarkProbesById[id] = probe;
+                Line(
+                    $"[LANDMARK-HOOK {name}] id={id} rva=0x{probe.Rva:X} addr=0x{address:X} " +
+                    $"base={probe.BaseRegister} access={probe.Access} expected={probe.ExpectedBytes}");
+                id++;
+            }
+            catch (Exception ex)
+            {
+                Line($"[LANDMARK-FAILED {name}] rva=0x{probe.Rva:X} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        Flush();
+    }
+
+    private static bool ValidateLandmarkBytes(nint address, LandmarkProbe probe, out string error)
+    {
+        error = "";
+        byte[] expected;
+        try
+        {
+            expected = ParseExpectedBytes(probe.ExpectedBytes);
+        }
+        catch (Exception ex) when (ex is FormatException or OverflowException)
+        {
+            error = $"invalid ExpectedBytes: {ex.Message}";
+            return false;
+        }
+        if (expected.Length == 0)
+            return true;
+
+        var actual = new byte[expected.Length];
+        if (!CurrentProcessMemory.TryRead(address, actual, out error))
+            return false;
+
+        for (int i = 0; i < expected.Length; i++)
+        {
+            if (actual[i] == expected[i])
+                continue;
+
+            error =
+                $"expected bytes {FormatBytePattern(expected)} but found {FormatBytePattern(actual)}";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static byte[] ParseExpectedBytes(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return Array.Empty<byte>();
+
+        var bytes = new List<byte>();
+        foreach (string token in text.Split([' ', '\t', ',', ';'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            string clean = token.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                ? token[2..]
+                : token;
+            if (clean is "?" or "??")
+                throw new FormatException("wildcards are not supported in LandmarkProbe.ExpectedBytes");
+            bytes.Add(Convert.ToByte(clean, 16));
+        }
+
+        return bytes.ToArray();
+    }
+
+    private static string FormatBytePattern(byte[] bytes)
+        => bytes.Length == 0 ? "-" : string.Join(" ", bytes.Select(value => value.ToString("X2")));
+
+    private string[] BuildLandmarkHookAsm(int landmarkId)
+    {
+        string buf = $"0{_landmarkBuf:X}h";
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push r8",
+            "push r9",
+            "pushfq",
+            $"mov rax, {buf}",
+            $"mov r8d, [rax+{L_COUNT}]",
+            "add r8d, 1",
+            $"mov [rax+{L_COUNT}], r8d",
+            "mov r9d, r8d",
+            $"and r9d, {LANDMARK_RING_MASK}",
+            $"imul r9, r9, {LANDMARK_SLOT_SIZE}",
+            "add r9, rax",
+            $"add r9, {L_EVENTS}",
+            $"mov dword [r9+{L_SEQ}], 0",
+            $"mov dword [r9+{L_ID}], {landmarkId}",
+        };
+
+        void StoreOriginalFromStack(int registerIndex, int stackOffset)
+        {
+            asm.Add($"mov r8, [rsp+{stackOffset}]");
+            asm.Add($"mov [r9+{L_REGS + registerIndex * 8}], r8");
+        }
+
+        StoreOriginalFromStack(0, 24); // rax
+        asm.Add($"mov [r9+{L_REGS + 1 * 8}], rbx");
+        asm.Add($"mov [r9+{L_REGS + 2 * 8}], rcx");
+        asm.Add($"mov [r9+{L_REGS + 3 * 8}], rdx");
+        asm.Add($"mov [r9+{L_REGS + 4 * 8}], rsi");
+        asm.Add($"mov [r9+{L_REGS + 5 * 8}], rdi");
+        asm.Add($"mov [r9+{L_REGS + 6 * 8}], rbp");
+        asm.Add("lea r8, [rsp+32]");
+        asm.Add($"mov [r9+{L_REGS + 7 * 8}], r8");
+        StoreOriginalFromStack(8, 16); // r8
+        StoreOriginalFromStack(9, 8);  // r9
+        asm.Add($"mov [r9+{L_REGS + 10 * 8}], r10");
+        asm.Add($"mov [r9+{L_REGS + 11 * 8}], r11");
+        asm.Add($"mov [r9+{L_REGS + 12 * 8}], r12");
+        asm.Add($"mov [r9+{L_REGS + 13 * 8}], r13");
+        asm.Add($"mov [r9+{L_REGS + 14 * 8}], r14");
+        asm.Add($"mov [r9+{L_REGS + 15 * 8}], r15");
+        asm.Add($"mov r8d, [rax+{L_COUNT}]");
+        asm.Add($"mov [r9+{L_SEQ}], r8d");
+        asm.AddRange(new[] { "popfq", "pop r9", "pop r8", "pop rax" });
+        return asm.ToArray();
     }
 
     private void Install(nint address)
@@ -197,6 +420,7 @@ public class Mod : ModBase
                 ReloadRuntime(force: false);
                 long nowTick = Stopwatch.GetTimestamp();
                 CaptureHookObservation(ref lastHookCount, nowTick);
+                CaptureLandmarkProbeEvents(nowTick);
                 PollRegisteredUnits(nowTick);
             }
             catch (Exception ex)
@@ -223,8 +447,165 @@ public class Mod : ModBase
         byte[] raw = ReadHookDumpBytes();
         if (!TryCreateUnitSnapshot(unitPtr, raw, out var target, out _)) return;
 
+        _lastHookObservationTick = nowTick;
         LogHookRegisterProbeIfEnabled(count, target);
         ProcessObservedUnit(target, nowTick, touchForContext: true, logStructMapping: true);
+    }
+
+    private void CaptureLandmarkProbeEvents(long nowTick)
+    {
+        if (_landmarkBuf == 0 || !_settings.LandmarkProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_landmarkBuf, L_COUNT);
+        if (count == _lastLandmarkProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastLandmarkProbeSequence + 1;
+        if (count - _lastLandmarkProbeSequence > LANDMARK_RING_SIZE)
+        {
+            int lost = count - _lastLandmarkProbeSequence - LANDMARK_RING_SIZE;
+            Line($"[LANDMARK-LOST last={_lastLandmarkProbeSequence} current={count} lost={lost}]");
+            start = count - LANDMARK_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.LandmarkProbeMaxLogs, 0, 10_000);
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = L_EVENTS + ((sequence & LANDMARK_RING_MASK) * LANDMARK_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_landmarkBuf, slot + L_SEQ);
+            if (recordedSequence != sequence)
+                continue;
+
+            int probeId = Marshal.ReadInt32(_landmarkBuf, slot + L_ID);
+            if (!_landmarkProbesById.TryGetValue(probeId, out var probe))
+                continue;
+
+            if (_landmarkProbeLogs >= maxLogs)
+                continue;
+
+            var registers = ReadLandmarkRegisters(slot);
+            string line = FormatLandmarkHit(sequence, probeId, probe, registers, nowTick);
+            if (line.Length == 0)
+                continue;
+
+            Line(line);
+            _landmarkProbeLogs++;
+            needsFlush = true;
+        }
+
+        _lastLandmarkProbeSequence = count;
+        if (needsFlush)
+            Flush();
+    }
+
+    private nint[] ReadLandmarkRegisters(int slot)
+    {
+        var registers = new nint[REGISTER_COUNT];
+        for (int i = 0; i < registers.Length; i++)
+            registers[i] = Marshal.ReadIntPtr(_landmarkBuf, slot + L_REGS + (i * IntPtr.Size));
+        return registers;
+    }
+
+    private string FormatLandmarkHit(int sequence, int probeId, LandmarkProbe probe, nint[] registers, long nowTick)
+    {
+        nint basePtr = TryGetRegister(registers, probe.BaseRegister, out var registerValue) ? registerValue : 0;
+        UnitSnapshot? baseUnit = null;
+        string baseRead = "baseRead=none";
+        if (basePtr != 0)
+        {
+            if (TryReadLiveUnitSnapshot(basePtr, out var unit, out string error))
+            {
+                baseUnit = unit;
+                baseRead = $"baseRead=unit:id=0x{unit.CharId:X2}/team={unit.Team}/hp={unit.Hp}/ct={unit.Ct}";
+            }
+            else
+            {
+                baseRead = $"baseRead={error.Replace(' ', '_')}";
+            }
+        }
+        if (baseUnit is null)
+            return "";
+
+        string fields = $"fields={ActionBoundaryFields(baseUnit.Raw)}/raw={FormatLandmarkOffsets(baseUnit.Raw, probe.InterestingOffsets)}";
+        string regs = FormatLandmarkRegisters(registers, baseUnit);
+        string stack = FormatLandmarkStackSlots(registers.Length > 7 ? registers[7] : 0, baseUnit);
+        string stackPart = stack.Length == 0 ? "" : $" stack={stack}";
+        return
+            $"[LANDMARK-HIT event={sequence} id={probeId} name={probe.TraceName} rva=0x{probe.Rva:X} " +
+            $"access={probe.Access} base={probe.BaseRegister}=0x{basePtr:X}:{ClassifyRegisterValue(basePtr, baseUnit, "base")} " +
+            $"now={nowTick} {baseRead} {fields}] regs={regs}{stackPart}";
+    }
+
+    private static bool TryGetRegister(nint[] registers, string name, out nint value)
+    {
+        value = 0;
+        for (int i = 0; i < RegisterNames.Length && i < registers.Length; i++)
+        {
+            if (!string.Equals(RegisterNames[i], name, StringComparison.OrdinalIgnoreCase))
+                continue;
+            value = registers[i];
+            return true;
+        }
+
+        return false;
+    }
+
+    private string FormatLandmarkRegisters(nint[] registers, UnitSnapshot? reference)
+    {
+        var parts = new List<string>(registers.Length);
+        for (int i = 0; i < registers.Length && i < RegisterNames.Length; i++)
+            parts.Add($"{RegisterNames[i]}=0x{registers[i]:X}:{ClassifyRegisterValue(registers[i], reference, "base")}");
+        return string.Join(" ", parts);
+    }
+
+    private string FormatLandmarkStackSlots(nint rsp, UnitSnapshot? reference)
+    {
+        int slots = Math.Clamp(_settings.LandmarkProbeStackSlots, 0, 64);
+        if (slots == 0 || rsp == 0) return "";
+
+        var parts = new List<string>(slots);
+        for (int i = 0; i < slots; i++)
+        {
+            nint slotAddress = rsp + (i * IntPtr.Size);
+            if (!ReadableMemoryRange.IsReadable(slotAddress, IntPtr.Size))
+                continue;
+            nint value;
+            try
+            {
+                value = Marshal.ReadIntPtr(slotAddress);
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (value == 0) continue;
+            parts.Add($"+0x{i * IntPtr.Size:X}=0x{value:X}:{ClassifyRegisterValue(value, reference, "base")}");
+        }
+
+        return string.Join(",", parts);
+    }
+
+    private static string FormatLandmarkOffsets(byte[] raw, IReadOnlyList<int> offsets)
+    {
+        if (offsets.Count == 0)
+            return "none";
+
+        var parts = new List<string>(offsets.Count);
+        foreach (int offset in offsets)
+        {
+            if (offset < 0 || offset >= raw.Length)
+                continue;
+            string value = raw[offset].ToString("X2");
+            if (offset + 1 < raw.Length)
+                value += raw[offset + 1].ToString("X2");
+            parts.Add($"+0x{offset:X}={value}");
+        }
+
+        return parts.Count == 0 ? "none" : string.Join("/", parts);
     }
 
     private void PollRegisteredUnits(long nowTick)
@@ -250,6 +631,7 @@ public class Mod : ModBase
         int hp = target.Hp;
         int mp = target.Mp;
         bool needsFlush = false;
+        _lastObservedRaw.TryGetValue(unitPtr, out var previousObservedRaw);
 
         if (!_unitRegistry.Contains(unitPtr) && _unitRegistry.Count >= MaxTrackedBattleUnits)
         {
@@ -262,6 +644,18 @@ public class Mod : ModBase
         }
 
         _unitRegistry.Add(unitPtr);
+        UnitSnapshot? actionProbeUnit = null;
+        ActionProbeState? actionProbeState = null;
+        if (_settings.LogActionStateChanges || _settings.TrackPendingActions || _settings.LogImmediateActionCandidatesOnEvent)
+        {
+            if (TryReadActionProbeSnapshot(unitPtr, id, out var probeUnit, out var probeState))
+            {
+                actionProbeUnit = probeUnit;
+                actionProbeState = probeState;
+                TrackActionProbeAges(unitPtr, probeState, nowTick);
+            }
+        }
+
         // Track CT (+0x41) per unit so the attacker resolver can identify who just acted: a unit
         // whose CT dropped between polls just took its turn (classic FFT charge-time reset).
         _unitObservations.TryGetValue(unitPtr, out var previousObservation);
@@ -284,7 +678,7 @@ public class Mod : ModBase
             if (_settings.HookRegisterProbeOnCtDrop)
             {
                 long probeEventIndex = Interlocked.Increment(ref _probeEventIndex);
-                LogHookRegisterProbeEventIfEnabled("ctdrop", probeEventIndex, target);
+                LogHookRegisterProbeEventIfEnabled("ctdrop", probeEventIndex, target, nowTick);
             }
         }
         // Hook touches set a fresh SeenTick (legacy recency signal); polls keep the prior SeenTick
@@ -296,8 +690,25 @@ public class Mod : ModBase
             : (previousObservation?.SeenTick ?? 0);
         _unitObservations[unitPtr] = new UnitObservation(target, seenTick, ctDropTick, ctDropAmount);
 
-        if (LogActionStateChangeIfEnabled(unitPtr, id, nowTick, touchForContext))
+        if (actionProbeUnit is not null && actionProbeState is not null)
+        {
+            if (ObservePendingActionStateIfEnabled(actionProbeUnit, actionProbeState, nowTick, touchForContext))
+                needsFlush = true;
+            if (LogActionStateChangeIfEnabled(actionProbeUnit, actionProbeState, nowTick, touchForContext))
+                needsFlush = true;
+        }
+
+        if (LogActionBoundaryProbeIfEnabled(target, previousObservedRaw, nowTick, touchForContext))
             needsFlush = true;
+
+        if (actionProbeUnit is null && _settings.TrackPendingActions)
+        {
+            var lines = _pendingActionTracker.ForgetUnit(unitPtr);
+            foreach (string line in lines)
+                Line(line);
+            if (lines.Count > 0)
+                needsFlush = true;
+        }
 
         if (_settings.CaptureStructOnDeath) DeathCaptureTick(target);
 
@@ -341,19 +752,52 @@ public class Mod : ModBase
                 Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prev} -> {hp} = {Math.Abs(signedDamage)} sampleAgeMs={hpSampleAgeMs}");
                 if (_settings.ActorProbeOnEvent) LogActorProbe(id);
                 long eventIndex = Interlocked.Increment(ref _battleEventIndex);
-                LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target);
+                LogHpEventProbeIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, previousObservedRaw, prev, hp, signedDamage, actionProbeState);
+                LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
                 LogPendingActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
+                LogImmediateActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, actionProbeState, prev, hp, signedDamage, nowTick);
+                PendingActionMatch? pendingCandidate = null;
+                PendingActionMatch? pendingMatch = null;
+                if (signedDamage > 0 && RefreshPendingActionTrackerForEvent(nowTick))
+                    needsFlush = true;
+                if (signedDamage > 0)
+                {
+                    var pendingResult = MatchPendingActionIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, actionProbeState, signedDamage, nowTick);
+                    pendingCandidate = pendingResult.Match;
+                    pendingMatch = ShouldUsePendingActionMatch(pendingCandidate) ? pendingCandidate : null;
+                    if (pendingResult.Logged)
+                        needsFlush = true;
+                }
                 long eventSeed = ComputeEventSeed(target, eventIndex, prev, hp, signedDamage);
-                var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
+                var fallbackAttacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
+                UnitSnapshot? attackerUnit = pendingMatch?.Caster ?? fallbackAttacker.Unit;
+                string attackerSource = pendingMatch?.Source ?? fallbackAttacker.Source;
+                ActionSignal? pendingAction = pendingMatch is null ? null : BuildPendingActionSignal(pendingMatch);
                 if (_settings.LogAttackerCandidates)
                 {
-                    string resolved = attacker.Unit is null
+                    string resolved = attackerUnit is null
                         ? "resolved=none"
-                        : $"resolved=0x{attacker.Unit.Ptr:X} source={attacker.Source}";
-                    Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {attacker.Summary}");
+                        : $"resolved=0x{attackerUnit.Ptr:X} source={attackerSource}";
+                    if (pendingMatch is not null)
+                    {
+                        string fallback = fallbackAttacker.Unit is null
+                            ? "fallback=none"
+                            : $"fallback=0x{fallbackAttacker.Unit.Ptr:X} fallbackSource={fallbackAttacker.Source}";
+                        string pending =
+                            $"pending=batch={pendingMatch.BatchId}/act={pendingMatch.ActionId}/event={pendingMatch.BatchEvent}/{pendingMatch.MaxBatchEvents}" +
+                            $"/confidence={pendingMatch.Confidence}/score={pendingMatch.Score}";
+                        Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {pending} {fallback} {fallbackAttacker.Summary}");
+                    }
+                    else
+                    {
+                        string rejected = pendingCandidate is null
+                            ? ""
+                            : $"pendingRejected=batch={pendingCandidate.BatchId}/act={pendingCandidate.ActionId}/confidence={pendingCandidate.Confidence}/reason=no-damage-cache-match ";
+                        Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {rejected}{fallbackAttacker.Summary}");
+                    }
                 }
-                trackingHp = MaybeRewriteHpEvent(new DamageEvent(target, prev, hp, signedDamage, attacker.Unit, attacker.Source, EventIndex: eventIndex, EventSeed: eventSeed));
-                _contextResolver.RememberHpDamageEvent(target, attacker.Unit, attacker.Source, signedDamage, nowTick, eventIndex);
+                trackingHp = MaybeRewriteHpEvent(new DamageEvent(target, prev, hp, signedDamage, attackerUnit, attackerSource, pendingAction, EventIndex: eventIndex, EventSeed: eventSeed));
+                _contextResolver.RememberHpDamageEvent(target, attackerUnit, attackerSource, signedDamage, nowTick, eventIndex);
             }
             needsFlush = true;
         }
@@ -376,7 +820,7 @@ public class Mod : ModBase
                 string eventTag = signedMpChange < 0 ? "MPLOSS" : "MPGAIN";
                 Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prevMp} -> {mp} = {Math.Abs(signedMpChange)} sampleAgeMs={mpSampleAgeMs}");
                 long eventIndex = Interlocked.Increment(ref _battleEventIndex);
-                LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target);
+                LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
                 LogPendingActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
                 long eventSeed = ComputeEventSeed(target, eventIndex, prevMp, mp, signedMpChange);
                 var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
@@ -393,6 +837,7 @@ public class Mod : ModBase
         }
         _lastMp[unitPtr] = trackingMp;
         _lastMpSampleTick[unitPtr] = nowTick;
+        _lastObservedRaw[unitPtr] = target.Raw;
 
         if (needsFlush) Flush();
     }
@@ -472,6 +917,13 @@ public class Mod : ModBase
         _lastMpSampleTick.Remove(unitPtr);
         _seen.Remove(unitPtr);
         _lastActionProbeState.Remove(unitPtr);
+        _lastActionProbeChangeTick.Remove(unitPtr);
+        _lastActionProbeActionId.Remove(unitPtr);
+        _lastActionProbeActionIdChangeTick.Remove(unitPtr);
+        _lastActionProbeActiveActionId.Remove(unitPtr);
+        _lastActionProbeActiveActionChangeTick.Remove(unitPtr);
+        foreach (string line in _pendingActionTracker.ForgetUnit(unitPtr))
+            Line(line);
         _dumped.Remove(unitPtr);
         _lastRaw.Remove(unitPtr);
         _diffCounts.Remove(unitPtr);
@@ -480,6 +932,7 @@ public class Mod : ModBase
         _deathCaptureRaw.Remove(unitPtr);
         _deathCaptureFollow.Remove(unitPtr);
         _deathCaptured.Remove(unitPtr);
+        _lastObservedRaw.Remove(unitPtr);
         Line($"[UNIT-LOST ptr=0x{unitPtr:X}] {reason}");
         Flush();
     }
@@ -488,6 +941,34 @@ public class Mod : ModBase
 
     private static int ElapsedMs(long nowTick, long previousTick)
         => (int)Math.Round((nowTick - previousTick) * 1000.0 / Stopwatch.Frequency);
+
+    private void TrackActionProbeAges(nint unitPtr, ActionProbeState state, long nowTick)
+    {
+        if (!_lastActionProbeActionId.TryGetValue(unitPtr, out int previousActionId) ||
+            previousActionId != state.ActionId)
+        {
+            _lastActionProbeActionId[unitPtr] = state.ActionId;
+            _lastActionProbeActionIdChangeTick[unitPtr] = nowTick;
+        }
+
+        int activeActionId = state.ActionId > 0 && state.ActiveMarker2 != 0 ? state.ActionId : 0;
+        if (!_lastActionProbeActiveActionId.TryGetValue(unitPtr, out int previousActiveActionId) ||
+            previousActiveActionId != activeActionId)
+        {
+            _lastActionProbeActiveActionId[unitPtr] = activeActionId;
+            _lastActionProbeActiveActionChangeTick[unitPtr] = nowTick;
+        }
+    }
+
+    private int ActionIdAgeMs(nint unitPtr, long nowTick)
+        => _lastActionProbeActionIdChangeTick.TryGetValue(unitPtr, out long tick)
+            ? ElapsedMs(nowTick, tick)
+            : -1;
+
+    private int ActiveActionAgeMs(nint unitPtr, long nowTick)
+        => _lastActionProbeActiveActionChangeTick.TryGetValue(unitPtr, out long tick)
+            ? ElapsedMs(nowTick, tick)
+            : -1;
 
     // Reflection-based: log which mods are actually LOADED in this process + the app's EnabledMods.
     private void LogEnv()
@@ -584,6 +1065,8 @@ public class Mod : ModBase
         _itemCatalog = nextCatalog;
         _formulaEngine = new BattleFormulaEngine(_settings, _itemCatalog);
         _contextResolver = new BattleContextResolver(_settings);
+        if (settingsChanged)
+            _pendingActionTracker.Reset();
         _settingsLastWriteUtc = settingsWrite;
         _catalogPath = nextCatalogPath;
         _catalogLastWriteUtc = catalogWrite;
@@ -690,6 +1173,149 @@ public class Mod : ModBase
         Line($"[ACTOR-PROBE tgt=0x{targetId:X2} off=0x{start:X2}-0x{end:X2}] {string.Join(" ", parts)}");
     }
 
+    private void LogHpEventProbeIfEnabled(
+        string kind,
+        long eventIndex,
+        UnitSnapshot target,
+        byte[]? previousRaw,
+        int previousHp,
+        int currentHp,
+        int signedDamage,
+        ActionProbeState? actionProbeState)
+    {
+        if (!_settings.LogHpEventProbe) return;
+
+        int maxLogs = Math.Clamp(_settings.HpEventProbeMaxLogs, 0, 1000);
+        if (_hpEventProbeLogs >= maxLogs) return;
+
+        _hpEventProbeLogs++;
+        int absoluteDelta = Math.Abs(signedDamage);
+        bool isDamage = signedDamage > 0;
+        bool isLethal = isDamage && currentHp <= 0;
+        int appliedHpLoss = isDamage ? absoluteDelta : 0;
+        int appliedHpGain = isDamage ? 0 : absoluteDelta;
+        int rawForecastDamage = actionProbeState?.ForecastDamage ?? 0;
+        int overkill = isDamage ? Math.Max(0, absoluteDelta - Math.Max(0, previousHp)) : 0;
+        int rawForecastOverkill = isDamage && rawForecastDamage > 0
+            ? Math.Max(0, rawForecastDamage - Math.Max(0, previousHp))
+            : 0;
+        bool hpClamp = isDamage && rawForecastDamage > appliedHpLoss && currentHp <= 0;
+        int diffMax = Math.Clamp(_settings.HpEventProbeDiffMax, 0, 256);
+        string rawDiff = previousRaw is null
+            ? "no-raw-baseline"
+            : string.Join(" ", StructByteDiffs(previousRaw, target.Raw, 0, DUMP - 1, diffMax));
+        if (string.IsNullOrWhiteSpace(rawDiff))
+            rawDiff = "none";
+
+        string actionFields = actionProbeState is null ? "none" : actionProbeState.AllFields;
+        Line(
+            $"[HP-EVENT-PROBE kind={kind} event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2} " +
+            $"prevHp={previousHp} currentHp={currentHp} delta={absoluteDelta} appliedHpLoss={appliedHpLoss} " +
+            $"appliedHpGain={appliedHpGain} rawForecastDamage={rawForecastDamage} lethal={(isLethal ? 1 : 0)} " +
+            $"hpClamp={(hpClamp ? 1 : 0)} overkill={overkill} rawForecastOverkill={rawForecastOverkill} " +
+            $"maxHp={target.MaxHp} team={target.Team} foe={(target.IsFoe ? 1 : 0)} " +
+            $"ct={target.Ct} action={actionFields}] diff={rawDiff}");
+
+        if (!_settings.HpEventProbeDumpRaw) return;
+
+        if (previousRaw is not null)
+            Line($"[HP-EVENT-PRE-RAW event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] {HexDump(previousRaw)}");
+        else
+            Line($"[HP-EVENT-PRE-RAW event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] no-raw-baseline");
+        Line($"[HP-EVENT-POST-RAW event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] {HexDump(target.Raw)}");
+    }
+
+    private void LogImmediateActionCandidatesIfEnabled(
+        string kind,
+        long eventIndex,
+        UnitSnapshot target,
+        ActionProbeState? targetState,
+        int previousHp,
+        int currentHp,
+        int signedDamage,
+        long nowTick)
+    {
+        if (!_settings.LogImmediateActionCandidatesOnEvent) return;
+
+        int maxUnits = Math.Clamp(_settings.ImmediateActionCandidateMaxUnits, 1, 128);
+        int appliedHpLoss = signedDamage > 0 ? Math.Abs(signedDamage) : 0;
+        int rawTargetForecastDamage = targetState?.ForecastDamage ?? 0;
+        bool hpClamp = signedDamage > 0 &&
+                       currentHp <= 0 &&
+                       rawTargetForecastDamage > appliedHpLoss;
+        var candidates = new List<(int Score, string Text)>();
+
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p))
+        {
+            _unitObservations.TryGetValue(ptr, out var known);
+            int expectedId = known?.Unit.CharId ?? -1;
+            if (!TryReadActionProbeSnapshot(ptr, expectedId, out var unit, out var state))
+                continue;
+            TrackActionProbeAges(ptr, state, nowTick);
+
+            bool isTarget = ptr == target.Ptr;
+            int stateAgeMs = _lastActionProbeChangeTick.TryGetValue(ptr, out long actionChangeTick)
+                ? ElapsedMs(nowTick, actionChangeTick)
+                : -1;
+            int actionIdAgeMs = ActionIdAgeMs(ptr, nowTick);
+            int activeActionAgeMs = ActiveActionAgeMs(ptr, nowTick);
+            int seenAgeMs = known is not null && known.SeenTick > 0 ? ElapsedMs(nowTick, known.SeenTick) : -1;
+            int ctDropAgeMs = known is not null && known.CtDropTick > 0 ? ElapsedMs(nowTick, known.CtDropTick) : -1;
+            int rawDamage = state.ForecastDamage;
+            bool exactAppliedMatch = appliedHpLoss > 0 && rawDamage == appliedHpLoss;
+            bool lethalClampMatch = appliedHpLoss > 0 &&
+                                    currentHp <= 0 &&
+                                    previousHp > 0 &&
+                                    rawDamage >= previousHp;
+            var scoreResult = ImmediateActionCandidateScoring.Evaluate(
+                new ImmediateActionCandidateScoreInput(
+                    isTarget,
+                    unit.Hp,
+                    state.ActionId,
+                    state.HasPrimaryPendingFlag,
+                    state.HasSecondaryPendingFlag,
+                    state.PendingTimer,
+                    state.ActiveMarker2,
+                    stateAgeMs,
+                    seenAgeMs,
+                    ctDropAgeMs,
+                    rawDamage,
+                    actionIdAgeMs,
+                    activeActionAgeMs));
+            bool relevant = state.LooksRelevant ||
+                            scoreResult.SourceLike ||
+                            isTarget ||
+                            (stateAgeMs >= 0 && stateAgeMs <= 5000) ||
+                            (actionIdAgeMs >= 0 && actionIdAgeMs <= 5000) ||
+                            (activeActionAgeMs >= 0 && activeActionAgeMs <= 5000) ||
+                            (seenAgeMs >= 0 && seenAgeMs <= 5000) ||
+                            (ctDropAgeMs >= 0 && ctDropAgeMs <= 5000);
+            if (!relevant && !_settings.LogAllPendingActionCandidates)
+                continue;
+
+            candidates.Add(
+                (scoreResult.Score,
+                 $"0x{ptr:X}/id=0x{unit.CharId:X2}/role={scoreResult.Role}/score={scoreResult.Score}/hp={unit.Hp}/ct={unit.Ct}" +
+                 $"/seenAgeMs={seenAgeMs}/ctDropAgeMs={ctDropAgeMs}/ctDrop={known?.CtDropAmount ?? 0}" +
+                 $"/stateAgeMs={stateAgeMs}/actionIdAgeMs={actionIdAgeMs}/activeActionAgeMs={activeActionAgeMs}" +
+                 $"/freshAct={(scoreResult.FreshActionId ? 1 : 0)}/freshActive={(scoreResult.FreshActiveAction ? 1 : 0)}" +
+                 $"/staleAct={(scoreResult.StaleActionId ? 1 : 0)}/staleActive={(scoreResult.StaleActiveAction ? 1 : 0)}" +
+                 $"/rawDmg={rawDamage}/exactApplied={(exactAppliedMatch ? 1 : 0)}" +
+                 $"/lethalClamp={(lethalClampMatch ? 1 : 0)}/{state.AllFields}"));
+        }
+
+        string summary = candidates.Count == 0
+            ? "none"
+            : string.Join(" ", candidates
+                .OrderByDescending(candidate => candidate.Score)
+                .Take(maxUnits)
+                .Select(candidate => candidate.Text));
+        Line(
+            $"[IMMEDIATE-ACTION-CANDIDATES kind={kind} event={eventIndex} target=0x{target.Ptr:X}/id=0x{target.CharId:X2} " +
+            $"prevHp={previousHp} currentHp={currentHp} appliedHpLoss={appliedHpLoss} " +
+            $"rawTargetForecastDamage={rawTargetForecastDamage} hpClamp={(hpClamp ? 1 : 0)} now={nowTick}] {summary}");
+    }
+
     private void LogPendingActionCandidatesIfEnabled(string kind, long eventIndex, UnitSnapshot target, long nowTick)
     {
         if (!_settings.LogPendingActionCandidatesOnEvent) return;
@@ -736,50 +1362,225 @@ public class Mod : ModBase
         Line($"[PENDING-ACTION-CANDIDATES kind={kind} event={eventIndex} target=0x{target.Ptr:X}/id=0x{target.CharId:X2} now={nowTick}] {summary}");
     }
 
-    private bool LogActionStateChangeIfEnabled(nint unitPtr, int expectedId, long nowTick, bool touchForContext)
+    private bool TryReadActionProbeSnapshot(
+        nint unitPtr,
+        int expectedId,
+        out UnitSnapshot unit,
+        out ActionProbeState state)
     {
-        if (!_settings.LogActionStateChanges) return false;
+        unit = null!;
+        state = null!;
 
         const int actionProbeRawSize = 0x200;
         byte[] raw = new byte[actionProbeRawSize];
         if (!CurrentProcessMemory.TryRead(unitPtr, raw, out _)) return false;
-        if (!TryCreateUnitSnapshot(unitPtr, raw, out var unit, out _)) return false;
+        if (!TryCreateUnitSnapshot(unitPtr, raw, out unit, out _)) return false;
         if (unit.CharId != expectedId) return false;
 
-        int pendingFlag = unit.ReadByte(0x61);
-        int pendingTimer = unit.ReadByte(0x18D);
-        int actionId = unit.ReadUInt16(0x1A2);
-        int forecastDamage = unit.ReadUInt16(0x1C4);
-        int forecastCharge = unit.ReadByte(0x1D8);
-        int forecastFlag = unit.ReadByte(0x1E5);
-        int pendingFlag2 = unit.ReadByte(0x1EF);
-        int activeMarker = unit.ReadByte(0x1B8);
-        int activeMarker2 = unit.ReadByte(0x1BA);
-        int phaseMarker = unit.ReadByte(0x1BB);
+        state = ActionProbeState.From(unit);
+        return true;
+    }
 
-        string stateKey = string.Join('/',
-            pendingFlag,
-            pendingTimer,
-            actionId,
-            forecastDamage,
-            forecastCharge,
-            forecastFlag,
-            pendingFlag2,
-            activeMarker,
-            activeMarker2,
-            phaseMarker);
+    private bool ObservePendingActionStateIfEnabled(UnitSnapshot unit, ActionProbeState state, long nowTick, bool touchForContext)
+    {
+        if (!_settings.TrackPendingActions) return false;
+
+        var lines = _pendingActionTracker.ObserveUnit(unit, state, _settings, nowTick, touchForContext);
+        foreach (string line in lines)
+            Line(line);
+        return lines.Count > 0;
+    }
+
+    private (bool Logged, PendingActionMatch? Match) MatchPendingActionIfEnabled(
+        string kind,
+        long eventIndex,
+        UnitSnapshot target,
+        ActionProbeState? targetState,
+        int observedHpLoss,
+        long nowTick)
+    {
+        if (!_settings.TrackPendingActions) return (false, null);
+
+        var result = _pendingActionTracker.MatchHpEvent(kind, eventIndex, target, targetState, observedHpLoss, _settings, nowTick);
+        foreach (string line in result.Lines)
+            Line(line);
+        return (result.Lines.Count > 0, result.Match);
+    }
+
+    private static ActionSignal BuildPendingActionSignal(PendingActionMatch match)
+    {
+        int targetCacheDamage = match.CurrentTargetCacheDamage > 0
+            ? match.CurrentTargetCacheDamage
+            : match.RecentTargetCacheDamage;
+        var variables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["signal"] = match.ActionId,
+            ["id"] = match.ActionId,
+            ["actionId"] = match.ActionId,
+            ["batch"] = ClampFormulaInt(match.BatchId),
+            ["batchEvent"] = match.BatchEvent,
+            ["batchMaxEvents"] = match.MaxBatchEvents,
+            ["batchAgeMs"] = match.BatchAgeMs,
+            ["score"] = match.Score,
+            ["observedHpLoss"] = match.ObservedHpLoss,
+            ["targetCacheDamage"] = targetCacheDamage,
+            ["currentTargetCacheDamage"] = match.CurrentTargetCacheDamage,
+            ["recentTargetCacheDamage"] = match.RecentTargetCacheDamage,
+            ["damageCacheMatch"] = match.CurrentDamageCacheMatches || match.RecentDamageCacheMatches ? 1 : 0,
+            ["currentDamageCacheMatch"] = match.CurrentDamageCacheMatches ? 1 : 0,
+            ["recentDamageCacheMatch"] = match.RecentDamageCacheMatches ? 1 : 0,
+            ["exactDamageCacheMatch"] = match.CurrentDamageCacheExactMatches || match.RecentDamageCacheExactMatches ? 1 : 0,
+            ["currentExactDamageCacheMatch"] = match.CurrentDamageCacheExactMatches ? 1 : 0,
+            ["recentExactDamageCacheMatch"] = match.RecentDamageCacheExactMatches ? 1 : 0,
+            ["lethalClampDamageCacheMatch"] = match.CurrentDamageCacheLethalClampMatches || match.RecentDamageCacheLethalClampMatches ? 1 : 0,
+            ["currentLethalClampDamageCacheMatch"] = match.CurrentDamageCacheLethalClampMatches ? 1 : 0,
+            ["recentLethalClampDamageCacheMatch"] = match.RecentDamageCacheLethalClampMatches ? 1 : 0,
+            ["hasCurrentTargetMetadata"] = match.HasCurrentTargetMetadata ? 1 : 0,
+            ["confidenceDamageCache"] = match.Confidence.StartsWith("damage-cache", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+            ["confidenceRecentDamageCache"] = match.Confidence.StartsWith("recent-damage-cache", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+            ["confidenceLethalClampDamageCache"] = match.Confidence.Contains("lethal-clamp", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+            ["confidenceRecentResolve"] = match.Confidence.Equals("recent-resolve", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+        };
+        return new ActionSignal($"pending-action-{match.ActionId}", match.Source, variables);
+    }
+
+    private static bool ShouldUsePendingActionMatch(PendingActionMatch? match)
+        => match is not null && match.HasDamageCacheMatch;
+
+    private static int ClampFormulaInt(long value)
+    {
+        if (value > int.MaxValue) return int.MaxValue;
+        if (value < int.MinValue) return int.MinValue;
+        return (int)value;
+    }
+
+    private bool RefreshPendingActionTrackerForEvent(long nowTick)
+    {
+        if (!_settings.TrackPendingActions) return false;
+
+        bool logged = false;
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p).ToArray())
+        {
+            if (!_unitObservations.TryGetValue(ptr, out var observation)) continue;
+            if (!TryReadActionProbeSnapshot(ptr, observation.Unit.CharId, out var unit, out var state)) continue;
+            TrackActionProbeAges(ptr, state, nowTick);
+
+            var lines = _pendingActionTracker.ObserveUnit(unit, state, _settings, nowTick, touchForContext: false);
+            foreach (string line in lines)
+                Line(line);
+            logged |= lines.Count > 0;
+        }
+
+        return logged;
+    }
+
+    private bool LogActionStateChangeIfEnabled(UnitSnapshot unit, ActionProbeState state, long nowTick, bool touchForContext)
+    {
+        if (!_settings.LogActionStateChanges) return false;
+
+        string stateKey = state.Key;
+        nint unitPtr = unit.Ptr;
 
         if (_lastActionProbeState.TryGetValue(unitPtr, out string? previous) && previous == stateKey)
             return false;
 
         _lastActionProbeState[unitPtr] = stateKey;
+        _lastActionProbeChangeTick[unitPtr] = nowTick;
         Line(
             $"[ACTION-STATE ptr=0x{unitPtr:X} id=0x{unit.CharId:X2} now={nowTick} touch={(touchForContext ? 1 : 0)}] " +
-            $"hp={unit.Hp} ct={unit.Ct} s61={pendingFlag} t18D={pendingTimer} act={actionId} " +
-            $"dmg1C4={forecastDamage} chg1D8={forecastCharge} f1E5={forecastFlag} f1EF={pendingFlag2} " +
-            $"b8={activeMarker} ba={activeMarker2} bb={phaseMarker}");
+            $"hp={unit.Hp} ct={unit.Ct} s61={state.PendingFlag} t18D={state.PendingTimer} act={state.ActionId} " +
+            $"dmg1C4={state.ForecastDamage} chg1D8={state.ForecastCharge} f1E5={state.ForecastFlag} f1EF={state.PendingFlag2} " +
+            $"b8={state.ActiveMarker} ba={state.ActiveMarker2} bb={state.PhaseMarker}");
         return true;
     }
+
+    private bool LogActionBoundaryProbeIfEnabled(UnitSnapshot target, byte[]? previousRaw, long nowTick, bool touchForContext)
+    {
+        if (!_settings.LogActionBoundaryProbe) return false;
+        if (previousRaw is null) return false;
+
+        int maxLogs = Math.Clamp(_settings.ActionBoundaryProbeMaxLogs, 0, 10_000);
+        if (_actionBoundaryProbeLogs >= maxLogs) return false;
+
+        int diffMax = Math.Clamp(_settings.ActionBoundaryProbeDiffMax, 0, 128);
+        var diffs = ActionBoundaryDiffs(previousRaw, target.Raw, diffMax);
+        if (diffs.Count == 0) return false;
+
+        long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+        int hookAgeMs = _lastHookObservationTick > 0 ? ElapsedMs(nowTick, _lastHookObservationTick) : -1;
+        _actionBoundaryProbeLogs++;
+        Line(
+            $"[ACTION-BOUNDARY event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2} now={nowTick} " +
+            $"touch={(touchForContext ? 1 : 0)} hookAgeMs={hookAgeMs} reason={ActionBoundaryReasons(previousRaw, target.Raw)} " +
+            $"prev={ActionBoundaryFields(previousRaw)} curr={ActionBoundaryFields(target.Raw)}] diff={string.Join(" ", diffs)}");
+        LogHookRegisterProbeEventIfEnabled("actionboundary", eventIndex, target, nowTick);
+        return true;
+    }
+
+    private static List<string> ActionBoundaryDiffs(byte[] previousRaw, byte[] currentRaw, int max)
+    {
+        var diffs = new List<string>();
+        int limit = Math.Min(previousRaw.Length, currentRaw.Length);
+        if (limit == 0 || max <= 0) return diffs;
+
+        foreach (int offset in ActionBoundaryOffsets)
+        {
+            if (offset < 0 || offset >= limit) continue;
+            if (previousRaw[offset] == currentRaw[offset]) continue;
+            diffs.Add($"+0x{offset:X2}:{previousRaw[offset]:X2}->{currentRaw[offset]:X2}");
+            if (diffs.Count >= max) break;
+        }
+        return diffs;
+    }
+
+    private static string ActionBoundaryReasons(byte[] previousRaw, byte[] currentRaw)
+    {
+        var reasons = new List<string>();
+        int prevHp = ReadUInt16Raw(previousRaw, 0x30);
+        int currHp = ReadUInt16Raw(currentRaw, 0x30);
+        int prevDamage = ReadUInt16Raw(previousRaw, 0x1C4);
+        int currDamage = ReadUInt16Raw(currentRaw, 0x1C4);
+        int prevAction = ReadUInt16Raw(previousRaw, 0x1A2);
+        int currAction = ReadUInt16Raw(currentRaw, 0x1A2);
+
+        if (prevHp != currHp) reasons.Add(currHp == 0 && prevHp > 0 ? "hp-zero" : "hp-change");
+        if (prevDamage != currDamage) reasons.Add("forecast-damage-change");
+        if (prevAction != currAction) reasons.Add("action-id-change");
+        if (ReadByteRaw(previousRaw, 0x1D8) != ReadByteRaw(currentRaw, 0x1D8)) reasons.Add("forecast-charge-change");
+        if (ReadByteRaw(previousRaw, 0x1E5) != ReadByteRaw(currentRaw, 0x1E5)) reasons.Add("forecast-flag-change");
+        if (ReadByteRaw(previousRaw, 0x1BB) != ReadByteRaw(currentRaw, 0x1BB)) reasons.Add("phase-change");
+        if (ReadByteRaw(previousRaw, 0x61) != ReadByteRaw(currentRaw, 0x61) ||
+            ReadByteRaw(previousRaw, 0x1EF) != ReadByteRaw(currentRaw, 0x1EF))
+            reasons.Add("status-pending-change");
+        if (DeathStateChanged(previousRaw, currentRaw)) reasons.Add("death-state-change");
+
+        return reasons.Count == 0 ? "interesting-offset-change" : string.Join(",", reasons);
+    }
+
+    private static bool DeathStateChanged(byte[] previousRaw, byte[] currentRaw)
+    {
+        int[] offsets = [0x61, 0x63, 0x18C, 0x1BB, 0x1DB, 0x1EF, 0x1F1, 0x1F5];
+        foreach (int offset in offsets)
+        {
+            if (ReadByteRaw(previousRaw, offset) != ReadByteRaw(currentRaw, offset))
+                return true;
+        }
+        return false;
+    }
+
+    private static string ActionBoundaryFields(byte[] raw)
+        => $"hp={ReadUInt16Raw(raw, 0x30)}/ct={ReadByteRaw(raw, 0x41)}" +
+           $"/s61={ReadByteRaw(raw, 0x61)}/t18D={ReadByteRaw(raw, 0x18D)}" +
+           $"/act={ReadUInt16Raw(raw, 0x1A2)}/dmg1C4={ReadUInt16Raw(raw, 0x1C4)}" +
+           $"/chg1D8={ReadByteRaw(raw, 0x1D8)}/f1E5={ReadByteRaw(raw, 0x1E5)}" +
+           $"/f1EF={ReadByteRaw(raw, 0x1EF)}/b8={ReadByteRaw(raw, 0x1B8)}" +
+           $"/ba={ReadByteRaw(raw, 0x1BA)}/bb={ReadByteRaw(raw, 0x1BB)}";
+
+    private static int ReadByteRaw(byte[] raw, int offset)
+        => offset >= 0 && offset < raw.Length ? raw[offset] : 0;
+
+    private static int ReadUInt16Raw(byte[] raw, int offset)
+        => ReadByteRaw(raw, offset) | (ReadByteRaw(raw, offset + 1) << 8);
 
     private int MaybeRewriteMpEvent(MpEvent mpEvent)
     {
@@ -845,7 +1646,7 @@ public class Mod : ModBase
         Flush();
     }
 
-    private void LogHookRegisterProbeEventIfEnabled(string kind, long eventIndex, UnitSnapshot target)
+    private void LogHookRegisterProbeEventIfEnabled(string kind, long eventIndex, UnitSnapshot target, long nowTick)
     {
         if (!ShouldLogHookRegisterProbeEvent(kind))
             return;
@@ -855,10 +1656,11 @@ public class Mod : ModBase
 
         int hookCount = Marshal.ReadInt32(_buf, B_COUNT);
         nint hookPtr = Marshal.ReadIntPtr(_buf, B_PTR);
+        int hookAgeMs = _lastHookObservationTick > 0 ? ElapsedMs(nowTick, _lastHookObservationTick) : -1;
         _hookRegisterProbeEventLogs++;
         Line(
             $"[HOOK-REGS-EVENT kind={kind} event={eventIndex} hookCount={hookCount} " +
-            $"hookPtr=0x{hookPtr:X} targetPtr=0x{target.Ptr:X} id=0x{target.CharId:X2}] " +
+            $"hookAgeMs={hookAgeMs} hookPtr=0x{hookPtr:X} targetPtr=0x{target.Ptr:X} id=0x{target.CharId:X2}] " +
             FormatHookRegisterSnapshot(target));
         LogHookPointerScanEventIfEnabled(kind, eventIndex, target);
         Flush();
@@ -870,19 +1672,54 @@ public class Mod : ModBase
             "damage" or "healing" => _settings.HookRegisterProbeOnHpEvent,
             "mploss" or "mpgain" => _settings.HookRegisterProbeOnMpEvent,
             "ctdrop" => _settings.HookRegisterProbeOnCtDrop,
+            "actionboundary" => _settings.HookRegisterProbeOnActionBoundary,
             _ => false,
         };
 
     private string ClassifyRegisterValue(nint value, UnitSnapshot touched)
+        => ClassifyRegisterValue(value, touched, "touched");
+
+    private string ClassifyRegisterValue(nint value, UnitSnapshot? reference, string referenceName)
     {
         if (value == 0) return "zero";
-        if (value == touched.Ptr) return "unit:touched";
+        if (reference is not null && value == reference.Ptr) return $"unit:{referenceName}";
         if (_unitObservations.TryGetValue(value, out var observation))
             return $"unit:id=0x{observation.Unit.CharId:X2}:team={observation.Unit.Team}:hp={observation.Unit.Hp}:ct={observation.Unit.Ct}";
+        string? moduleAddress = ClassifyModuleAddress(value);
+        if (moduleAddress is not null)
+            return moduleAddress;
         if (ReadableMemoryRange.IsReadable(value, IntPtr.Size))
             return "readable";
         return "unreadable";
     }
+
+    private string? ClassifyModuleAddress(nint value)
+    {
+        if (_moduleBase == 0 || value == 0)
+            return null;
+
+        long rva = value.ToInt64() - _moduleBase.ToInt64();
+        if (rva < 0 || (_moduleSize > 0 && rva >= _moduleSize))
+            return null;
+
+        var nearest = CodeLandmarks
+            .Select(landmark => new { landmark.Name, Distance = rva - landmark.Rva })
+            .OrderBy(candidate => Math.Abs(candidate.Distance))
+            .FirstOrDefault();
+        if (nearest is null)
+            return $"module+0x{rva:X}";
+
+        if (nearest.Distance == 0)
+            return $"module+0x{rva:X}:{nearest.Name}";
+
+        if (Math.Abs(nearest.Distance) <= 0x20)
+            return $"module+0x{rva:X}:near-{nearest.Name}{FormatSignedHex(nearest.Distance)}";
+
+        return $"module+0x{rva:X}";
+    }
+
+    private static string FormatSignedHex(long value)
+        => value >= 0 ? $"+0x{value:X}" : $"-0x{-value:X}";
 
     private string FormatHookRegisterSnapshot(UnitSnapshot reference)
     {
@@ -1147,7 +1984,9 @@ public class Mod : ModBase
     {
         _running = false;
         _hook = null;
+        _landmarkHooks.Clear();
         if (_buf != 0) { try { Marshal.FreeHGlobal(_buf); } catch { } _buf = 0; }
+        if (_landmarkBuf != 0) { try { Marshal.FreeHGlobal(_landmarkBuf); } catch { } _landmarkBuf = 0; }
     }
 
     #region For Exports, Serialization etc.
@@ -1837,6 +2676,8 @@ internal sealed class BattleFormulaEngine
         context.Set("a.sourceCt", IsCtAttackerSource(e.AttackerSource) ? 1 : 0);
         context.Set("attacker.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("a.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
         AddActionVariables(context, "action", e.Action, e);
         AddActionVariables(context, "act", e.Action, e);
 
@@ -1909,6 +2750,8 @@ internal sealed class BattleFormulaEngine
         context.Set("a.sourceCt", IsCtAttackerSource(e.AttackerSource) ? 1 : 0);
         context.Set("attacker.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+        context.Set("attacker.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("a.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
         AddMpActionVariables(context, "action", e.Action, e);
         AddMpActionVariables(context, "act", e.Action, e);
 
@@ -1976,11 +2819,40 @@ internal sealed class BattleFormulaEngine
     private static bool IsCtAttackerSource(string source)
         => source.StartsWith("ct-", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsPendingActionSource(string source)
+        => source.StartsWith("pending-", StringComparison.OrdinalIgnoreCase);
+
     private void AddActionVariables(FormulaContext context, string prefix, ActionSignal? action, DamageEvent e)
     {
         context.Set($"{prefix}.present", action is null ? 0 : 1);
         context.Set($"{prefix}.sourceVanillaDamage", action?.Source.Equals("vanilla-damage", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
+        context.Set($"{prefix}.sourcePending", action is not null && IsPendingActionSource(action.Source) ? 1 : 0);
         context.Set($"{prefix}.signal", action?.Get("signal") ?? 0);
+        context.Set($"{prefix}.id", action?.Get("id") ?? 0);
+        context.Set($"{prefix}.actionId", action?.Get("actionId") ?? 0);
+        context.Set($"{prefix}.batch", action?.Get("batch") ?? 0);
+        context.Set($"{prefix}.batchEvent", action?.Get("batchEvent") ?? 0);
+        context.Set($"{prefix}.batchMaxEvents", action?.Get("batchMaxEvents") ?? 0);
+        context.Set($"{prefix}.batchAgeMs", action?.Get("batchAgeMs") ?? 0);
+        context.Set($"{prefix}.score", action?.Get("score") ?? 0);
+        context.Set($"{prefix}.observedHpLoss", action?.Get("observedHpLoss") ?? 0);
+        context.Set($"{prefix}.targetCacheDamage", action?.Get("targetCacheDamage") ?? 0);
+        context.Set($"{prefix}.currentTargetCacheDamage", action?.Get("currentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.recentTargetCacheDamage", action?.Get("recentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.damageCacheMatch", action?.Get("damageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentDamageCacheMatch", action?.Get("currentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentDamageCacheMatch", action?.Get("recentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.exactDamageCacheMatch", action?.Get("exactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentExactDamageCacheMatch", action?.Get("currentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentExactDamageCacheMatch", action?.Get("recentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.lethalClampDamageCacheMatch", action?.Get("lethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentLethalClampDamageCacheMatch", action?.Get("currentLethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentLethalClampDamageCacheMatch", action?.Get("recentLethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.hasCurrentTargetMetadata", action?.Get("hasCurrentTargetMetadata") ?? 0);
+        context.Set($"{prefix}.confidenceDamageCache", action?.Get("confidenceDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceRecentDamageCache", action?.Get("confidenceRecentDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceLethalClampDamageCache", action?.Get("confidenceLethalClampDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceRecentResolve", action?.Get("confidenceRecentResolve") ?? 0);
         context.Set($"{prefix}.vanillaDamage", e.VanillaDamage);
         context.Set($"{prefix}.vanillaDamageAbs", e.VanillaDamageAbs);
         context.Set($"{prefix}.vanillaHealing", e.VanillaHealing);
@@ -2020,7 +2892,33 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.present", action is null ? 0 : 1);
         context.Set($"{prefix}.sourceVanillaDamage", 0);
         context.Set($"{prefix}.sourceMpChange", action?.Source.Equals("mp-change", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
+        context.Set($"{prefix}.sourcePending", action is not null && IsPendingActionSource(action.Source) ? 1 : 0);
         context.Set($"{prefix}.signal", action?.Get("signal") ?? 0);
+        context.Set($"{prefix}.id", action?.Get("id") ?? 0);
+        context.Set($"{prefix}.actionId", action?.Get("actionId") ?? 0);
+        context.Set($"{prefix}.batch", action?.Get("batch") ?? 0);
+        context.Set($"{prefix}.batchEvent", action?.Get("batchEvent") ?? 0);
+        context.Set($"{prefix}.batchMaxEvents", action?.Get("batchMaxEvents") ?? 0);
+        context.Set($"{prefix}.batchAgeMs", action?.Get("batchAgeMs") ?? 0);
+        context.Set($"{prefix}.score", action?.Get("score") ?? 0);
+        context.Set($"{prefix}.observedHpLoss", action?.Get("observedHpLoss") ?? 0);
+        context.Set($"{prefix}.targetCacheDamage", action?.Get("targetCacheDamage") ?? 0);
+        context.Set($"{prefix}.currentTargetCacheDamage", action?.Get("currentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.recentTargetCacheDamage", action?.Get("recentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.damageCacheMatch", action?.Get("damageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentDamageCacheMatch", action?.Get("currentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentDamageCacheMatch", action?.Get("recentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.exactDamageCacheMatch", action?.Get("exactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentExactDamageCacheMatch", action?.Get("currentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentExactDamageCacheMatch", action?.Get("recentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.lethalClampDamageCacheMatch", action?.Get("lethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentLethalClampDamageCacheMatch", action?.Get("currentLethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentLethalClampDamageCacheMatch", action?.Get("recentLethalClampDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.hasCurrentTargetMetadata", action?.Get("hasCurrentTargetMetadata") ?? 0);
+        context.Set($"{prefix}.confidenceDamageCache", action?.Get("confidenceDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceRecentDamageCache", action?.Get("confidenceRecentDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceLethalClampDamageCache", action?.Get("confidenceLethalClampDamageCache") ?? 0);
+        context.Set($"{prefix}.confidenceRecentResolve", action?.Get("confidenceRecentResolve") ?? 0);
         context.Set($"{prefix}.vanillaDamage", 0);
         context.Set($"{prefix}.vanillaDamageAbs", 0);
         context.Set($"{prefix}.vanillaHealing", 0);
@@ -3170,12 +4068,64 @@ internal sealed class FormulaDerivedVariable
     }
 }
 
+internal sealed class LandmarkProbe
+{
+    private static readonly string[] AllowedBaseRegisters =
+    [
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+        "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+    ];
+
+    public string Name { get; set; } = "";
+    public bool Enabled { get; set; } = false;
+    public int Rva { get; set; } = 0;
+    public string BaseRegister { get; set; } = "rdi";
+    public string Access { get; set; } = "";
+    public string ExpectedBytes { get; set; } = "";
+    public List<int> InterestingOffsets { get; set; } = new();
+
+    public string TraceName { get; private set; } = "landmark";
+
+    public void Normalize()
+    {
+        TraceName = FormulaExpression.NormalizeIdentifierPart(string.IsNullOrWhiteSpace(Name) ? $"rva_{Rva:X}" : Name);
+        BaseRegister = string.IsNullOrWhiteSpace(BaseRegister) ? "rdi" : BaseRegister.Trim().ToLowerInvariant();
+        Access = string.IsNullOrWhiteSpace(Access) ? "observe" : Access.Trim();
+        ExpectedBytes = ExpectedBytes?.Trim() ?? "";
+        InterestingOffsets ??= new List<int>();
+    }
+
+    public bool TryValidate(out string error)
+    {
+        error = "";
+        if (Rva <= 0)
+        {
+            error = "Rva must be positive.";
+            return false;
+        }
+
+        if (!AllowedBaseRegisters.Any(name => string.Equals(name, BaseRegister, StringComparison.OrdinalIgnoreCase)))
+        {
+            error = $"BaseRegister '{BaseRegister}' is not one of {string.Join(",", AllowedBaseRegisters)}.";
+            return false;
+        }
+
+        if (InterestingOffsets.Any(offset => offset < 0 || offset >= 0x200))
+        {
+            error = "InterestingOffsets must stay within 0x000..0x1FF.";
+            return false;
+        }
+
+        return true;
+    }
+}
+
 // One write applied to a unit's struct when our formula kills it (HP forced to 0), used to set the
 // death/status state the engine would normally set itself. Read-modify-write so a single status BIT
 // can be set without clobbering the rest of the field. Configured in JSON once the offset is mapped.
 internal sealed class DeathStateWrite
 {
-    private const int CopiedRawSize = 0x180;
+    private const int CopiedRawSize = 0x200;
 
     public string Name { get; set; } = "";
     public int Offset { get; set; } = -1;
@@ -3347,11 +4297,16 @@ internal sealed class RuntimeSettings
     public bool HookRegisterProbeOnHpEvent { get; set; } = false;
     public bool HookRegisterProbeOnMpEvent { get; set; } = false;
     public bool HookRegisterProbeOnCtDrop { get; set; } = false;
+    public bool HookRegisterProbeOnActionBoundary { get; set; } = false;
     public int HookRegisterProbeEventMaxLogs { get; set; } = 64;
     public int HookRegisterProbeStackSlots { get; set; } = 0;
     public int HookRegisterProbePointerScanBytes { get; set; } = 0;
     public int HookRegisterProbePointerMaxLogs { get; set; } = 64;
     public int HookRegisterProbePointerMaxPointersPerRoot { get; set; } = 8;
+    public bool LandmarkProbeEnabled { get; set; } = false;
+    public int LandmarkProbeMaxLogs { get; set; } = 160;
+    public int LandmarkProbeStackSlots { get; set; } = 16;
+    public List<LandmarkProbe> LandmarkProbes { get; set; } = new();
 
     // Actor probe: on each HP damage event, snapshot a small byte window of EVERY registered unit so we can
     // find which unit just acted (the attacker) by its turn-state/CT signature. Window is JSON-tunable (no
@@ -3359,10 +4314,23 @@ internal sealed class RuntimeSettings
     public bool ActorProbeOnEvent { get; set; } = false;
     public int ActorProbeStart { get; set; } = 0x40;
     public int ActorProbeEnd { get; set; } = 0x44;
+    public bool LogHpEventProbe { get; set; } = false;
+    public int HpEventProbeMaxLogs { get; set; } = 32;
+    public int HpEventProbeDiffMax { get; set; } = 64;
+    public bool HpEventProbeDumpRaw { get; set; } = false;
+    public bool LogActionBoundaryProbe { get; set; } = false;
+    public int ActionBoundaryProbeMaxLogs { get; set; } = 96;
+    public int ActionBoundaryProbeDiffMax { get; set; } = 32;
     public bool LogPendingActionCandidatesOnEvent { get; set; } = false;
     public bool LogAllPendingActionCandidates { get; set; } = false;
     public int PendingActionCandidateMaxUnits { get; set; } = 16;
+    public bool LogImmediateActionCandidatesOnEvent { get; set; } = false;
+    public int ImmediateActionCandidateMaxUnits { get; set; } = 16;
     public bool LogActionStateChanges { get; set; } = false;
+    public bool TrackPendingActions { get; set; } = false;
+    public int PendingActionResolveWindowMs { get; set; } = 5000;
+    public int PendingActionMaxBatchEvents { get; set; } = 16;
+    public int PendingActionStaleMs { get; set; } = 30000;
 
     // Death-causing write: once vanilla damage is neutered, the engine no longer kills, so when OUR
     // formula zeroes a unit's HP we must set the death state ourselves. Off until the offset is mapped;
@@ -3432,9 +4400,12 @@ internal sealed class RuntimeSettings
         MemoryTableProbes ??= new List<MemoryTableProbe>();
         foreach (var probe in MemoryTableProbes)
             probe.Normalize();
+        LandmarkProbes ??= new List<LandmarkProbe>();
+        foreach (var probe in LandmarkProbes)
+            probe.Normalize();
         DeathStateWrites ??= new List<DeathStateWrite>();
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

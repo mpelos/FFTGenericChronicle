@@ -18,21 +18,6 @@ does not prove runtime-decrypted/Denuvo regions and does not replace live tracin
 | `min_brave_faith` | 1 | `0x10885C7D` | `0xD47FA7D` | `.edata` | FOUND | short/unstable public CE pattern; useful only as a warning signal |
 | `min_spd_jmp_mov` | 1 | `0x36027F` | `0x35F67F` | `.xcode` | PASS | stable movement stat anchor; confirms +0x42 Move |
 
-## FFT_classic.exe
-
-- Path: `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_classic.exe`
-- Size: 371524864 bytes
-
-| Pattern | Matches | RVAs | Raw Offsets | Sections | Status | Note |
-| --- | ---: | --- | --- | --- | --- | --- |
-| `battle_base_ptr` | 3 | `0x12A07C, 0x14CBDD, 0x1D0CAC` | `0x12947C, 0x14BFDD, 0x1D00AC` | `.bss` | FOUND | stable unit-struct touchpoint; rcx is a battle unit and +0x30 is HP |
-| `damage_multiplier` | 0 | `-` | `-` | `-` | PASS_ABSENT | volatile damage application site; expected to be absent from static file on current build |
-| `damage_mult_2` | 1 | `0x1991C1` | `0x1985C1` | `.bss` | FOUND | stable helper anchor near damage math evidence |
-| `jp_multiplier` | 0 | `-` | `-` | `-` | NOTFOUND | stable JP math anchor |
-| `xp_multiplier` | 0 | `-` | `-` | `-` | NOTFOUND | stable XP math anchor |
-| `min_brave_faith` | 1 | `0xDA1E0D6` | `0xA7B48D6` | `.srdata` | FOUND | short/unstable public CE pattern; useful only as a warning signal |
-| `min_spd_jmp_mov` | 2 | `0x1EAC97, 0x2287EA` | `0x1EA097, 0x227BEA` | `.bss` | FOUND | stable movement stat anchor; confirms +0x42 Move |
-
 ## Read
 
 - On `FFT_enhanced.exe`, the low-.text anchors should map to the live RVAs already

@@ -105,9 +105,54 @@ PROFILES: tuple[ProfileSpec, ...] = (
         "action-context-probe",
         REPO / "work/battle-runtime-settings.action-context-probe.json",
         "observe-only charged-action RE capture",
-        "Correlate CT-drop scheduling, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.",
+        "Correlate CT-drop scheduling, unit pending-state transitions, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.",
         "no HP/MP rewrites",
-        ("hook_register_probe_observe_only", "actor_probe_observe_only"),
+        ("hook_register_probe_observe_only", "actor_probe_observe_only", "pending_action_tracker_observe_only"),
+    ),
+    ProfileSpec(
+        "ko-pre-damage-probe",
+        REPO / "work/battle-runtime-settings.ko-pre-damage-probe.json",
+        "observe-only KO/pre-damage RE capture",
+        "Compare known nonlethal HP events with a vanilla lethal KO in one run, logging HP-event raw diffs, death follow-up, action context, hook registers, stack slots, and pointer roots.",
+        "no HP/MP rewrites",
+        (
+            "observe_only_death_capture",
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+        ),
+    ),
+    ProfileSpec(
+        "immediate-action-ko-boundary-probe",
+        REPO / "work/battle-runtime-settings.immediate-action-ko-boundary-probe.json",
+        "observe-only immediate-action/KO-boundary RE capture",
+        "Repeat the known Cross Slash into Ramza Rush KO path with raw-vs-applied HP event fields and ranked immediate-action candidates.",
+        "no HP/MP rewrites",
+        (
+            "observe_only_death_capture",
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+            "immediate_action_probe_observe_only",
+        ),
+    ),
+    ProfileSpec(
+        "ko-landmark-probe",
+        REPO / "work/battle-runtime-settings.ko-landmark-probe.json",
+        "observe-only KO static-landmark RE capture",
+        "Load the low-HP Ninja autosave and validate targeted RVA landmarks around target-cache and KO/death-state candidates.",
+        "no HP/MP rewrites",
+        (
+            "observe_only_death_capture",
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+            "immediate_action_probe_observe_only",
+            "landmark_probe_observe_only",
+        ),
     ),
     ProfileSpec(
         "engine-death-test",
@@ -301,6 +346,82 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("CauseDeathOnZeroHp must be false")
         if int(settings.get("MinHpFloor", 0)) != 0:
             errors.append("MinHpFloor must remain 0 in observe-only hook register probe")
+    elif invariant == "pending_action_tracker_observe_only":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "TrackPendingActions"):
+            errors.append("TrackPendingActions must be true")
+        if not truthy(settings, "LogActionStateChanges"):
+            errors.append("LogActionStateChanges must be true")
+        if int(settings.get("PendingActionResolveWindowMs", 0)) <= 0:
+            errors.append("PendingActionResolveWindowMs must be positive")
+        if int(settings.get("PendingActionMaxBatchEvents", 0)) <= 0:
+            errors.append("PendingActionMaxBatchEvents must be positive")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only pending action probe")
+    elif invariant == "hp_event_probe_observe_only":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "LogHpEventProbe"):
+            errors.append("LogHpEventProbe must be true")
+        if int(settings.get("HpEventProbeMaxLogs", 0)) <= 0:
+            errors.append("HpEventProbeMaxLogs must be positive")
+        if int(settings.get("HpEventProbeDiffMax", 0)) <= 0:
+            errors.append("HpEventProbeDiffMax must be positive")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only HP event probe")
+    elif invariant == "immediate_action_probe_observe_only":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "LogImmediateActionCandidatesOnEvent"):
+            errors.append("LogImmediateActionCandidatesOnEvent must be true")
+        if not truthy(settings, "LogActionBoundaryProbe"):
+            errors.append("LogActionBoundaryProbe must be true")
+        if int(settings.get("ImmediateActionCandidateMaxUnits", 0)) <= 0:
+            errors.append("ImmediateActionCandidateMaxUnits must be positive")
+        if int(settings.get("ActionBoundaryProbeMaxLogs", 0)) <= 0:
+            errors.append("ActionBoundaryProbeMaxLogs must be positive")
+        if not truthy(settings, "LogActionStateChanges"):
+            errors.append("LogActionStateChanges must be true for meaningful stateAgeMs")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only immediate action probe")
+    elif invariant == "landmark_probe_observe_only":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "LandmarkProbeEnabled"):
+            errors.append("LandmarkProbeEnabled must be true")
+        if int(settings.get("LandmarkProbeMaxLogs", 0)) <= 0:
+            errors.append("LandmarkProbeMaxLogs must be positive")
+        if int(settings.get("LandmarkProbeStackSlots", 0)) <= 0:
+            errors.append("LandmarkProbeStackSlots must be positive")
+        probes = settings.get("LandmarkProbes", [])
+        if not isinstance(probes, list) or not probes:
+            errors.append("LandmarkProbes must not be empty")
+        else:
+            enabled = [probe for probe in probes if isinstance(probe, dict) and probe.get("Enabled")]
+            if not enabled:
+                errors.append("at least one LandmarkProbe must be enabled")
+            for idx, probe in enumerate(enabled):
+                if int(probe.get("Rva", 0)) <= 0:
+                    errors.append(f"LandmarkProbes[{idx}].Rva must be positive")
+                if not str(probe.get("BaseRegister", "")).strip():
+                    errors.append(f"LandmarkProbes[{idx}].BaseRegister must be set")
+                if not str(probe.get("ExpectedBytes", "")).strip():
+                    errors.append(f"LandmarkProbes[{idx}].ExpectedBytes must be set")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only landmark probe")
     elif invariant == "engine_owned_death":
         if not truthy(settings, "RewriteObservedDamage"):
             errors.append("RewriteObservedDamage must be true")

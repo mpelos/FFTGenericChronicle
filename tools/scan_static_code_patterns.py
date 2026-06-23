@@ -19,7 +19,14 @@ from typing import Iterable
 
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_GAME_DIR = Path(r"D:/SteamLibrary/steamapps/common/FINAL FANTASY TACTICS - The Ivalice Chronicles")
+DEFAULT_GAME_DIR_CANDIDATES = (
+    Path(r"C:/Program Files (x86)/Steam/steamapps/common/FINAL FANTASY TACTICS - The Ivalice Chronicles"),
+    Path(r"D:/SteamLibrary/steamapps/common/FINAL FANTASY TACTICS - The Ivalice Chronicles"),
+)
+DEFAULT_GAME_DIR = next(
+    (path for path in DEFAULT_GAME_DIR_CANDIDATES if (path / "FFT_enhanced.exe").exists()),
+    DEFAULT_GAME_DIR_CANDIDATES[0],
+)
 DEFAULT_OUTPUT = REPO / "work" / "static_code_pattern_scan.md"
 
 
