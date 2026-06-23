@@ -1,0 +1,20 @@
+docs/job-balance/73-thief-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_57490b0cd3d525 1-2,4-398
+  s_fce6b25a5764ca::t_85d500664e729e 3,399-400
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8f0d917eac5a42dd9747cad4e7b06395abe23a16",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
