@@ -26,6 +26,7 @@ Overall status: PASS
 | `immediate-action-ko-boundary-probe` | observe-only immediate-action/KO-boundary RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only` | PASS |
 | `ko-landmark-probe` | observe-only KO static-landmark RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only` | PASS |
 | `ko-hp-apply-probe` | observe-only KO HP-apply lifecycle RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only` | PASS |
+| `ko-preclamp-force-agrias` | live KO pre-clamp proof | mutates staged unit+0x1C4 once before vanilla HP clamp | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only`, `preclamp_damage_rewrite_proof` | PASS |
 | `engine-death-test` | live architecture proof | rewrites HP, but never below MinHpFloor | `engine_owned_death` | PASS |
 | `custom-formula-demo` | live/offline attacker+target proof | rewrites HP when CT attacker context is present, never below MinHpFloor | `custom_formula_demo` | PASS |
 | `death-test-hp-only` | legacy/refuted death-write probe | writes HP to 0 for foes only; do not use as success path | `legacy_death_hp_only`, `foes_only`, `known_ko_flag_configured` | PASS |
@@ -148,6 +149,14 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.ko-hp-apply-probe.json`
 - Intent: Hook the 0x30A51C state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.
 - Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
+- Errors: none
+
+### ko-preclamp-force-agrias
+
+- Path: `work/battle-runtime-settings.ko-preclamp-force-agrias.json`
+- Intent: Force Agrias Cross Slash staged debit before HP clamp to test engine-owned custom lethal lifecycle.
+- Live mutation: mutates staged unit+0x1C4 once before vanilla HP clamp
 - Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
 - Errors: none
 

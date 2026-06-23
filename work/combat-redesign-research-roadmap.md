@@ -846,15 +846,15 @@ Purpose:
 
 Tests:
 
-1. Nonlethal real rewrite for Cross Slash pending context.
-2. Nonlethal real rewrite for basic weapon attack with memory-only context.
-3. Nonlethal real rewrite for spell/charge.
-4. Lethal real rewrite only after Phase 1 succeeds.
+1. Pre-clamp staged-damage lethal proof for Cross Slash.
+2. Nonlethal or lethal staged-damage rewrite for basic weapon attack with memory-only context.
+3. Nonlethal or lethal staged-damage rewrite for spell/charge.
+4. Late HP rewrite only as fallback/legacy proof, not as the desired architecture.
 
 Exit criteria:
 
 - formula output changes live battle results in multiple action families.
-- KO works when custom formula kills.
+- KO works when custom formula kills through an engine-owned state path.
 
 ### Phase 6. Preview/player-facing pass
 
@@ -900,21 +900,25 @@ Good next tests answer one of these:
 
 ## Immediate Recommendation
 
-The next research focus should stay on KO/pre-damage and CT retirement, but the immediate task has
-shifted from "validate the immediate-action probe" to "use the validated boundary to find the
-pre-commit damage or engine KO path."
+The next research focus should stay on engine-safe custom lethal application and CT retirement. The
+immediate task has shifted from passive KO landmark discovery to an active proof at the staged-damage
+boundary.
 
 Recommended next concrete work:
 
-1. Target the narrowed static RVAs from P11, especially `0x30A6D3`, `0x30A912`, `0x30D43C`, and
-   `0x2D7AC0/0x2D7AEC`.
-2. Use the broader `50 -> 33 -> applied 15` transition as the framing model for preview vs
-   execution vs applied HP loss.
-3. Keep CT in diagnostic logs, but treat every CT-only resolution as a failure to investigate.
-4. Do not attempt custom lethal application until either pre-damage modification or engine KO
-   invocation has evidence.
-5. Run another live test only if offline/static work produces a specific hook or routine candidate
-   that needs validation.
+1. Run `ko-preclamp-force-agrias`.
+2. Confirm whether forcing Agrias's staged Cross Slash debit from `187` to `9999` at `0x30A66F`
+   produces a true engine-owned KO.
+3. Inspect whether displayed damage, HP clamp, KO flags, Reraise/cleanup behavior, and turn flow stay
+   coherent.
+4. Keep CT in diagnostic logs, but treat memory/pending action context as the intended source.
+5. If this passes, generalize staged-damage injection into the formula application path. If it fails,
+   prioritize finding the original staged-debit/KO-state producer or the minimal lifecycle write set.
 
-If a quick morale/demo milestone is needed, a conservative nonlethal real rewrite of Cross Slash
-can be done first. It should not be mistaken for the next major architectural unlock.
+Why this is the right next test:
+
+- The final redesign needs custom formulas to apply results through engine-safe state transitions.
+- We now know the HP apply routine consumes `unit+0x1C4` / `unit+0x1C6` before vanilla clamp.
+- A late write to `unit+0x30` is known to be architecturally suspect for lethal custom formulas.
+- The pre-clamp proof directly tests the insertion point most likely to retire the CT/late-HP
+  fallback path and become the foundation for real custom combat results.

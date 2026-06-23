@@ -171,6 +171,23 @@ PROFILES: tuple[ProfileSpec, ...] = (
         ),
     ),
     ProfileSpec(
+        "ko-preclamp-force-agrias",
+        REPO / "work/battle-runtime-settings.ko-preclamp-force-agrias.json",
+        "live KO pre-clamp proof",
+        "Force Agrias Cross Slash staged debit before HP clamp to test engine-owned custom lethal lifecycle.",
+        "mutates staged unit+0x1C4 once before vanilla HP clamp",
+        (
+            "observe_only_death_capture",
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+            "immediate_action_probe_observe_only",
+            "landmark_probe_observe_only",
+            "preclamp_damage_rewrite_proof",
+        ),
+    ),
+    ProfileSpec(
         "engine-death-test",
         REPO / "work/battle-runtime-settings.engine-death-test.json",
         "live architecture proof",
@@ -438,6 +455,31 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("CauseDeathOnZeroHp must be false")
         if int(settings.get("MinHpFloor", 0)) != 0:
             errors.append("MinHpFloor must remain 0 in observe-only landmark probe")
+    elif invariant == "preclamp_damage_rewrite_proof":
+        if not truthy(settings, "PreClampDamageRewriteEnabled"):
+            errors.append("PreClampDamageRewriteEnabled must be true")
+        if truthy(settings, "PreClampDamageRewriteLogOnly"):
+            errors.append("PreClampDamageRewriteLogOnly must be false")
+        if int(settings.get("PreClampDamageRewriteRva", 0)) != 0x30A66F:
+            errors.append("PreClampDamageRewriteRva must be 0x30A66F")
+        if str(settings.get("PreClampDamageRewriteExpectedBytes", "")).strip().upper() != "0F BF 45 06":
+            errors.append("PreClampDamageRewriteExpectedBytes must match the debit read")
+        if int(settings.get("PreClampDamageRewriteTargetCharId", -1)) != 0x1E:
+            errors.append("PreClampDamageRewriteTargetCharId must target Agrias id 0x1E")
+        if int(settings.get("PreClampDamageRewriteExpectedDebit", -1)) != 187:
+            errors.append("Expected staged debit must be Agrias Cross Slash 187")
+        if int(settings.get("PreClampDamageRewriteExpectedCredit", -1)) != 0:
+            errors.append("Expected staged credit must be 0")
+        if int(settings.get("PreClampDamageRewriteForcedDebit", -1)) <= int(settings.get("PreClampDamageRewriteExpectedDebit", 0)):
+            errors.append("Forced debit must exceed vanilla debit")
+        if int(settings.get("PreClampDamageRewriteForcedCredit", -1)) != 0:
+            errors.append("Forced credit must be 0")
+        if int(settings.get("PreClampDamageRewriteMaxWrites", 0)) != 1:
+            errors.append("Pre-clamp proof must be one-shot")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 so vanilla clamp can reach HP zero")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
     elif invariant == "engine_owned_death":
         if not truthy(settings, "RewriteObservedDamage"):
             errors.append("RewriteObservedDamage must be true")

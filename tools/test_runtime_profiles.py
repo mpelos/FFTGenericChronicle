@@ -26,6 +26,7 @@ def main() -> int:
         "immediate-action-ko-boundary-probe",
         "ko-landmark-probe",
         "ko-hp-apply-probe",
+        "ko-preclamp-force-agrias",
         "engine-death-test",
         "custom-formula-demo",
         "death-test-hp-only",
@@ -113,6 +114,16 @@ def main() -> int:
     check(profiles.truthy(hp_apply_probe, "LogHpEventProbe"), "KO HP apply probe must keep HP event evidence")
     check(not profiles.truthy(hp_apply_probe, "RewriteObservedDamage"), "KO HP apply probe must not rewrite HP damage")
     check(hp_apply_probe.get("MinHpFloor", 0) == 0, "KO HP apply probe must leave vanilla KO untouched")
+
+    preclamp = get(rows, "ko-preclamp-force-agrias")
+    check(profiles.truthy(preclamp, "PreClampDamageRewriteEnabled"), "preclamp proof must enable the pre-clamp rewrite hook")
+    check(preclamp.get("PreClampDamageRewriteRva") == 0x30A66F, "preclamp proof must hook the staged debit read")
+    check(preclamp.get("PreClampDamageRewriteTargetCharId") == 0x1E, "preclamp proof must target Agrias")
+    check(preclamp.get("PreClampDamageRewriteExpectedDebit") == 187, "preclamp proof must guard on Agrias Cross Slash damage")
+    check(preclamp.get("PreClampDamageRewriteForcedDebit", 0) > 187, "preclamp proof must force a lethal staged debit")
+    check(preclamp.get("PreClampDamageRewriteMaxWrites") == 1, "preclamp proof must be one-shot")
+    check(not profiles.truthy(preclamp, "RewriteObservedDamage"), "preclamp proof must not use late HP rewrites")
+    check(preclamp.get("MinHpFloor", 0) == 0, "preclamp proof must let vanilla HP clamp reach zero")
 
     killflag = get(rows, "death-test-killflag")
     check(profiles.truthy(killflag, "CauseDeathOnZeroHp"), "legacy killflag probe should preserve its KO-flag write")

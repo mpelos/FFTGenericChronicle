@@ -114,6 +114,34 @@ internal static class RuntimeSettingsValidator
             if (!probe.TryValidate(out string error))
                 report.Error($"LandmarkProbes.{probe.TraceName}", error);
         }
+        if (settings.PreClampDamageRewriteEnabled)
+        {
+            report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");
+            if (settings.PreClampDamageRewriteRva <= 0)
+                report.Error("PreClampDamageRewriteRva", "PreClampDamageRewriteRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.PreClampDamageRewriteExpectedBytes))
+                report.Error("PreClampDamageRewriteExpectedBytes", "Expected bytes are required for the pre-clamp hook.");
+            if (settings.PreClampDamageRewriteTargetCharId is < -1 or > 0xFF)
+                report.Error("PreClampDamageRewriteTargetCharId", "Target char id must be -1 or 0..255.");
+            if (settings.PreClampDamageRewriteTargetTeam is < -1 or > 0xFF)
+                report.Error("PreClampDamageRewriteTargetTeam", "Target team must be -1 or 0..255.");
+            if (settings.PreClampDamageRewriteExpectedDebit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteExpectedDebit", "Expected debit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteExpectedCredit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteExpectedCredit", "Expected credit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteMinHp < 0 || settings.PreClampDamageRewriteMaxHp < settings.PreClampDamageRewriteMinHp)
+                report.Error("PreClampDamageRewriteHpRange", "Pre-clamp HP range must be nonnegative and ordered.");
+            if (settings.PreClampDamageRewriteForcedDebit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteForcedDebit", "Forced debit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteForcedCredit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteForcedCredit", "Forced credit must be -1 or a signed 16-bit nonnegative value.");
+            if (!settings.PreClampDamageRewriteLogOnly &&
+                settings.PreClampDamageRewriteForcedDebit < 0 &&
+                settings.PreClampDamageRewriteForcedCredit < 0)
+                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit or forced credit.");
+            if (settings.PreClampDamageRewriteMaxWrites <= 0 || settings.PreClampDamageRewriteMaxWrites > 32)
+                report.Error("PreClampDamageRewriteMaxWrites", "Max writes must be within 1..32.");
+        }
         if (settings.HpEventProbeMaxLogs < 0)
             report.Error("HpEventProbeMaxLogs", "HpEventProbeMaxLogs must be nonnegative.");
         if (settings.HpEventProbeDiffMax < 0 || settings.HpEventProbeDiffMax > 256)

@@ -1538,7 +1538,7 @@ Deployment status:
 - Historical note: this scoring-only change was not deployed at this point in the investigation.
   It was superseded by the later action-boundary deployment and live validation below.
 
-Updated next direction:
+Historical next direction at that point:
 
 1. Live-validate the new candidate ranking if it remains a blocker.
 2. In parallel, start the pre-commit damage / KO routine boundary search using the captured
@@ -1769,8 +1769,9 @@ Updated next direction:
    lethal damage.
 3. Keep CT fallback as diagnostic-only. For the covered Rush case, memory freshness evidence is
    already better than CT.
-4. Do not attempt custom lethal damage until the pre-commit/KO path has a concrete hook or routine
-   candidate.
+4. At that point, do not attempt custom lethal damage until the pre-commit/KO path had a concrete
+   hook or routine candidate. This condition is now satisfied enough for the controlled
+   `ko-preclamp-force-agrias` proof at `0x30A66F`.
 
 ## 2026-06-23 Offline Result: KO Boundary Static Targets
 
@@ -1863,17 +1864,18 @@ python tools\test_static_code_patterns.py
 dotnet publish codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.csproj -c Release -o "C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod" --no-restore
 ```
 
-Next direction:
+Historical next direction from this static pass:
 
 1. Do not run another generic Cross Slash/Rush repetition just to see the same boundary again.
 2. Use the next live run only to validate one of the static leads or to collect deeper stack/context
-   around the `0x30A6D3`, `0x30A912`, `0x30D43C`, and `0x2D7AC0/0x2D7AEC` candidates.
+   around the `0x30A6D3`, `0x30A912`, `0x30D43C`, and `0x2D7AC0/0x2D7AEC` candidates. This led to
+   the landmark and HP-apply probes that narrowed the current target to pre-clamp staged damage.
 3. The best next engineering task is to decide whether these RVAs can be safely hooked or used as
    return-address classifiers to narrow the real pre-commit/KO routine.
 
 ## 2026-06-23 Implementation: KO Landmark Probe
 
-Prepared the next live probe for the autosave-before-Rush test.
+Prepared the historical live probe for the autosave-before-Rush test.
 
 New runtime feature:
 
@@ -2127,15 +2129,12 @@ Interpretation:
 - `+0x1BB`/`bb` remains a useful phase/death-state byte, but its semantics must be interpreted with
   the broader lifecycle (`1` during KO, `2` after Reraise) instead of as a simple dead/alive boolean.
 
-Recommended next work:
+Follow-up completed:
 
-1. Do offline disassembly/control-flow analysis around `0x30A6D3`, `0x30AAFC`, and their callers
-   (`0x2F3884`, `0x2F37A2`, `0x2F2EC1`) to find the branch/call site that decides whether to enter
-   the KO lifecycle.
-2. Prepare a proof profile that observes or safely hooks the pre-KO decision point, not just the
-   post-zero lifecycle markers.
-3. The next live proof should answer whether custom lethal damage can force entry into the same
-   engine-owned KO path when vanilla damage would leave HP above zero.
+- This question led to the `ko-hp-apply-probe` and then to the pre-clamp staged-damage proof below.
+- The current active experiment is no longer another passive KO landmark read. It is the one-shot
+  `ko-preclamp-force-agrias` test, which changes staged damage before vanilla HP clamp and checks
+  whether engine-owned KO lifecycle remains coherent.
 
 ## 2026-06-23 Offline Analysis: KO HP-Apply Lifecycle
 
@@ -2166,7 +2165,8 @@ Disassembly read:
 Important conclusion:
 
 - `0x30A6D3` is after the HP write, so it is not the earliest damage/KO decision point.
-- The next live question is whether KO/status state is already armed before the HP write.
+- The live question for the now-completed `ko-hp-apply-probe` was whether KO/status state is already
+  armed before the HP write.
 - Two earlier instructions are now high-value:
   - `0x30A595`: tests `rdx+0x61` bit `0x20`;
   - `0x30A5C0`: writes `r13b` to `rdx+0x1BB`.
@@ -2175,7 +2175,7 @@ Important conclusion:
 - If not, an HP-write proof at `0x30A6C3` may be sufficient to make downstream engine code process
   custom lethal HP as normal KO.
 
-Prepared next profile:
+Historical profile that was subsequently run:
 
 - `work\battle-runtime-settings.ko-hp-apply-probe.json`;
 - active deployed settings:
@@ -2208,7 +2208,7 @@ dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\f
 Additional byte validation against the installed `FFT_enhanced.exe` passed for all eight profile
 landmarks.
 
-Next live test:
+Live test that was subsequently run:
 
 1. Open the game through Reloaded after the new profile is active.
 2. Load the same autosave before Ramza Rush on the low-HP Ninja.
@@ -2231,3 +2231,222 @@ Decision target:
   should not rely on HP write alone.
 - If KO state appears only after or because of `hp-write-clamped-30`, the next proof can target a
   controlled custom HP-write hook at or before `0x30A6C3`.
+
+## 2026-06-23 Live Test: KO HP-Apply Rush/Reraise Readout
+
+Validated run with `work\battle-runtime-settings.ko-hp-apply-probe.json`.
+
+Captured snapshots:
+
+- `work\live-captures\battleprobe_log.ko-hp-apply-baseline-autosave.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-hp-apply-baseline-after-correct-load.mixed-with-wrong-load.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-hp-apply-preview-ramza-rush-ninja-50.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-hp-apply-resolved-ramza-rush-ninja-ko-before-wait.snapshot.txt`;
+- `work\live-captures\battleprobe_log.ko-hp-apply-after-ramza-wait-ninja-reraise.snapshot.txt`.
+
+Important capture note:
+
+- The first autosave baseline includes an initial wrong-load/post-Reraise state, then the correct
+  pre-Reraise autosave. The useful live evidence is the isolated preview, resolution, and post-Wait
+  snapshots.
+
+User-observed sequence:
+
+1. Correct baseline: Ramza active, Rush available, pre-Reraise.
+2. Preview: `Ramza Rush -> Ninja`, predicted damage `50`.
+3. Resolution before Ramza Wait: Ninja died, shown number `16`, Ramza still active.
+4. After Ramza Wait: next active Ninja, Reraise revived him, visible HP `28`.
+
+Probe validation:
+
+- Runtime installed all `8/8` configured landmark hooks.
+- Preview produced `0` landmark hits, confirming these landmarks are resolution/apply-only.
+- Resolution before Wait produced `9` landmark hits, with `0` lost hits.
+- Post-Wait/Reraise snapshot contains `17` total landmark hits, with the Reraise landmark at event
+  `17`.
+
+KO resolution facts on the Ninja target (`ptr=0x141855EE0`, `id=0x80`):
+
+- Events `1..7` are the lethal Rush state apply on the Ninja.
+- Important timing note: landmark registers are captured immediately by the assembly hook, but
+  `baseRead`, `fields=`, and `raw=` are read later by the poller while formatting
+  `[LANDMARK-HIT]`. Treat those field snapshots as near-event state, not guaranteed
+  pre-instruction memory.
+- By the time the poller formatted `event=1`, the target snapshot showed KO-like state:
+  - `hp=0`;
+  - `ct=101`;
+  - `s61=32`;
+  - `dmg1C4=16`;
+  - `chg1D8=130`;
+  - `f1E5=128`;
+  - `f1EF=32`;
+  - `b8=0`, `ba=0`, `bb=1`;
+  - raw `+0x61=2000`, `+0x1BB=0111`, `+0x1C4=1000`, `+0x1D8=8200`,
+    `+0x1EF=2000`, `+0x1F1=0000`, `+0x1F5=1000`.
+- `event=1` (`0x30A595`) exactly captured `r12=0x20`, `r13=0x1`, and target base in `rdx`.
+- `event=2` (`0x30A5C0`) writes `r13b` to `+0x1BB`, but the captured state already had
+  `+0x1BB=01` by the time the poller read the unit snapshot.
+- `event=4` (`0x30A68C`) captured the actual HP arithmetic:
+  - `rdx=0xF`: old HP `15`;
+  - `rax=0xFFFFFFFF`: raw signed result `-1`;
+  - `r15=0x120`: max HP `288` before clamp completion.
+- `event=5` (`0x30A6B6`) captured:
+  - `rdx=0xF`: old HP `15`;
+  - `r15=0`: clamped new HP `0`.
+- `event=6` (`0x30A6C3`) writes clamped HP `0` to `+0x30`.
+- `event=7` (`0x30A6D3`) is the post-HP-write lifecycle mark at `+0x1F5`.
+
+Ramza-side events:
+
+- Events `8..9` are on Ramza (`ptr=0x141855CE0`, `id=0x03`), not the KO target.
+- They show the same `0x30A595`/`0x30A5C0` pair can run for actor/action lifecycle state, so live
+  analysis must key these events by base unit pointer and not by instruction alone.
+
+Reraise facts after Ramza Wait:
+
+- Events `10..17` are the revive/Reraise lifecycle on the Ninja after Wait.
+- The revived state matches the user's visible HP:
+  - `hp=28`;
+  - `ct=1`;
+  - `s61=0`;
+  - `dmg1C4=0`;
+  - `f1E5=72`;
+  - `f1EF=0`;
+  - `b8=1`, `ba=0`, `bb=2`;
+  - raw `+0x30=1C00`, `+0x1BB=0211`, `+0x1F1=0100`, `+0x1F5=FF00`.
+- `event=17` hit `reraise_death_state_write_1bb` at `0x30AAFC` with base `rax` pointing to the
+  Ninja and `+0x1BB=02`.
+
+Interpretation:
+
+- The HP apply routine is downstream of vanilla damage staging, but it is the first proven
+  engine-owned clamp/write site for lethal HP application.
+- HP write alone at `0x30A6C3` is probably too late for a robust custom-lethal design because it
+  bypasses part of the state-apply lifecycle.
+- The arithmetic inside this routine is valuable because it proves how the vanilla side buffer turns
+  old HP `15` plus delta `-16` into clamped HP `0`.
+- The ideal long-term static target remains the producer of the staged damage debit/credit before HP
+  math: whatever writes the real `unit+0x1C4` / `unit+0x1C6` values consumed by this routine.
+- For the next live test, we are deliberately bypassing that producer search with a one-shot
+  pre-clamp proof. This is the most useful experiment now because it directly tests whether the
+  final custom formula system can feed the engine at the staged-damage boundary and let vanilla
+  perform HP zero, KO lifecycle, Reraise, and turn flow.
+
+Next experiment implemented below:
+
+- `ko-preclamp-force-agrias`: force Agrias's staged Cross Slash debit from `187` to `9999` at
+  `0x30A66F`, before vanilla reads `unit+0x1C4`.
+
+## 2026-06-23 Offline Follow-up: HP Apply Dataflow Recalibration
+
+The regenerated `work\ko_lifecycle_disassembly_analysis.md` now reflects the post-live static
+findings.
+
+New static facts:
+
+- `0x30A51C` is the state-apply routine entry. It takes a unit index, derives the live battle-unit
+  pointer, and stores current global pointers around `0x186AF68` / `0x186AF70`.
+- The state buffer consumed by the HP math is not an external side buffer. It is the tail of the same
+  unit struct: `rbp = unit + 0x1BE`.
+- Therefore the HP math consumes:
+  - `unit+0x1C4` as signed HP debit;
+  - `unit+0x1C6` as signed HP credit;
+  - `unit+0x30` as old HP;
+  - `unit+0x32` as max HP.
+- The formula at the consumption point is:
+  `newRawHp = oldHp + s16[unit+0x1C6] - s16[unit+0x1C4]`, then floor at `0`, cap at max HP, write
+  clamped HP to `unit+0x30`.
+- For the live Rush KO, the exact registers prove old HP `15`, staged debit `16`, staged credit `0`,
+  raw result `-1`, and clamped result `0`.
+- For Reraise, the later state is consistent with staged debit `0`, staged credit `28`, old HP `0`,
+  and restored HP `28`.
+- `0x30A908` / `0x30A912` are cleanup/clear writes in the post-HP status tail, not the KO-arm
+  producer.
+- `0x2D7AC0` / `0x2D7AEC` are likely writes in a separate `0x248`-stride target/cache table, not the
+  direct live unit-tail producer consumed by `0x30A51C`.
+
+Recalibrated next objective:
+
+Find or bypass the producer of the staged debit/credit fields. The best next proof is probably not a
+late `+0x30` HP rewrite. It is a controlled pre-clamp intervention that changes `unit+0x1C4` before
+`0x30A68C`, then observes whether vanilla downstream logic performs HP zero, KO flags, displayed
+number, Reraise, and turn flow correctly.
+
+## 2026-06-23 Implementation: Pre-Clamp Staged-Damage Proof
+
+Prepared and deployed the next live proof profile:
+
+- source profile: `work\battle-runtime-settings.ko-preclamp-force-agrias.json`;
+- installed profile:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json`;
+- previous installed settings backup:
+  `C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json.bak-20260623-193204`.
+
+Code changes:
+
+- Added `PreClampDamageRewriteEnabled` runtime support in the code mod.
+- The hook installs at `0x30A66F`, before vanilla executes `movsx eax, word ptr [rbp+6]`.
+- At that point:
+  - `rdi` is the unit pointer;
+  - `rbp = unit + 0x1BE`;
+  - `[rbp+6]` is `unit+0x1C4`, the staged HP debit;
+  - `[rbp+8]` is `unit+0x1C6`, the staged HP credit.
+- The hook is one-shot and guarded by:
+  - target char id `0x1E` (Agrias);
+  - old staged debit exactly `187`;
+  - old staged credit exactly `0`;
+  - current HP at least `188`;
+  - expected bytes `0F BF 45 06`.
+- On match, it writes:
+  - `unit+0x1C4 = 9999`;
+  - `unit+0x1C6 = 0`;
+  before vanilla HP clamp reads the debit.
+- It emits `[PRECLAMP-REWRITE ...]` with exact hook-time `hp`, old debit/credit, forced
+  debit/credit, unit pointer, and state pointer.
+
+Why this test matters:
+
+- It tests the practical custom-lethal architecture we actually want: custom damage feeds the same
+  staged damage input that vanilla already consumes.
+- If Agrias dies from a normally nonlethal Cross Slash, and the downstream log shows vanilla HP
+  clamp, KO lifecycle, displayed damage behavior, and turn flow are coherent, then we can stop
+  treating late `+0x30` HP writes as the primary design path.
+- If she only reaches HP zero without full KO lifecycle, then we still need the earlier KO-state
+  producer or a minimal lifecycle write set.
+
+Why it makes sense now relative to the final combat redesign:
+
+- The final system needs `custom formula -> engine-safe application`, not just `custom formula ->
+  visible HP number`.
+- We already proved pending-action context can identify Cloud/Cross Slash/target batches, and we
+  already proved the HP apply routine consumes staged debit/credit from `unit+0x1C4` / `unit+0x1C6`.
+- Searching for the original producer is still useful, but it can be slow. This proof answers the
+  more important architectural question first: if a custom formula supplies a lethal staged debit at
+  the consumption point, will the engine complete KO correctly?
+- A pass would move lethal custom formulas from "needs unknown KO trigger" to "can use pre-clamp
+  staged damage injection"; a fail would tell us to prioritize the KO-state producer/minimal
+  lifecycle write set before building more formula families.
+
+Next live test instructions:
+
+1. Launch the game through Reloaded-II with `Generic Chronicle (Battle Probe)` enabled.
+2. Load the Cloud-active baseline, not the Ramza/Ninja KO autosave.
+3. Confirm Cloud is active.
+4. Select `Cross Slash` on Agrias and verify the preview damage is `187`.
+5. Before confirming, tell the log checkpoint as: `baseline preclamp Cloud ativo`.
+6. Then tell the preview as: `preview preclamp: Cross Slash na Agrias, dano 187`.
+7. Confirm the action.
+8. Report exactly:
+   - whether Agrias died;
+   - what damage number was shown on Agrias;
+   - whether Ninja was also hit normally;
+   - who is the next active unit after Cloud's Wait.
+
+Expected log evidence:
+
+- `[PRECLAMP-REWRITE ... id=0x1E ... oldDebit=187 oldCredit=0 forcedDebit=9999 forcedCredit=0]`;
+- at `0x30A68C`, exact registers should show old HP in `rdx` and raw signed HP result below zero;
+- at `0x30A6B6`, `r15=0`;
+- at `0x30A6C3`, vanilla writes clamped HP zero;
+- HP event/action logs should show whether the displayed/applied damage uses the forced staged debit,
+  the clamped HP loss, or another display-only value.

@@ -51,10 +51,16 @@ LANDMARKS = (
 
 WINDOWS = (
     Window(
-        "state-apply-decision-window",
+        "state-apply-entry-window",
+        0x30A51C,
+        0x90,
+        "The state-apply entry that derives unit and unit-tail state-buffer pointers.",
+    ),
+    Window(
+        "state-apply-hp-window",
         0x30A58E,
         0x162,
-        "The HP/status state-apply path that reaches the proven KO landmark.",
+        "The HP/status state-apply path that consumes the unit-tail debit/credit fields.",
     ),
     Window(
         "reraise-tail-window",
@@ -63,10 +69,28 @@ WINDOWS = (
         "The revive/Reraise tail that hit death_state_write_1bb after Ramza Wait.",
     ),
     Window(
+        "state-apply-status-tail-window",
+        0x30A6D0,
+        0x560,
+        "The post-HP state/status tail, including cleanup and Reraise state transitions.",
+    ),
+    Window(
         "late-ko-mask-window",
         0x30D3F0,
         0x95,
         "The later mask cleanup block discovered statically but not hit before Wait.",
+    ),
+    Window(
+        "state-simulation-wrapper-window",
+        0x30B584,
+        0x280,
+        "A stack-copy simulation wrapper that redirects the current unit/state globals.",
+    ),
+    Window(
+        "target-cache-table-window",
+        0x2D79E8,
+        0x150,
+        "A separate 0x248-stride table initializer/writer that resembles target-cache handling.",
     ),
     Window(
         "scheduler-indirect-call-window",
@@ -97,7 +121,7 @@ def mark_instruction(rva: int, text: str) -> str:
     if any(landmark.rva == rva for landmark in LANDMARKS):
         return "ANCHOR"
     lowered = text.lower()
-    if any(token in lowered for token in ("0x30", "0x61", "0x1bb", "0x1c4", "0x1ef", "0x1f5")):
+    if any(token in lowered for token in ("0x30", "0x61", "0x1bb", "0x1be", "0x1c4", "0x1c6", "0x1ef", "0x1f5")):
         return "field"
     return ""
 
@@ -181,13 +205,18 @@ def render_report(exe: Path, output: Path) -> str:
             f"- Direct calls/jumps to the state-apply routine start `0x30A51C`: {callers}.",
             "- The live stack instead points at the scheduler/dispatch family `0x2F3799`, `0x2F37A2`,",
             "  `0x2F3884`, and `0x2F2EC1`, which is consistent with an indirect function-pointer call.",
-            "- Inside the state-apply routine, the HP path reads current HP, computes a signed delta from",
-            "  the side buffer at `rbp`, floors the result at zero, caps it against max HP, and writes the",
-            "  clamped value to `rdi+0x30` at `0x30A6C3`.",
+            "- The routine derives the live battle-unit pointer from the unit index, then sets the state",
+            "  buffer pointer to the tail of the same unit struct: `rbp = unit + 0x1BE`.",
+            "- The HP path reads old HP from `unit+0x30`, max HP from `unit+0x32`, and computes:",
+            "  `newRawHp = oldHp + s16[unit+0x1C6] - s16[unit+0x1C4]`.",
+            "- It then floors at zero, caps against max HP, and writes the clamped value to `unit+0x30`",
+            "  at `0x30A6C3`.",
             "- The proven live landmark `0x30A6D3` happens after that HP write, so it is lifecycle evidence,",
             "  not the earliest damage/KO decision point.",
-            "- The earlier `0x30A595` and `0x30A5C0` pair should reveal whether the KO/status path was already",
-            "  armed before HP is applied; this is the next live question.",
+            "- Landmark registers are exact at hook time, but `[LANDMARK-HIT ... fields=...]` is read later",
+            "  by the poller. Treat fields as near-event state, not guaranteed pre-instruction memory.",
+            "- The status writes around `0x30A908`/`0x30A912` are cleanup/clear writes in the post-HP tail,",
+            "  not the producer that arms KO before the HP arithmetic.",
             "",
             "## Disassembly Windows",
             "",
@@ -198,13 +227,42 @@ def render_report(exe: Path, output: Path) -> str:
 
     lines.extend(
         [
-            "## Next Probe Read",
+            "## Live Probe Read",
             "",
-            "- Hook `0x30A595`, `0x30A5C0`, `0x30A68C`, `0x30A6B6`, `0x30A6C3`, and `0x30A6D3` together.",
-            "- If `+0x61` and `+0x1BB` are already KO-armed before `0x30A6C3`, a custom lethal proof must either",
-            "  feed the same pre-armed state path or deliberately set the minimal lifecycle state before HP write.",
-            "- If the state is not armed until after `0x30A6C3`, then an HP-write hook may be enough to force",
-            "  engine-owned KO by changing the clamped HP value before downstream lifecycle code runs.",
+            "The 2026-06-23 `ko-hp-apply-probe` live run answered the old next-probe question:",
+            "",
+            "- Preview produced no landmark hits; these landmarks are resolution/apply-only.",
+            "- Lethal Rush on the Ninja hit the HP apply path before Ramza Wait and then the Reraise tail after Wait.",
+            "- At `0x30A68C`, exact registers showed old HP `rdx=0xF`, raw signed HP result",
+            "  `rax=0xFFFFFFFF`, and pre-clamp max HP `r15=0x120`.",
+            "- At `0x30A6B6`, exact registers showed old HP `rdx=0xF` and clamped new HP `r15=0`.",
+            "- At `0x30A6C3`, the routine wrote clamped HP zero to `unit+0x30`.",
+            "- After Ramza Wait, Reraise hit `0x30AAFC` with the revived Ninja at HP `28`.",
+            "- The `fields=` snapshots around early landmarks showed KO-like fields, but those fields are",
+            "  poller reads after the hook event. The exact pre-instruction proof comes from registers.",
+            "",
+            "Conclusion:",
+            "",
+            "- The HP apply routine is downstream of vanilla damage staging, but it is the first proven",
+            "  engine-owned clamp/write site for lethal HP application.",
+            "- A late write to `unit+0x30` is still too late for a robust custom lethal design.",
+            "- A better custom-lethal proof is to alter the staged debit/credit before the clamp math, e.g.",
+            "  feed `unit+0x1C4`/`unit+0x1C6` before `0x30A68C`, then let the vanilla tail perform HP zero,",
+            "  KO lifecycle, and Reraise handling.",
+            "",
+            "## Current Next Experiment",
+            "",
+            "- Experiment: `ko-preclamp-force-agrias`.",
+            "- Question: can custom lethal damage feed the engine through staged damage (`unit+0x1C4`) before",
+            "  vanilla HP clamp, instead of writing final HP late at `unit+0x30`?",
+            "- Setup: Cloud-active baseline, Cross Slash preview on Agrias for `187` damage.",
+            "- Mechanism: hook `0x30A66F`, guard on Agrias (`id=0x1E`) and staged debit `187`, then force",
+            "  `unit+0x1C4=9999` once before vanilla executes `movsx eax, word ptr [rbp+6]`.",
+            "- Pass signal: Agrias becomes a true KO through the vanilla downstream state path, with coherent",
+            "  HP clamp, KO lifecycle, displayed damage behavior, and turn flow.",
+            "- Why now: the final combat redesign needs engine-safe custom lethal application. This test checks",
+            "  the most promising engine-owned insertion point we have discovered, while bypassing the harder",
+            "  producer search for one controlled proof.",
             "",
         ]
     )
