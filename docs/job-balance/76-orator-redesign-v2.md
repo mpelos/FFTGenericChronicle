@@ -199,7 +199,7 @@ New name:
 | Human recruitment | Preserved through `Entice`. | Eligible humans can be flipped in battle and recruited after battle if conditions pass. | Recruitment tables, immunities, and exact rates. |
 | Monster recruitment | Preserved through `Tame` and `Beast Tongue`. | Orator-derived supports keep monster communication/recruitment routes alive. | Monster/breeding/Poach pass. |
 | Poach routing | Indirectly preserved. | Monster access keeps breeding and Poach planning possible. | Thief/monster/economy pass. |
-| Permanent Brave/Faith repair | Gain only. | `Praise` can repair Brave; `Preach` can repair Faith. | Permanent cap/rate tuning. |
+| Permanent Brave/Faith gain | Vanilla positive-change behavior preserved. | `Praise` and `Preach` can still create ordinary permanent positive drift through the game's existing rule. | No custom cap/rate tuning in this pass. |
 | Permanent Brave/Faith loss | Removed. | `Intimidate` and `Enlighten` are battle-only. | None unless global policy changes. |
 | Guns | Preserved. | Native guns and `Equip Guns`. | JP/incidence tuning. |
 | Gil economy | Not touched. | No Gil values, rewards, or prices change. | None in this pass. |
@@ -305,8 +305,7 @@ Function:
 - Ally morale speech.
 - Battle effect: Brave +20, capped below extreme optimization.
 - Clears `Chicken`.
-- Permanent effect: first successful `Praise` on a roster unit per battle grants bounded permanent
-  Brave gain/repair after battle, capped at the accepted permanent repair ceiling.
+- Permanent positive Brave drift follows the game's existing rule for temporary Brave increases.
 
 Why use this instead of attacking?
 
@@ -316,8 +315,7 @@ Why use this instead of attacking?
 Guardrails:
 
 - no permanent Brave loss exists elsewhere as a counterpart;
-- one permanent same-axis gain per unit per battle;
-- does not create Brave 97 farming.
+- this document does not add a new permanent Brave cap, rate, or per-battle limit.
 
 Verdict: keep as Brave rally and repair.
 
@@ -351,8 +349,7 @@ Function:
 - Applies visible `Faith` status / strong receptivity spike.
 - Ally use creates a burst or healing window.
 - Enemy use creates a vulnerability window.
-- Permanent effect: first successful roster-unit `Preach` per battle may grant bounded permanent
-  Faith gain/repair after battle.
+- Permanent positive Faith drift follows the game's existing rule for temporary Faith increases.
 
 Why use this instead of attacking?
 
@@ -653,8 +650,8 @@ shooting.
 
 Allowed:
 
-- bounded permanent Brave gain/repair from `Praise`;
-- bounded permanent Faith gain/repair from `Preach`;
+- ordinary permanent Brave gain from positive `Praise` changes, using the game's existing rule;
+- ordinary permanent Faith gain from positive `Preach` changes, using the game's existing rule;
 - permanent human recruitment from `Entice` when eligibility and survival conditions pass;
 - monster access routes through `Tame` and `Beast Tongue`.
 
@@ -684,8 +681,8 @@ The only new conceptual behavior is `Call Out`, and it is expressed through a vi
 marker plus targeting pressure and minor CT/morale hesitation rather than hidden marks.
 
 No skill should require the player to track many invisible counters. Caps such as active `Entice`
-flips and permanent gain limits are balance constraints for the system, not tactical states the
-player must optimize every turn.
+flips are balance constraints for the system, not tactical states the player must optimize every
+turn. This document does not add custom permanent Brave/Faith gain counters.
 
 ## Expected Player Use
 
@@ -726,11 +723,11 @@ Orator remains pressured by:
 | Vanilla diagnosis | Pass. |
 | Dependent systems | Pass: Brave, Faith, recruitment, monsters, guns named. |
 | Creative identity question | Pass: `Call Out` accepted as the non-vanilla identity mechanic for review. |
-| Protected systems | Pass: human recruitment, monster access, Poach route, repair-only permanent stats. |
+| Protected systems | Pass: human recruitment, monster access, Poach route, and vanilla positive permanent Brave/Faith drift. |
 | Thematic ownership | Pass with required Thief follow-up for `Steal Heart`. |
 | Skill value | Pass. |
 | Combat action value | Pass: every action names the battle window that beats attacking. |
-| Campaign value | Pass: recruitment, monster access, and permanent repair named. |
+| Campaign value | Pass: recruitment, monster access, and vanilla positive permanent Brave/Faith drift preserved. |
 | Permanent-effect policy | Pass: no permanent loss. |
 | Visibility | Pass: `Call Out` uses a visible `Called Out` marker tied to the challenge/taunt model. |
 | Complexity budget | Watch: `Entice` setup and cap must stay simple. |
