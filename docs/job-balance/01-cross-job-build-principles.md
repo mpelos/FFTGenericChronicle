@@ -241,6 +241,33 @@ Examples:
 - Orator should be allowed to win through speech, morale, recruitment, and disruption.
 - Bard and Dancer should be allowed to shape the battlefield through performance.
 
+### Skill Payoff And Readability
+
+Good job kits should make the player feel that learned skills matter.
+
+Small invisible modifiers are usually worse than bold, legible effects with real costs. A skill that
+spends an action, CT, MP, item stock, positioning, JP, or a reaction/support/movement slot should
+change the tactical situation enough for the player to notice. Generic Chronicle should avoid
+over-conservative values that are technically balanced but emotionally dead.
+
+Persistent effects on units must be readable in battle. If a temporary effect changes damage,
+movement, defense, targeting, accuracy, or vulnerability, it should normally be represented by a
+visible status with clear feedback. If the engine cannot show the effect, prefer a vanilla status,
+a direct stat change, an instant effect, or a simpler ability over hidden state.
+
+Recovery skills should keep some relevance across the game. Fixed HP recovery attached directly to a
+skill, such as a basic heal or Chakra-style action, should scale with attributes, level band, max HP,
+or another visible progression hook while staying modest for the current chapter. Item-based recovery
+is different: reactions or skills that consume items can scale through item progression itself. This
+is why the vanilla `Auto-Potion` idea works when it follows the player's available item tier instead
+of using a flat late-game value.
+
+Reaction design should not make one permanent stat the obvious answer for every unit. If all
+important reactions scale only from Brave, the correct late-game behavior becomes raising Brave on
+everyone. Reactions should instead have varied defensive identities and costs: Brave, equipment,
+shield access, evasion, armor profile, damage type, positioning, CT, HP threshold, status context, or
+job identity can all matter, as long as the resulting behavior remains understandable.
+
 ## Unhealthy Build Patterns
 
 ### Universal Answer
