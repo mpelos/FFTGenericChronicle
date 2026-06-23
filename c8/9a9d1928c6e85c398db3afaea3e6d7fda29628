@@ -1,0 +1,21 @@
+docs/job-balance/01-cross-job-build-principles.md
+  s_fce6b25a5764ca::t_3c6642e1193636 258-260
+docs/job-balance/68-squire-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_3c6642e1193636 20,40-41,155-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "c89a9d1928c6e85c398db3afaea3e6d7fda29628",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
