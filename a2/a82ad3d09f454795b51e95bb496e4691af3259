@@ -1,0 +1,19 @@
+docs/job-balance/76-orator-redesign-v2.md
+  s_fce6b25a5764ca::t_09bb029e34753e 202,308,318,352,653-654,684-685,726,730
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "a2a82ad3d09f454795b51e95bb496e4691af3259",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
