@@ -145,6 +145,7 @@ try {
                 'work\battle-runtime-settings.neuter-spotcheck.json',
                 'work\battle-runtime-settings.death-flag-capture.json',
                 'work\battle-runtime-settings.actor-probe.json',
+                'work\battle-runtime-settings.action-context-probe.json',
                 'work\battle-runtime-settings.engine-death-test.json',
                 'work\battle-runtime-settings.hook-register-probe.json',
                 'work\battle-runtime-settings.custom-formula-demo.json',

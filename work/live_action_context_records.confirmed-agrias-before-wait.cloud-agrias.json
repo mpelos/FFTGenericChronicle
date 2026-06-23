@@ -1,0 +1,49 @@
+{
+  "pid": 19044,
+  "required": [
+    "cloud",
+    "agrias"
+  ],
+  "nearBytes": 2048,
+  "maxSpan": 4096,
+  "stats": {
+    "regions_skipped": 2665,
+    "regions_scanned": 763,
+    "bytes_scanned": 2608680960
+  },
+  "units": [
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    }
+  ],
+  "hitCounts": {
+    "Cloud": 12000,
+    "Beowulf": 23,
+    "Ramza": 4,
+    "Ninja": 4,
+    "Agrias": 4
+  },
+  "candidates": []
+}

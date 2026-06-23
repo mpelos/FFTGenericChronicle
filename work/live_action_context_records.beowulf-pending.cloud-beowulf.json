@@ -1,0 +1,195 @@
+{
+  "pid": 19044,
+  "required": [
+    "cloud",
+    "beowulf"
+  ],
+  "nearBytes": 4096,
+  "maxSpan": 8192,
+  "stats": {
+    "regions_skipped": 2665,
+    "regions_scanned": 786,
+    "bytes_scanned": 2655379456
+  },
+  "units": [
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    }
+  ],
+  "hitCounts": {
+    "Beowulf": 11084,
+    "Cloud": 20000,
+    "Ramza": 3278,
+    "Ninja": 3279,
+    "Agrias": 3299
+  },
+  "candidates": [
+    {
+      "start": 5889300712,
+      "end": 5889300736,
+      "span": 24,
+      "score": 1267.0,
+      "repeatCount": 1,
+      "names": [
+        "Cloud",
+        "Beowulf"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 27332608,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5889300712,
+          "relative": 0
+        },
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5889300736,
+          "relative": 24
+        }
+      ]
+    },
+    {
+      "start": 5880440696,
+      "end": 5880440712,
+      "span": 16,
+      "score": 1262.0,
+      "repeatCount": 2,
+      "names": [
+        "Beowulf",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 27332608,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5880440696,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5880440712,
+          "relative": 16
+        }
+      ]
+    },
+    {
+      "start": 5884608248,
+      "end": 5884608976,
+      "span": 728,
+      "score": 1179.0,
+      "repeatCount": 1,
+      "names": [
+        "Cloud",
+        "Beowulf"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 27332608,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884608248,
+          "relative": 0
+        },
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5884608976,
+          "relative": 728
+        }
+      ]
+    },
+    {
+      "start": 5833706536,
+      "end": 5833706544,
+      "span": 8,
+      "score": 969.0,
+      "repeatCount": 876,
+      "names": [
+        "Cloud",
+        "Beowulf"
+      ],
+      "regionBase": 5825888256,
+      "regionSize": 7938048,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5833706536,
+          "relative": 0
+        },
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5833706544,
+          "relative": 8
+        }
+      ]
+    },
+    {
+      "start": 5884609928,
+      "end": 5884609936,
+      "span": 8,
+      "score": 969.0,
+      "repeatCount": 2552,
+      "names": [
+        "Beowulf",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 27332608,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5884609928,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884609936,
+          "relative": 8
+        }
+      ]
+    }
+  ]
+}

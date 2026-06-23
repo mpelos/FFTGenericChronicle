@@ -102,6 +102,14 @@ PROFILES: tuple[ProfileSpec, ...] = (
         ("hook_register_probe_observe_only",),
     ),
     ProfileSpec(
+        "action-context-probe",
+        REPO / "work/battle-runtime-settings.action-context-probe.json",
+        "observe-only charged-action RE capture",
+        "Correlate CT-drop scheduling, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.",
+        "no HP/MP rewrites",
+        ("hook_register_probe_observe_only", "actor_probe_observe_only"),
+    ),
+    ProfileSpec(
         "engine-death-test",
         REPO / "work/battle-runtime-settings.engine-death-test.json",
         "live architecture proof",

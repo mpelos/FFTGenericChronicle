@@ -1,0 +1,221 @@
+{
+  "groups": [],
+  "nearBytes": 768,
+  "patterns": [
+    {
+      "bytes": "0101",
+      "encoding": "u16",
+      "hits": 8000,
+      "key": "value:braverId:u16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "0101",
+      "encoding": "s16",
+      "hits": 8000,
+      "key": "value:braverId:s16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "u32",
+      "hits": 8000,
+      "key": "value:braverId:u32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "s32",
+      "hits": 8000,
+      "key": "value:braverId:s32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "00808043",
+      "encoding": "f32",
+      "hits": 2,
+      "key": "value:braverId:f32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "0000000000107040",
+      "encoding": "f64",
+      "hits": 0,
+      "key": "value:braverId:f64",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "u16",
+      "hits": 8000,
+      "key": "value:damage:u16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "s16",
+      "hits": 8000,
+      "key": "value:damage:s16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "u32",
+      "hits": 8000,
+      "key": "value:damage:u32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "s32",
+      "hits": 8000,
+      "key": "value:damage:s32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "00009842",
+      "encoding": "f32",
+      "hits": 221,
+      "key": "value:damage:f32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0000000000005340",
+      "encoding": "f64",
+      "hits": 13,
+      "key": "value:damage:f64",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "u16",
+      "hits": 8000,
+      "key": "value:charge:u16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "s16",
+      "hits": 8000,
+      "key": "value:charge:s16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "u32",
+      "hits": 8000,
+      "key": "value:charge:u32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "s32",
+      "hits": 8000,
+      "key": "value:charge:s32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "00000040",
+      "encoding": "f32",
+      "hits": 8000,
+      "key": "value:charge:f32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0000000000000040",
+      "encoding": "f64",
+      "hits": 8000,
+      "key": "value:charge:f64",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0900",
+      "encoding": "u16",
+      "hits": 8000,
+      "key": "value:skillsetLimit:u16",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "0900",
+      "encoding": "s16",
+      "hits": 8000,
+      "key": "value:skillsetLimit:s16",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "09000000",
+      "encoding": "u32",
+      "hits": 8000,
+      "key": "value:skillsetLimit:u32",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "09000000",
+      "encoding": "s32",
+      "hits": 8000,
+      "key": "value:skillsetLimit:s32",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "00001041",
+      "encoding": "f32",
+      "hits": 3568,
+      "key": "value:skillsetLimit:f32",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "0000000000002240",
+      "encoding": "f64",
+      "hits": 32,
+      "key": "value:skillsetLimit:f64",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "427261766572",
+      "encoding": "ascii",
+      "hits": 41,
+      "key": "text:Braver:ascii",
+      "kind": "text",
+      "name": "Braver"
+    },
+    {
+      "bytes": "420072006100760065007200",
+      "encoding": "utf16le",
+      "hits": 0,
+      "key": "text:Braver:utf16le",
+      "kind": "text",
+      "name": "Braver"
+    }
+  ],
+  "pid": 19044,
+  "stats": {
+    "bytes_scanned": 2648076288,
+    "regions_scanned": 757,
+    "regions_skipped": 2651
+  },
+  "units": []
+}

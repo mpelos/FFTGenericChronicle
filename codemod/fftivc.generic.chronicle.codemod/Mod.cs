@@ -63,6 +63,7 @@ public class Mod : ModBase
     private readonly Dictionary<nint, int> _lastMp = new();   // unit pointer -> last MP (resource deltas)
     private readonly Dictionary<nint, long> _lastHpSampleTick = new();
     private readonly Dictionary<nint, long> _lastMpSampleTick = new();
+    private readonly Dictionary<nint, string> _lastActionProbeState = new();
     private readonly Dictionary<nint, string> _seen = new();  // unit pointer -> last stat line (re-log if it changes)
     private readonly HashSet<nint> _dumped = new();           // unit pointer -> emitted full struct dump
     private readonly Dictionary<nint, byte[]> _lastRaw = new();
@@ -295,6 +296,9 @@ public class Mod : ModBase
             : (previousObservation?.SeenTick ?? 0);
         _unitObservations[unitPtr] = new UnitObservation(target, seenTick, ctDropTick, ctDropAmount);
 
+        if (LogActionStateChangeIfEnabled(unitPtr, id, nowTick, touchForContext))
+            needsFlush = true;
+
         if (_settings.CaptureStructOnDeath) DeathCaptureTick(target);
 
         string lineStats = target.StatLine;
@@ -338,6 +342,7 @@ public class Mod : ModBase
                 if (_settings.ActorProbeOnEvent) LogActorProbe(id);
                 long eventIndex = Interlocked.Increment(ref _battleEventIndex);
                 LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target);
+                LogPendingActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
                 long eventSeed = ComputeEventSeed(target, eventIndex, prev, hp, signedDamage);
                 var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
                 if (_settings.LogAttackerCandidates)
@@ -372,6 +377,7 @@ public class Mod : ModBase
                 Line($"[{eventTag} ptr=0x{unitPtr:X} id=0x{id:X2}] {prevMp} -> {mp} = {Math.Abs(signedMpChange)} sampleAgeMs={mpSampleAgeMs}");
                 long eventIndex = Interlocked.Increment(ref _battleEventIndex);
                 LogHookRegisterProbeEventIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target);
+                LogPendingActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, nowTick);
                 long eventSeed = ComputeEventSeed(target, eventIndex, prevMp, mp, signedMpChange);
                 var attacker = _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick);
                 if (_settings.LogAttackerCandidates)
@@ -465,6 +471,7 @@ public class Mod : ModBase
         _lastHpSampleTick.Remove(unitPtr);
         _lastMpSampleTick.Remove(unitPtr);
         _seen.Remove(unitPtr);
+        _lastActionProbeState.Remove(unitPtr);
         _dumped.Remove(unitPtr);
         _lastRaw.Remove(unitPtr);
         _diffCounts.Remove(unitPtr);
@@ -681,6 +688,97 @@ public class Mod : ModBase
             parts.Add($"{raw[0]:X2}@{Convert.ToHexString(raw, start, end - start + 1)}");
         }
         Line($"[ACTOR-PROBE tgt=0x{targetId:X2} off=0x{start:X2}-0x{end:X2}] {string.Join(" ", parts)}");
+    }
+
+    private void LogPendingActionCandidatesIfEnabled(string kind, long eventIndex, UnitSnapshot target, long nowTick)
+    {
+        if (!_settings.LogPendingActionCandidatesOnEvent) return;
+
+        const int pendingProbeRawSize = 0x200;
+        int maxUnits = Math.Clamp(_settings.PendingActionCandidateMaxUnits, 1, 128);
+        var parts = new List<string>();
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p).Take(maxUnits))
+        {
+            byte[] raw = new byte[pendingProbeRawSize];
+            if (!CurrentProcessMemory.TryRead(ptr, raw, out _)) continue;
+            if (!TryCreateUnitSnapshot(ptr, raw, out var unit, out _)) continue;
+
+            int pendingFlag = unit.ReadByte(0x61);
+            int pendingTimer = unit.ReadByte(0x18D);
+            int actionId = unit.ReadUInt16(0x1A2);
+            int forecastDamage = unit.ReadUInt16(0x1C4);
+            int forecastCharge = unit.ReadByte(0x1D8);
+            int forecastFlag = unit.ReadByte(0x1E5);
+            int pendingFlag2 = unit.ReadByte(0x1EF);
+            int activeMarker = unit.ReadByte(0x1B8);
+            int phaseMarker = unit.ReadByte(0x1BB);
+
+            bool looksRelevant =
+                pendingFlag != 0 ||
+                pendingTimer != 0xFF ||
+                actionId != 0 ||
+                forecastDamage != 0 ||
+                forecastCharge != 0 ||
+                forecastFlag != 0 ||
+                pendingFlag2 != 0 ||
+                activeMarker != 0 ||
+                phaseMarker != 0;
+            if (!looksRelevant && !_settings.LogAllPendingActionCandidates) continue;
+
+            parts.Add(
+                $"0x{ptr:X}/id=0x{unit.CharId:X2}/hp={unit.Hp}/ct={unit.Ct}" +
+                $"/s61={pendingFlag}/t18D={pendingTimer}/act={actionId}" +
+                $"/dmg1C4={forecastDamage}/chg1D8={forecastCharge}/f1E5={forecastFlag}" +
+                $"/f1EF={pendingFlag2}/b8={activeMarker}/bb={phaseMarker}");
+        }
+
+        string summary = parts.Count == 0 ? "none" : string.Join(" ", parts);
+        Line($"[PENDING-ACTION-CANDIDATES kind={kind} event={eventIndex} target=0x{target.Ptr:X}/id=0x{target.CharId:X2} now={nowTick}] {summary}");
+    }
+
+    private bool LogActionStateChangeIfEnabled(nint unitPtr, int expectedId, long nowTick, bool touchForContext)
+    {
+        if (!_settings.LogActionStateChanges) return false;
+
+        const int actionProbeRawSize = 0x200;
+        byte[] raw = new byte[actionProbeRawSize];
+        if (!CurrentProcessMemory.TryRead(unitPtr, raw, out _)) return false;
+        if (!TryCreateUnitSnapshot(unitPtr, raw, out var unit, out _)) return false;
+        if (unit.CharId != expectedId) return false;
+
+        int pendingFlag = unit.ReadByte(0x61);
+        int pendingTimer = unit.ReadByte(0x18D);
+        int actionId = unit.ReadUInt16(0x1A2);
+        int forecastDamage = unit.ReadUInt16(0x1C4);
+        int forecastCharge = unit.ReadByte(0x1D8);
+        int forecastFlag = unit.ReadByte(0x1E5);
+        int pendingFlag2 = unit.ReadByte(0x1EF);
+        int activeMarker = unit.ReadByte(0x1B8);
+        int activeMarker2 = unit.ReadByte(0x1BA);
+        int phaseMarker = unit.ReadByte(0x1BB);
+
+        string stateKey = string.Join('/',
+            pendingFlag,
+            pendingTimer,
+            actionId,
+            forecastDamage,
+            forecastCharge,
+            forecastFlag,
+            pendingFlag2,
+            activeMarker,
+            activeMarker2,
+            phaseMarker);
+
+        if (_lastActionProbeState.TryGetValue(unitPtr, out string? previous) && previous == stateKey)
+            return false;
+
+        _lastActionProbeState[unitPtr] = stateKey;
+        Line(
+            $"[ACTION-STATE ptr=0x{unitPtr:X} id=0x{unit.CharId:X2} now={nowTick} touch={(touchForContext ? 1 : 0)}] " +
+            $"hp={unit.Hp} ct={unit.Ct} s61={pendingFlag} t18D={pendingTimer} act={actionId} " +
+            $"dmg1C4={forecastDamage} chg1D8={forecastCharge} f1E5={forecastFlag} f1EF={pendingFlag2} " +
+            $"b8={activeMarker} ba={activeMarker2} bb={phaseMarker}");
+        return true;
     }
 
     private int MaybeRewriteMpEvent(MpEvent mpEvent)
@@ -3261,6 +3359,10 @@ internal sealed class RuntimeSettings
     public bool ActorProbeOnEvent { get; set; } = false;
     public int ActorProbeStart { get; set; } = 0x40;
     public int ActorProbeEnd { get; set; } = 0x44;
+    public bool LogPendingActionCandidatesOnEvent { get; set; } = false;
+    public bool LogAllPendingActionCandidates { get; set; } = false;
+    public int PendingActionCandidateMaxUnits { get; set; } = 16;
+    public bool LogActionStateChanges { get; set; } = false;
 
     // Death-causing write: once vanilla damage is neutered, the engine no longer kills, so when OUR
     // formula zeroes a unit's HP we must set the death state ourselves. Off until the offset is mapped;
@@ -3334,5 +3436,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}";
 }

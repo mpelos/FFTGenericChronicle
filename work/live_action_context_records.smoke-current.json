@@ -1,0 +1,179 @@
+{
+  "pid": 30296,
+  "required": [
+    "cloud",
+    "agrias"
+  ],
+  "nearBytes": 1536,
+  "maxSpan": 2304,
+  "stats": {
+    "regions_skipped": 2637,
+    "regions_scanned": 762,
+    "bytes_scanned": 2622115840
+  },
+  "units": [
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    }
+  ],
+  "hitCounts": {
+    "Beowulf": 5000,
+    "Agrias": 5000,
+    "Cloud": 5000,
+    "Ramza": 5000,
+    "Ninja": 5000
+  },
+  "candidates": [
+    {
+      "start": 5884756384,
+      "end": 5884756448,
+      "span": 64,
+      "score": 966.0,
+      "repeatCount": 1,
+      "names": [
+        "Agrias",
+        "Ninja",
+        "Ramza",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15257600,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5884756384,
+          "relative": 0
+        },
+        {
+          "name": "Ninja",
+          "ptr": 5394226912,
+          "address": 5884756400,
+          "relative": 16
+        },
+        {
+          "name": "Ramza",
+          "ptr": 5394226400,
+          "address": 5884756432,
+          "relative": 48
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884756448,
+          "relative": 64
+        }
+      ]
+    },
+    {
+      "start": 5884773368,
+      "end": 5884773464,
+      "span": 96,
+      "score": 962.0,
+      "repeatCount": 1,
+      "names": [
+        "Agrias",
+        "Ninja",
+        "Ramza",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15257600,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5884773368,
+          "relative": 0
+        },
+        {
+          "name": "Ninja",
+          "ptr": 5394226912,
+          "address": 5884773392,
+          "relative": 24
+        },
+        {
+          "name": "Ramza",
+          "ptr": 5394226400,
+          "address": 5884773440,
+          "relative": 72
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884773464,
+          "relative": 96
+        }
+      ]
+    },
+    {
+      "start": 5876224048,
+      "end": 5876224080,
+      "span": 32,
+      "score": 670.0,
+      "repeatCount": 2492,
+      "names": [
+        "Agrias",
+        "Ninja",
+        "Ramza",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15257600,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5876224048,
+          "relative": 0
+        },
+        {
+          "name": "Ninja",
+          "ptr": 5394226912,
+          "address": 5876224056,
+          "relative": 8
+        },
+        {
+          "name": "Ramza",
+          "ptr": 5394226400,
+          "address": 5876224072,
+          "relative": 24
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5876224080,
+          "relative": 32
+        }
+      ]
+    }
+  ]
+}

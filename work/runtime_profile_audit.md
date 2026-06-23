@@ -21,6 +21,7 @@ Overall status: PASS
 | `death-flag-capture` | observe-only live capture | no HP/MP rewrites | `observe_only_death_capture` | PASS |
 | `actor-probe` | observe-only attacker RE capture | no HP/MP rewrites | `actor_probe_observe_only` | PASS |
 | `hook-register-probe` | observe-only hook register RE capture | no HP/MP rewrites | `hook_register_probe_observe_only` | PASS |
+| `action-context-probe` | observe-only charged-action RE capture | no HP/MP rewrites | `hook_register_probe_observe_only`, `actor_probe_observe_only` | PASS |
 | `engine-death-test` | live architecture proof | rewrites HP, but never below MinHpFloor | `engine_owned_death` | PASS |
 | `custom-formula-demo` | live/offline attacker+target proof | rewrites HP when CT attacker context is present, never below MinHpFloor | `custom_formula_demo` | PASS |
 | `death-test-hp-only` | legacy/refuted death-write probe | writes HP to 0 for foes only; do not use as success path | `legacy_death_hp_only`, `foes_only`, `known_ko_flag_configured` | PASS |
@@ -104,6 +105,14 @@ Overall status: PASS
 - Intent: Log a short burst of x64 register snapshots at the stable battle_base_ptr hook.
 - Live mutation: no HP/MP rewrites
 - Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False, ctResolver=False/0ms, counterResolver=False/0ms, hookRegs=True/2000
+- Errors: none
+
+### action-context-probe
+
+- Path: `work/battle-runtime-settings.action-context-probe.json`
+- Intent: Correlate CT-drop scheduling, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/512
 - Errors: none
 
 ### engine-death-test

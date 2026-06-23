@@ -1,0 +1,3106 @@
+{
+  "candidates": [
+    {
+      "end": 7710064,
+      "hits": [
+        {
+          "address": 7710062,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7710062,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7710064,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1227.5,
+      "span": 2,
+      "start": 7710062
+    },
+    {
+      "end": 4359784,
+      "hits": [
+        {
+          "address": 4359781,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 4359781,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 4359784,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 4325376,
+      "regionSize": 40960,
+      "score": 1227.25,
+      "span": 3,
+      "start": 4359781
+    },
+    {
+      "end": 96156368,
+      "hits": [
+        {
+          "address": 96156365,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 96156365,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 96156368,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1227.25,
+      "span": 3,
+      "start": 96156365
+    },
+    {
+      "end": 6223772,
+      "hits": [
+        {
+          "address": 6223768,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6223768,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6223772,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1227.0,
+      "span": 4,
+      "start": 6223768
+    },
+    {
+      "end": 63508697,
+      "hits": [
+        {
+          "address": 63508693,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 63508693,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 63508697,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 62783488,
+      "regionSize": 2093056,
+      "score": 1227.0,
+      "span": 4,
+      "start": 63508693
+    },
+    {
+      "end": 121365769,
+      "hits": [
+        {
+          "address": 121365765,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 121365765,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 121365769,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 121364480,
+      "regionSize": 798720,
+      "score": 1227.0,
+      "span": 4,
+      "start": 121365765
+    },
+    {
+      "end": 121893913,
+      "hits": [
+        {
+          "address": 121893909,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 121893909,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 121893913,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 121364480,
+      "regionSize": 798720,
+      "score": 1227.0,
+      "span": 4,
+      "start": 121893909
+    },
+    {
+      "end": 101511697,
+      "hits": [
+        {
+          "address": 101511692,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 101511692,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 101511697,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1226.75,
+      "span": 5,
+      "start": 101511692
+    },
+    {
+      "end": 87887987,
+      "hits": [
+        {
+          "address": 87887980,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 87887980,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 87887987,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 87642112,
+      "regionSize": 520192,
+      "score": 1226.25,
+      "span": 7,
+      "start": 87887980
+    },
+    {
+      "end": 1528514114,
+      "hits": [
+        {
+          "address": 1528514105,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1528514105,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1528514114,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1528512512,
+      "regionSize": 1662976,
+      "score": 1225.75,
+      "span": 9,
+      "start": 1528514105
+    },
+    {
+      "end": 1408339524,
+      "hits": [
+        {
+          "address": 1408339510,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408339510,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408339524,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1224.5,
+      "span": 14,
+      "start": 1408339510
+    },
+    {
+      "end": 1468451140,
+      "hits": [
+        {
+          "address": 1468451126,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468451126,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468451140,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1224.5,
+      "span": 14,
+      "start": 1468451126
+    },
+    {
+      "end": 807331365,
+      "hits": [
+        {
+          "address": 807331350,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 807331350,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 807331365,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 806486016,
+      "regionSize": 536870912,
+      "score": 1224.25,
+      "span": 15,
+      "start": 807331350
+    },
+    {
+      "end": 1367348973,
+      "hits": [
+        {
+          "address": 1367348956,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1367348956,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1367348973,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1223.75,
+      "span": 17,
+      "start": 1367348956
+    },
+    {
+      "end": 1535337261,
+      "hits": [
+        {
+          "address": 1535337244,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1535337244,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1535337261,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1535287296,
+      "regionSize": 921600,
+      "score": 1223.75,
+      "span": 17,
+      "start": 1535337244
+    },
+    {
+      "end": 1357160254,
+      "hits": [
+        {
+          "address": 1357160233,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357160233,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357160254,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1222.75,
+      "span": 21,
+      "start": 1357160233
+    },
+    {
+      "end": 1363218848,
+      "hits": [
+        {
+          "address": 1363218827,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1363218827,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1363218848,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1222.75,
+      "span": 21,
+      "start": 1363218827
+    },
+    {
+      "end": 1363873520,
+      "hits": [
+        {
+          "address": 1363873499,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1363873499,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1363873520,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1222.75,
+      "span": 21,
+      "start": 1363873499
+    },
+    {
+      "end": 1522230669,
+      "hits": [
+        {
+          "address": 1522230648,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1522230648,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1522230669,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1521242112,
+      "regionSize": 1810432,
+      "score": 1222.75,
+      "span": 21,
+      "start": 1522230648
+    },
+    {
+      "end": 1408341348,
+      "hits": [
+        {
+          "address": 1408341322,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408341322,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408341348,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1221.5,
+      "span": 26,
+      "start": 1408341322
+    },
+    {
+      "end": 1468452964,
+      "hits": [
+        {
+          "address": 1468452938,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468452938,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468452964,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1221.5,
+      "span": 26,
+      "start": 1468452938
+    },
+    {
+      "end": 1368599880,
+      "hits": [
+        {
+          "address": 1368599853,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1368599853,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1368599880,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1221.25,
+      "span": 27,
+      "start": 1368599853
+    },
+    {
+      "end": 135464544,
+      "hits": [
+        {
+          "address": 135464514,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 135464514,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 135464544,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 135004160,
+      "regionSize": 1302528,
+      "score": 1220.5,
+      "span": 30,
+      "start": 135464514
+    },
+    {
+      "end": 15721000,
+      "hits": [
+        {
+          "address": 15720969,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15720969,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15721000,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 770048,
+      "score": 1220.25,
+      "span": 31,
+      "start": 15720969
+    },
+    {
+      "end": 101944072,
+      "hits": [
+        {
+          "address": 101944034,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 101944034,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 101944072,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 101797888,
+      "regionSize": 434176,
+      "score": 1218.5,
+      "span": 38,
+      "start": 101944034
+    },
+    {
+      "end": 97130944,
+      "hits": [
+        {
+          "address": 97130904,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97130904,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97130944,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1218.0,
+      "span": 40,
+      "start": 97130904
+    },
+    {
+      "end": 98053664,
+      "hits": [
+        {
+          "address": 98053624,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 98053624,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 98053664,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1218.0,
+      "span": 40,
+      "start": 98053624
+    },
+    {
+      "end": 135697100,
+      "hits": [
+        {
+          "address": 135697056,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 135697056,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 135697100,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 135004160,
+      "regionSize": 1302528,
+      "score": 1217.0,
+      "span": 44,
+      "start": 135697056
+    },
+    {
+      "end": 1357159510,
+      "hits": [
+        {
+          "address": 1357159465,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357159465,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357159510,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1216.75,
+      "span": 45,
+      "start": 1357159465
+    },
+    {
+      "end": 1407311324,
+      "hits": [
+        {
+          "address": 1407311278,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407311278,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407311324,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407311278
+    },
+    {
+      "end": 1407311708,
+      "hits": [
+        {
+          "address": 1407311662,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407311662,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407311708,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407311662
+    },
+    {
+      "end": 1407377116,
+      "hits": [
+        {
+          "address": 1407377070,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407377070,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407377116,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407377070
+    },
+    {
+      "end": 1407377500,
+      "hits": [
+        {
+          "address": 1407377454,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407377454,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407377500,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407377454
+    },
+    {
+      "end": 1407760060,
+      "hits": [
+        {
+          "address": 1407760014,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407760014,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407760060,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407760014
+    },
+    {
+      "end": 1407760572,
+      "hits": [
+        {
+          "address": 1407760526,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407760526,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407760572,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407760526
+    },
+    {
+      "end": 1407771868,
+      "hits": [
+        {
+          "address": 1407771822,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407771822,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407771868,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407771822
+    },
+    {
+      "end": 1407772252,
+      "hits": [
+        {
+          "address": 1407772206,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407772206,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407772252,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407772206
+    },
+    {
+      "end": 1407891644,
+      "hits": [
+        {
+          "address": 1407891598,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407891598,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407891644,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407891598
+    },
+    {
+      "end": 1407892156,
+      "hits": [
+        {
+          "address": 1407892110,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407892110,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1407892156,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1407892110
+    },
+    {
+      "end": 1408348092,
+      "hits": [
+        {
+          "address": 1408348046,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408348046,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408348092,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1408348046
+    },
+    {
+      "end": 1408348604,
+      "hits": [
+        {
+          "address": 1408348558,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408348558,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408348604,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1408348558
+    },
+    {
+      "end": 1408545468,
+      "hits": [
+        {
+          "address": 1408545422,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408545422,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408545468,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1408545422
+    },
+    {
+      "end": 1408545980,
+      "hits": [
+        {
+          "address": 1408545934,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408545934,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1408545980,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1380122624,
+      "regionSize": 33525760,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1408545934
+    },
+    {
+      "end": 1467867580,
+      "hits": [
+        {
+          "address": 1467867534,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467867534,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467867580,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1467867534
+    },
+    {
+      "end": 1467868092,
+      "hits": [
+        {
+          "address": 1467868046,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467868046,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467868092,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1467868046
+    },
+    {
+      "end": 1467943308,
+      "hits": [
+        {
+          "address": 1467943262,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467943262,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467943308,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1467943262
+    },
+    {
+      "end": 1467943948,
+      "hits": [
+        {
+          "address": 1467943902,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467943902,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1467943948,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1467943902
+    },
+    {
+      "end": 1468076892,
+      "hits": [
+        {
+          "address": 1468076846,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468076846,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468076892,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468076846
+    },
+    {
+      "end": 1468077276,
+      "hits": [
+        {
+          "address": 1468077230,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468077230,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468077276,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468077230
+    },
+    {
+      "end": 1468130748,
+      "hits": [
+        {
+          "address": 1468130702,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468130702,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468130748,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468130702
+    },
+    {
+      "end": 1468131260,
+      "hits": [
+        {
+          "address": 1468131214,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468131214,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468131260,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468131214
+    },
+    {
+      "end": 1468459708,
+      "hits": [
+        {
+          "address": 1468459662,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468459662,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468459708,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468459662
+    },
+    {
+      "end": 1468460220,
+      "hits": [
+        {
+          "address": 1468460174,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468460174,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468460220,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468460174
+    },
+    {
+      "end": 1468471516,
+      "hits": [
+        {
+          "address": 1468471470,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468471470,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468471516,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468471470
+    },
+    {
+      "end": 1468471900,
+      "hits": [
+        {
+          "address": 1468471854,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468471854,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1468471900,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 1028,
+      "regionBase": 1447231488,
+      "regionSize": 33488896,
+      "score": 1216.5,
+      "span": 46,
+      "start": 1468471854
+    },
+    {
+      "end": 15449921,
+      "hits": [
+        {
+          "address": 15449874,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15449874,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15449921,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 770048,
+      "score": 1216.25,
+      "span": 47,
+      "start": 15449874
+    },
+    {
+      "end": 15480385,
+      "hits": [
+        {
+          "address": 15480338,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15480338,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15480385,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 770048,
+      "score": 1216.25,
+      "span": 47,
+      "start": 15480338
+    },
+    {
+      "end": 1359062280,
+      "hits": [
+        {
+          "address": 1359062232,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1359062232,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1359062280,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1216.0,
+      "span": 48,
+      "start": 1359062232
+    },
+    {
+      "end": 1361430744,
+      "hits": [
+        {
+          "address": 1361430696,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361430696,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361430744,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1216.0,
+      "span": 48,
+      "start": 1361430696
+    },
+    {
+      "end": 7221497,
+      "hits": [
+        {
+          "address": 7221448,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7221448,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7221497,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1215.75,
+      "span": 49,
+      "start": 7221448
+    },
+    {
+      "end": 1362537832,
+      "hits": [
+        {
+          "address": 1362537778,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1362537778,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1362537832,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1214.5,
+      "span": 54,
+      "start": 1362537778
+    },
+    {
+      "end": 1357042164,
+      "hits": [
+        {
+          "address": 1357042104,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357042104,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1357042164,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1213.0,
+      "span": 60,
+      "start": 1357042104
+    },
+    {
+      "end": 1528522425,
+      "hits": [
+        {
+          "address": 1528522365,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1528522365,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1528522425,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1528512512,
+      "regionSize": 1662976,
+      "score": 1213.0,
+      "span": 60,
+      "start": 1528522365
+    },
+    {
+      "end": 124307916,
+      "hits": [
+        {
+          "address": 124307854,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 124307854,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 124307916,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 123502592,
+      "regionSize": 1748992,
+      "score": 1212.5,
+      "span": 62,
+      "start": 124307854
+    },
+    {
+      "end": 87088581,
+      "hits": [
+        {
+          "address": 87088512,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 87088512,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 87088581,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 86855680,
+      "regionSize": 782336,
+      "score": 1210.75,
+      "span": 69,
+      "start": 87088512
+    },
+    {
+      "end": 97581005,
+      "hits": [
+        {
+          "address": 97580936,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97580936,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97581005,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1210.75,
+      "span": 69,
+      "start": 97580936
+    },
+    {
+      "end": 97792605,
+      "hits": [
+        {
+          "address": 97792536,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97792536,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 97792605,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1210.75,
+      "span": 69,
+      "start": 97792536
+    },
+    {
+      "end": 1361430624,
+      "hits": [
+        {
+          "address": 1361430552,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1361430552,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1361430624,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1210.0,
+      "span": 72,
+      "start": 1361430552
+    },
+    {
+      "end": 97581080,
+      "hits": [
+        {
+          "address": 97581005,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 97581005,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 97581080,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 1209.25,
+      "span": 75,
+      "start": 97581005
+    },
+    {
+      "end": 36439076,
+      "hits": [
+        {
+          "address": 36438998,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 36438998,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 36439076,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 36438016,
+      "regionSize": 8192,
+      "score": 1208.5,
+      "span": 78,
+      "start": 36438998
+    },
+    {
+      "end": 37422116,
+      "hits": [
+        {
+          "address": 37422038,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 37422038,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 37422116,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 37421056,
+      "regionSize": 8192,
+      "score": 1208.5,
+      "span": 78,
+      "start": 37422038
+    },
+    {
+      "end": 1358198696,
+      "hits": [
+        {
+          "address": 1358198618,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1358198618,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1358198696,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1208.5,
+      "span": 78,
+      "start": 1358198618
+    },
+    {
+      "end": 1358243144,
+      "hits": [
+        {
+          "address": 1358243066,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1358243066,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1358243144,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1208.5,
+      "span": 78,
+      "start": 1358243066
+    },
+    {
+      "end": 209068661,
+      "hits": [
+        {
+          "address": 209068582,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 209068582,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 209068661,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 209059840,
+      "regionSize": 12288,
+      "score": 1208.25,
+      "span": 79,
+      "start": 209068582
+    },
+    {
+      "end": 174731560,
+      "hits": [
+        {
+          "address": 174731476,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 174731476,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 174731560,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 174456832,
+      "regionSize": 2162688,
+      "score": 1207.0,
+      "span": 84,
+      "start": 174731476
+    },
+    {
+      "end": 1361428632,
+      "hits": [
+        {
+          "address": 1361428548,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361428548,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361428632,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1207.0,
+      "span": 84,
+      "start": 1361428548
+    },
+    {
+      "end": 1361428920,
+      "hits": [
+        {
+          "address": 1361428836,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361428836,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 1361428920,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1207.0,
+      "span": 84,
+      "start": 1361428836
+    },
+    {
+      "end": 119739072,
+      "hits": [
+        {
+          "address": 119738987,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 119738987,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 119739072,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 119513088,
+      "regionSize": 266240,
+      "score": 1206.75,
+      "span": 85,
+      "start": 119738987
+    },
+    {
+      "end": 1362162818,
+      "hits": [
+        {
+          "address": 1362162733,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1362162733,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 1362162818,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 1356988416,
+      "regionSize": 16007168,
+      "score": 1206.75,
+      "span": 85,
+      "start": 1362162733
+    },
+    {
+      "end": 8029706,
+      "hits": [
+        {
+          "address": 8029617,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8029617,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8029706,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1205.75,
+      "span": 89,
+      "start": 8029617
+    }
+  ],
+  "maxSpan": 1280,
+  "nearBytes": 768,
+  "patterns": [
+    {
+      "bytes": "0101",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:braverId:u16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "0101",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:braverId:s16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:braverId:u32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:braverId:s32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:damage:u16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:damage:s16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:damage:u32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:damage:s32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:charge:u16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:charge:s16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:charge:u32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:charge:s32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0900",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:skillsetLimit:u16",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "0900",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:skillsetLimit:s16",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "09000000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:skillsetLimit:u32",
+      "kind": "value",
+      "name": "skillsetLimit"
+    },
+    {
+      "bytes": "09000000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:skillsetLimit:s32",
+      "kind": "value",
+      "name": "skillsetLimit"
+    }
+  ],
+  "pid": 19044,
+  "required": [
+    "braverId",
+    "damage"
+  ],
+  "stats": {
+    "bytes_scanned": 2613559296,
+    "regions_scanned": 761,
+    "regions_skipped": 2666
+  }
+}

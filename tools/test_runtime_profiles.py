@@ -21,6 +21,7 @@ def main() -> int:
         "neuter-spotcheck",
         "actor-probe",
         "hook-register-probe",
+        "action-context-probe",
         "engine-death-test",
         "custom-formula-demo",
         "death-test-hp-only",
@@ -52,6 +53,13 @@ def main() -> int:
     check(profiles.truthy(hook_register_probe, "HookRegisterProbe"), "hook register probe must enable register capture")
     check(not profiles.truthy(hook_register_probe, "RewriteObservedDamage"), "hook register probe must not rewrite HP damage")
     check(hook_register_probe.get("HookRegisterProbeMaxLogs", 0) > 0, "hook register probe must limit log count")
+
+    action_context_probe = get(rows, "action-context-probe")
+    check(profiles.truthy(action_context_probe, "HookRegisterProbe"), "action context probe must enable register capture")
+    check(profiles.truthy(action_context_probe, "HookRegisterProbeOnCtDrop"), "action context probe must log CT-drop scheduling")
+    check(profiles.truthy(action_context_probe, "ActorProbeOnEvent"), "action context probe must preserve unit CT windows")
+    check(not profiles.truthy(action_context_probe, "RewriteObservedDamage"), "action context probe must not rewrite HP damage")
+    check(not profiles.truthy(action_context_probe, "RewriteObservedMpLoss"), "action context probe must not rewrite MP loss")
 
     killflag = get(rows, "death-test-killflag")
     check(profiles.truthy(killflag, "CauseDeathOnZeroHp"), "legacy killflag probe should preserve its KO-flag write")
