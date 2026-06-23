@@ -1,0 +1,20 @@
+docs/job-balance/68-squire-good-job-rediscussion-v0.md
+  s_fce6b25a5764ca::t_22fe27d3e0b8a4 1-192,197-199
+  s_fce6b25a5764ca::t_dc1fa107a84816 193-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "cc9f51a98c0991b3e11d6dc8741d75b7d297acdc",
+  "prompts": {},
+  "sessions": {
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
