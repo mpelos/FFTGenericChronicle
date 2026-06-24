@@ -151,6 +151,18 @@ internal static class RuntimeSettingsValidator
                 report.Error("PreClampPointerMaxPointersPerRoot", "PreClampPointerMaxPointersPerRoot must be within 0..64.");
             if (settings.PreClampPointerScanBytes > 0)
                 report.Warn("PreClampPointerScanBytes", "pre-clamp pointer scans are read-only but noisy; use only for short controlled RE captures.");
+            if (settings.PreClampActorStructDumpEnabled)
+            {
+                if (settings.PreClampActorStructDumpBytes <= 0 || settings.PreClampActorStructDumpBytes > 0x4000)
+                    report.Error("PreClampActorStructDumpBytes", "PreClampActorStructDumpBytes must be within 1..0x4000.");
+                if (settings.PreClampActorStructDumpBytes > settings.PreClampPointerScanBytes)
+                    report.Error("PreClampActorStructDumpBytes", "PreClampActorStructDumpBytes cannot exceed PreClampPointerScanBytes (the scan buffer it reads from).");
+                if (settings.PreClampActorStructUnitOffset < 0 || settings.PreClampActorStructUnitOffset > 0x4000)
+                    report.Error("PreClampActorStructUnitOffset", "PreClampActorStructUnitOffset must be within 0..0x4000.");
+                if (settings.PreClampActorStructDumpMaxLogs < 0)
+                    report.Error("PreClampActorStructDumpMaxLogs", "PreClampActorStructDumpMaxLogs must be nonnegative.");
+                report.Warn("PreClampActorStructDumpEnabled", "actor-struct dumps are read-only but verbose; use only for short controlled RE captures.");
+            }
             if (settings.PreClampFormulaPlanEnabled)
             {
                 if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)

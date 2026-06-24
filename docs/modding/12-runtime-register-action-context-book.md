@@ -2,7 +2,8 @@
 
 Status: living canonical model.
 
-Last major update: 2026-06-24, after the immediate Ninja dual-wield pre-clamp success.
+Last major update: 2026-06-24, after discovering the battle participant/actor array at the native
+pre-clamp frame (executing-action-pointer probe, Cross Slash AoE).
 
 This document is the organized "book" for what we have learned about FFT Ivalice Chronicles'
 battle runtime registers, unit structs, action state, and damage application path. Raw logs and
@@ -181,6 +182,67 @@ Other noisy leads:
   executing action object has been isolated yet;
 - single values are too noisy. A real candidate must correlate actor, action id, timing, and target
   or epicenter across baseline, forecast, confirmed, pending, resolution, and post states.
+
+### 2.4 Battle Participant / Actor Array
+
+Status: **proven live** (one session) as a structure; **stability across launches still unverified**.
+
+Discovered by the `executing-action-pointer-probe` during Cloud Cross Slash AoE. At the native
+pre-clamp frame, the pointer scan found a contiguous array of per-participant "actor" structs.
+
+```text
+actor module+0xD31FE8 -> unit 0x141855CE0 (Ramza)
+actor module+0xD32530 -> unit 0x141855EE0 (Ninja)
+actor module+0xD32A78 -> unit 0x1418560E0 (Agrias)
+actor module+0xD32FC0 -> unit 0x1418562E0 (Cloud / caster)
+```
+
+Layout:
+
+- contiguous array, stride `0x548`;
+- `actor+0x148` = pointer to the unit struct (this is how the scan identifies an actor: a root whose
+  `+0x148` dereferences to a registered unit);
+- `actor+0x0` = pointer to `(this - 0x548)` = previous array element (back-link).
+
+Why it matters for action context:
+
+- During each AoE HP-apply event, the caster's actor struct is present on the pre-clamp stack next to
+  the current target's actor struct:
+
+```text
+Ninja hit  (oldDebit=273): stack+0x20 -> Cloud actor (caster), stack+0x50 -> Ninja actor (target)
+Agrias hit (oldDebit=115): stack+0x60 -> Cloud actor (caster), stack+0x50 -> Agrias actor (target)
+```
+
+- The caster actor is constant across the AoE batch; the target actor varies.
+- Stack slot index is not fixed, so the discriminator is by content, not by slot:
+
+```text
+caster = stack actor whose +0x148 unit != current pre-clamp target
+```
+
+- Native pre-clamp registers still only carry the target (`rcx/rdi/r8`); the caster never appeared in
+  a register, only as an actor-struct pointer on the stack.
+
+This is the strongest candidate so far for a real engine "current executing action context", and it
+is reachable straight from memory at damage time. It could retire both CT and the pending-clear
+heuristic if the resolving action id also lives inside the actor struct.
+
+Open questions (being tested by the actor-struct dump probe):
+
+- Does the resolving action id (`0x0102` = 258 for Cross Slash) live inside the actor struct?
+- Is there a target pointer / target list / current-target index in the caster actor struct?
+- Is the `module+0xD32xxx` actor RVA stable across game launches, or is it session-allocated like the
+  unit pool?
+
+Probe support: `PreClampActorStructDumpEnabled` / `...DumpBytes` / `...UnitOffset` (default `0x148`) /
+`...DumpMaxLogs` emit `[PRECLAMP-ACTOR-DUMP root=0x... unit=0x.../id=0x.. bytes=N] <hex>` for any
+scanned root that links to a registered unit at the actor->unit offset. Profile:
+`work/battle-runtime-settings.executing-action-actor-dump-probe.json`.
+
+Evidence:
+
+- `work/live-captures/battleprobe_log.executing-action-pointer-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
 
 ## 3. Unit Struct Map
 
@@ -827,8 +889,11 @@ Useful log line families:
 
 Highest priority:
 
-1. **Current executing action pointer**
-   Find a real engine structure or hook that says "this caster/action is resolving now".
+1. **Current executing action pointer** (strong lead found — see 2.4)
+   The battle participant/actor array is the leading candidate: at the native pre-clamp frame the
+   caster's actor struct is on the stack alongside the target's, and `caster = stack actor whose
+   +0x148 != current target`. Remaining: confirm the resolving action id lives inside the actor
+   struct (actor-struct dump probe) and verify the actor RVA/layout is stable across launches.
 
 2. **Multiple simultaneous pending actions**
    A resolving-window heuristic may work for one pending action, but overlapping charges need a

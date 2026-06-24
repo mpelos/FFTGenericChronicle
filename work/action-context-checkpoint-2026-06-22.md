@@ -3742,3 +3742,114 @@ Current caveat:
 Eager immediate plans are still noisy/repeated while ba=1 stays active.
 Next cleanup should tighten source-context lifetime after the hit batch completes.
 ```
+
+## 2026-06-24 Live Result: Executing Action Pointer Probe (Cross Slash AoE)
+
+The observe-only `executing-action-pointer-probe` was run on the current PC.
+
+Controlled action:
+
+- Cloud Cross Slash centered on Agrias (hits Agrias + Ninja).
+- Forecast on Agrias: `115`.
+- Delayed resolution after Beowulf, Agrias, Ninja turns.
+- Result:
+  - Ninja `277 -> 4 = 273`.
+  - Agrias `322 -> 207 = 115`.
+  - Next active unit: Ramza.
+
+Artifacts:
+
+- `work/live-captures/battleprobe_log.executing-action-pointer-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.executing-action-pointer-probe-full.20260624-194730.txt`
+- `work/live-captures/battleprobe_log.pre-executing-action-pointer-probe.20260624-init-only.txt`
+
+### Verdict: partial pass + strong structural lead
+
+1. Internal pending tracker reconfirmed (already known): both AoE hits grouped into one batch
+   and resolved to Cloud/Cross Slash.
+   - Ninja and Agrias both: `resolved=0x1418562E0/id=0x32 source=pending-clear batch=1 act=258 confidence=damage-cache`.
+   - `fallback=none`, `ctCandidates=none` -> CT resolved nothing again.
+2. The stable-hook `kind=pendingresolve` scan was useless for attribution: `hookAgeMs=38745`
+   (snapshot ~39s stale) and `HOOK-PTRSCAN-EVENT kind=pendingresolve ... nohits`. The value is at
+   the native pre-clamp frame, not the stable hook at resolve-open.
+3. NEW: the native pre-clamp pointer scan revealed a battle participant/actor array.
+
+### The battle participant/actor array (new structure)
+
+Each scanned root that is an actor struct links to its unit at `+0x148`. Observed map (this session):
+
+```text
+actor module+0xD31FE8 -> unit 0x141855CE0 (Ramza)
+actor module+0xD32530 -> unit 0x141855EE0 (Ninja)
+actor module+0xD32A78 -> unit 0x1418560E0 (Agrias)
+actor module+0xD32FC0 -> unit 0x1418562E0 (Cloud)   <- caster
+```
+
+- Contiguous array, stride `0x548`. Predicted Beowulf actor: `module+0xD33508`.
+- Actor `+0x148` = pointer to the unit struct.
+- Actor `+0x0` = pointer to `(this - 0x548)` = previous array element (back-link), consistent with a
+  contiguous array.
+
+### Caster is reachable at damage time
+
+During BOTH AoE HP-apply events (same native tick `now=37793402198`), the caster's actor struct
+(Cloud `module+0xD32FC0`) is present on the pre-clamp stack next to the current target's actor struct:
+
+```text
+Ninja hit  (oldDebit=273): stack+0x20 -> Cloud actor (caster), stack+0x50 -> Ninja actor (target)
+Agrias hit (oldDebit=115): stack+0x60 -> Cloud actor (caster), stack+0x50 -> Agrias actor (target)
+```
+
+- The slot index of the caster differs per hit, so it cannot be hardcoded.
+- BUT the caster actor is constant across the AoE batch while the target actor varies.
+- Practical discriminator: `caster = stack actor whose +0x148 unit != current pre-clamp target`.
+- The native pre-clamp registers (`rcx/rdi/r8`) still only carry the target; in the Agrias hit
+  `r11`/`stack+0x10` carried Ninja's state struct (`unit+0x1BE`), i.e. the two AoE victims are
+  cross-linked, but the caster never appeared in a register.
+
+This is the candidate "current executing action context" the probe was hunting: a real engine
+structure that links the resolving caster to each target HP-apply, available straight from memory at
+damage time. It is the strongest lead so far for retiring both CT and the pending-clear heuristic.
+
+### Open question: does the action id live in the actor struct?
+
+We see the caster actor pointer, but have not yet dumped the actor struct bytes to find the resolving
+action id (Cross Slash `0x0102` / `258`), target list, current-target index, or charge fields. If
+the action id is inside the actor struct, caster+action+target can be read directly from engine
+memory at damage time with no pending tracker.
+
+### Next probe deployed: actor-struct dump
+
+Implemented and deployed an extension to the pre-clamp pointer scan:
+
+- New runtime settings:
+  - `PreClampActorStructDumpEnabled`
+  - `PreClampActorStructDumpBytes`
+  - `PreClampActorStructUnitOffset` (default `0x148`)
+  - `PreClampActorStructDumpMaxLogs`
+- New log line: `[PRECLAMP-ACTOR-DUMP root=0x... unitOff=+0x148 unit=0x.../id=0x.. bytes=N] <hex>`.
+- When a scanned root links to a registered unit at `PreClampActorStructUnitOffset`, the runtime
+  dumps that actor struct's raw bytes (from the buffer the scan already read; no extra process read).
+
+Profile: `work/battle-runtime-settings.executing-action-actor-dump-probe.json`
+
+- Dumps `1352` (`0x548`) bytes per actor struct (the full stride), `unitOffset=0x148`, max `32` dumps.
+- Still observe-only: `PreClampDamageRewriteLogOnly=true`, no HP/MP writes.
+
+Offline gate: `dotnet build`, smoke tests, `report_runtime_profiles.py`, `test_runtime_profiles.py`,
+`test_runtime_tooling.py`, settings validation, and `run-offline-checks.ps1` all passed. Deployed via
+`build-deploy.ps1 -RuntimeSettings ...` with the game closed. The live log was archived and cleared.
+
+Next live test (same controlled action, Cloud Cross Slash AoE on Agrias). After resolution, inspect:
+
+```text
+[PRECLAMP-ACTOR-DUMP ...]   # for Cloud (caster) and each target
+```
+
+Goals:
+
+1. Find `02 01` (`0x0102` = 258) or `258` inside the caster actor struct, and map its offset.
+2. Look for a target pointer / target list / current-target index in the caster actor struct.
+3. Compare caster vs target actor dumps to find caster-only action fields.
+4. Separately, relaunch and re-capture to test whether the `module+0xD32xxx` actor RVA and the
+   `+0x148` / `0x548` layout are stable across game launches.
