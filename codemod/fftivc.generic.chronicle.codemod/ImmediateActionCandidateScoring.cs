@@ -13,12 +13,16 @@ internal readonly record struct ImmediateActionCandidateScoreInput(
     int CtDropAgeMs,
     int RawDamage,
     int ActionIdAgeMs,
-    int ActiveActionAgeMs);
+    int ActiveActionAgeMs)
+{
+    public bool AllowZeroActionIdActiveSource { get; init; }
+}
 
 internal readonly record struct ImmediateActionCandidateScore(
     int Score,
     string Role,
     bool SourceLike,
+    bool CurrentActiveAction,
     bool FreshActionId,
     bool FreshActiveAction,
     bool StaleActionId,
@@ -31,21 +35,26 @@ internal static class ImmediateActionCandidateScoring
 
     public static ImmediateActionCandidateScore Evaluate(ImmediateActionCandidateScoreInput input)
     {
-        bool sourceLike = !input.IsTarget && input.UnitHp > 0 && input.ActionId > 0;
-        bool freshActionId = sourceLike && IsWithin(input.ActionIdAgeMs, FreshActionWindowMs);
-        bool freshActiveAction = sourceLike &&
-                                 input.ActiveMarker2 != 0 &&
-                                 IsWithin(input.ActiveActionAgeMs, FreshActionWindowMs);
-        bool staleActionId = sourceLike && input.ActionIdAgeMs > StaleActionWindowMs;
-        bool staleActiveAction = sourceLike &&
-                                 input.ActiveMarker2 != 0 &&
-                                 input.ActiveActionAgeMs > StaleActionWindowMs;
+        bool hasActiveSourceMarker = input.ActiveMarker2 == 1;
+        bool zeroActionActiveSource = input.AllowZeroActionIdActiveSource &&
+                                      !input.IsTarget &&
+                                      input.UnitHp > 0 &&
+                                      input.ActionId == 0 &&
+                                      hasActiveSourceMarker;
+        bool sourceLike = !input.IsTarget && input.UnitHp > 0 && (input.ActionId > 0 || zeroActionActiveSource);
+        bool currentActiveAction = sourceLike && hasActiveSourceMarker;
+        bool freshActionId = sourceLike && input.ActionId > 0 && IsWithin(input.ActionIdAgeMs, FreshActionWindowMs);
+        bool freshActiveAction = currentActiveAction && IsWithin(input.ActiveActionAgeMs, FreshActionWindowMs);
+        bool staleActionId = sourceLike && input.ActionId > 0 && input.ActionIdAgeMs > StaleActionWindowMs;
+        bool staleActiveAction = currentActiveAction && input.ActiveActionAgeMs > StaleActionWindowMs;
 
         int score = 0;
         if (sourceLike) score += 600;
+        if (currentActiveAction) score += 1000;
         if (freshActionId) score += 600;
-        if (freshActiveAction) score += 800;
+        if (freshActiveAction) score += 300;
         if (!input.IsTarget && input.ActionId > 0) score += 150;
+        if (zeroActionActiveSource) score += 150;
         if (!input.IsTarget && input.HasPrimaryPendingFlag) score += 200;
         if (!input.IsTarget && input.HasSecondaryPendingFlag) score += 200;
         if (!input.IsTarget && input.PendingTimer != 0xFF) score += 100;
@@ -56,13 +65,14 @@ internal static class ImmediateActionCandidateScoring
         if (input.IsTarget) score -= 200;
         if (input.UnitHp <= 0 && !input.IsTarget) score -= 500;
         if (staleActionId) score -= 500;
-        if (staleActiveAction) score -= 500;
+        if (staleActiveAction && !zeroActionActiveSource) score -= 500;
 
-        string role = input.IsTarget ? "target" : sourceLike ? "source-like" : "context";
+        string role = input.IsTarget ? "target" : zeroActionActiveSource ? "active-source-like" : sourceLike ? "source-like" : "context";
         return new ImmediateActionCandidateScore(
             score,
             role,
             sourceLike,
+            currentActiveAction,
             freshActionId,
             freshActiveAction,
             staleActionId,

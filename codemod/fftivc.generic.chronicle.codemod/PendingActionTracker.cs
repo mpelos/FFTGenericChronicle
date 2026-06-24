@@ -31,6 +31,7 @@ internal sealed record ActionProbeState(
 
     public bool HasPrimaryPendingFlag => (PendingFlag & PendingActionBit) != 0;
     public bool HasSecondaryPendingFlag => (PendingFlag2 & PendingActionBit) != 0;
+    public bool IsActiveSourceMarker => ActiveMarker2 == 1;
 
     public bool IsLivePendingAction => HasPrimaryPendingFlag && HasSecondaryPendingFlag && ActionId > 0;
 
@@ -199,6 +200,26 @@ internal sealed class PendingActionTracker
         int observedHpLoss,
         RuntimeSettings settings,
         long nowTick)
+        => MatchDamageEvidence(kind, eventIndex, target, targetState, observedHpLoss, settings, nowTick, consumeBatchEvent: true);
+
+    public PendingActionMatchResult MatchTargetCache(
+        string kind,
+        long eventIndex,
+        UnitSnapshot target,
+        ActionProbeState targetState,
+        RuntimeSettings settings,
+        long nowTick)
+        => MatchDamageEvidence(kind, eventIndex, target, targetState, targetState.ForecastDamage, settings, nowTick, consumeBatchEvent: false);
+
+    private PendingActionMatchResult MatchDamageEvidence(
+        string kind,
+        long eventIndex,
+        UnitSnapshot target,
+        ActionProbeState? targetState,
+        int observedHpLoss,
+        RuntimeSettings settings,
+        long nowTick,
+        bool consumeBatchEvent)
     {
         var lines = new List<string>();
         Prune(settings, nowTick, lines);
@@ -227,7 +248,9 @@ internal sealed class PendingActionTracker
             .ThenByDescending(candidate => candidate.Batch.OpenTick)
             .First();
 
-        best.Batch.Events++;
+        int batchEvent = best.Batch.Events + (consumeBatchEvent ? 1 : 0);
+        if (consumeBatchEvent)
+            best.Batch.Events = batchEvent;
         string activeSummary = SummarizeActiveBatches(active, nowTick);
         int ageMs = AgeMs(nowTick, best.Batch.OpenTick);
         var match = new PendingActionMatch(
@@ -236,7 +259,7 @@ internal sealed class PendingActionTracker
             best.Batch.BatchId,
             best.Batch.ActionId,
             ageMs,
-            best.Batch.Events,
+            batchEvent,
             maxEvents,
             cacheEvidence.Confidence,
             best.Score,
@@ -254,12 +277,12 @@ internal sealed class PendingActionTracker
             $"[PENDING-ACTION-MATCH kind={kind} event={eventIndex} target=0x{target.Ptr:X}/id=0x{target.CharId:X2} " +
             $"resolved=0x{best.Batch.Caster.Ptr:X}/id=0x{best.Batch.Caster.CharId:X2} " +
             $"source=pending-clear batch={best.Batch.BatchId} act={best.Batch.ActionId} " +
-            $"batchAge={ageMs}ms batchEvent={best.Batch.Events}/{maxEvents} " +
+            $"batchAge={ageMs}ms batchEvent={batchEvent}/{maxEvents} consume={(consumeBatchEvent ? 1 : 0)} " +
             $"confidence={cacheEvidence.Confidence} score={best.Score} observed={observedHpLoss} " +
             $"activeBatches={active.Count} trackedPending={_pendingByCaster.Count} " +
             $"batches={activeSummary} {cacheEvidence.Details}]");
 
-        if (best.Batch.Events >= maxEvents)
+        if (consumeBatchEvent && best.Batch.Events >= maxEvents)
         {
             best.Batch.Closed = true;
             lines.Add(

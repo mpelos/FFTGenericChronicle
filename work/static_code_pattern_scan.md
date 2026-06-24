@@ -5,7 +5,7 @@ does not prove runtime-decrypted/Denuvo regions and does not replace live tracin
 
 ## FFT_enhanced.exe
 
-- Path: `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe`
+- Path: `D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe`
 - Size: 365841152 bytes
 
 | Pattern | Matches | RVAs | Raw Offsets | Sections | Status | Note |
@@ -20,7 +20,7 @@ does not prove runtime-decrypted/Denuvo regions and does not replace live tracin
 
 ## FFT_classic.exe
 
-- Path: `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_classic.exe`
+- Path: `D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_classic.exe`
 - Size: 371524864 bytes
 
 | Pattern | Matches | RVAs | Raw Offsets | Sections | Status | Note |

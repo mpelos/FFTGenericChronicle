@@ -466,8 +466,8 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("PreClampDamageRewriteExpectedBytes must match the debit read")
         if int(settings.get("PreClampDamageRewriteTargetCharId", -1)) != 0x1E:
             errors.append("PreClampDamageRewriteTargetCharId must target Agrias id 0x1E")
-        if int(settings.get("PreClampDamageRewriteExpectedDebit", -1)) != 187:
-            errors.append("Expected staged debit must be Agrias Cross Slash 187")
+        if int(settings.get("PreClampDamageRewriteExpectedDebit", -1)) != 115:
+            errors.append("Expected staged debit must be Agrias Cross Slash 115")
         if int(settings.get("PreClampDamageRewriteExpectedCredit", -1)) != 0:
             errors.append("Expected staged credit must be 0")
         if int(settings.get("PreClampDamageRewriteForcedDebit", -1)) <= int(settings.get("PreClampDamageRewriteExpectedDebit", 0)):

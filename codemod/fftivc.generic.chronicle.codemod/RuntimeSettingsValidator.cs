@@ -137,10 +137,47 @@ internal static class RuntimeSettingsValidator
                 report.Error("PreClampDamageRewriteForcedCredit", "Forced credit must be -1 or a signed 16-bit nonnegative value.");
             if (!settings.PreClampDamageRewriteLogOnly &&
                 settings.PreClampDamageRewriteForcedDebit < 0 &&
-                settings.PreClampDamageRewriteForcedCredit < 0)
-                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit or forced credit.");
+                settings.PreClampDamageRewriteForcedCredit < 0 &&
+                !settings.PreClampFormulaPlanEnabled)
+                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, or PreClampFormulaPlanEnabled.");
             if (settings.PreClampDamageRewriteMaxWrites <= 0 || settings.PreClampDamageRewriteMaxWrites > 32)
                 report.Error("PreClampDamageRewriteMaxWrites", "Max writes must be within 1..32.");
+            if (settings.PreClampFormulaPlanEnabled)
+            {
+                if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)
+                    report.Error("PreClampFormulaPlanSlots", "Plan slots must be within 1..32.");
+                if (settings.PreClampFormulaPlanWindowMs <= 0 || settings.PreClampFormulaPlanWindowMs > 60_000)
+                    report.Error("PreClampFormulaPlanWindowMs", "Plan window must be within 1..60000 ms.");
+                if (settings.PreClampFormulaPlanMaxWrites <= 0 || settings.PreClampFormulaPlanMaxWrites > 16)
+                    report.Error("PreClampFormulaPlanMaxWrites", "Plan max writes must be within 1..16.");
+                if (!settings.TrackPendingActions)
+                    report.Warn("PreClampFormulaPlanEnabled", "TrackPendingActions is recommended so plan entries have action context.");
+                if (!settings.LogPreClampFormulaCandidates)
+                    report.Warn("PreClampFormulaPlanEnabled", "LogPreClampFormulaCandidates is recommended during live validation.");
+            }
+            if (settings.PreClampFormulaCandidateAllowImmediateAction)
+            {
+                if (settings.PreClampFormulaCandidateRequirePendingMatch)
+                    report.Warn("PreClampFormulaCandidateAllowImmediateAction", "PreClampFormulaCandidateRequirePendingMatch=true prevents immediate-action fallback from being used.");
+                if (settings.PreClampImmediateActionMinScore < 0)
+                    report.Error("PreClampImmediateActionMinScore", "Immediate action minimum score must be nonnegative.");
+                if (settings.PreClampImmediateActionMinMargin < 0)
+                    report.Error("PreClampImmediateActionMinMargin", "Immediate action minimum margin must be nonnegative.");
+                if (settings.PreClampImmediateActionMaxAgeMs <= 0 || settings.PreClampImmediateActionMaxAgeMs > 60_000)
+                    report.Error("PreClampImmediateActionMaxAgeMs", "Immediate action max age must be within 1..60000 ms.");
+                if (settings.PreClampImmediateActionAllowZeroActionId)
+                    report.Warn("PreClampImmediateActionAllowZeroActionId", "Zero action id sources should be used only for controlled basic-attack validation.");
+                if (settings.PreClampImmediateActionPlanMaxWrites <= 0 || settings.PreClampImmediateActionPlanMaxWrites > 16)
+                    report.Error("PreClampImmediateActionPlanMaxWrites", "Immediate action plan max writes must be within 1..16.");
+                if (!settings.PreClampImmediateActionPlanRequireExpectedHp && settings.PreClampImmediateActionPlanMaxWrites > 1)
+                    report.Warn("PreClampImmediateActionPlanRequireExpectedHp", "HP-wildcard immediate plans can rewrite multiple hits from one queued formula; use only when target HP is not part of the intended formula.");
+                if (settings.PreClampImmediateActionNearbyUnitScanRadius < 0 || settings.PreClampImmediateActionNearbyUnitScanRadius > 32)
+                    report.Error("PreClampImmediateActionNearbyUnitScanRadius", "Immediate action nearby unit scan radius must be within 0..32.");
+                if (settings.PreClampImmediateActionPlanEagerTargets)
+                    report.Warn("PreClampImmediateActionPlanEagerTargets", "Eager immediate plans prequeue one positive-debit rewrite per nearby possible target; use only for controlled immediate/basic validation.");
+                if (!settings.LogActionStateChanges)
+                    report.Warn("PreClampFormulaCandidateAllowImmediateAction", "LogActionStateChanges is recommended so immediate action ages are meaningful.");
+            }
         }
         if (settings.HpEventProbeMaxLogs < 0)
             report.Error("HpEventProbeMaxLogs", "HpEventProbeMaxLogs must be nonnegative.");
@@ -616,6 +653,8 @@ internal static class RuntimeSettingsValidator
         context.Set("a.sourceCounter", 1);
         context.Set("attacker.sourcePending", 1);
         context.Set("a.sourcePending", 1);
+        context.Set("attacker.sourceImmediate", 1);
+        context.Set("a.sourceImmediate", 1);
         AddActionVariables(context, settings);
         AddSlotVariables(context, "slot", settings.EquipmentSlots, catalog, preferWeapon: false);
         AddSlotVariables(context, "targetSlot", settings.EquipmentSlots, catalog, preferWeapon: false);
@@ -771,6 +810,7 @@ internal static class RuntimeSettingsValidator
             context.Set($"{prefix}.present", 1);
             context.Set($"{prefix}.sourceVanillaDamage", 1);
             context.Set($"{prefix}.sourcePending", 1);
+            context.Set($"{prefix}.sourceImmediate", 1);
             context.Set($"{prefix}.signal", 1);
             context.Set($"{prefix}.id", 1);
             context.Set($"{prefix}.actionId", 1);
@@ -797,6 +837,22 @@ internal static class RuntimeSettingsValidator
             context.Set($"{prefix}.confidenceRecentDamageCache", 1);
             context.Set($"{prefix}.confidenceLethalClampDamageCache", 1);
             context.Set($"{prefix}.confidenceRecentResolve", 1);
+            context.Set($"{prefix}.runnerUpScore", 100);
+            context.Set($"{prefix}.margin", 300);
+            context.Set($"{prefix}.stateAgeMs", 100);
+            context.Set($"{prefix}.seenAgeMs", 100);
+            context.Set($"{prefix}.ctDropAgeMs", 100);
+            context.Set($"{prefix}.actionIdAgeMs", 100);
+            context.Set($"{prefix}.activeActionAgeMs", 100);
+            context.Set($"{prefix}.currentActiveAction", 1);
+            context.Set($"{prefix}.freshActionId", 1);
+            context.Set($"{prefix}.freshActiveAction", 1);
+            context.Set($"{prefix}.staleActionId", 0);
+            context.Set($"{prefix}.staleActiveAction", 0);
+            context.Set($"{prefix}.activeMarker2", 1);
+            context.Set($"{prefix}.pendingFlag", 0);
+            context.Set($"{prefix}.pendingFlag2", 0);
+            context.Set($"{prefix}.pendingTimer", 255);
             context.Set($"{prefix}.vanillaDamage", 20);
             context.Set($"{prefix}.vanillaDamageAbs", 20);
             context.Set($"{prefix}.vanillaHealing", 0);

@@ -1,5 +1,5 @@
 {
-  "_note": "LIVE PROOF - pre-clamp staged damage rewrite. Load the Cloud-active baseline, preview Cross Slash on Agrias for 187, then confirm. When the state-apply HP routine is about to read Agrias unit+0x1C4=187, force the staged debit to 9999 before vanilla clamp/write. This tests whether custom lethal damage can feed vanilla HP-zero/KO lifecycle without a late HP write.",
+  "_note": "LIVE PROOF - pre-clamp staged damage rewrite. Load the Cloud-active baseline, preview Cross Slash on Agrias for 115, then confirm. When the state-apply HP routine is about to read Agrias unit+0x1C4=115, force the staged debit to 9999 before vanilla clamp/write. This tests whether custom lethal damage can feed vanilla HP-zero/KO lifecycle without a late HP write.",
   "RewriteObservedDamage": false,
   "RewriteObservedHealing": false,
   "RewriteObservedMpLoss": false,
@@ -28,9 +28,9 @@
   "PreClampDamageRewriteRva": 3188335,
   "PreClampDamageRewriteExpectedBytes": "0F BF 45 06",
   "PreClampDamageRewriteTargetCharId": 30,
-  "PreClampDamageRewriteExpectedDebit": 187,
+  "PreClampDamageRewriteExpectedDebit": 115,
   "PreClampDamageRewriteExpectedCredit": 0,
-  "PreClampDamageRewriteMinHp": 188,
+  "PreClampDamageRewriteMinHp": 116,
   "PreClampDamageRewriteMaxHp": 9999,
   "PreClampDamageRewriteForcedDebit": 9999,
   "PreClampDamageRewriteForcedCredit": 0,

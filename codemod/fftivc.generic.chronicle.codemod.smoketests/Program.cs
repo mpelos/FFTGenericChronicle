@@ -55,6 +55,21 @@ internal static class Program
         Check(expressionResult.FinalDamage == 30, $"attacker formula final damage expected 30, got {expressionResult.FinalDamage}");
         Check(expressionResult.DesiredHp == 20, $"attacker formula desired HP expected 20, got {expressionResult.DesiredHp}");
 
+        var stagedSettings = new RuntimeSettings
+        {
+            RewriteObservedDamage = false,
+            RewriteConditionFormula = "event.isDamage && a.present",
+            FinalDamageFormula = "a.pa * 3 + vanillaDamage",
+        };
+        var stagedLateResult = new BattleFormulaEngine(stagedSettings, catalog)
+            .Evaluate(new DamageEvent(target, 50, 30, 20, attacker));
+        Check(!stagedLateResult.ShouldRewrite, "late HP rewrite should stay off when RewriteObservedDamage is false");
+        var stagedApplyResult = new BattleFormulaEngine(stagedSettings, catalog)
+            .EvaluateForStagedApply(new DamageEvent(target, 50, 30, 20, attacker));
+        Check(stagedApplyResult.ShouldRewrite, "staged apply evaluation should bypass the late rewrite gate");
+        Check(stagedApplyResult.FinalDamage == 56, $"staged apply final damage expected 56, got {stagedApplyResult.FinalDamage}");
+        Check(stagedApplyResult.DesiredHp == 0, $"staged apply desired HP expected 0, got {stagedApplyResult.DesiredHp}");
+
         var mpAwareResult = new BattleFormulaEngine(new RuntimeSettings
         {
             RewriteObservedDamage = true,
@@ -865,6 +880,28 @@ internal static class Program
             })));
         Check(pendingContextResult.ShouldRewrite, "pending source context formula should rewrite");
         Check(pendingContextResult.FinalDamage == 1557, $"pending source context formula expected 1557, got {pendingContextResult.FinalDamage}");
+
+        var immediateContextResult = new BattleFormulaEngine(new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            FinalDamageFormula = "a.sourceImmediate * 1000 + action.sourceImmediate * 100 + action.id + action.currentActiveAction * 20 + action.freshActiveAction * 10 + action.margin",
+        }, catalog).Evaluate(new DamageEvent(
+            target,
+            50,
+            30,
+            20,
+            attacker,
+            "immediate-action",
+            new ActionSignal("immediate-action-1", "immediate-action", new Dictionary<string, int>
+            {
+                ["signal"] = 1,
+                ["id"] = 1,
+                ["currentActiveAction"] = 1,
+                ["freshActiveAction"] = 1,
+                ["margin"] = 300,
+            })));
+        Check(immediateContextResult.ShouldRewrite, "immediate source context formula should rewrite");
+        Check(immediateContextResult.FinalDamage == 1431, $"immediate source context formula expected 1431, got {immediateContextResult.FinalDamage}");
 
         var actionSignalSettings = new RuntimeSettings
         {
@@ -1966,6 +2003,16 @@ internal static class Program
             (nint)0x6100, 0x1E, 12, 207, 322, 0, false, 11, 7, 12, 4, 3, 70, 63,
             ActionRaw(forecastDamage: 115, forecastCharge: 2, forecastFlag: 128, phaseMarker: 2),
             Ct: 100);
+        var agriasPreClampCandidate = pendingTracker.MatchTargetCache(
+            "preclamp-cache",
+            899,
+            agriasHit,
+            ActionProbeState.From(agriasHit),
+            pendingTrackerSettings,
+            TickAfter(545));
+        Check(agriasPreClampCandidate.Lines.Any(line => line.Contains("resolved=0x6000") && line.Contains("consume=0")), "pending tracker target-cache match should resolve without consuming a batch event");
+        Check(agriasPreClampCandidate.Match?.BatchEvent == 0, $"pending tracker target-cache match expected preview batch event 0, got {agriasPreClampCandidate.Match?.BatchEvent}");
+
         var agriasMatch = pendingTracker.MatchHpEvent(
             "damage",
             900,
@@ -2896,13 +2943,77 @@ internal static class Program
                 ActionIdAgeMs: 0,
                 ActiveActionAgeMs: 0));
 
+        var basicAttackActiveSource = ImmediateActionCandidateScoring.Evaluate(
+            new ImmediateActionCandidateScoreInput(
+                IsTarget: false,
+                UnitHp: 322,
+                ActionId: 0,
+                HasPrimaryPendingFlag: false,
+                HasSecondaryPendingFlag: false,
+                PendingTimer: 0xFF,
+                ActiveMarker2: 1,
+                StateAgeMs: 5,
+                SeenAgeMs: 500,
+                CtDropAgeMs: 2000,
+                RawDamage: 0,
+                ActionIdAgeMs: 20_000,
+                ActiveActionAgeMs: 5)
+            {
+                AllowZeroActionIdActiveSource = true,
+            });
+
+        var basicAttackActiveSourceWithoutOptIn = ImmediateActionCandidateScoring.Evaluate(
+            new ImmediateActionCandidateScoreInput(
+                IsTarget: false,
+                UnitHp: 322,
+                ActionId: 0,
+                HasPrimaryPendingFlag: false,
+                HasSecondaryPendingFlag: false,
+                PendingTimer: 0xFF,
+                ActiveMarker2: 1,
+                StateAgeMs: 5,
+                SeenAgeMs: 500,
+                CtDropAgeMs: 2000,
+                RawDamage: 0,
+                ActionIdAgeMs: 20_000,
+                ActiveActionAgeMs: 5));
+
+        var delayedBasicAttackActiveSource = ImmediateActionCandidateScoring.Evaluate(
+            new ImmediateActionCandidateScoreInput(
+                IsTarget: false,
+                UnitHp: 322,
+                ActionId: 0,
+                HasPrimaryPendingFlag: false,
+                HasSecondaryPendingFlag: false,
+                PendingTimer: 0xFF,
+                ActiveMarker2: 1,
+                StateAgeMs: 28_302,
+                SeenAgeMs: 24_742,
+                CtDropAgeMs: -1,
+                RawDamage: 0,
+                ActionIdAgeMs: 42_928,
+                ActiveActionAgeMs: 29_386)
+            {
+                AllowZeroActionIdActiveSource = true,
+            });
+
         Check(ramzaRush.Role == "source-like", "fresh Ramza Rush should be source-like");
         Check(ramzaRush.FreshActionId, "fresh Ramza Rush should mark fresh action id");
+        Check(ramzaRush.CurrentActiveAction, "fresh Ramza Rush should mark current active action");
         Check(ramzaRush.FreshActiveAction, "fresh Ramza Rush should mark fresh active action");
         Check(staleCloudCrossSlash.StaleActionId, "old Cloud Cross Slash action id should be stale");
         Check(staleCloudCrossSlash.StaleActiveAction, "old Cloud Cross Slash active action should be stale");
         Check(ramzaRush.Score > staleCloudCrossSlash.Score, "fresh Ramza Rush should beat stale Cloud Cross Slash");
         Check(ramzaRush.Score > lethalTarget.Score, "fresh Ramza Rush should beat the target-side lethal cache candidate");
+        Check(basicAttackActiveSource.Role == "active-source-like", "opt-in active marker with action id 0 should be a basic-action source candidate");
+        Check(basicAttackActiveSource.CurrentActiveAction, "opt-in action id 0 source should mark current active action");
+        Check(basicAttackActiveSource.FreshActiveAction, "opt-in action id 0 source should use fresh active marker");
+        Check(basicAttackActiveSource.Score >= 1600, $"basic active source should have a usable score, got {basicAttackActiveSource.Score}");
+        Check(!basicAttackActiveSourceWithoutOptIn.SourceLike, "action id 0 active marker should not be source-like without opt-in");
+        Check(delayedBasicAttackActiveSource.CurrentActiveAction, "delayed basic attack should still be current active action");
+        Check(!delayedBasicAttackActiveSource.FreshActiveAction, "delayed basic attack should no longer be fresh");
+        Check(delayedBasicAttackActiveSource.StaleActiveAction, "delayed basic attack should report stale active age diagnostically");
+        Check(delayedBasicAttackActiveSource.Score >= 1600, $"delayed basic active source should remain selectable, got {delayedBasicAttackActiveSource.Score}");
     }
 
     private static UnitSnapshot MakeActionProbeUnit(

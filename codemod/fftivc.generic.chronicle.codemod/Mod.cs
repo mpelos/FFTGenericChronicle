@@ -45,6 +45,9 @@ public class Mod : ModBase
 
     private const string BattleBasePtr = "0F B7 41 30 66 89 42 0C"; // movzx eax,[rcx+0x30]; rcx=unit (stable)
     private const int DUMP = 0x200;       // copy 0x00..0x1FF (stats + suspected gear/action/death region)
+    private const int BattleUnitStride = 0x200;
+    private const int PlanExpectedAny = -1;
+    private const int PlanExpectedPositiveDebit = -2;
     private const int B_PTR = DUMP;       // native pointer-sized: rcx unit pointer
     private const int B_COUNT = DUMP + 8;
     private const int B_REGS = B_COUNT + 8;
@@ -61,8 +64,10 @@ public class Mod : ModBase
     private const int LANDMARK_BUFFER_SIZE = L_EVENTS + (LANDMARK_RING_SIZE * LANDMARK_SLOT_SIZE);
     private const int PRECLAMP_RING_SIZE = 32;
     private const int PRECLAMP_RING_MASK = PRECLAMP_RING_SIZE - 1;
-    private const int PRECLAMP_SLOT_SIZE = 0x40;
+    private const int PRECLAMP_SLOT_SIZE = 0x440;
     private const int P_COUNT = 0;
+    private const int P_STATIC_WRITES = 4;
+    private const int P_PLAN_WRITES = 8;
     private const int P_EVENTS = 0x10;
     private const int P_SEQ = 0;
     private const int P_UNIT = 8;
@@ -76,7 +81,33 @@ public class Mod : ModBase
     private const int P_FORCED_DEBIT = 48;
     private const int P_FORCED_CREDIT = 52;
     private const int P_FLAGS = 56;
-    private const int PRECLAMP_BUFFER_SIZE = P_EVENTS + (PRECLAMP_RING_SIZE * PRECLAMP_SLOT_SIZE);
+    private const int P_ACTION = 60;
+    private const int P_REGS = 64;
+    private const int P_STACK_DUMP = 0xC0;
+    private const int PRECLAMP_STACK_DUMP_SIZE = 0x100;
+    private const int P_STATE_DUMP = P_STACK_DUMP + PRECLAMP_STACK_DUMP_SIZE;
+    private const int PRECLAMP_STATE_DUMP_SIZE = 0x80;
+    private const int P_UNIT_DUMP = P_STATE_DUMP + PRECLAMP_STATE_DUMP_SIZE;
+    private const int PRECLAMP_UNIT_DUMP_SIZE = 0x200;
+    private const int PRECLAMP_EVENT_BUFFER_SIZE = P_EVENTS + (PRECLAMP_RING_SIZE * PRECLAMP_SLOT_SIZE);
+    private const int PRECLAMP_PLAN_MAX_SLOTS = 32;
+    private const int PRECLAMP_PLAN_SLOT_SIZE = 0x50;
+    private const int P_PLAN_TABLE = PRECLAMP_EVENT_BUFFER_SIZE;
+    private const int PLAN_ACTIVE = 0;
+    private const int PLAN_TARGET = 8;
+    private const int PLAN_EXPECTED_DEBIT = 16;
+    private const int PLAN_EXPECTED_CREDIT = 20;
+    private const int PLAN_FORCED_DEBIT = 24;
+    private const int PLAN_FORCED_CREDIT = 28;
+    private const int PLAN_MAX_WRITES = 32;
+    private const int PLAN_WRITE_COUNT = 36;
+    private const int PLAN_FLAGS = 40;
+    private const int PLAN_ACTION = 44;
+    private const int PLAN_BATCH = 48;
+    private const int PLAN_CREATED_TICK = 56;
+    private const int PLAN_EXPECTED_HP = 64;
+    private const int PLAN_EXPECTED_MAX_HP = 68;
+    private const int PRECLAMP_BUFFER_SIZE = PRECLAMP_EVENT_BUFFER_SIZE + (PRECLAMP_PLAN_MAX_SLOTS * PRECLAMP_PLAN_SLOT_SIZE);
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -97,6 +128,8 @@ public class Mod : ModBase
     private readonly Dictionary<nint, long> _lastHpSampleTick = new();
     private readonly Dictionary<nint, long> _lastMpSampleTick = new();
     private readonly Dictionary<nint, string> _lastActionProbeState = new();
+    private readonly Dictionary<nint, string> _lastPreClampFormulaCandidateKey = new();
+    private readonly Dictionary<string, long> _preClampFormulaPlanKeys = new(StringComparer.Ordinal);
     private readonly Dictionary<nint, long> _lastActionProbeChangeTick = new();
     private readonly Dictionary<nint, int> _lastActionProbeActionId = new();
     private readonly Dictionary<nint, long> _lastActionProbeActionIdChangeTick = new();
@@ -124,6 +157,7 @@ public class Mod : ModBase
     private int _hookRegisterPointerScanLogs;
     private int _hpEventProbeLogs;
     private int _actionBoundaryProbeLogs;
+    private int _preClampFormulaCandidateLogs;
     private int _landmarkProbeLogs;
     private int _lastLandmarkProbeSequence;
     private int _lastPreClampDamageRewriteSequence;
@@ -291,7 +325,8 @@ public class Mod : ModBase
 
         if (_settings.PreClampDamageRewriteForcedDebit < 0 &&
             _settings.PreClampDamageRewriteForcedCredit < 0 &&
-            !_settings.PreClampDamageRewriteLogOnly)
+            !_settings.PreClampDamageRewriteLogOnly &&
+            !_settings.PreClampFormulaPlanEnabled)
         {
             Line("[PRECLAMP-REWRITE-SKIP] no forced debit/credit configured");
             Flush();
@@ -321,7 +356,8 @@ public class Mod : ModBase
                 $"expectedCredit={FormatMaybeInt(_settings.PreClampDamageRewriteExpectedCredit)} " +
                 $"forcedDebit={FormatMaybeInt(_settings.PreClampDamageRewriteForcedDebit)} " +
                 $"forcedCredit={FormatMaybeInt(_settings.PreClampDamageRewriteForcedCredit)} " +
-                $"maxWrites={_settings.PreClampDamageRewriteMaxWrites} logOnly={(_settings.PreClampDamageRewriteLogOnly ? 1 : 0)}");
+                $"maxWrites={_settings.PreClampDamageRewriteMaxWrites} logOnly={(_settings.PreClampDamageRewriteLogOnly ? 1 : 0)} " +
+                $"planEnabled={(_settings.PreClampFormulaPlanEnabled ? 1 : 0)} planSlots={PlanSlotCount}");
         }
         catch (Exception ex)
         {
@@ -341,6 +377,12 @@ public class Mod : ModBase
         int forcedCredit = ClampInt16Immediate(_settings.PreClampDamageRewriteForcedCredit);
         bool forceDebit = _settings.PreClampDamageRewriteForcedDebit >= 0 && !_settings.PreClampDamageRewriteLogOnly;
         bool forceCredit = _settings.PreClampDamageRewriteForcedCredit >= 0 && !_settings.PreClampDamageRewriteLogOnly;
+        bool staticEnabled = _settings.PreClampDamageRewriteForcedDebit >= 0 ||
+                             _settings.PreClampDamageRewriteForcedCredit >= 0 ||
+                             _settings.PreClampDamageRewriteLogOnly;
+        bool planEnabled = _settings.PreClampFormulaPlanEnabled;
+        bool planWrites = planEnabled && !_settings.PreClampDamageRewriteLogOnly;
+        int planSlots = PlanSlotCount;
         int flags = (_settings.PreClampDamageRewriteLogOnly ? 1 : 0) |
                     (forceDebit ? 2 : 0) |
                     (forceCredit ? 4 : 0);
@@ -353,86 +395,290 @@ public class Mod : ModBase
             "push rdx",
             "push r8",
             "push r9",
+            "push r10",
+            "push r11",
             "pushfq",
             $"mov rax, {buf}",
-            $"mov ecx, [rax+{P_COUNT}]",
-            $"cmp ecx, {maxWrites}",
-            "jge .done",
             "test rdi, rdi",
             "jz .done",
             "test rbp, rbp",
             "jz .done",
         };
 
-        if (_settings.PreClampDamageRewriteTargetCharId >= 0)
+        void AddRecordEventFromStatic()
         {
-            asm.Add("movzx edx, byte [rdi]");
-            asm.Add($"cmp edx, {_settings.PreClampDamageRewriteTargetCharId}");
-            asm.Add("jne .done");
+            asm.AddRange(
+            [
+                $"mov ecx, [rax+{P_COUNT}]",
+                "add ecx, 1",
+                $"mov [rax+{P_COUNT}], ecx",
+                "mov r8d, ecx",
+                $"and r8d, {PRECLAMP_RING_MASK}",
+                $"imul r8, r8, {PRECLAMP_SLOT_SIZE}",
+                "add r8, rax",
+                $"add r8, {P_EVENTS}",
+                $"mov dword [r8+{P_SEQ}], ecx",
+                $"mov [r8+{P_UNIT}], rdi",
+                $"mov [r8+{P_STATE}], rbp",
+                "movzx edx, byte [rdi]",
+                $"mov dword [r8+{P_ID}], edx",
+                "movzx edx, byte [rdi+4]",
+                $"mov dword [r8+{P_TEAM}], edx",
+                "movzx edx, word [rdi+30h]",
+                $"mov dword [r8+{P_HP}], edx",
+                "movzx edx, word [rdi+32h]",
+                $"mov dword [r8+{P_MAX_HP}], edx",
+                "movsx edx, word [rbp+6]",
+                $"mov dword [r8+{P_OLD_DEBIT}], edx",
+                "movsx edx, word [rbp+8]",
+                $"mov dword [r8+{P_OLD_CREDIT}], edx",
+                $"mov dword [r8+{P_FORCED_DEBIT}], {forcedDebit}",
+                $"mov dword [r8+{P_FORCED_CREDIT}], {forcedCredit}",
+                $"mov dword [r8+{P_FLAGS}], {flags}",
+                $"mov dword [r8+{P_ACTION}], -1",
+            ]);
+            AddStorePreClampRegisters();
         }
 
-        if (_settings.PreClampDamageRewriteTargetTeam >= 0)
+        void AddRecordEventFromPlan()
         {
-            asm.Add("movzx edx, byte [rdi+4]");
-            asm.Add($"cmp edx, {_settings.PreClampDamageRewriteTargetTeam}");
-            asm.Add("jne .done");
+            asm.AddRange(
+            [
+                $"mov ecx, [rax+{P_COUNT}]",
+                "add ecx, 1",
+                $"mov [rax+{P_COUNT}], ecx",
+                $"mov r11d, [rax+{P_PLAN_WRITES}]",
+                "add r11d, 1",
+                $"mov [rax+{P_PLAN_WRITES}], r11d",
+                "mov r8d, ecx",
+                $"and r8d, {PRECLAMP_RING_MASK}",
+                $"imul r8, r8, {PRECLAMP_SLOT_SIZE}",
+                "add r8, rax",
+                $"add r8, {P_EVENTS}",
+                $"mov dword [r8+{P_SEQ}], ecx",
+                $"mov [r8+{P_UNIT}], rdi",
+                $"mov [r8+{P_STATE}], rbp",
+                "movzx edx, byte [rdi]",
+                $"mov dword [r8+{P_ID}], edx",
+                "movzx edx, byte [rdi+4]",
+                $"mov dword [r8+{P_TEAM}], edx",
+                "movzx edx, word [rdi+30h]",
+                $"mov dword [r8+{P_HP}], edx",
+                "movzx edx, word [rdi+32h]",
+                $"mov dword [r8+{P_MAX_HP}], edx",
+                "movsx edx, word [rbp+6]",
+                $"mov dword [r8+{P_OLD_DEBIT}], edx",
+                "movsx edx, word [rbp+8]",
+                $"mov dword [r8+{P_OLD_CREDIT}], edx",
+                $"mov edx, [r9+{PLAN_FORCED_DEBIT}]",
+                $"mov dword [r8+{P_FORCED_DEBIT}], edx",
+                $"mov edx, [r9+{PLAN_FORCED_CREDIT}]",
+                $"mov dword [r8+{P_FORCED_CREDIT}], edx",
+                $"mov edx, [r9+{PLAN_FLAGS}]",
+                $"mov dword [r8+{P_FLAGS}], edx",
+                $"mov edx, [r9+{PLAN_ACTION}]",
+                $"mov dword [r8+{P_ACTION}], edx",
+            ]);
+            AddStorePreClampRegisters();
         }
 
-        asm.Add("movzx edx, word [rdi+30h]");
-        asm.Add($"cmp edx, {minHp}");
-        asm.Add("jl .done");
-        asm.Add($"cmp edx, {maxHp}");
-        asm.Add("jg .done");
-
-        if (_settings.PreClampDamageRewriteExpectedDebit >= 0)
+        void AddStorePreClampRegisters()
         {
-            asm.Add("movsx edx, word [rbp+6]");
-            asm.Add($"cmp edx, {_settings.PreClampDamageRewriteExpectedDebit}");
-            asm.Add("jne .done");
+            asm.AddRange(
+            [
+                // Original volatile registers are on the hook-save stack:
+                // push rax, rcx, rdx, r8, r9, r10, r11, pushfq.
+                $"mov r11, [rsp+56]",
+                $"mov [r8+{P_REGS + 0 * 8}], r11",
+                $"mov [r8+{P_REGS + 1 * 8}], rbx",
+                $"mov r11, [rsp+48]",
+                $"mov [r8+{P_REGS + 2 * 8}], r11",
+                $"mov r11, [rsp+40]",
+                $"mov [r8+{P_REGS + 3 * 8}], r11",
+                $"mov [r8+{P_REGS + 4 * 8}], rsi",
+                $"mov [r8+{P_REGS + 5 * 8}], rdi",
+                $"mov [r8+{P_REGS + 6 * 8}], rbp",
+                "lea r11, [rsp+64]",
+                $"mov [r8+{P_REGS + 7 * 8}], r11",
+                $"mov r11, [rsp+32]",
+                $"mov [r8+{P_REGS + 8 * 8}], r11",
+                $"mov r11, [rsp+24]",
+                $"mov [r8+{P_REGS + 9 * 8}], r11",
+                $"mov r11, [rsp+16]",
+                $"mov [r8+{P_REGS + 10 * 8}], r11",
+                $"mov r11, [rsp+8]",
+                $"mov [r8+{P_REGS + 11 * 8}], r11",
+                $"mov [r8+{P_REGS + 12 * 8}], r12",
+                $"mov [r8+{P_REGS + 13 * 8}], r13",
+                $"mov [r8+{P_REGS + 14 * 8}], r14",
+                $"mov [r8+{P_REGS + 15 * 8}], r15",
+            ]);
+
+            for (int offset = 0; offset < PRECLAMP_STACK_DUMP_SIZE; offset += 8)
+            {
+                asm.Add($"mov r11, [rsp+{64 + offset}]");
+                asm.Add($"mov [r8+{P_STACK_DUMP + offset}], r11");
+            }
+
+            for (int offset = 0; offset < PRECLAMP_STATE_DUMP_SIZE; offset += 8)
+            {
+                asm.Add($"mov r11, [rbp+{offset}]");
+                asm.Add($"mov [r8+{P_STATE_DUMP + offset}], r11");
+            }
+
+            for (int offset = 0; offset < PRECLAMP_UNIT_DUMP_SIZE; offset += 8)
+            {
+                asm.Add($"mov r11, [rdi+{offset}]");
+                asm.Add($"mov [r8+{P_UNIT_DUMP + offset}], r11");
+            }
         }
 
-        if (_settings.PreClampDamageRewriteExpectedCredit >= 0)
+        if (planEnabled)
         {
-            asm.Add("movsx edx, word [rbp+8]");
-            asm.Add($"cmp edx, {_settings.PreClampDamageRewriteExpectedCredit}");
-            asm.Add("jne .done");
+            asm.AddRange(
+            [
+                "xor r10d, r10d",
+                ".plan_loop:",
+                $"cmp r10d, {planSlots}",
+                "jge .static_checks",
+                "mov r9, rax",
+                $"add r9, {P_PLAN_TABLE}",
+                "mov r11d, r10d",
+                $"imul r11, r11, {PRECLAMP_PLAN_SLOT_SIZE}",
+                "add r9, r11",
+                $"cmp dword [r9+{PLAN_ACTIVE}], 1",
+                "jne .plan_next",
+                $"mov r11, [r9+{PLAN_TARGET}]",
+                "cmp r11, rdi",
+                "jne .plan_next",
+                $"mov edx, [r9+{PLAN_EXPECTED_HP}]",
+                "cmp edx, -1",
+                "je .plan_skip_expected_hp",
+                "movzx edx, word [rdi+30h]",
+                $"cmp edx, [r9+{PLAN_EXPECTED_HP}]",
+                "jne .plan_next",
+                ".plan_skip_expected_hp:",
+                $"mov edx, [r9+{PLAN_EXPECTED_MAX_HP}]",
+                "cmp edx, -1",
+                "je .plan_skip_expected_max_hp",
+                "movzx edx, word [rdi+32h]",
+                $"cmp edx, [r9+{PLAN_EXPECTED_MAX_HP}]",
+                "jne .plan_next",
+                ".plan_skip_expected_max_hp:",
+                $"mov edx, [r9+{PLAN_EXPECTED_DEBIT}]",
+                $"cmp edx, {PlanExpectedAny}",
+                "je .plan_skip_expected_debit",
+                $"cmp edx, {PlanExpectedPositiveDebit}",
+                "jne .plan_exact_expected_debit",
+                "movsx edx, word [rbp+6]",
+                "cmp edx, 1",
+                "jl .plan_next",
+                "jmp .plan_skip_expected_debit",
+                ".plan_exact_expected_debit:",
+                "movsx edx, word [rbp+6]",
+                $"cmp edx, [r9+{PLAN_EXPECTED_DEBIT}]",
+                "jne .plan_next",
+                ".plan_skip_expected_debit:",
+                $"mov edx, [r9+{PLAN_EXPECTED_CREDIT}]",
+                $"cmp edx, {PlanExpectedAny}",
+                "je .plan_skip_expected_credit",
+                "movsx edx, word [rbp+8]",
+                $"cmp edx, [r9+{PLAN_EXPECTED_CREDIT}]",
+                "jne .plan_next",
+                ".plan_skip_expected_credit:",
+                $"mov edx, [r9+{PLAN_WRITE_COUNT}]",
+                $"cmp edx, [r9+{PLAN_MAX_WRITES}]",
+                "jge .plan_deactivate",
+                "add edx, 1",
+                $"mov [r9+{PLAN_WRITE_COUNT}], edx",
+            ]);
+            AddRecordEventFromPlan();
+            if (planWrites)
+            {
+                asm.AddRange(
+                [
+                    $"mov edx, [r9+{PLAN_FORCED_DEBIT}]",
+                    "cmp edx, -1",
+                    "je .plan_skip_debit_write",
+                    "mov [rbp+6], dx",
+                    ".plan_skip_debit_write:",
+                    $"mov edx, [r9+{PLAN_FORCED_CREDIT}]",
+                    "cmp edx, -1",
+                    "je .plan_skip_credit_write",
+                    "mov [rbp+8], dx",
+                    ".plan_skip_credit_write:",
+                ]);
+            }
+            asm.AddRange(
+            [
+                $"mov edx, [r9+{PLAN_WRITE_COUNT}]",
+                $"cmp edx, [r9+{PLAN_MAX_WRITES}]",
+                "jl .done",
+                ".plan_deactivate:",
+                $"mov dword [r9+{PLAN_ACTIVE}], 0",
+                "jmp .done",
+                ".plan_next:",
+                "inc r10d",
+                "jmp .plan_loop",
+            ]);
         }
 
-        asm.AddRange(
-        [
-            "add ecx, 1",
-            $"mov [rax+{P_COUNT}], ecx",
-            "mov r8d, ecx",
-            $"and r8d, {PRECLAMP_RING_MASK}",
-            $"imul r8, r8, {PRECLAMP_SLOT_SIZE}",
-            "add r8, rax",
-            $"add r8, {P_EVENTS}",
-            $"mov dword [r8+{P_SEQ}], ecx",
-            $"mov [r8+{P_UNIT}], rdi",
-            $"mov [r8+{P_STATE}], rbp",
-            "movzx edx, byte [rdi]",
-            $"mov dword [r8+{P_ID}], edx",
-            "movzx edx, byte [rdi+4]",
-            $"mov dword [r8+{P_TEAM}], edx",
-            "movzx edx, word [rdi+30h]",
-            $"mov dword [r8+{P_HP}], edx",
-            "movzx edx, word [rdi+32h]",
-            $"mov dword [r8+{P_MAX_HP}], edx",
-            "movsx edx, word [rbp+6]",
-            $"mov dword [r8+{P_OLD_DEBIT}], edx",
-            "movsx edx, word [rbp+8]",
-            $"mov dword [r8+{P_OLD_CREDIT}], edx",
-            $"mov dword [r8+{P_FORCED_DEBIT}], {forcedDebit}",
-            $"mov dword [r8+{P_FORCED_CREDIT}], {forcedCredit}",
-            $"mov dword [r8+{P_FLAGS}], {flags}",
-        ]);
+        asm.Add(".static_checks:");
+        if (!staticEnabled)
+        {
+            asm.Add("jmp .done");
+        }
+        else
+        {
+            asm.Add($"mov ecx, [rax+{P_STATIC_WRITES}]");
+            asm.Add($"cmp ecx, {maxWrites}");
+            asm.Add("jge .done");
 
-        if (forceDebit)
-            asm.Add($"mov word [rbp+6], {forcedDebit}");
-        if (forceCredit)
-            asm.Add($"mov word [rbp+8], {forcedCredit}");
+            if (_settings.PreClampDamageRewriteTargetCharId >= 0)
+            {
+                asm.Add("movzx edx, byte [rdi]");
+                asm.Add($"cmp edx, {_settings.PreClampDamageRewriteTargetCharId}");
+                asm.Add("jne .done");
+            }
 
-        asm.AddRange([".done:", "popfq", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax"]);
+            if (_settings.PreClampDamageRewriteTargetTeam >= 0)
+            {
+                asm.Add("movzx edx, byte [rdi+4]");
+                asm.Add($"cmp edx, {_settings.PreClampDamageRewriteTargetTeam}");
+                asm.Add("jne .done");
+            }
+
+            asm.Add("movzx edx, word [rdi+30h]");
+            asm.Add($"cmp edx, {minHp}");
+            asm.Add("jl .done");
+            asm.Add($"cmp edx, {maxHp}");
+            asm.Add("jg .done");
+
+            if (_settings.PreClampDamageRewriteExpectedDebit >= 0)
+            {
+                asm.Add("movsx edx, word [rbp+6]");
+                asm.Add($"cmp edx, {_settings.PreClampDamageRewriteExpectedDebit}");
+                asm.Add("jne .done");
+            }
+
+            if (_settings.PreClampDamageRewriteExpectedCredit >= 0)
+            {
+                asm.Add("movsx edx, word [rbp+8]");
+                asm.Add($"cmp edx, {_settings.PreClampDamageRewriteExpectedCredit}");
+                asm.Add("jne .done");
+            }
+
+            asm.Add("add ecx, 1");
+            asm.Add($"mov [rax+{P_STATIC_WRITES}], ecx");
+            AddRecordEventFromStatic();
+
+            if (forceDebit)
+                asm.Add($"mov word [rbp+6], {forcedDebit}");
+            if (forceCredit)
+                asm.Add($"mov word [rbp+8], {forcedCredit}");
+        }
+
+        asm.AddRange([".done:", "popfq", "pop r11", "pop r10", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax"]);
         return asm.ToArray();
     }
 
@@ -495,7 +741,13 @@ public class Mod : ModBase
         => bytes.Length == 0 ? "-" : string.Join(" ", bytes.Select(value => value.ToString("X2")));
 
     private static string FormatMaybeInt(int value)
-        => value < 0 ? "any" : value.ToString();
+        => value switch
+        {
+            PlanExpectedAny => "any",
+            PlanExpectedPositiveDebit => "positive",
+            < 0 => value.ToString(),
+            _ => value.ToString(),
+        };
 
     private static string FormatMaybeByte(int value)
         => value < 0 ? "any" : $"0x{value:X2}";
@@ -742,13 +994,81 @@ public class Mod : ModBase
         int forcedDebit = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_FORCED_DEBIT);
         int forcedCredit = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_FORCED_CREDIT);
         int flags = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_FLAGS);
+        int action = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_ACTION);
+        byte[] unitDump = ReadPreClampBytes(slot, P_UNIT_DUMP, PRECLAMP_UNIT_DUMP_SIZE);
+        UnitSnapshot? preClampUnit = TryCreateUnitSnapshot(unitPtr, unitDump, out var capturedUnit, out _)
+            ? capturedUnit
+            : null;
+        string preClampFields = preClampUnit is null
+            ? "pre=unreadable"
+            : $"pre={ActionBoundaryFields(preClampUnit.Raw)}";
+        UnitSnapshot? liveUnit = null;
         string live = TryReadLiveUnitSnapshot(unitPtr, out var unit, out string error)
             ? $"live={ActionBoundaryFields(unit.Raw)}"
             : $"live={error.Replace(' ', '_')}";
+        if (unit is not null)
+            liveUnit = unit;
+        string actionText = action >= 0 ? $" action={action}" : "";
+        nint[] registers = ReadPreClampRegisters(slot);
+        byte[] stackDump = ReadPreClampBytes(slot, P_STACK_DUMP, PRECLAMP_STACK_DUMP_SIZE);
+        byte[] stateDump = ReadPreClampBytes(slot, P_STATE_DUMP, PRECLAMP_STATE_DUMP_SIZE);
+        UnitSnapshot? referenceUnit = preClampUnit ?? liveUnit;
+        string regs = FormatPreClampRegisters(registers, referenceUnit);
+        string stack = FormatCapturedStackSlots(stackDump, referenceUnit);
+        string stackPart = stack.Length == 0 ? "" : $" stack={stack}";
         return
             $"[PRECLAMP-REWRITE event={sequence} ptr=0x{unitPtr:X} state=0x{statePtr:X} id=0x{id:X2} " +
             $"team={team} hp={hp}/{maxHp} oldDebit={oldDebit} oldCredit={oldCredit} " +
-            $"forcedDebit={forcedDebit} forcedCredit={forcedCredit} flags=0x{flags:X} now={nowTick} {live}]";
+            $"forcedDebit={forcedDebit} forcedCredit={forcedCredit} flags=0x{flags:X}{actionText} now={nowTick} " +
+            $"{preClampFields} {live}] regs={regs}{stackPart} stateDump={FormatHexBytes(stateDump)}";
+    }
+
+    private byte[] ReadPreClampBytes(int slot, int offset, int length)
+    {
+        var bytes = new byte[length];
+        Marshal.Copy(IntPtr.Add(_preClampDamageRewriteBuf, slot + offset), bytes, 0, length);
+        return bytes;
+    }
+
+    private nint[] ReadPreClampRegisters(int slot)
+    {
+        var registers = new nint[REGISTER_COUNT];
+        for (int i = 0; i < registers.Length; i++)
+            registers[i] = Marshal.ReadIntPtr(_preClampDamageRewriteBuf, slot + P_REGS + (i * IntPtr.Size));
+        return registers;
+    }
+
+    private string FormatPreClampRegisters(nint[] registers, UnitSnapshot? reference)
+    {
+        var parts = new List<string>(registers.Length);
+        for (int i = 0; i < registers.Length && i < RegisterNames.Length; i++)
+            parts.Add($"{RegisterNames[i]}=0x{registers[i]:X}:{ClassifyRegisterValue(registers[i], reference, "preclamp")}");
+        return string.Join(" ", parts);
+    }
+
+    private string FormatCapturedStackSlots(byte[] stackDump, UnitSnapshot? reference)
+    {
+        var parts = new List<string>();
+        for (int offset = 0; offset + IntPtr.Size <= stackDump.Length; offset += IntPtr.Size)
+        {
+            long raw = BitConverter.ToInt64(stackDump, offset);
+            if (raw == 0) continue;
+            var value = (nint)raw;
+            parts.Add($"+0x{offset:X}=0x{value:X}:{ClassifyRegisterValue(value, reference, "preclamp")}");
+        }
+
+        return string.Join(" ", parts);
+    }
+
+    private static string FormatHexBytes(byte[] raw)
+    {
+        var sb = new StringBuilder(raw.Length * 3);
+        for (int i = 0; i < raw.Length; i++)
+        {
+            if (i > 0) sb.Append(i % 16 == 0 ? " | " : " ");
+            sb.Append(raw[i].ToString("X2"));
+        }
+        return sb.ToString();
     }
 
     private nint[] ReadLandmarkRegisters(int slot)
@@ -894,6 +1214,8 @@ public class Mod : ModBase
         }
 
         _unitRegistry.Add(unitPtr);
+        if (touchForContext)
+            DiscoverNearbyBattleUnits(unitPtr);
         UnitSnapshot? actionProbeUnit = null;
         ActionProbeState? actionProbeState = null;
         if (_settings.LogActionStateChanges || _settings.TrackPendingActions || _settings.LogImmediateActionCandidatesOnEvent)
@@ -945,6 +1267,12 @@ public class Mod : ModBase
             if (ObservePendingActionStateIfEnabled(actionProbeUnit, actionProbeState, nowTick, touchForContext))
                 needsFlush = true;
             if (LogActionStateChangeIfEnabled(actionProbeUnit, actionProbeState, nowTick, touchForContext))
+                needsFlush = true;
+            if (LogPreClampFormulaCandidateIfEnabled(actionProbeUnit, actionProbeState, nowTick))
+                needsFlush = true;
+            if (QueueEagerImmediatePreClampFormulaPlansIfEnabled(actionProbeUnit, actionProbeState, nowTick))
+                needsFlush = true;
+            if (ReevaluatePreClampFormulaTargetsForImmediateActionIfEnabled(actionProbeUnit, actionProbeState, nowTick))
                 needsFlush = true;
         }
 
@@ -1154,6 +1482,32 @@ public class Mod : ModBase
         int jmp = rb(0x43);
         int br = rb(0x2B);
         int fa = rb(0x2D);
+        if (team > 16)
+        {
+            error = $"invalid team {team}";
+            return false;
+        }
+        if (ct > 100)
+        {
+            error = $"invalid CT {ct}";
+            return false;
+        }
+        if (pa > 127 || ma > 127 || spd > 127)
+        {
+            error = $"invalid combat stats PA/MA/Sp {pa}/{ma}/{spd}";
+            return false;
+        }
+        if (mov > 32 || jmp > 32)
+        {
+            error = $"invalid mobility Mv/Jp {mov}/{jmp}";
+            return false;
+        }
+        if (br > 100 || fa > 100)
+        {
+            error = $"invalid Brave/Faith {br}/{fa}";
+            return false;
+        }
+
         target = new UnitSnapshot(unitPtr, id, lvl, hp, maxhp, team, foe != 0, pa, ma, spd, mov, jmp, br, fa, raw, mp, maxmp, ct);
         return true;
     }
@@ -1189,8 +1543,134 @@ public class Mod : ModBase
 
     private int MaxTrackedBattleUnits => Math.Clamp(_settings.MaxTrackedBattleUnits, 1, 512);
 
+    private int PlanSlotCount => Math.Clamp(_settings.PreClampFormulaPlanSlots, 1, PRECLAMP_PLAN_MAX_SLOTS);
+
+    private sealed record PreClampFormulaPlanContext(string Source, int ActionId, long BatchId)
+    {
+        public string LogText => BatchId >= 0
+            ? $"pending=batch={BatchId}/act={ActionId} context={Source}/act={ActionId}"
+            : $"pending=none context={Source}/act={ActionId}";
+
+        public bool IsImmediateAction => Source.Equals("immediate-action", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed record ImmediatePreClampActionMatch(
+        UnitSnapshot Unit,
+        ActionProbeState State,
+        ImmediateActionCandidateScore Score,
+        int StateAgeMs,
+        int SeenAgeMs,
+        int CtDropAgeMs,
+        int ActionIdAgeMs,
+        int ActiveActionAgeMs,
+        int RunnerUpScore,
+        int Margin);
+
     private static int ElapsedMs(long nowTick, long previousTick)
         => (int)Math.Round((nowTick - previousTick) * 1000.0 / Stopwatch.Frequency);
+
+    private void PrunePreClampFormulaPlans(long nowTick)
+    {
+        int windowMs = Math.Clamp(_settings.PreClampFormulaPlanWindowMs, 1, 60_000);
+        foreach (var (key, tick) in _preClampFormulaPlanKeys.ToArray())
+        {
+            if (ElapsedMs(nowTick, tick) <= windowMs)
+                continue;
+            _preClampFormulaPlanKeys.Remove(key);
+        }
+
+        if (_preClampDamageRewriteBuf == 0)
+            return;
+
+        int slots = PlanSlotCount;
+        for (int i = 0; i < slots; i++)
+        {
+            int slot = P_PLAN_TABLE + (i * PRECLAMP_PLAN_SLOT_SIZE);
+            if (Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + PLAN_ACTIVE) == 0)
+                continue;
+
+            long createdTick = Marshal.ReadInt64(_preClampDamageRewriteBuf, slot + PLAN_CREATED_TICK);
+            if (createdTick > 0 && ElapsedMs(nowTick, createdTick) <= windowMs)
+                continue;
+
+            Marshal.WriteInt32(_preClampDamageRewriteBuf, slot + PLAN_ACTIVE, 0);
+        }
+    }
+
+    private bool TryQueuePreClampFormulaPlan(
+        string key,
+        UnitSnapshot target,
+        PreClampFormulaPlanContext? planContext,
+        int oldDebit,
+        int oldCredit,
+        int forcedDebit,
+        int forcedCredit,
+        long nowTick)
+    {
+        if (!_settings.PreClampFormulaPlanEnabled || _preClampDamageRewriteBuf == 0)
+            return false;
+
+        PrunePreClampFormulaPlans(nowTick);
+        if (_preClampFormulaPlanKeys.ContainsKey(key))
+            return false;
+
+        int slots = PlanSlotCount;
+        int chosenSlot = -1;
+        for (int i = 0; i < slots; i++)
+        {
+            int slot = P_PLAN_TABLE + (i * PRECLAMP_PLAN_SLOT_SIZE);
+            if (Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + PLAN_ACTIVE) != 0)
+                continue;
+            chosenSlot = i;
+            break;
+        }
+
+        if (chosenSlot < 0)
+        {
+            Line($"[PRECLAMP-PLAN-SKIP ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] no free plan slots ({slots})");
+            return true;
+        }
+
+        int offset = P_PLAN_TABLE + (chosenSlot * PRECLAMP_PLAN_SLOT_SIZE);
+        bool isImmediatePlan = planContext?.IsImmediateAction == true;
+        int maxWrites = isImmediatePlan
+            ? Math.Clamp(_settings.PreClampImmediateActionPlanMaxWrites, 1, 16)
+            : Math.Clamp(_settings.PreClampFormulaPlanMaxWrites, 1, 16);
+        int expectedHp = isImmediatePlan && !_settings.PreClampImmediateActionPlanRequireExpectedHp
+            ? -1
+            : target.Hp;
+        int clampedDebit = forcedDebit < 0 ? -1 : Math.Clamp(forcedDebit, short.MinValue, short.MaxValue);
+        int clampedCredit = forcedCredit < 0 ? -1 : Math.Clamp(forcedCredit, short.MinValue, short.MaxValue);
+        int flags = (_settings.PreClampDamageRewriteLogOnly ? 1 : 0) |
+                    (clampedDebit >= 0 && !_settings.PreClampDamageRewriteLogOnly ? 2 : 0) |
+                    (clampedCredit >= 0 && !_settings.PreClampDamageRewriteLogOnly ? 4 : 0) |
+                    8;
+
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_ACTIVE, 0);
+        Marshal.WriteIntPtr(_preClampDamageRewriteBuf, offset + PLAN_TARGET, target.Ptr);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_EXPECTED_DEBIT, oldDebit);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_EXPECTED_CREDIT, oldCredit);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_FORCED_DEBIT, clampedDebit);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_FORCED_CREDIT, clampedCredit);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_MAX_WRITES, maxWrites);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_WRITE_COUNT, 0);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_FLAGS, flags);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_ACTION, planContext?.ActionId ?? -1);
+        Marshal.WriteInt64(_preClampDamageRewriteBuf, offset + PLAN_BATCH, planContext?.BatchId ?? -1);
+        Marshal.WriteInt64(_preClampDamageRewriteBuf, offset + PLAN_CREATED_TICK, nowTick);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_EXPECTED_HP, expectedHp);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_EXPECTED_MAX_HP, target.MaxHp);
+        Marshal.WriteInt32(_preClampDamageRewriteBuf, offset + PLAN_ACTIVE, 1);
+        _preClampFormulaPlanKeys[key] = nowTick;
+
+        string pending = planContext?.LogText ?? "pending=none context=none";
+        Line(
+            $"[PRECLAMP-PLAN-QUEUE slot={chosenSlot} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2} " +
+            $"hp={target.Hp}/{target.MaxHp} oldDebit={FormatMaybeInt(oldDebit)} oldCredit={FormatMaybeInt(oldCredit)} " +
+            $"forcedDebit={clampedDebit} forcedCredit={clampedCredit} maxWrites={maxWrites} flags=0x{flags:X} " +
+            $"expectedHp={FormatMaybeInt(expectedHp)} {pending} now={nowTick}]");
+        return true;
+    }
 
     private void TrackActionProbeAges(nint unitPtr, ActionProbeState state, long nowTick)
     {
@@ -1201,7 +1681,7 @@ public class Mod : ModBase
             _lastActionProbeActionIdChangeTick[unitPtr] = nowTick;
         }
 
-        int activeActionId = state.ActionId > 0 && state.ActiveMarker2 != 0 ? state.ActionId : 0;
+        int activeActionId = state.IsActiveSourceMarker ? state.ActionId > 0 ? state.ActionId : -1 : 0;
         if (!_lastActionProbeActiveActionId.TryGetValue(unitPtr, out int previousActiveActionId) ||
             previousActiveActionId != activeActionId)
         {
@@ -1219,6 +1699,190 @@ public class Mod : ModBase
         => _lastActionProbeActiveActionChangeTick.TryGetValue(unitPtr, out long tick)
             ? ElapsedMs(nowTick, tick)
             : -1;
+
+    private void DiscoverNearbyBattleUnits(nint anchor)
+    {
+        if (!_settings.PreClampImmediateActionPlanEagerTargets)
+            return;
+
+        int radius = Math.Clamp(_settings.PreClampImmediateActionNearbyUnitScanRadius, 0, 32);
+        if (radius <= 0)
+            return;
+
+        long anchorValue = anchor.ToInt64();
+        for (int delta = -radius; delta <= radius; delta++)
+        {
+            if (_unitRegistry.Count >= MaxTrackedBattleUnits)
+                return;
+
+            long candidateValue = anchorValue + ((long)delta * BattleUnitStride);
+            if (candidateValue <= 0)
+                continue;
+
+            nint candidatePtr = new(candidateValue);
+            if (_unitRegistry.Contains(candidatePtr))
+                continue;
+
+            if (!TryReadLiveUnitSnapshot(candidatePtr, out var unit, out _))
+                continue;
+
+            _unitRegistry.Add(candidatePtr);
+            _unitObservations.TryAdd(candidatePtr, new UnitObservation(unit, SeenTick: 0, CtDropTick: 0, CtDropAmount: 0));
+        }
+    }
+
+    private bool QueueEagerImmediatePreClampFormulaPlansIfEnabled(
+        UnitSnapshot source,
+        ActionProbeState sourceState,
+        long nowTick)
+    {
+        if (!_settings.PreClampFormulaCandidateAllowImmediateAction ||
+            !_settings.PreClampFormulaPlanEnabled ||
+            !_settings.PreClampImmediateActionPlanEagerTargets ||
+            !_settings.TrackPendingActions ||
+            !sourceState.IsActiveSourceMarker)
+        {
+            return false;
+        }
+
+        int maxAgeMs = Math.Clamp(_settings.PreClampImmediateActionMaxAgeMs, 1, 60_000);
+        int minScore = _settings.PreClampImmediateActionMinScore;
+        int stateAgeMs = _lastActionProbeChangeTick.TryGetValue(source.Ptr, out long actionChangeTick)
+            ? ElapsedMs(nowTick, actionChangeTick)
+            : -1;
+        int actionIdAgeMs = ActionIdAgeMs(source.Ptr, nowTick);
+        int activeActionAgeMs = ActiveActionAgeMs(source.Ptr, nowTick);
+        _unitObservations.TryGetValue(source.Ptr, out var sourceObservation);
+        int seenAgeMs = sourceObservation is not null && sourceObservation.SeenTick > 0
+            ? ElapsedMs(nowTick, sourceObservation.SeenTick)
+            : -1;
+        int ctDropAgeMs = sourceObservation is not null && sourceObservation.CtDropTick > 0
+            ? ElapsedMs(nowTick, sourceObservation.CtDropTick)
+            : -1;
+        var score = ImmediateActionCandidateScoring.Evaluate(
+            new ImmediateActionCandidateScoreInput(
+                false,
+                source.Hp,
+                sourceState.ActionId,
+                sourceState.HasPrimaryPendingFlag,
+                sourceState.HasSecondaryPendingFlag,
+                sourceState.PendingTimer,
+                sourceState.ActiveMarker2,
+                stateAgeMs,
+                seenAgeMs,
+                ctDropAgeMs,
+                sourceState.ForecastDamage,
+                actionIdAgeMs,
+                activeActionAgeMs)
+            {
+                AllowZeroActionIdActiveSource = _settings.PreClampImmediateActionAllowZeroActionId,
+            });
+        bool currentActiveAllowed = !_settings.PreClampImmediateActionRequireFreshActive && score.CurrentActiveAction;
+        bool freshEnough = _settings.PreClampImmediateActionRequireFreshActive
+            ? score.FreshActiveAction && activeActionAgeMs >= 0 && activeActionAgeMs <= maxAgeMs
+            : currentActiveAllowed ||
+              (score.FreshActiveAction && activeActionAgeMs >= 0 && activeActionAgeMs <= maxAgeMs) ||
+              (score.FreshActionId && actionIdAgeMs >= 0 && actionIdAgeMs <= maxAgeMs);
+        bool hasActionIdentity = sourceState.ActionId > 0 ||
+                                 (_settings.PreClampImmediateActionAllowZeroActionId && sourceState.IsActiveSourceMarker);
+        if (!score.SourceLike || !freshEnough || score.Score < minScore || !hasActionIdentity)
+            return false;
+
+        var sourceMatch = new ImmediatePreClampActionMatch(
+            source,
+            sourceState,
+            score,
+            stateAgeMs,
+            seenAgeMs,
+            ctDropAgeMs,
+            actionIdAgeMs,
+            activeActionAgeMs,
+            RunnerUpScore: int.MinValue,
+            Margin: int.MaxValue);
+
+        bool loggedOrQueued = false;
+        bool canLogCandidate = _settings.LogPreClampFormulaCandidates &&
+                               _preClampFormulaCandidateLogs < Math.Clamp(_settings.PreClampFormulaCandidateMaxLogs, 0, 1000);
+        long sourceEpoch = _lastActionProbeActiveActionChangeTick.TryGetValue(source.Ptr, out long epoch)
+            ? epoch
+            : nowTick;
+
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p).ToArray())
+        {
+            if (ptr == source.Ptr)
+                continue;
+
+            if (!_unitObservations.TryGetValue(ptr, out var known))
+            {
+                if (!TryReadLiveUnitSnapshot(ptr, out var discovered, out _))
+                    continue;
+                known = new UnitObservation(discovered, SeenTick: 0, CtDropTick: 0, CtDropAmount: 0);
+                _unitObservations[ptr] = known;
+            }
+
+            if (!TryReadActionProbeSnapshot(ptr, known.Unit.CharId, out var target, out var targetState))
+                continue;
+            TrackActionProbeAges(ptr, targetState, nowTick);
+            if (target.Hp <= 0)
+                continue;
+
+            long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+            var actionSignal = BuildImmediateActionSignal(sourceMatch, targetState);
+            const int syntheticDamage = 1;
+            int syntheticCurrentHp = Math.Max(0, target.Hp - syntheticDamage);
+            long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, syntheticDamage);
+            var stagedEvent = new DamageEvent(
+                target,
+                target.Hp,
+                syntheticCurrentHp,
+                syntheticDamage,
+                source,
+                "immediate-action",
+                actionSignal,
+                eventIndex,
+                eventSeed);
+            var formulaResult = _formulaEngine.EvaluateForStagedApply(stagedEvent);
+            if (!formulaResult.ShouldRewrite || !stagedEvent.IsDamage)
+                continue;
+
+            int forcedDebit = Math.Clamp(formulaResult.FinalDamage, 0, 9999);
+            string key = string.Join("|",
+                "eager-immediate",
+                source.Ptr.ToString("X"),
+                ptr.ToString("X"),
+                sourceEpoch,
+                sourceState.ActionId,
+                forcedDebit,
+                formulaResult.RuleName);
+            bool queuedPlan = TryQueuePreClampFormulaPlan(
+                key,
+                target,
+                new PreClampFormulaPlanContext("immediate-action", sourceState.ActionId, -1),
+                PlanExpectedPositiveDebit,
+                oldCredit: 0,
+                forcedDebit,
+                forcedCredit: 0,
+                nowTick);
+            loggedOrQueued |= queuedPlan;
+
+            if (!canLogCandidate)
+                continue;
+
+            _preClampFormulaCandidateLogs++;
+            canLogCandidate = _preClampFormulaCandidateLogs < Math.Clamp(_settings.PreClampFormulaCandidateMaxLogs, 0, 1000);
+            Line(
+                $"[PRECLAMP-EAGER-PLAN-CANDIDATE event={eventIndex} source=0x{source.Ptr:X}/id=0x{source.CharId:X2} " +
+                $"target=0x{target.Ptr:X}/id=0x{target.CharId:X2} hp={target.Hp}/{target.MaxHp} " +
+                $"forcedDebit={forcedDebit} shouldStage=1 queuedPlan={(queuedPlan ? 1 : 0)} rule={formulaResult.RuleName} " +
+                $"score={score.Score} currentActive={(score.CurrentActiveAction ? 1 : 0)} actionAge={actionIdAgeMs}ms " +
+                $"activeAge={activeActionAgeMs}ms syntheticVanilla={syntheticDamage} now={nowTick} action={sourceState.AllFields}]");
+            if (_settings.LogResolvedRuntimeContext && !string.IsNullOrWhiteSpace(formulaResult.Trace))
+                Line($"[PRECLAMP-EAGER-RUNTIME source=0x{source.Ptr:X}/id=0x{source.CharId:X2} target=0x{target.Ptr:X}/id=0x{target.CharId:X2}] {formulaResult.Trace}");
+            loggedOrQueued = true;
+        }
+
+        return loggedOrQueued;
+    }
 
     // Reflection-based: log which mods are actually LOADED in this process + the app's EnabledMods.
     private void LogEnv()
@@ -1531,7 +2195,10 @@ public class Mod : ModBase
                     ctDropAgeMs,
                     rawDamage,
                     actionIdAgeMs,
-                    activeActionAgeMs));
+                    activeActionAgeMs)
+                {
+                    AllowZeroActionIdActiveSource = _settings.PreClampImmediateActionAllowZeroActionId,
+                });
             bool relevant = state.LooksRelevant ||
                             scoreResult.SourceLike ||
                             isTarget ||
@@ -1548,6 +2215,7 @@ public class Mod : ModBase
                  $"0x{ptr:X}/id=0x{unit.CharId:X2}/role={scoreResult.Role}/score={scoreResult.Score}/hp={unit.Hp}/ct={unit.Ct}" +
                  $"/seenAgeMs={seenAgeMs}/ctDropAgeMs={ctDropAgeMs}/ctDrop={known?.CtDropAmount ?? 0}" +
                  $"/stateAgeMs={stateAgeMs}/actionIdAgeMs={actionIdAgeMs}/activeActionAgeMs={activeActionAgeMs}" +
+                 $"/currentActive={(scoreResult.CurrentActiveAction ? 1 : 0)}" +
                  $"/freshAct={(scoreResult.FreshActionId ? 1 : 0)}/freshActive={(scoreResult.FreshActiveAction ? 1 : 0)}" +
                  $"/staleAct={(scoreResult.StaleActionId ? 1 : 0)}/staleActive={(scoreResult.StaleActiveAction ? 1 : 0)}" +
                  $"/rawDmg={rawDamage}/exactApplied={(exactAppliedMatch ? 1 : 0)}" +
@@ -1657,6 +2325,163 @@ public class Mod : ModBase
         return (result.Lines.Count > 0, result.Match);
     }
 
+    private bool ReevaluatePreClampFormulaTargetsForImmediateActionIfEnabled(
+        UnitSnapshot source,
+        ActionProbeState sourceState,
+        long nowTick)
+    {
+        if (!_settings.PreClampFormulaCandidateAllowImmediateAction)
+            return false;
+        if (!sourceState.IsActiveSourceMarker)
+            return false;
+
+        int maxAgeMs = Math.Clamp(_settings.PreClampImmediateActionMaxAgeMs, 1, 60_000);
+        int activeAgeMs = ActiveActionAgeMs(source.Ptr, nowTick);
+        if (_settings.PreClampImmediateActionRequireFreshActive &&
+            (activeAgeMs < 0 || activeAgeMs > maxAgeMs))
+            return false;
+
+        bool logged = false;
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p).ToArray())
+        {
+            if (ptr == source.Ptr) continue;
+            _unitObservations.TryGetValue(ptr, out var known);
+            int expectedId = known?.Unit.CharId ?? -1;
+            if (!TryReadActionProbeSnapshot(ptr, expectedId, out var target, out var targetState))
+                continue;
+            TrackActionProbeAges(ptr, targetState, nowTick);
+            if (targetState.ForecastDamage <= 0)
+                continue;
+
+            if (LogPreClampFormulaCandidateIfEnabled(target, targetState, nowTick))
+                logged = true;
+        }
+
+        return logged;
+    }
+
+    private bool LogPreClampFormulaCandidateIfEnabled(UnitSnapshot target, ActionProbeState targetState, long nowTick)
+    {
+        bool canLogCandidate = _settings.LogPreClampFormulaCandidates &&
+                               _preClampFormulaCandidateLogs < Math.Clamp(_settings.PreClampFormulaCandidateMaxLogs, 0, 1000);
+        bool canQueuePlan = _settings.PreClampFormulaPlanEnabled;
+        if ((!canLogCandidate && !canQueuePlan) || !_settings.TrackPendingActions)
+            return false;
+
+        if (targetState.ForecastDamage <= 0)
+        {
+            _lastPreClampFormulaCandidateKey.Remove(target.Ptr);
+            return false;
+        }
+
+        long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+        var pendingResult = _pendingActionTracker.MatchTargetCache(
+            "preclamp-cache",
+            eventIndex,
+            target,
+            targetState,
+            _settings,
+            nowTick);
+        PendingActionMatch? pendingCandidate = pendingResult.Match;
+        PendingActionMatch? pendingMatch = ShouldUsePendingActionMatch(pendingCandidate) ? pendingCandidate : null;
+        if (_settings.PreClampFormulaCandidateRequirePendingMatch && pendingMatch is null)
+            return false;
+
+        string immediateCandidateLine = "";
+        ImmediatePreClampActionMatch? immediateMatch = pendingMatch is null
+            ? ResolveImmediatePreClampActionIfEnabled(target, targetState, nowTick, out immediateCandidateLine)
+            : null;
+        var fallbackAttacker = immediateMatch is null
+            ? _contextResolver.ResolveRecentAttacker(target, _unitObservations, nowTick)
+            : new ResolvedAttacker(null, "none", "");
+        UnitSnapshot? attackerUnit = pendingMatch?.Caster ?? immediateMatch?.Unit ?? fallbackAttacker.Unit;
+        string attackerSource = pendingMatch?.Source ?? (immediateMatch is not null ? "immediate-action" : fallbackAttacker.Source);
+        ActionSignal? actionSignal = pendingMatch is not null
+            ? BuildPendingActionSignal(pendingMatch)
+            : immediateMatch is not null
+                ? BuildImmediateActionSignal(immediateMatch, targetState)
+                : null;
+        PreClampFormulaPlanContext? planContext = pendingMatch is not null
+            ? new PreClampFormulaPlanContext(pendingMatch.Source, pendingMatch.ActionId, pendingMatch.BatchId)
+            : immediateMatch is not null
+                ? new PreClampFormulaPlanContext("immediate-action", immediateMatch.State.ActionId, -1)
+                : null;
+        int syntheticCurrentHp = Math.Max(0, target.Hp - targetState.ForecastDamage);
+        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, targetState.ForecastDamage);
+        var stagedEvent = new DamageEvent(
+            target,
+            target.Hp,
+            syntheticCurrentHp,
+            targetState.ForecastDamage,
+            attackerUnit,
+            attackerSource,
+            actionSignal,
+            eventIndex,
+            eventSeed);
+        var formulaResult = _formulaEngine.EvaluateForStagedApply(stagedEvent);
+
+        string attackerKey = attackerUnit is null ? "none" : attackerUnit.Ptr.ToString("X");
+        string key = string.Join("|",
+            target.Ptr.ToString("X"),
+            pendingMatch?.BatchId.ToString() ?? "none",
+            planContext?.ActionId.ToString() ?? "none",
+            planContext?.Source ?? "none",
+            attackerKey,
+            targetState.ForecastDamage,
+            formulaResult.ShouldRewrite ? "1" : "0",
+            formulaResult.FinalDamage,
+            formulaResult.RuleName);
+        if (_lastPreClampFormulaCandidateKey.TryGetValue(target.Ptr, out string? previousKey) &&
+            previousKey == key)
+            return false;
+
+        _lastPreClampFormulaCandidateKey[target.Ptr] = key;
+        int forcedDebit = formulaResult.ShouldRewrite && stagedEvent.IsDamage
+            ? Math.Clamp(formulaResult.FinalDamage, 0, 9999)
+            : targetState.ForecastDamage;
+        bool shouldQueuePlan = canQueuePlan &&
+                               formulaResult.ShouldRewrite &&
+                               stagedEvent.IsDamage &&
+                               (!_settings.PreClampFormulaPlanRequirePhaseZero || targetState.PhaseMarker == 0);
+        bool queuedPlan = shouldQueuePlan &&
+                          TryQueuePreClampFormulaPlan(
+                              key,
+                              target,
+                              planContext,
+                              targetState.ForecastDamage,
+                              oldCredit: 0,
+                              forcedDebit,
+                              forcedCredit: 0,
+                              nowTick);
+
+        if (!canLogCandidate)
+            return queuedPlan;
+
+        _preClampFormulaCandidateLogs++;
+        foreach (string line in pendingResult.Lines)
+            Line(line);
+        if (!string.IsNullOrWhiteSpace(immediateCandidateLine))
+            Line(immediateCandidateLine);
+
+        string attacker = attackerUnit is null
+            ? "none"
+            : $"0x{attackerUnit.Ptr:X}/id=0x{attackerUnit.CharId:X2}";
+        string pending = pendingMatch is null
+            ? "pending=none"
+            : $"pending=batch={pendingMatch.BatchId}/act={pendingMatch.ActionId}/event={pendingMatch.BatchEvent}/{pendingMatch.MaxBatchEvents}/confidence={pendingMatch.Confidence}/score={pendingMatch.Score}";
+        string immediate = immediateMatch is null
+            ? "immediate=none"
+            : $"immediate=0x{immediateMatch.Unit.Ptr:X}/id=0x{immediateMatch.Unit.CharId:X2}/act={immediateMatch.State.ActionId}/score={immediateMatch.Score.Score}/runnerUp={immediateMatch.RunnerUpScore}/margin={immediateMatch.Margin}/currentActive={(immediateMatch.Score.CurrentActiveAction ? 1 : 0)}/actionAge={immediateMatch.ActionIdAgeMs}ms/activeAge={immediateMatch.ActiveActionAgeMs}ms";
+        Line(
+            $"[PRECLAMP-FORMULA-CANDIDATE event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2} " +
+            $"hp={target.Hp}/{target.MaxHp} oldDebit={targetState.ForecastDamage} forcedDebit={forcedDebit} " +
+            $"shouldStage={(formulaResult.ShouldRewrite ? 1 : 0)} queuedPlan={(queuedPlan ? 1 : 0)} rule={formulaResult.RuleName} " +
+            $"attacker={attacker} source={attackerSource} {pending} {immediate} now={nowTick} action={targetState.AllFields}]");
+        if (_settings.LogResolvedRuntimeContext && !string.IsNullOrWhiteSpace(formulaResult.Trace))
+            Line($"[PRECLAMP-FORMULA-RUNTIME ptr=0x{target.Ptr:X} id=0x{target.CharId:X2}] {formulaResult.Trace}");
+        return true;
+    }
+
     private static ActionSignal BuildPendingActionSignal(PendingActionMatch match)
     {
         int targetCacheDamage = match.CurrentTargetCacheDamage > 0
@@ -1692,6 +2517,159 @@ public class Mod : ModBase
             ["confidenceRecentResolve"] = match.Confidence.Equals("recent-resolve", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
         };
         return new ActionSignal($"pending-action-{match.ActionId}", match.Source, variables);
+    }
+
+    private ImmediatePreClampActionMatch? ResolveImmediatePreClampActionIfEnabled(
+        UnitSnapshot target,
+        ActionProbeState targetState,
+        long nowTick,
+        out string candidateLine)
+    {
+        candidateLine = "";
+        if (!_settings.PreClampFormulaCandidateAllowImmediateAction)
+            return null;
+
+        int maxUnits = Math.Clamp(_settings.ImmediateActionCandidateMaxUnits, 1, 128);
+        int minScore = _settings.PreClampImmediateActionMinScore;
+        int minMargin = _settings.PreClampImmediateActionMinMargin;
+        int maxAgeMs = Math.Clamp(_settings.PreClampImmediateActionMaxAgeMs, 1, 60_000);
+        var candidates = new List<ImmediatePreClampActionMatch>();
+        var summary = new List<(int Score, string Text)>();
+
+        foreach (nint ptr in _unitRegistry.OrderBy(p => p))
+        {
+            _unitObservations.TryGetValue(ptr, out var known);
+            int expectedId = known?.Unit.CharId ?? -1;
+            if (!TryReadActionProbeSnapshot(ptr, expectedId, out var unit, out var state))
+                continue;
+            TrackActionProbeAges(ptr, state, nowTick);
+
+            bool isTarget = ptr == target.Ptr;
+            int stateAgeMs = _lastActionProbeChangeTick.TryGetValue(ptr, out long actionChangeTick)
+                ? ElapsedMs(nowTick, actionChangeTick)
+                : -1;
+            int actionIdAgeMs = ActionIdAgeMs(ptr, nowTick);
+            int activeActionAgeMs = ActiveActionAgeMs(ptr, nowTick);
+            int seenAgeMs = known is not null && known.SeenTick > 0 ? ElapsedMs(nowTick, known.SeenTick) : -1;
+            int ctDropAgeMs = known is not null && known.CtDropTick > 0 ? ElapsedMs(nowTick, known.CtDropTick) : -1;
+            var score = ImmediateActionCandidateScoring.Evaluate(
+                new ImmediateActionCandidateScoreInput(
+                    isTarget,
+                    unit.Hp,
+                    state.ActionId,
+                    state.HasPrimaryPendingFlag,
+                    state.HasSecondaryPendingFlag,
+                    state.PendingTimer,
+                    state.ActiveMarker2,
+                    stateAgeMs,
+                    seenAgeMs,
+                    ctDropAgeMs,
+                    state.ForecastDamage,
+                    actionIdAgeMs,
+                    activeActionAgeMs)
+                {
+                    AllowZeroActionIdActiveSource = _settings.PreClampImmediateActionAllowZeroActionId,
+                });
+            bool currentActiveAllowed = !_settings.PreClampImmediateActionRequireFreshActive && score.CurrentActiveAction;
+            bool freshEnough = _settings.PreClampImmediateActionRequireFreshActive
+                ? score.FreshActiveAction && activeActionAgeMs >= 0 && activeActionAgeMs <= maxAgeMs
+                : currentActiveAllowed ||
+                  (score.FreshActiveAction && activeActionAgeMs >= 0 && activeActionAgeMs <= maxAgeMs) ||
+                  (score.FreshActionId && actionIdAgeMs >= 0 && actionIdAgeMs <= maxAgeMs);
+            bool hasActionIdentity = state.ActionId > 0 ||
+                                     (_settings.PreClampImmediateActionAllowZeroActionId && state.IsActiveSourceMarker);
+            bool eligible = score.SourceLike &&
+                            freshEnough &&
+                            score.Score >= minScore &&
+                            hasActionIdentity;
+            string eligibleText = eligible ? "eligible=1" : "eligible=0";
+            summary.Add(
+                 (score.Score,
+                 $"0x{ptr:X}/id=0x{unit.CharId:X2}/{score.Role}/score={score.Score}/{eligibleText}" +
+                 $"/act={state.ActionId}/currentActive={(score.CurrentActiveAction ? 1 : 0)}" +
+                 $"/freshAct={(score.FreshActionId ? 1 : 0)}/freshActive={(score.FreshActiveAction ? 1 : 0)}" +
+                 $"/stateAge={stateAgeMs}/actionAge={actionIdAgeMs}/activeAge={activeActionAgeMs}/seenAge={seenAgeMs}/ctDropAge={ctDropAgeMs}" +
+                 $"/hp={unit.Hp}/ct={unit.Ct}/{state.AllFields}"));
+
+            if (!eligible)
+                continue;
+
+            candidates.Add(new ImmediatePreClampActionMatch(
+                unit,
+                state,
+                score,
+                stateAgeMs,
+                seenAgeMs,
+                ctDropAgeMs,
+                actionIdAgeMs,
+                activeActionAgeMs,
+                RunnerUpScore: int.MinValue,
+                Margin: int.MaxValue));
+        }
+
+        var ordered = candidates
+            .OrderByDescending(candidate => candidate.Score.Score)
+            .ThenBy(candidate => candidate.ActiveActionAgeMs < 0 ? int.MaxValue : candidate.ActiveActionAgeMs)
+            .ThenBy(candidate => candidate.ActionIdAgeMs < 0 ? int.MaxValue : candidate.ActionIdAgeMs)
+            .ThenBy(candidate => candidate.Unit.Ptr.ToInt64())
+            .ToList();
+        ImmediatePreClampActionMatch? best = ordered.FirstOrDefault();
+        int runnerUpScore = ordered.Count > 1 ? ordered[1].Score.Score : int.MinValue;
+        int margin = best is null || runnerUpScore == int.MinValue ? int.MaxValue : best.Score.Score - runnerUpScore;
+        if (best is not null)
+            best = best with { RunnerUpScore = runnerUpScore, Margin = margin };
+        bool marginOk = best is not null && margin >= minMargin;
+        if (!marginOk)
+            best = null;
+
+        string selected = best is null
+            ? "selected=none"
+            : $"selected=0x{best.Unit.Ptr:X}/id=0x{best.Unit.CharId:X2}/act={best.State.ActionId}/score={best.Score.Score}/runnerUp={runnerUpScore}/margin={margin}";
+        string body = summary.Count == 0
+            ? "none"
+            : string.Join(" ", summary
+                .OrderByDescending(candidate => candidate.Score)
+                .Take(maxUnits)
+                .Select(candidate => candidate.Text));
+        candidateLine =
+            $"[PRECLAMP-IMMEDIATE-CANDIDATES target=0x{target.Ptr:X}/id=0x{target.CharId:X2} " +
+            $"oldDebit={targetState.ForecastDamage} minScore={minScore} minMargin={minMargin} maxAgeMs={maxAgeMs} " +
+            $"requireFreshActive={(_settings.PreClampImmediateActionRequireFreshActive ? 1 : 0)} {selected}] {body}";
+        return best;
+    }
+
+    private static ActionSignal BuildImmediateActionSignal(ImmediatePreClampActionMatch match, ActionProbeState targetState)
+    {
+        var variables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["signal"] = match.State.ActionId,
+            ["id"] = match.State.ActionId,
+            ["actionId"] = match.State.ActionId,
+            ["score"] = match.Score.Score,
+            ["runnerUpScore"] = match.RunnerUpScore == int.MinValue ? 0 : match.RunnerUpScore,
+            ["margin"] = match.Margin == int.MaxValue ? 9999 : Math.Clamp(match.Margin, -9999, 9999),
+            ["stateAgeMs"] = match.StateAgeMs,
+            ["seenAgeMs"] = match.SeenAgeMs,
+            ["ctDropAgeMs"] = match.CtDropAgeMs,
+            ["actionIdAgeMs"] = match.ActionIdAgeMs,
+            ["activeActionAgeMs"] = match.ActiveActionAgeMs,
+            ["currentActiveAction"] = match.Score.CurrentActiveAction ? 1 : 0,
+            ["freshActionId"] = match.Score.FreshActionId ? 1 : 0,
+            ["freshActiveAction"] = match.Score.FreshActiveAction ? 1 : 0,
+            ["staleActionId"] = match.Score.StaleActionId ? 1 : 0,
+            ["staleActiveAction"] = match.Score.StaleActiveAction ? 1 : 0,
+            ["activeMarker2"] = match.State.ActiveMarker2,
+            ["pendingFlag"] = match.State.PendingFlag,
+            ["pendingFlag2"] = match.State.PendingFlag2,
+            ["pendingTimer"] = match.State.PendingTimer,
+            ["targetCacheDamage"] = targetState.ForecastDamage,
+            ["currentTargetCacheDamage"] = targetState.ForecastDamage,
+            ["recentTargetCacheDamage"] = 0,
+            ["damageCacheMatch"] = targetState.ForecastDamage > 0 ? 1 : 0,
+            ["currentDamageCacheMatch"] = targetState.ForecastDamage > 0 ? 1 : 0,
+            ["hasCurrentTargetMetadata"] = targetState.ForecastCharge != 0 || targetState.ForecastFlag != 0 || targetState.PhaseMarker != 0 ? 1 : 0,
+        };
+        return new ActionSignal($"immediate-action-{match.State.ActionId}", "immediate-action", variables);
     }
 
     private static bool ShouldUsePendingActionMatch(PendingActionMatch? match)
@@ -1935,6 +2913,8 @@ public class Mod : ModBase
         if (reference is not null && value == reference.Ptr) return $"unit:{referenceName}";
         if (_unitObservations.TryGetValue(value, out var observation))
             return $"unit:id=0x{observation.Unit.CharId:X2}:team={observation.Unit.Team}:hp={observation.Unit.Hp}:ct={observation.Unit.Ct}";
+        if (TryReadLiveUnitSnapshot(value, out var possibleUnit, out _))
+            return $"unit?:id=0x{possibleUnit.CharId:X2}:team={possibleUnit.Team}:hp={possibleUnit.Hp}:ct={possibleUnit.Ct}";
         string? moduleAddress = ClassifyModuleAddress(value);
         if (moduleAddress is not null)
             return moduleAddress;
@@ -2504,9 +3484,15 @@ internal sealed class BattleFormulaEngine
     }
 
     public DamageResult Evaluate(DamageEvent e)
+        => EvaluateCore(e, requireRewriteGate: true);
+
+    public DamageResult EvaluateForStagedApply(DamageEvent e)
+        => EvaluateCore(e, requireRewriteGate: false);
+
+    private DamageResult EvaluateCore(DamageEvent e, bool requireRewriteGate)
     {
-        if (e.IsDamage && !_settings.RewriteObservedDamage) return DamageResult.NoRewrite(e.CurrentHp);
-        if (e.IsHealing && !_settings.RewriteObservedHealing) return DamageResult.NoRewrite(e.CurrentHp);
+        if (requireRewriteGate && e.IsDamage && !_settings.RewriteObservedDamage) return DamageResult.NoRewrite(e.CurrentHp);
+        if (requireRewriteGate && e.IsHealing && !_settings.RewriteObservedHealing) return DamageResult.NoRewrite(e.CurrentHp);
         if (!e.IsDamage && !e.IsHealing) return DamageResult.NoRewrite(e.CurrentHp);
         if (e.Target.IsFoe && !_settings.AffectFoes) return DamageResult.NoRewrite(e.CurrentHp);
         if (!e.Target.IsFoe && !_settings.AffectAllies) return DamageResult.NoRewrite(e.CurrentHp);
@@ -2928,6 +3914,8 @@ internal sealed class BattleFormulaEngine
         context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("attacker.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
         context.Set("a.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("attacker.sourceImmediate", IsImmediateActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("a.sourceImmediate", IsImmediateActionSource(e.AttackerSource) ? 1 : 0);
         AddActionVariables(context, "action", e.Action, e);
         AddActionVariables(context, "act", e.Action, e);
 
@@ -3002,6 +3990,8 @@ internal sealed class BattleFormulaEngine
         context.Set("a.sourceCounter", e.AttackerSource.Equals("counter-inversion", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
         context.Set("attacker.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
         context.Set("a.sourcePending", IsPendingActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("attacker.sourceImmediate", IsImmediateActionSource(e.AttackerSource) ? 1 : 0);
+        context.Set("a.sourceImmediate", IsImmediateActionSource(e.AttackerSource) ? 1 : 0);
         AddMpActionVariables(context, "action", e.Action, e);
         AddMpActionVariables(context, "act", e.Action, e);
 
@@ -3072,11 +4062,15 @@ internal sealed class BattleFormulaEngine
     private static bool IsPendingActionSource(string source)
         => source.StartsWith("pending-", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsImmediateActionSource(string source)
+        => source.StartsWith("immediate-", StringComparison.OrdinalIgnoreCase);
+
     private void AddActionVariables(FormulaContext context, string prefix, ActionSignal? action, DamageEvent e)
     {
         context.Set($"{prefix}.present", action is null ? 0 : 1);
         context.Set($"{prefix}.sourceVanillaDamage", action?.Source.Equals("vanilla-damage", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
         context.Set($"{prefix}.sourcePending", action is not null && IsPendingActionSource(action.Source) ? 1 : 0);
+        context.Set($"{prefix}.sourceImmediate", action is not null && IsImmediateActionSource(action.Source) ? 1 : 0);
         context.Set($"{prefix}.signal", action?.Get("signal") ?? 0);
         context.Set($"{prefix}.id", action?.Get("id") ?? 0);
         context.Set($"{prefix}.actionId", action?.Get("actionId") ?? 0);
@@ -3103,6 +4097,22 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.confidenceRecentDamageCache", action?.Get("confidenceRecentDamageCache") ?? 0);
         context.Set($"{prefix}.confidenceLethalClampDamageCache", action?.Get("confidenceLethalClampDamageCache") ?? 0);
         context.Set($"{prefix}.confidenceRecentResolve", action?.Get("confidenceRecentResolve") ?? 0);
+        context.Set($"{prefix}.runnerUpScore", action?.Get("runnerUpScore") ?? 0);
+        context.Set($"{prefix}.margin", action?.Get("margin") ?? 0);
+        context.Set($"{prefix}.stateAgeMs", action?.Get("stateAgeMs") ?? 0);
+        context.Set($"{prefix}.seenAgeMs", action?.Get("seenAgeMs") ?? 0);
+        context.Set($"{prefix}.ctDropAgeMs", action?.Get("ctDropAgeMs") ?? 0);
+        context.Set($"{prefix}.actionIdAgeMs", action?.Get("actionIdAgeMs") ?? 0);
+        context.Set($"{prefix}.activeActionAgeMs", action?.Get("activeActionAgeMs") ?? 0);
+        context.Set($"{prefix}.currentActiveAction", action?.Get("currentActiveAction") ?? 0);
+        context.Set($"{prefix}.freshActionId", action?.Get("freshActionId") ?? 0);
+        context.Set($"{prefix}.freshActiveAction", action?.Get("freshActiveAction") ?? 0);
+        context.Set($"{prefix}.staleActionId", action?.Get("staleActionId") ?? 0);
+        context.Set($"{prefix}.staleActiveAction", action?.Get("staleActiveAction") ?? 0);
+        context.Set($"{prefix}.activeMarker2", action?.Get("activeMarker2") ?? 0);
+        context.Set($"{prefix}.pendingFlag", action?.Get("pendingFlag") ?? 0);
+        context.Set($"{prefix}.pendingFlag2", action?.Get("pendingFlag2") ?? 0);
+        context.Set($"{prefix}.pendingTimer", action?.Get("pendingTimer") ?? 0);
         context.Set($"{prefix}.vanillaDamage", e.VanillaDamage);
         context.Set($"{prefix}.vanillaDamageAbs", e.VanillaDamageAbs);
         context.Set($"{prefix}.vanillaHealing", e.VanillaHealing);
@@ -3143,6 +4153,7 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.sourceVanillaDamage", 0);
         context.Set($"{prefix}.sourceMpChange", action?.Source.Equals("mp-change", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
         context.Set($"{prefix}.sourcePending", action is not null && IsPendingActionSource(action.Source) ? 1 : 0);
+        context.Set($"{prefix}.sourceImmediate", action is not null && IsImmediateActionSource(action.Source) ? 1 : 0);
         context.Set($"{prefix}.signal", action?.Get("signal") ?? 0);
         context.Set($"{prefix}.id", action?.Get("id") ?? 0);
         context.Set($"{prefix}.actionId", action?.Get("actionId") ?? 0);
@@ -3169,6 +4180,22 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.confidenceRecentDamageCache", action?.Get("confidenceRecentDamageCache") ?? 0);
         context.Set($"{prefix}.confidenceLethalClampDamageCache", action?.Get("confidenceLethalClampDamageCache") ?? 0);
         context.Set($"{prefix}.confidenceRecentResolve", action?.Get("confidenceRecentResolve") ?? 0);
+        context.Set($"{prefix}.runnerUpScore", action?.Get("runnerUpScore") ?? 0);
+        context.Set($"{prefix}.margin", action?.Get("margin") ?? 0);
+        context.Set($"{prefix}.stateAgeMs", action?.Get("stateAgeMs") ?? 0);
+        context.Set($"{prefix}.seenAgeMs", action?.Get("seenAgeMs") ?? 0);
+        context.Set($"{prefix}.ctDropAgeMs", action?.Get("ctDropAgeMs") ?? 0);
+        context.Set($"{prefix}.actionIdAgeMs", action?.Get("actionIdAgeMs") ?? 0);
+        context.Set($"{prefix}.activeActionAgeMs", action?.Get("activeActionAgeMs") ?? 0);
+        context.Set($"{prefix}.currentActiveAction", action?.Get("currentActiveAction") ?? 0);
+        context.Set($"{prefix}.freshActionId", action?.Get("freshActionId") ?? 0);
+        context.Set($"{prefix}.freshActiveAction", action?.Get("freshActiveAction") ?? 0);
+        context.Set($"{prefix}.staleActionId", action?.Get("staleActionId") ?? 0);
+        context.Set($"{prefix}.staleActiveAction", action?.Get("staleActiveAction") ?? 0);
+        context.Set($"{prefix}.activeMarker2", action?.Get("activeMarker2") ?? 0);
+        context.Set($"{prefix}.pendingFlag", action?.Get("pendingFlag") ?? 0);
+        context.Set($"{prefix}.pendingFlag2", action?.Get("pendingFlag2") ?? 0);
+        context.Set($"{prefix}.pendingTimer", action?.Get("pendingTimer") ?? 0);
         context.Set($"{prefix}.vanillaDamage", 0);
         context.Set($"{prefix}.vanillaDamageAbs", 0);
         context.Set($"{prefix}.vanillaHealing", 0);
@@ -4570,6 +5597,24 @@ internal sealed class RuntimeSettings
     public int PreClampDamageRewriteForcedCredit { get; set; } = -1;
     public int PreClampDamageRewriteMaxWrites { get; set; } = 1;
     public bool PreClampDamageRewriteLogOnly { get; set; } = false;
+    public bool LogPreClampFormulaCandidates { get; set; } = false;
+    public int PreClampFormulaCandidateMaxLogs { get; set; } = 64;
+    public bool PreClampFormulaCandidateRequirePendingMatch { get; set; } = true;
+    public bool PreClampFormulaCandidateAllowImmediateAction { get; set; } = false;
+    public int PreClampImmediateActionMinScore { get; set; } = 1800;
+    public int PreClampImmediateActionMinMargin { get; set; } = 300;
+    public int PreClampImmediateActionMaxAgeMs { get; set; } = 1500;
+    public bool PreClampImmediateActionRequireFreshActive { get; set; } = true;
+    public bool PreClampImmediateActionAllowZeroActionId { get; set; } = false;
+    public int PreClampImmediateActionPlanMaxWrites { get; set; } = 1;
+    public bool PreClampImmediateActionPlanRequireExpectedHp { get; set; } = true;
+    public bool PreClampImmediateActionPlanEagerTargets { get; set; } = false;
+    public int PreClampImmediateActionNearbyUnitScanRadius { get; set; } = 8;
+    public bool PreClampFormulaPlanEnabled { get; set; } = false;
+    public int PreClampFormulaPlanSlots { get; set; } = 16;
+    public int PreClampFormulaPlanWindowMs { get; set; } = 3000;
+    public int PreClampFormulaPlanMaxWrites { get; set; } = 1;
+    public bool PreClampFormulaPlanRequirePhaseZero { get; set; } = true;
 
     // Actor probe: on each HP damage event, snapshot a small byte window of EVERY registered unit so we can
     // find which unit just acted (the attacker) by its turn-state/CT signature. Window is JSON-tunable (no
@@ -4671,5 +5716,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

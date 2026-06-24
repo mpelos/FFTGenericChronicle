@@ -218,6 +218,37 @@ The dry-run profile proved that formulas can read:
 - `action.damageCacheMatch`;
 - observed HP loss.
 
+### P8. Pre-clamp staged-damage injection can produce real KO
+
+The `ko-preclamp-force-agrias` live proof passed after recalibrating the expected Cross Slash
+staged debit from `187` to the actual current-baseline value `115`.
+
+Proven result:
+
+- Cloud Cross Slash on Agrias previewed `115`.
+- The pre-clamp hook at `0x30A66F` matched Agrias (`id=0x1E`) with `oldDebit=115` and
+  `oldCredit=0`.
+- The hook forced `unit+0x1C4=9999` before vanilla HP-apply consumed the staged debit.
+- Vanilla HP-apply computed a negative raw HP result, clamped HP to `0`, and produced a coherent
+  KO/lifecycle diff including `+0x61` KO status.
+- The user observed Agrias die; UI showed `999` damage.
+- The same AoE action still hit Ninja normally for `273`, proving the target guard did not corrupt
+  the whole batch.
+
+Implication:
+
+- The desired engine-safe lethal path is viable: feed custom staged debit/credit before vanilla
+  HP apply, then let the engine own HP clamp, KO, Reraise, and turn flow.
+- Late direct HP writes should become fallback/legacy behavior, not the primary final design.
+
+Remaining risk:
+
+- This is a controlled single-target force inside one AoE action. It must be generalized to formula
+  computed values and tested across immediate attacks, spells/charge actions, healing, and multi-hit
+  cases.
+- UI display behavior may clamp or otherwise transform large staged values (`9999` displayed as
+  `999`), so preview/display policy remains a separate player-facing question.
+
 Cross Slash dry-run correctly computed:
 
 - Ninja `273 -> 283`;
@@ -900,25 +931,91 @@ Good next tests answer one of these:
 
 ## Immediate Recommendation
 
-The next research focus should stay on engine-safe custom lethal application and CT retirement. The
-immediate task has shifted from passive KO landmark discovery to an active proof at the staged-damage
-boundary.
+The next research focus should stay on generalizing engine-safe custom result application and
+retiring CT as a design dependency. The active staged-damage proof has passed for a controlled
+Cloud Cross Slash / Agrias KO case.
 
 Recommended next concrete work:
 
-1. Run `ko-preclamp-force-agrias`.
-2. Confirm whether forcing Agrias's staged Cross Slash debit from `187` to `9999` at `0x30A66F`
-   produces a true engine-owned KO.
-3. Inspect whether displayed damage, HP clamp, KO flags, Reraise/cleanup behavior, and turn flow stay
-   coherent.
+1. Generalize the pre-clamp staged-damage hook from one forced Agrias proof into a runtime path that
+   consumes resolved formula output.
+2. Link staged-damage writes to the resolved action context:
+   pending tracker / memory context -> target HP-apply event -> staged debit/credit rewrite.
+3. Prove the same path for:
+   - one nonlethal custom damage result;
+   - one lethal custom damage result;
+   - one immediate weapon/action case;
+   - one delayed or charged action case;
+   - one AoE/multi-target batch where only selected targets are changed.
 4. Keep CT in diagnostic logs, but treat memory/pending action context as the intended source.
-5. If this passes, generalize staged-damage injection into the formula application path. If it fails,
-   prioritize finding the original staged-debit/KO-state producer or the minimal lifecycle write set.
+5. Separately investigate preview/display behavior, since `9999` staged debit displayed as `999` in
+   the passing proof.
 
 Why this is the right next test:
 
 - The final redesign needs custom formulas to apply results through engine-safe state transitions.
 - We now know the HP apply routine consumes `unit+0x1C4` / `unit+0x1C6` before vanilla clamp.
 - A late write to `unit+0x30` is known to be architecturally suspect for lethal custom formulas.
-- The pre-clamp proof directly tests the insertion point most likely to retire the CT/late-HP
-  fallback path and become the foundation for real custom combat results.
+- The pre-clamp proof directly tested the insertion point most likely to retire the CT/late-HP
+  fallback path and become the foundation for real custom combat results; the next step is turning
+  that proof into a configurable formula application pipeline.
+
+Latest update:
+
+- The observe-only formula candidate probe passed for delayed/AoE Cross Slash:
+  - `PRECLAMP-FORMULA-CANDIDATE` appeared before the HP event;
+  - Cloud/Cross Slash resolved via `pending-clear`;
+  - vanilla debits were Ninja `273`, Agrias `115`;
+  - formula debits were Ninja `68`, Agrias `77`.
+- This confirms the managed side can prepare formula-backed plan entries in time for this action
+  family.
+- The native one-shot plan table consumed by the pre-clamp hook is now implemented and deployed via
+  `work\battle-runtime-settings.preclamp-plan-cross-slash-demo.json`.
+- The live plan-table proof passed:
+  - Agrias changed from vanilla `115` to formula `77`, HP `322 -> 245`;
+  - Ninja changed from vanilla `273` to formula `68`, HP `276 -> 208`;
+  - both UI damage numbers and final HP used the forced formula values;
+  - logs show matching `[PRECLAMP-PLAN-QUEUE]`, `[PRECLAMP-REWRITE]`, and final `[DAMAGE]` lines.
+- Next live proofs should generalize this path:
+  - immediate single-target attack;
+  - another delayed/charged action family;
+  - overlapping pending actions.
+- Formula-backed lethal same-hit KO has now passed with Cloud Braver:
+  - vanilla Braver `153` on Beowulf was replaced by formula `9999`;
+  - UI displayed `999`;
+  - Beowulf HP became `0/314`;
+  - KO lifecycle included `+0x61:00->20`.
+- This confirms the primary final damage architecture can be:
+  `pending/action memory context -> formula -> pre-clamp staged debit/credit rewrite -> vanilla apply/KO`.
+- Remaining high-value work:
+  - prove immediate/basic attacks through this same route;
+  - validate non-Cloud charged actions and skills without MP cost;
+  - expose reliable action/equipment/DR data to formulas;
+  - stress overlapping pending actions and reactions/counters.
+
+Latest implementation update:
+
+- Immediate/basic attacks now have an experimental pre-clamp formula-plan path, disabled by default.
+- New runtime settings:
+  - `PreClampFormulaCandidateAllowImmediateAction`;
+  - `PreClampImmediateActionMinScore`;
+  - `PreClampImmediateActionMinMargin`;
+  - `PreClampImmediateActionMaxAgeMs`;
+  - `PreClampImmediateActionRequireFreshActive`.
+- New formula flags:
+  - `a.sourceImmediate` / `attacker.sourceImmediate`;
+  - `action.sourceImmediate` / `act.sourceImmediate`;
+  - immediate diagnostics such as `action.freshActiveAction`, `action.actionIdAgeMs`,
+    `action.activeActionAgeMs`, `action.margin`, and `action.runnerUpScore`.
+- Prepared profile:
+  - `work\battle-runtime-settings.preclamp-plan-immediate-basic-demo.json`.
+- Intended next test:
+  - Agrias basic-attacks Beowulf with data mod disabled and CT/recent attacker fallback disabled.
+  - Expected pass result is formula damage, not vanilla, with logs proving `source=immediate-action`.
+- First live attempt failed safely because basic Attack used `act=0`.
+- Second live attempt proved Agrias becomes `active-source-like` with `act=0/ba=1`, but the mandatory
+  freshness gate rejected her because the marker was about 29s old by HP apply.
+- The next profile/version splits `currentActiveAction` from `freshActiveAction`, gates the formula on
+  current `ba=1`, and treats freshness as diagnostic for the basic-attack path.
+- This 7c implementation has passed build/smoke/settings validation and is waiting for a clean
+  redeploy after Reloaded-II is closed.
