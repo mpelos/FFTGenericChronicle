@@ -2364,6 +2364,22 @@ If equipment-slot confirmation and the live DR/response checks pass, the answer 
 in armor?" is yes for real HP outcomes. Lethal outcomes remain engine-owned through
 `MinHpFloor=1` until a future pre-damage/same-hit hook is found.
 
+## Update 2026-06-24: pre-clamp damage path and memory-only action context
+
+Two architecture-level results supersede parts of the older text above (see
+`docs/modding/12-runtime-register-action-context-book.md` for the distilled model):
+
+- **Same-hit lethal is solved.** The native pre-clamp staged-debit hook (`rva 0x30A66F`) lets the
+  code mod rewrite the staged damage before vanilla HP apply, so the engine itself clamps HP and runs
+  the real KO/death lifecycle. `MinHpFloor=1` (two-hit kill) is now legacy/fallback, not the primary
+  lethal path.
+- **Action context can be read from memory at damage time.** The engine keeps a per-participant
+  battle actor array (stride `0x548`, `actor+0x148` -> unit). At the pre-clamp frame the resolving
+  caster's actor is on the stack and the action id is at `caster_actor+0x142`, so
+  `caster = stack actor whose +0x148 != target` and `actionId = caster_actor+0x142` (validated for
+  Cross Slash, Braver, basic). This is the path to retiring CT and the pending-clear heuristic, once
+  implemented as a live resolver and validated for overlapping actions, counters, and RVA stability.
+
 ## Sources
 
 - Local: `docs/modding/00-overview.md`, `03-custom-formula-feasibility.md`,

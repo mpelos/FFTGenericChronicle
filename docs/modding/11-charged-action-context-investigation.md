@@ -593,3 +593,25 @@ The most promising implementation path from this evidence is:
 
 This does not remove the need to search for a real executing-action pointer, but it gives us a
 concrete code-mod path that is stronger than CT-only attribution.
+
+## 2026-06-24 Update: executing-action context found (battle actor array)
+
+The search for a real executing-action context (referenced above as still needed) has a concrete
+answer for damage-time attribution. See `docs/modding/12-runtime-register-action-context-book.md`
+section 2.4 and `work/action-context-checkpoint-2026-06-22.md` for full detail.
+
+At the native pre-clamp frame the engine exposes a per-participant actor array (stride `0x548`,
+`actor+0x148` -> unit). The resolving caster's actor struct sits on the pre-clamp stack next to the
+current target's actor, and the resolving action id is stored inside the caster actor at `+0x142`
+(also `0x17A/0x18C/0x1BC`).
+
+For the charged actions investigated here this was validated live:
+
+- Cross Slash: caster actor (Cloud) `+0x142 = 258` (`0x0102`).
+- Braver: caster actor (Cloud) `+0x142 = 257` (`0x0101`).
+- All non-caster actors had `0`, confirming it is the caster's current action id.
+
+This means delayed/charged caster+action can be read from memory at damage time without CT and
+without the pending-clear heuristic. The pending-action tracker remains valid and is still the proven
+path until a memory-only resolver is implemented and validated, especially for overlapping pending
+actions (multiple casters charged simultaneously), which this single-caster test did not cover.

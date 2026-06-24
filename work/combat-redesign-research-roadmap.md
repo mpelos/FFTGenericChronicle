@@ -416,6 +416,32 @@ Implication:
   `0x2D7AC0`, `0x2D7AEC`, `0x30A6D3`, `0x30A908`, `0x30A912`, `0x30AAFC`,
   `0x30D42A`, `0x30D433`, and `0x30D43C`.
 
+### P12. Executing-action context found via battle actor array
+
+Live-proven (one battle, 2026-06-24): the engine exposes a per-participant battle actor array,
+contiguous with stride `0x548`, each actor linking to its unit struct at `+0x148`. At the native
+pre-clamp damage frame the resolving caster's actor struct is present on the stack alongside the
+current target's actor struct, and the resolving action id is stored inside the caster actor at
+`+0x142` (also `0x17A/0x18C/0x1BC`).
+
+Damage-time memory-only context:
+
+```text
+target   = pre-clamp unit pointer (per HP event)
+caster   = stack actor whose +0x148 != target      (charged AND immediate)
+actionId = caster_actor + 0x142                     (258 Cross Slash, 257 Braver, 0 basic)
+```
+
+Validated across action families (Cross Slash, Braver, basic attack). This is the strongest path to
+retiring CT (U2) and a robust delayed/overlapping resolver (U4). Remaining: implement as a live
+resolver, test overlapping pending casters and counters, and confirm RVA/layout stability across a
+different battle/save (both captures so far were the same battle).
+
+Implication:
+
+- attacker/action identity no longer depends on CT or the pending-clear heuristic at damage time;
+- basic attacks still need weapon identity from equipment (U5), since their action id is 0.
+
 ## Critical Unknowns
 
 ## U1. KO / lethal custom damage path
@@ -490,6 +516,15 @@ Do not assume:
 - post-damage HP reconciliation can solve KO by itself.
 
 ## U2. Full replacement of CT fallback
+
+Update (2026-06-24): the primary question below ("where is the current executing action context
+stored") now has a concrete answer at damage time. The engine keeps a per-participant battle actor
+array (stride `0x548`, `actor+0x148` -> unit); at the native pre-clamp frame the resolving caster's
+actor is on the stack and the resolving action id is in the caster actor at `+0x142`. So
+`caster = stack actor whose +0x148 != target` and `actionId = caster_actor+0x142`, validated live for
+Cross Slash (258), Braver (257), and basic (0). See P12 and `docs/modding/12-...` section 2.4. CT can
+be retired for caster/action identity once this is implemented as a live resolver and validated for
+overlapping pending actions and counters.
 
 Why this matters:
 

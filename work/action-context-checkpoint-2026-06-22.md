@@ -3853,3 +3853,134 @@ Goals:
 3. Compare caster vs target actor dumps to find caster-only action fields.
 4. Separately, relaunch and re-capture to test whether the `module+0xD32xxx` actor RVA and the
    `+0x148` / `0x548` layout are stable across game launches.
+
+## 2026-06-24 Live Result: Actor-Struct Dump (action id found in caster actor)
+
+Ran the `executing-action-actor-dump-probe` (observe-only) on the same controlled action: Cloud Cross
+Slash centered on Agrias (hits Agrias + Ninja). Result identical to the prior run: Ninja `277 -> 4`
+(`273`), Agrias `322 -> 207` (`115`), next active Ramza.
+
+Artifact:
+
+- `work/live-captures/battleprobe_log.executing-action-actor-dump-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
+
+### Parse sanity
+
+8 `[PRECLAMP-ACTOR-DUMP]` lines captured (Ramza x1, Ninja x4, Agrias x1, Cloud x2). For every dump
+`actor+0x148 == unit ptr`, so the dumps are correctly aligned to the actor struct base.
+
+### Key finding: the resolving action id lives in the caster actor struct
+
+In BOTH Cloud (caster) dumps, the value `258` (`0x0102` = Cross Slash, little-endian `02 01`) appears
+at four offsets:
+
+```text
+caster_actor +0x142 = 258
+caster_actor +0x17A = 258
+caster_actor +0x18C = 258
+caster_actor +0x1BC = 258
+```
+
+In EVERY target/other actor (Ninja, Ramza, Agrias) all four offsets are `0`. So the action id is a
+caster-only field, present and stable across both capture times.
+
+Context bytes (first Cloud dump):
+
+```text
++0x142: 00 00 [02 01] 00 00 00 00 E0 62 85 41 01 00 00 00   # 258, then self unit ptr 0x1418562E0 at +0x148
++0x17A: 13 29 [02 01] 00 00 00 00 00 00 05 00 0A 00 00 00
++0x18C: 00 00 [02 01] 00 00 01 00 00 00 00 00 00 00 00 00   # 258, then a 1 (flag/count?)
++0x1BC: 00 00 [02 01] 00 00 00 00 00 00 0A 09 00 00 00 01
+```
+
+`+0x142` sits immediately before the self unit pointer at `+0x148`, making it a natural
+"this actor's current action id" field. Any of the four caster-only offsets works for reading the
+action; `+0x142` is the primary candidate.
+
+### No target list inside the caster actor
+
+Scanning the full `0x548` caster actor for pointers to known units found only the self pointer at
+`+0x148`. There is no target/target-list pointer inside the caster actor (at least not as a direct
+unit pointer). This is fine: each target is authoritative from its own pre-clamp HP event.
+
+### Memory-only action context is now complete (at damage time)
+
+Combining this with the prior actor-array finding, at the native pre-clamp HP-apply frame we can read
+everything from engine memory, with no CT and no pending-clear heuristic:
+
+```text
+target   = pre-clamp unit pointer (per HP event)
+caster   = stack actor struct whose +0x148 != target
+actionId = caster_actor + 0x142   (258 here; also 0x17A/0x18C/0x1BC)
+```
+
+### RVA stability signal
+
+The actor array bases were identical to the previous session (`0xD31FE8` Ramza, `0xD32530` Ninja,
+`0xD32A78` Agrias, `0xD32FC0` Cloud). The unit pool pointers were also identical, so this is the same
+battle/save; it is promising but NOT yet a real cross-battle stability proof.
+
+### Status: mid-investigation (commit held)
+
+This is a strong RE confirmation, but not yet an engineering milestone. Not committed yet. Open items
+before the next commit-worthy milestone:
+
+1. Implement a memory-only resolver at the pre-clamp hook (caster by stack-actor elimination + action
+   id from `caster_actor+0x142`) and run it head-to-head against the pending tracker / CT to confirm
+   agreement live.
+2. Test overlapping/simultaneous pending actions (does each actor carry its own current action id, and
+   does only the resolving caster's actor sit on the damage stack?).
+3. Test immediate/basic attack (unit `act=0`): does the actor struct hold a weapon/action id or 0?
+4. Confirm the action-id offset is the live/current action (vs selected/last) using a second, different
+   action.
+5. Confirm actor-array RVA/layout stability across a DIFFERENT battle/save.
+
+## 2026-06-24 Live Validation: action id field tracks action; immediate works too
+
+Two quick captures with the same `executing-action-actor-dump-probe` (same fresh battle session,
+observe-only), to validate the `+0x142` action-id field before building a resolver.
+
+Artifacts:
+
+- `work/live-captures/battleprobe_log.actor-dump-braver-agrias.snapshot.txt`
+- `work/live-captures/battleprobe_log.actor-dump-basic-agrias-beowulf.snapshot.txt`
+
+### Test 1: Cloud Braver -> Agrias (charged, action 257)
+
+- Result: Agrias `-76`, next active Agrias.
+- Caster actor (Cloud) now holds `257` (`0x0101`, Braver) at the SAME four offsets
+  `+0x142 / +0x17A / +0x18C / +0x1BC`; all targets/other actors `0`.
+- Conclusion: the field is the live/current action id of the actor (changed 258 Cross Slash -> 257
+  Braver, following the action), not a Cross-Slash-specific fluke.
+
+### Test 2: Agrias basic attack -> Beowulf (immediate, action 0)
+
+- Result: Beowulf `-151`, nonlethal (Beowulf is ally id=0x1F; this was friendly fire, which is fine).
+- At the Beowulf pre-clamp event (`oldDebit=151`), the pointer scan found TWO actor structs on the
+  stack: `+0x148 -> Agrias (id=0x1E)` (attacker) and `+0x148 -> Beowulf` (target).
+  - So the discriminator `caster = stack actor whose +0x148 != target` works for IMMEDIATE/basic
+    attacks too, not only charged actions.
+- The attacker (Agrias) actor holds `0` at all four action-id offsets.
+  - Expected: basic attack has `unit+0x1A2 = 0`; the actor mirrors that. Basic = implicit weapon
+    attack, so weapon identity must come from equipment (U5), not the actor action-id field.
+
+### Net: memory-only action context validated across action families
+
+```text
+target   = pre-clamp unit pointer (per HP event)            # authoritative
+caster   = stack actor whose +0x148 != target               # works for charged AND immediate
+actionId = caster_actor + 0x142                              # 258 / 257 for charged; 0 for basic
+```
+
+Validated live for Cross Slash (258), Braver (257), and basic attack (0). No CT, no pending-clear
+heuristic needed for caster/action identity at damage time.
+
+Still open before the redesign can rely on this:
+
+1. Implement this as a live memory-only resolver at the pre-clamp hook and run it head-to-head with
+   the pending tracker / CT to confirm agreement.
+2. Overlapping/simultaneous pending actions (multiple casters charged at once).
+3. Counters / reactions (source/target inversion).
+4. Actor-array RVA/layout stability across a DIFFERENT battle/save (both runs so far were the same
+   battle, so the matching addresses are not yet a real stability proof).
+5. Weapon/action identity for basic attacks via equipment (U5).

@@ -86,6 +86,11 @@ constants - locate these by extending the struct walk. See `04-re-strategy.md`.
 Limits: stats are bytes (HP/MP are 16-bit words); damage stored as a 16-bit word; engine math is
 integer (the remaster applies some multipliers as AVX floats, then truncates to int).
 
+Note (separate struct): besides the unit struct above, the engine keeps a per-participant **battle
+actor array** (contiguous, stride `0x548`), where `actor+0x148` -> the unit struct and the resolving
+action id is stored at `actor+0x142`. This is the source for runtime caster/action identity at damage
+time. Raw model and offsets: `docs/modding/12-runtime-register-action-context-book.md` section 2.4.
+
 ---
 
 ## B. Per-ability ACTION variables (the formula surface)

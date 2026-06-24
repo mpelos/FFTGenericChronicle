@@ -843,3 +843,36 @@ Expected Test 7c:
   `source=immediate-action`, a queued plan, and a pre-clamp rewrite.
 - If it still fails, the next suspect is phase gating (`PreClampFormulaPlanRequirePhaseZero`) or the
   plan queue timing relative to the native pre-clamp hook.
+
+## LIVE TEST: Executing-action context via battle actor array (2026-06-24)
+
+Probe: `executing-action-pointer-probe` then `executing-action-actor-dump-probe` (both observe-only).
+Action: Cloud Cross Slash AoE on Agrias (+Ninja); then Cloud Braver on Agrias; then Agrias basic
+attack on Beowulf. Full detail in `work/action-context-checkpoint-2026-06-22.md` and the distilled
+model in `docs/modding/12-runtime-register-action-context-book.md` section 2.4.
+
+Finding: the engine keeps a per-participant battle actor array (contiguous, stride `0x548`, each
+actor links to its unit struct at `+0x148`). At the native pre-clamp damage frame the resolving
+caster's actor struct is on the stack alongside the current target's actor struct. So at damage time
+everything is readable from memory, no CT and no pending-clear heuristic:
+
+```text
+target   = pre-clamp unit pointer (per HP event)
+caster   = stack actor whose +0x148 != target      (works for charged AND immediate)
+actionId = caster_actor + 0x142                     (258 Cross Slash, 257 Braver, 0 basic)
+```
+
+Validated live: the action-id field tracked the action (258 -> 257 across Cross Slash -> Braver,
+caster-only, targets 0); the caster-by-elimination discriminator also fired for an immediate basic
+attack (both attacker and target actor structs on the pre-clamp stack); basic attack carries action
+id 0 (weapon identity must come from equipment, U5).
+
+Open: implement as a live resolver; test overlapping pending actions and counters; confirm actor RVA
+stability across a different battle/save (both captures were the same battle).
+
+Evidence:
+
+- `work/live-captures/battleprobe_log.executing-action-pointer-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.executing-action-actor-dump-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.actor-dump-braver-agrias.snapshot.txt`
+- `work/live-captures/battleprobe_log.actor-dump-basic-agrias-beowulf.snapshot.txt`

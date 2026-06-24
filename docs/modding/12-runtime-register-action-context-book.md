@@ -228,12 +228,44 @@ This is the strongest candidate so far for a real engine "current executing acti
 is reachable straight from memory at damage time. It could retire both CT and the pending-clear
 heuristic if the resolving action id also lives inside the actor struct.
 
-Open questions (being tested by the actor-struct dump probe):
+Answered by the actor-struct dump probe (2026-06-24, Cross Slash AoE):
 
-- Does the resolving action id (`0x0102` = 258 for Cross Slash) live inside the actor struct?
-- Is there a target pointer / target list / current-target index in the caster actor struct?
-- Is the `module+0xD32xxx` actor RVA stable across game launches, or is it session-allocated like the
-  unit pool?
+- **The resolving action id lives in the caster actor struct.** `258` (`0x0102`, bytes `02 01`)
+  appears at caster offsets `+0x142`, `+0x17A`, `+0x18C`, `+0x1BC` in both Cloud dumps, and is `0`
+  in every target/other actor. `+0x142` sits right before the self unit pointer at `+0x148`, so it
+  is the primary "this actor's current action id" candidate.
+
+  ```text
+  actionId = caster_actor + 0x142   (also 0x17A / 0x18C / 0x1BC)
+  ```
+
+- **No target list inside the caster actor.** Scanning the full `0x548` caster actor found only the
+  self pointer at `+0x148`. Targets are taken from each pre-clamp HP event instead.
+
+- **RVA stability: promising but unproven.** The actor bases were identical across two launches, but
+  it was the same battle/save (unit pool pointers also matched), so cross-battle stability is still
+  open.
+
+Resulting memory-only action context at the native pre-clamp damage frame:
+
+```text
+target   = pre-clamp unit pointer (per HP event)
+caster   = stack actor struct whose +0x148 != target
+actionId = caster_actor + 0x142
+```
+
+Validated live (2026-06-24) across action families:
+
+- the action-id field tracks the live action: `258` (Cross Slash) then `257` (Braver) at the same
+  caster-only offsets;
+- the `caster = stack actor whose +0x148 != target` discriminator also fires for an immediate basic
+  attack (Agrias -> Beowulf): both the attacker and target actor structs were on the pre-clamp stack;
+- a basic attack carries action id `0` in the actor (matches `unit+0x1A2=0`), so basic = implicit
+  weapon attack and its weapon identity must come from equipment (U5), not this field.
+
+Still open: implement this as a live resolver (head-to-head vs the pending tracker), validate against
+overlapping/simultaneous pending actions and counters/reactions, and confirm actor-array RVA/layout
+stability across a DIFFERENT battle/save (both captures so far were the same battle).
 
 Probe support: `PreClampActorStructDumpEnabled` / `...DumpBytes` / `...UnitOffset` (default `0x148`) /
 `...DumpMaxLogs` emit `[PRECLAMP-ACTOR-DUMP root=0x... unit=0x.../id=0x.. bytes=N] <hex>` for any
@@ -243,6 +275,7 @@ scanned root that links to a registered unit at the actor->unit offset. Profile:
 Evidence:
 
 - `work/live-captures/battleprobe_log.executing-action-pointer-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
+- `work/live-captures/battleprobe_log.executing-action-actor-dump-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
 
 ## 3. Unit Struct Map
 
@@ -889,11 +922,12 @@ Useful log line families:
 
 Highest priority:
 
-1. **Current executing action pointer** (strong lead found — see 2.4)
-   The battle participant/actor array is the leading candidate: at the native pre-clamp frame the
-   caster's actor struct is on the stack alongside the target's, and `caster = stack actor whose
-   +0x148 != current target`. Remaining: confirm the resolving action id lives inside the actor
-   struct (actor-struct dump probe) and verify the actor RVA/layout is stable across launches.
+1. **Current executing action context** (mostly solved at damage time — see 2.4)
+   The battle participant/actor array provides it: at the native pre-clamp frame `caster = stack
+   actor whose +0x148 != current target`, and `actionId = caster_actor + 0x142`. Remaining before
+   relying on it: implement it as a live resolver, validate against overlapping pending actions and
+   immediate/basic (`act=0`) attacks, and confirm the actor RVA/layout is stable across a different
+   battle/save.
 
 2. **Multiple simultaneous pending actions**
    A resolving-window heuristic may work for one pending action, but overlapping charges need a
