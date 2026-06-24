@@ -40,15 +40,18 @@ If starting fresh, read these files in order:
 
 1. `work/action-context-checkpoint-2026-06-22.md`
    - This file. It summarizes the current state, open questions, and next steps.
-2. `docs/modding/11-charged-action-context-investigation.md`
+2. `docs/modding/12-runtime-register-action-context-book.md`
+   - The organized living model of hooks, registers, unit offsets, action lifecycle, damage/KO, and
+     current design rules. Read this before diving into raw live-test narratives.
+3. `docs/modding/11-charged-action-context-investigation.md`
    - Detailed live-test record for Braver and Cross Slash delayed-action context.
-3. `docs/modding/07-live-findings.md`
+4. `docs/modding/07-live-findings.md`
    - Canonical live evidence up through earlier CT/death tests.
-4. `docs/modding/05-battle-data-map.md`
+5. `docs/modding/05-battle-data-map.md`
    - Known unit struct offsets.
-5. `docs/modding/06-code-mod-battle-runtime-architecture.md`
+6. `docs/modding/06-code-mod-battle-runtime-architecture.md`
    - Runtime architecture and "engine owns death, code mod owns the number".
-6. `docs/modding/04-re-strategy.md`
+7. `docs/modding/04-re-strategy.md`
    - Reverse-engineering strategy and PSX/classic FFT function-map direction.
 
 ## Current Deployed Probe State
