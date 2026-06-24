@@ -31,6 +31,18 @@ The mod should prevent monotony, not prevent power. Strong builds are desirable.
 only when one build is too universal, too automatic, too cheap, or makes the rest of the system
 feel pointless.
 
+### Battle-First Balance
+
+The default balance target is the battle layer: action value, CT, MP, chance, range, target rules,
+status visibility, counterplay, job access, equipment access, JP timing, and party composition.
+
+External or campaign-facing mechanics should change only when the change clearly improves the game.
+Do not add caps, custom permanent-stat rates, per-battle limits, recruitment friction, economy
+friction, or extra grind just to make a combat design easier to tune. If a restriction mainly makes
+it harder for the player to build the character they want, and does not create a clear
+player-facing benefit, preserve the vanilla external mechanic and rebalance the battle effect
+instead.
+
 ## Core Principles
 
 ### Preserve FFT Identity

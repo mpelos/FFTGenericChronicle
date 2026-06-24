@@ -284,6 +284,22 @@ a real loss, or changing target priority. A campaign-facing turn can instead be 
 protecting a core long-term system such as monster recruitment, breeding, poaching, roster shaping,
 or permanent build planning.
 
+### External Mechanics Should Pay For Their Friction
+
+Generic Chronicle should not make long-term build planning harder unless the change creates a clear
+gameplay benefit.
+
+The default balance target is inside battle: action strength, timing, CT, MP, range, accuracy,
+immunity, duration, visibility, target restrictions, counterplay, job access, equipment access, JP
+timing, and party setup. External systems such as permanent Brave/Faith drift, recruitment,
+breeding, Poach routing, economy, and roster planning should keep their familiar FFT shape unless
+changing them solves a real problem.
+
+Do not add custom caps, custom permanent-stat rates, per-battle limits, extra grind, or campaign
+friction only because a proposed combat effect is easier to balance that way. If the player pays by
+having fewer ways to build the character they want, the design must name the benefit. If there is no
+meaningful benefit, preserve the external mechanic and tune the battle-facing effect instead.
+
 Persistent effects on units must be readable in battle. If a temporary effect changes damage,
 movement, defense, targeting, accuracy, or vulnerability, it should normally be represented by a
 visible status with clear feedback. If the engine cannot show the effect, prefer a vanilla status,

@@ -384,6 +384,16 @@ When a skill is cut, moved, or deferred, the proposal must state one of:
 - the subsystem is moved to a named future pass with an explicit access promise;
 - the user explicitly approved removing that subsystem.
 
+### Gate G5a - External Mechanics Must Justify Friction
+
+A proposal fails if it changes external or campaign-facing mechanics mainly as a balance shortcut.
+
+Do not add custom permanent-stat rates, caps, per-battle limits, recruitment restrictions, economy
+restrictions, or extra grind friction unless the proposal names the player-facing benefit and
+explains why battle-facing tuning is insufficient. If the rule mostly makes desired builds harder to
+assemble, preserve the familiar FFT external mechanic and tune the combat effect, access timing,
+visibility, cost, reliability, target restrictions, or counterplay instead.
+
 ### Gate G6 - Preserve Good Mechanics Through Revision
 
 A proposal fails if a revision discards useful mechanics only because the previous version was too
