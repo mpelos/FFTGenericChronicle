@@ -22,6 +22,7 @@ def main() -> int:
         "actor-probe",
         "hook-register-probe",
         "action-context-probe",
+        "executing-action-pointer-probe",
         "ko-pre-damage-probe",
         "immediate-action-ko-boundary-probe",
         "ko-landmark-probe",
@@ -68,6 +69,14 @@ def main() -> int:
     check(action_context_probe.get("PendingActionResolveWindowMs", 0) > 0, "action context probe must keep a positive resolve window")
     check(not profiles.truthy(action_context_probe, "RewriteObservedDamage"), "action context probe must not rewrite HP damage")
     check(not profiles.truthy(action_context_probe, "RewriteObservedMpLoss"), "action context probe must not rewrite MP loss")
+
+    executing_probe = get(rows, "executing-action-pointer-probe")
+    check(profiles.truthy(executing_probe, "HookRegisterProbeOnPendingResolve"), "executing action probe must log pending-resolve registers")
+    check(profiles.truthy(executing_probe, "PreClampDamageRewriteEnabled"), "executing action probe must install the pre-clamp hook")
+    check(profiles.truthy(executing_probe, "PreClampDamageRewriteLogOnly"), "executing action probe must keep pre-clamp capture log-only")
+    check(executing_probe.get("PreClampPointerScanBytes", 0) > 0, "executing action probe must scan pre-clamp pointer roots")
+    check(not profiles.truthy(executing_probe, "PreClampFormulaPlanEnabled"), "executing action probe must not queue pre-clamp formula plans")
+    check(not profiles.truthy(executing_probe, "RewriteObservedDamage"), "executing action probe must not rewrite HP damage")
 
     ko_probe = get(rows, "ko-pre-damage-probe")
     check(profiles.truthy(ko_probe, "CaptureStructOnDeath"), "KO probe must capture vanilla death diffs")

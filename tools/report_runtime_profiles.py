@@ -110,6 +110,20 @@ PROFILES: tuple[ProfileSpec, ...] = (
         ("hook_register_probe_observe_only", "actor_probe_observe_only", "pending_action_tracker_observe_only"),
     ),
     ProfileSpec(
+        "executing-action-pointer-probe",
+        REPO / "work/battle-runtime-settings.executing-action-pointer-probe.json",
+        "observe-only executing-action RE capture",
+        "Correlate pending-resolve register snapshots with native pre-clamp register/stack pointer scans to hunt for a current executing action object.",
+        "no HP/MP rewrites; pre-clamp hook is LogOnly",
+        (
+            "hook_register_probe_observe_only",
+            "actor_probe_observe_only",
+            "pending_action_tracker_observe_only",
+            "hp_event_probe_observe_only",
+            "preclamp_logonly_observe",
+        ),
+    ),
+    ProfileSpec(
         "ko-pre-damage-probe",
         REPO / "work/battle-runtime-settings.ko-pre-damage-probe.json",
         "observe-only KO/pre-damage RE capture",
@@ -409,6 +423,30 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("CauseDeathOnZeroHp must be false")
         if int(settings.get("MinHpFloor", 0)) != 0:
             errors.append("MinHpFloor must remain 0 in observe-only HP event probe")
+    elif invariant == "preclamp_logonly_observe":
+        for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
+            if truthy(settings, key):
+                errors.append(f"{key} must be false")
+        if not truthy(settings, "PreClampDamageRewriteEnabled"):
+            errors.append("PreClampDamageRewriteEnabled must be true")
+        if not truthy(settings, "PreClampDamageRewriteLogOnly"):
+            errors.append("PreClampDamageRewriteLogOnly must be true for observe-only pre-clamp capture")
+        if truthy(settings, "PreClampFormulaPlanEnabled"):
+            errors.append("PreClampFormulaPlanEnabled must be false for observe-only pre-clamp capture")
+        if int(settings.get("PreClampDamageRewriteForcedDebit", -1)) != -1:
+            errors.append("PreClampDamageRewriteForcedDebit must stay -1 in log-only capture")
+        if int(settings.get("PreClampDamageRewriteForcedCredit", -1)) != -1:
+            errors.append("PreClampDamageRewriteForcedCredit must stay -1 in log-only capture")
+        if int(settings.get("PreClampDamageRewriteRva", 0)) != 0x30A66F:
+            errors.append("PreClampDamageRewriteRva must be 0x30A66F")
+        if str(settings.get("PreClampDamageRewriteExpectedBytes", "")).strip().upper() != "0F BF 45 06":
+            errors.append("PreClampDamageRewriteExpectedBytes must match the debit read")
+        if int(settings.get("PreClampPointerScanBytes", 0)) <= 0:
+            errors.append("PreClampPointerScanBytes must be positive")
+        if truthy(settings, "CauseDeathOnZeroHp"):
+            errors.append("CauseDeathOnZeroHp must be false")
+        if int(settings.get("MinHpFloor", 0)) != 0:
+            errors.append("MinHpFloor must remain 0 in observe-only pre-clamp capture")
     elif invariant == "immediate_action_probe_observe_only":
         for key in ["RewriteObservedDamage", "RewriteObservedHealing", "RewriteObservedMpLoss", "RewriteObservedMpGain"]:
             if truthy(settings, key):

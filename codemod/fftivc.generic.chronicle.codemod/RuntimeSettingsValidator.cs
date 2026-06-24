@@ -94,7 +94,8 @@ internal static class RuntimeSettingsValidator
         if (settings.HookRegisterProbeOnHpEvent ||
             settings.HookRegisterProbeOnMpEvent ||
             settings.HookRegisterProbeOnCtDrop ||
-            settings.HookRegisterProbeOnActionBoundary)
+            settings.HookRegisterProbeOnActionBoundary ||
+            settings.HookRegisterProbeOnPendingResolve)
             report.Warn("HookRegisterProbeOnEvent", "event-correlated hook register snapshots are for short RE captures only.");
         if (settings.HookRegisterProbePointerScanBytes > 0)
             report.Warn("HookRegisterProbePointerScanBytes", "pointer scans are read-only but noisy; use only for short controlled RE captures.");
@@ -142,6 +143,14 @@ internal static class RuntimeSettingsValidator
                 report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, or PreClampFormulaPlanEnabled.");
             if (settings.PreClampDamageRewriteMaxWrites <= 0 || settings.PreClampDamageRewriteMaxWrites > 32)
                 report.Error("PreClampDamageRewriteMaxWrites", "Max writes must be within 1..32.");
+            if (settings.PreClampPointerScanBytes < 0 || settings.PreClampPointerScanBytes > 0x4000)
+                report.Error("PreClampPointerScanBytes", "PreClampPointerScanBytes must be within 0..0x4000.");
+            if (settings.PreClampPointerMaxLogs < 0)
+                report.Error("PreClampPointerMaxLogs", "PreClampPointerMaxLogs must be nonnegative.");
+            if (settings.PreClampPointerMaxPointersPerRoot < 0 || settings.PreClampPointerMaxPointersPerRoot > 64)
+                report.Error("PreClampPointerMaxPointersPerRoot", "PreClampPointerMaxPointersPerRoot must be within 0..64.");
+            if (settings.PreClampPointerScanBytes > 0)
+                report.Warn("PreClampPointerScanBytes", "pre-clamp pointer scans are read-only but noisy; use only for short controlled RE captures.");
             if (settings.PreClampFormulaPlanEnabled)
             {
                 if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)

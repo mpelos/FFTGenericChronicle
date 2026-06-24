@@ -125,6 +125,7 @@ What this hook gives us:
 - Raw staged damage (`oldDebit`) before clamp.
 - Raw staged credit (`oldCredit`) for heal/credit-like cases.
 - A place to rewrite damage before vanilla applies HP and KO.
+- A native-frame register/stack capture point for hunting a current executing action object.
 
 What was proven:
 
@@ -672,6 +673,25 @@ Useful facts:
 - `[rbp+6]` maps to `target+0x1C4`, the staged debit.
 - Pre-clamp registers mostly expose the target, not necessarily the source/caster.
 
+Current probe direction:
+
+```text
+pending tracker sees "resolving action opened"
+-> log latest stable-hook registers as kind=pendingresolve
+native pre-clamp sees each staged HP debit
+-> scan pre-clamp registers/stack roots for known unit pointers
+-> compare both views for a shared current-action/controller object
+```
+
+The dedicated profile for this is:
+
+```text
+work/battle-runtime-settings.executing-action-pointer-probe.json
+```
+
+It is observe-only. The pre-clamp hook runs in `LogOnly` mode and emits `[PRECLAMP-PTRSCAN]`
+without changing staged damage.
+
 ### 8.3 Session Pointers And Identity
 
 Status: **operational rule**.
@@ -793,10 +813,13 @@ Useful log line families:
 - `[ACTION-STATE]`: changes in action/forecast/pending signature fields.
 - `[ACTION-BOUNDARY]`: focused diff around action boundary bytes.
 - `[HOOK-REGS]`: broad stable-hook register capture.
-- `[HOOK-REGS-EVENT]`: recent hook snapshot correlated with HP/MP/CT events.
+- `[HOOK-REGS-EVENT]`: recent hook snapshot correlated with HP/MP/CT/pending-resolve events.
+- `[HOOK-PTRSCAN-EVENT]`: readable roots from a correlated stable-hook register snapshot.
 - `[PENDING-ACTION-CANDIDATES]`: registered unit pending/action state at event time.
+- `[PENDING-ACTION-TRACK]`: runtime pending/resolving action lifecycle.
 - `[PRECLAMP-PLAN-QUEUE]`: formula plan staged for native pre-clamp.
 - `[PRECLAMP-REWRITE]`: actual native staged debit/credit rewrite.
+- `[PRECLAMP-PTRSCAN]`: native pre-clamp register/stack root scan for unit-pointer context.
 - `[DAMAGE]`: observed HP loss.
 - `[HP-EVENT-PROBE]`: raw damage/clamp/lethal diagnostics.
 

@@ -22,6 +22,7 @@ Overall status: PASS
 | `actor-probe` | observe-only attacker RE capture | no HP/MP rewrites | `actor_probe_observe_only` | PASS |
 | `hook-register-probe` | observe-only hook register RE capture | no HP/MP rewrites | `hook_register_probe_observe_only` | PASS |
 | `action-context-probe` | observe-only charged-action RE capture | no HP/MP rewrites | `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only` | PASS |
+| `executing-action-pointer-probe` | observe-only executing-action RE capture | no HP/MP rewrites; pre-clamp hook is LogOnly | `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `preclamp_logonly_observe` | PASS |
 | `ko-pre-damage-probe` | observe-only KO/pre-damage RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only` | PASS |
 | `immediate-action-ko-boundary-probe` | observe-only immediate-action/KO-boundary RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only` | PASS |
 | `ko-landmark-probe` | observe-only KO static-landmark RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only` | PASS |
@@ -118,6 +119,14 @@ Overall status: PASS
 - Intent: Correlate CT-drop scheduling, unit pending-state transitions, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.
 - Live mutation: no HP/MP rewrites
 - Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/512
+- Errors: none
+
+### executing-action-pointer-probe
+
+- Path: `work/battle-runtime-settings.executing-action-pointer-probe.json`
+- Intent: Correlate pending-resolve register snapshots with native pre-clamp register/stack pointer scans to hunt for a current executing action object.
+- Live mutation: no HP/MP rewrites; pre-clamp hook is LogOnly
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/256
 - Errors: none
 
 ### ko-pre-damage-probe

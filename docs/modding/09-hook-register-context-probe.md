@@ -74,6 +74,22 @@ unit pointers inside that object without mutating game state.
 For charged actions, the most interesting event may be `kind=ctdrop`, because the caster often
 resets CT when the action is scheduled while the HP damage lands several turns later.
 
+The follow-up executing-action probe adds two more correlation points:
+
+- `HookRegisterProbeOnPendingResolve=true` emits `[HOOK-REGS-EVENT kind=pendingresolve]` when the
+  pending-action tracker sees a caster transition into a short resolving window.
+- `PreClampPointerScanBytes>0` emits `[PRECLAMP-PTRSCAN]` from the native staged-damage frame,
+  scanning register and stack roots for exact registered unit pointers.
+
+Use this profile when the specific goal is to find a real current executing action/controller
+object, especially for delayed AoE actions:
+
+```powershell
+work\battle-runtime-settings.executing-action-pointer-probe.json
+```
+
+It is observe-only. The pre-clamp hook is enabled only in `LogOnly` mode.
+
 ## Live Prep
 
 Dry-run first:

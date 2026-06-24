@@ -66,11 +66,11 @@ The deployed runtime settings are:
 
 They were copied from:
 
-`work/battle-runtime-settings.immediate-action-ko-boundary-probe.json`
+`work/battle-runtime-settings.executing-action-pointer-probe.json`
 
-The pre-KO-probe game log was archived to:
+The previous game log was archived to:
 
-`work/live-captures/battleprobe_log.pre-immediate-action-ko-boundary-probe.20260623-154450.txt`
+`D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt.bak-20260624-083056`
 
 Offline checks passed after the latest probe changes:
 
@@ -79,7 +79,9 @@ dotnet build codemod\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.c
 dotnet run --project codemod\fftivc.generic.chronicle.codemod.smoketests\fftivc.generic.chronicle.codemod.smoketests.csproj
 python tools\report_runtime_profiles.py
 python tools\test_runtime_profiles.py
-dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.immediate-action-ko-boundary-probe.json
+python tools\test_runtime_tooling.py
+dotnet run --project codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj -- work\battle-runtime-settings.executing-action-pointer-probe.json
+powershell -ExecutionPolicy Bypass -File codemod\run-offline-checks.ps1
 ```
 
 The profile is observe-only:
@@ -90,16 +92,20 @@ The profile is observe-only:
 - CT diagnostics enabled;
 - HP event raw-diff probe enabled;
 - hook register event probes enabled;
+- hook register snapshots enabled for pending-resolve openings;
+- native pre-clamp pointer scans enabled in `LogOnly` mode;
 - actor probe enabled;
 - pending-action candidate logging enabled.
-- ranked immediate-action candidate logging enabled.
 
 Important log lines from the latest code:
 
 ```text
 [HP-EVENT-PROBE kind=... event=N ptr=0x... prevHp=... currentHp=... delta=... appliedHpLoss=... rawForecastDamage=... lethal=... hpClamp=... action=...] diff=...
 [PENDING-ACTION-CANDIDATES kind=damage event=N target=0x.../id=0x.. now=...] ...
-[IMMEDIATE-ACTION-CANDIDATES kind=damage event=N target=0x.../id=0x.. appliedHpLoss=... rawTargetForecastDamage=... hpClamp=...] ...
+[PENDING-ACTION-TRACK resolve-open ...]
+[HOOK-REGS-EVENT kind=pendingresolve ...]
+[PRECLAMP-REWRITE ... flags=0x1 ...]
+[PRECLAMP-PTRSCAN event=N targetPtr=0x... id=0x.. now=...] ...
 ```
 
 It prints, for registered units at each HP/MP event:
@@ -114,11 +120,10 @@ It prints, for registered units at each HP/MP event:
 - `b8` = `unit+0x1B8`
 - `bb` = `unit+0x1BB`
 
-The latest live test answered the first KO-state question. The next engineering step is to improve
-lethal event attribution and search for a pre-damage / engine-owned KO application path.
-
-Note: after the KO live result, the lethal-aware target-cache fix and immediate-action candidate
-probe were implemented, validated, and deployed to Reloaded-II with the game closed.
+The immediate test goal is to compare the stable-hook `pendingresolve` register snapshot with the
+native pre-clamp register/stack pointer scan during a delayed AoE action. We are looking for a
+shared current-action/controller object that can identify the resolving caster/action even when
+several delayed actions might be pending.
 
 ## Known Live Unit Pointers
 
