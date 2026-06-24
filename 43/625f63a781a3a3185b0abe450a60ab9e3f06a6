@@ -1,0 +1,19 @@
+.mcp.json
+  s_c08f9ea70d3af2::t_11c84f59b12c48 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "43625f63a781a3a3185b0abe450a60ab9e3f06a6",
+  "prompts": {},
+  "sessions": {
+    "s_c08f9ea70d3af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8120ec5d-2a13-42b5-a831-b8f4409276c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
