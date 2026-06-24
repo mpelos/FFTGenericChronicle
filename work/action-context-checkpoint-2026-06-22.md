@@ -507,67 +507,135 @@ Why:
 
 Use `docs/modding/04-re-strategy.md` and the classic FFT function map as guideposts.
 
-## Next Live Test Protocol
+## Next Live Experiment: Executing Action Pointer Probe
 
-Current DLL/profile is already deployed.
+Status: current deployed experiment.
+
+Current DLL/profile is already deployed:
+
+```text
+C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\fftivc.generic.chronicle.codemod.dll
+C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json
+```
+
+The deployed profile is:
+
+```text
+work\battle-runtime-settings.executing-action-pointer-probe.json
+```
 
 The user should launch through Reloaded-II with only:
 
 - `fftivc.utility.modloader`
 - `fftivc.generic.chronicle.codemod`
 
-No Reloaded AppConfig JSON edits.
+Keep the Generic Chronicle data mod disabled. Do not edit Reloaded-II AppConfig JSON.
 
-Test:
+### Objective
 
-1. Start from the known Cloud Limit setup.
-2. Use Cloud's Cross Slash centered on Agrias so it hits Agrias and Ninja if they remain in range.
-3. At preview, user says:
+Find a reliable primary source for the currently resolving action, especially for delayed/charged
+actions. The concrete question is:
 
 ```text
-forecast Cross Slash AoE pronto
+When Cross Slash resolves and native pre-clamp damage is staged for Agrias/Ninja, is there any
+engine object reachable from registers/stack that identifies Cloud + action id + target/epicenter?
 ```
 
-4. Confirm the action.
-5. Before Cloud Waits, user says:
+Why this matters:
+
+- CT is only a fallback and fails conceptually for charged actions, Wait, reactions, and overlapping
+  pending actions.
+- The native pre-clamp hook already gives authoritative target + staged damage.
+- The missing robust context is source/action identity at resolution time.
+- If we find a current executing action/controller object, it can become the primary resolver.
+- If we do not find one, the next practical path is strengthening our internal pending/resolving
+  action tracker and searching for an earlier engine hook.
+
+### Instrumentation To Inspect
+
+This profile is observe-only. It should not rewrite HP/MP or change damage.
+
+High-value log lines:
 
 ```text
-confirmado Cross Slash AoE
+[PENDING-ACTION-TRACK resolve-open ...]
+[HOOK-REGS-EVENT kind=pendingresolve ...]
+[HOOK-PTRSCAN-EVENT kind=pendingresolve ...]
+[PRECLAMP-REWRITE ... flags=0x1 ...]    # LogOnly; not mutating staged damage
+[PRECLAMP-PTRSCAN event=N targetPtr=0x... id=0x.. now=...]
+[PENDING-ACTION-MATCH ...]
+[DAMAGE ...]
 ```
 
-6. Agent captures a snapshot if useful.
-7. User Waits Cloud.
-8. On each intervening active unit, user stops and reports:
+What to compare:
+
+1. Does the pending tracker open a resolving batch for Cloud/Cross Slash before HP events?
+2. Do `pendingresolve` register roots point to a stable readable object?
+3. Do native pre-clamp register/stack roots point to the same object or to an object containing
+   known unit pointers?
+4. Does any candidate object contain Cloud plus either Agrias/Ninja, action id `258`, or a nearby
+   action/target/epicenter signature?
+5. Are the two AoE victims attached to the same resolving batch?
+
+### User Live Protocol
+
+Test action:
 
 ```text
-pendente Cross Slash AoE, ativo X
+Cloud Cross Slash centered on Agrias, hitting Agrias + Ninja.
 ```
 
-9. Agent captures snapshots as needed.
-10. After resolution, user reports:
+Report these milestones:
 
 ```text
+baseline executing-pointer Cloud ativo
+forecast Cross Slash AoE pronto, dano Agrias X
+confirmado Cross Slash AoE, Cloud ainda ativo
+pendente Cross Slash, ativo Beowulf
+pendente Cross Slash, ativo Agrias
+pendente Cross Slash, ativo Ninja
 pos Cross Slash AoE, Agrias HP -X, Ninja HP -Y, ativo Z
 ```
 
-11. Agent copies the game log from:
+After post-resolution, close the game so the log is stable.
 
-`D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`
+### Expected Outcomes
 
-and checks for:
+Strong pass:
 
-- `[PENDING-ACTION-CANDIDATES kind=damage ...]`
-- `[DAMAGE ...]`
-- `[CTX ...]`
-- `[HOOK-REGS-EVENT kind=damage ...]`
+- `[PENDING-ACTION-TRACK resolve-open]` identifies Cloud/Cross Slash.
+- `[HOOK-REGS-EVENT kind=pendingresolve]` or `[PRECLAMP-PTRSCAN]` exposes a readable root that
+  consistently contains Cloud plus target/action evidence.
+- Agrias and Ninja damage events map to the same resolving action batch.
 
-Primary expected evidence:
+Useful partial pass:
 
-- During Agrias and Ninja HP events, either Cloud is still listed as pending action candidate, or he
-  has already cleared.
+- No engine object is obvious, but the pending/resolving tracker correctly groups Agrias and Ninja
+  under Cloud/Cross Slash. This supports using our pending table as the implementation path while
+  RE continues.
 
-This determines whether live pending-state scan is viable or whether our own pending table is
-mandatory.
+Fail / pivot:
+
+- No stable pendingresolve/pre-clamp root appears, and the resolving tracker cannot group the AoE
+  events. Then search for an earlier hook around pending-action dequeue / action execution instead
+  of relying on the stable unit hook.
+
+### Post-Test Analysis
+
+Copy or inspect:
+
+```text
+D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt
+```
+
+Run:
+
+```powershell
+python tools\analyze_battleprobe_log.py
+```
+
+Manual review is still required because `[PRECLAMP-PTRSCAN]` is new and may expose candidate roots
+that no analyzer summarizes yet.
 
 ## Implementation Notes From Latest Changes
 
@@ -1349,7 +1417,7 @@ Deployment:
   `C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\battleprobe_log.txt`.
 - The active live log was cleared before deploy.
 
-Next live instructions for the user:
+Historical live instructions used for that 2026-06-23 probe:
 
 1. Launch FFT through Reloaded-II with only:
    - `fftivc.utility.modloader`
@@ -3568,7 +3636,7 @@ PreClampImmediateActionPlanEagerTargets=true
 PreClampImmediateActionNearbyUnitScanRadius=8
 ```
 
-The active test is still:
+The retest at that point was:
 
 ```text
 Ninja dual wield -> Agrias
@@ -3621,21 +3689,6 @@ Gate:
 ```text
 powershell -ExecutionPolicy Bypass -File codemod\run-offline-checks.ps1
 Offline checks passed.
-```
-
-Current deployed next test:
-
-```text
-Ninja dual wield -> Agrias
-```
-
-Expected:
-
-```text
-No ghost source.
-source=Ninja/id=0x80.
-forcedDebit=87 for Agrias.
-Applied damage ~87 / 87, Agrias survives.
 ```
 
 ## 2026-06-24 Success: Immediate Dual Wield Works
