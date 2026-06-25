@@ -26,10 +26,14 @@ attacker, and action context.
 - `a.inferred`
 - `a.sourceCounter`
 - `a.sourceCt`
+- `a.sourceImmediate`
+- `a.sourcePending`
 - `a.sourceRecent`
 - `attacker.inferred`
 - `attacker.sourceCounter`
 - `attacker.sourceCt`
+- `attacker.sourceImmediate`
+- `attacker.sourcePending`
 - `attacker.sourceRecent`
 - `currentHp`
 - `currentMp`
@@ -119,6 +123,7 @@ Additional attacker-source flags:
 - `attacker.sourceCt`, `a.sourceCt`
 - `attacker.sourceCounter`, `a.sourceCounter`
 - `attacker.inferred`, `a.inferred`
+- `attacker.sourceImmediate`, `a.sourceImmediate`
 - `attacker.sourceRecent`, `a.sourceRecent`
 
 ## Action Variables
@@ -129,15 +134,58 @@ those custom names to zero so formulas can read them safely even when no signal 
 
 - `<ActionSignalRules.VariableFormulas>`
 - `<ActionSignalRules.Variables>`
+- `actionId`
+- `actionIdAgeMs`
+- `activeActionAgeMs`
+- `activeMarker2`
+- `batch`
+- `batchAgeMs`
+- `batchEvent`
+- `batchMaxEvents`
+- `confidenceDamageCache`
+- `confidenceLethalClampDamageCache`
+- `confidenceRecentDamageCache`
+- `confidenceRecentResolve`
+- `ctDropAgeMs`
+- `currentActiveAction`
+- `currentDamageCacheMatch`
+- `currentExactDamageCacheMatch`
+- `currentLethalClampDamageCacheMatch`
+- `currentTargetCacheDamage`
+- `damageCacheMatch`
+- `exactDamageCacheMatch`
+- `freshActionId`
+- `freshActiveAction`
+- `hasCurrentTargetMetadata`
+- `id`
 - `isDamage`
 - `isHealing`
 - `isMpChange`
 - `isMpGain`
 - `isMpLoss`
+- `lethalClampDamageCacheMatch`
+- `margin`
+- `observedHpLoss`
+- `pendingFlag`
+- `pendingFlag2`
+- `pendingTimer`
 - `present`
+- `recentDamageCacheMatch`
+- `recentExactDamageCacheMatch`
+- `recentLethalClampDamageCacheMatch`
+- `recentTargetCacheDamage`
+- `runnerUpScore`
+- `score`
+- `seenAgeMs`
 - `signal`
+- `sourceImmediate`
 - `sourceMpChange`
+- `sourcePending`
 - `sourceVanillaDamage`
+- `staleActionId`
+- `staleActiveAction`
+- `stateAgeMs`
+- `targetCacheDamage`
 - `vanillaDamage`
 - `vanillaDamageAbs`
 - `vanillaHealing`

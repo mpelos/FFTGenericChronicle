@@ -469,3 +469,377 @@ demo-style formula path guarded on `a.present` and preserving engine-owned death
   the bands may overlap for some formulas.
 - **Neuter gap** for special skillsets/formulas that ignore weapon `Power` or action `X/Y`/Aim
   `Power`; see `work/neuter_gap_targets.md`.
+
+---
+
+## LIVE TEST 5 - pre-clamp formula plan table for delayed AoE (2026-06-23) - PASSED
+
+Goal: prove that a resolved action context can compute custom formula damage and feed it into the
+engine's own HP-apply path before clamp/UI/final HP, instead of doing a late HP rewrite.
+
+### Setup
+
+Profile:
+
+- `work\battle-runtime-settings.preclamp-plan-cross-slash-demo.json`
+- `PreClampDamageRewriteEnabled=true`
+- `PreClampFormulaPlanEnabled=true`
+- `PreClampFormulaPlanRequirePhaseZero=true`
+- `FinalDamageFormula="max(1, a.pa * 10 - t.faith)"`
+
+Data mod was disabled. Active user-facing mods were only the utility modloader and the code mod.
+
+Scenario:
+
+1. Cloud confirmed delayed Cross Slash AoE on Agrias.
+2. Beowulf, Agrias, and Ninja waited while Cloud's action remained pending.
+3. Cross Slash resolved against Ninja and Agrias.
+
+### Result
+
+User observed:
+
+```text
+Agrias UI 77, HP 322 -> 245
+Ninja  UI 68, HP 276 -> 208
+Next active: Ramza
+```
+
+Expected vanilla values in this baseline were Agrias `115` and Ninja `273`.
+
+### Log evidence
+
+Artifact:
+
+- `work\live-captures\battleprobe_log.preclamp-plan-post-cross-slash-success.snapshot.txt`
+
+Key lines:
+
+```text
+[PRECLAMP-PLAN-QUEUE ... id=0x80 hp=276/276 oldDebit=273 forcedDebit=68 ... pending=batch=1/act=258]
+[PRECLAMP-PLAN-QUEUE ... id=0x1E hp=322/322 oldDebit=115 forcedDebit=77 ... pending=batch=1/act=258]
+[PRECLAMP-REWRITE ... id=0x80 ... oldDebit=273 ... forcedDebit=68 ... action=258 ... live=hp=208 ... dmg1C4=68 ...]
+[PRECLAMP-REWRITE ... id=0x1E ... oldDebit=115 ... forcedDebit=77 ... action=258 ... live=hp=245 ... dmg1C4=77 ...]
+[DAMAGE ptr=0x141855EE0 id=0x80] 276 -> 208 = 68
+[DAMAGE ptr=0x1418560E0 id=0x1E] 322 -> 245 = 77
+```
+
+The runtime resolved the attacker/action as Cloud `0x32`, Cross Slash action `258`, source
+`pending-clear`. The formula computed target-specific values from the real attacker and real targets.
+
+### Conclusion
+
+The pre-clamp plan-table architecture works for a delayed AoE action:
+
+- pending-action context identifies the delayed caster/action;
+- target damage caches expose each affected target before HP application;
+- managed formula code queues target-specific staged result plans;
+- the native hook rewrites the engine's staged debit in time;
+- UI damage and final HP both use the custom formula result.
+
+This retires late HP-write as the preferred architecture for formula-owned damage in this tested
+path. Late HP-write and CT should remain fallback/diagnostic tools; the preferred path is now
+pending/action context -> formula -> pre-clamp staged debit/credit rewrite -> engine-owned apply/KO.
+
+### Still open after Test 5
+
+- Prove immediate single-target attacks through the same plan-table path.
+- Prove lethal custom damage causes same-hit KO through the engine path.
+- Validate another delayed/charged action family beyond Cloud Limit.
+- Stress multiple simultaneous pending actions.
+- Generalize action identity and equipment/DR inputs for the real combat redesign.
+
+---
+
+## LIVE TEST 6 - formula-backed same-hit KO via pre-clamp plan (2026-06-23) - PASSED
+
+Goal: combine the prior proofs:
+
+1. formula-backed native pre-clamp plan table can replace vanilla staged damage;
+2. lethal staged damage consumed by vanilla HP apply can produce a real KO.
+
+### Setup
+
+Profile:
+
+- `work\battle-runtime-settings.preclamp-plan-lethal-braver-demo.json`
+- `PreClampDamageRewriteEnabled=true`
+- `PreClampFormulaPlanEnabled=true`
+- `FinalDamageFormula="9999"`
+- late observed HP rewrites disabled
+- `CaptureStructOnDeath=true`
+
+Data mod was disabled. Active user-facing mods were the utility modloader and the code mod.
+
+Scenario:
+
+1. Cloud selected Braver on Beowulf.
+2. Preview showed vanilla damage `153`.
+3. Cloud confirmed Braver, then waited.
+4. Beowulf waited.
+5. Braver resolved before Agrias became active.
+
+### Result
+
+User observed:
+
+```text
+Beowulf UI 999
+Beowulf died: yes
+Beowulf HP 0/314
+Next active: Agrias
+```
+
+### Log Evidence
+
+Artifact:
+
+- `work\live-captures\battleprobe_log.preclamp-plan-lethal-braver-success.snapshot.txt`
+
+Key lines:
+
+```text
+[PENDING-ACTION-TRACK ... caster=0x1418562E0/id=0x32 act=257 ...]
+[PENDING-ACTION-TRACK resolve-open batch=1 caster=0x1418562E0/id=0x32 act=257 ...]
+[PRECLAMP-PLAN-QUEUE ... id=0x1F hp=314/314 oldDebit=153 forcedDebit=9999 ... pending=batch=1/act=257]
+[PRECLAMP-FORMULA-CANDIDATE ... id=0x1F hp=314/314 oldDebit=153 forcedDebit=9999 ... attacker=0x1418562E0/id=0x32 source=pending-clear ...]
+[PRECLAMP-REWRITE ... id=0x1F ... oldDebit=153 ... forcedDebit=9999 ... action=257 ... live=hp=0 ... dmg1C4=9999 ...]
+[DEATH-DIFF ptr=0x1418564E0 id=0x1F] alive->dead +0x30:3A->00 +0x31:01->00 +0x61:00->20 +0x18C:00->01 +0x1BB:00->01 +0x1C4:99->0F +0x1C5:00->27 +0x1DB:00->20 +0x1EF:00->20 +0x1F5:FF->13
+[DAMAGE ptr=0x1418564E0 id=0x1F] 314 -> 0 = 314
+[HP-EVENT-PROBE ... rawForecastDamage=9999 lethal=1 hpClamp=1 rawForecastOverkill=9685 ...]
+```
+
+### Conclusion
+
+Formula-owned lethal damage can be applied through the engine's own HP/KO lifecycle in the same hit.
+
+- The runtime resolved Cloud as the delayed caster and Braver as action `257` via `pending-clear`.
+- The target damage cache exposed Beowulf's vanilla staged debit `153` before HP application.
+- Managed formula evaluation produced `9999`.
+- The native pre-clamp plan rewrote the staged debit from `153` to `9999`.
+- Vanilla HP apply clamped Beowulf from `314` to `0` and set the KO/death lifecycle fields,
+  including `+0x61:00->20`.
+- The UI displayed `999`, consistent with prior evidence that large staged damage is presentation-
+  clamped even when raw staged damage is `9999`.
+
+This is the current best architecture:
+
+`pending/action memory context -> formula -> pre-clamp staged debit/credit rewrite -> vanilla apply/KO`.
+
+The old late HP rewrite path and CT resolution remain useful as fallback/debugging tools, but they
+should not be the primary route for the final combat redesign.
+
+### Still open after Test 6
+
+- Prove immediate/basic attacks through the same plan-table path.
+- Validate non-Cloud charged action families, including actions without MP cost.
+- Build a real action identity layer instead of relying only on action ids observed in memory.
+- Investigate equipment/DR memory fields and expose them to formulas.
+- Stress multiple simultaneous pending actions and reaction/counter flows.
+
+---
+
+## Prepared LIVE TEST 7 - immediate/basic attack through pre-clamp plan (2026-06-23)
+
+Goal: prove that immediate actions can use the same formula-backed pre-clamp plan table without CT
+as the primary attacker source.
+
+### Setup
+
+Prepared profile:
+
+- `work\battle-runtime-settings.preclamp-plan-immediate-basic-demo.json`
+- `PreClampDamageRewriteEnabled=true`
+- `PreClampFormulaPlanEnabled=true`
+- `PreClampFormulaCandidateRequirePendingMatch=false`
+- `PreClampFormulaCandidateAllowImmediateAction=true`
+- `ResolveAttackerByCt=false`
+- `ResolveAttackerByLowCtFallback=false`
+- `InferAttackerFromRecentUnits=false`
+- `RewriteConditionFormula="event.isDamage && a.sourceImmediate && action.sourceImmediate && action.freshActiveAction"`
+- `FinalDamageFormula="max(1, a.pa * 10 - t.faith)"`
+
+Data mod should stay disabled. Active user-facing mods should be only:
+
+- `fftivc.utility.modloader`
+- `fftivc.generic.chronicle.codemod`
+
+### What changed in the runtime
+
+The pre-clamp formula candidate path can now optionally resolve an immediate-action source when no
+pending-action match is present.
+
+The immediate resolver scans registered battle units and scores the action-state fields already
+proven useful in the immediate KO probe:
+
+- `unit+0x1A2` action id / last action id;
+- `unit+0x1BA` active action marker (`ba` in logs);
+- state/action age;
+- freshness and staleness;
+- exclusion of the HP target as source.
+
+It only accepts a source if:
+
+- the unit is source-like and alive;
+- action id is positive;
+- fresh active action is present by default;
+- score is at least `PreClampImmediateActionMinScore`;
+- score beats the next eligible candidate by `PreClampImmediateActionMinMargin`.
+
+New formula variables:
+
+- `attacker.sourceImmediate`, `a.sourceImmediate`
+- `action.sourceImmediate`, `act.sourceImmediate`
+- immediate-action diagnostics such as `action.freshActiveAction`, `action.actionIdAgeMs`,
+  `action.activeActionAgeMs`, `action.margin`, and `action.runnerUpScore`
+
+### Intended live scenario
+
+Use a simple single-target basic attack where the vanilla damage is known and nonlethal. Recommended
+first action:
+
+1. Agrias attacks Beowulf with a basic attack.
+2. Record UI damage and Beowulf HP loss.
+3. Close the game so the log can be captured.
+
+Expected if the immediate pre-clamp path works:
+
+- damage should be formula-owned, roughly `Agrias PA * 10 - Beowulf Faith`;
+- from recent known stats, this is expected to be around `45`, not the old vanilla `10`;
+- logs should show:
+  - `[PRECLAMP-IMMEDIATE-CANDIDATES ... selected=... id=0x1E ...]`;
+  - `[PRECLAMP-FORMULA-CANDIDATE ... source=immediate-action ...]`;
+  - `[PRECLAMP-PLAN-QUEUE ... context=immediate-action/act=...]`;
+  - `[PRECLAMP-REWRITE ... forcedDebit=<formula result> ...]`;
+  - final `[DAMAGE ...]` matching the forced formula result.
+
+Expected if it fails safely:
+
+- vanilla damage applies;
+- logs should still include `[PRECLAMP-IMMEDIATE-CANDIDATES ... selected=none ...]` or a selected
+  candidate whose score/margin/action-age explains why the formula did not queue.
+
+Decision unlocked:
+
+- Pass means immediate/basic attacks can share the same primary architecture:
+  `action memory context -> formula -> pre-clamp staged debit -> vanilla apply/KO`.
+- Fail means immediate actions need either a lower-level current-action pointer/hook or different
+  freshness fields before they can retire CT.
+
+### Live result - first attempt failed safely
+
+Scenario:
+
+- Agrias basic-attacked Beowulf.
+- Data mod disabled.
+- CT/recent fallback disabled by profile.
+
+User observed:
+
+```text
+Preview/UI damage: 151
+Beowulf HP after hit: 163/314
+Agrias only attacked, did not finish the turn
+```
+
+Interpretation:
+
+- Vanilla damage was `151`, and final HP loss was also `151`.
+- No formula rewrite happened.
+
+Key log evidence:
+
+```text
+[PRECLAMP-IMMEDIATE-CANDIDATES ... oldDebit=151 ... selected=none] ... Agrias ... act=0 ... b8=1/ba=0 ...
+[PRECLAMP-FORMULA-CANDIDATE ... oldDebit=151 forcedDebit=151 shouldStage=0 queuedPlan=0 ... source=none ...]
+[ACTION-STATE ptr=... id=0x1E ... act=0 ... b8=1 ba=1 ...]
+[DAMAGE ptr=... id=0x1F] 314 -> 163 = 151
+```
+
+Conclusion:
+
+- The profile failed in the safe direction: no confident attacker, no plan queued, vanilla damage
+  passed through unchanged.
+- The target damage cache appeared before Agrias had the stronger active marker:
+  - during target cache: Agrias `b8=1`, `ba=0`, `act=0`;
+  - shortly before HP write: Agrias `ba=1`, but `act` still `0`.
+- Basic attacks may not use `+0x1A2` action id, or may represent "Attack" as zero.
+
+Runtime follow-up prepared:
+
+- Allow zero action id as an immediate source only when explicitly configured.
+- Treat fresh `ba=1` with `act=0` as a possible basic/immediate source.
+- When a source enters fresh `ba=1`, rescan other registered units for live target damage caches and
+  re-run pre-clamp formula candidate evaluation before HP apply.
+- Updated `work\battle-runtime-settings.preclamp-plan-immediate-basic-demo.json` with:
+  - `PreClampImmediateActionAllowZeroActionId=true`;
+  - `PreClampImmediateActionMinScore=1600`.
+
+Expected Test 7b:
+
+- Repeat Agrias basic attack on Beowulf.
+- If the new source-triggered rescan catches the window, damage should become formula-owned:
+  `max(1, Agrias PA * 10 - Beowulf Faith)`.
+- Logs should show `selected=.../id=0x1E/act=0` and `source=immediate-action`.
+
+### Live result - second attempt found the source, but the freshness gate was too strict
+
+Scenario:
+
+- Agrias basic-attacked Beowulf.
+- Data mod disabled.
+- CT/recent fallback disabled by profile.
+
+User observed:
+
+```text
+Preview damage: 151
+UI damage: 151
+Beowulf HP loss: 151
+No critical
+Agrias only attacked
+```
+
+Interpretation:
+
+- This was still vanilla damage. The runtime did not queue a formula plan.
+
+Log artifact:
+
+- `work\live-captures\battleprobe_log.preclamp-plan-immediate-basic-7b-agrias-beowulf.snapshot.txt`
+
+Key log evidence:
+
+```text
+[ACTION-STATE ... Agrias ... act=0 ... b8=1 ba=1 bb=1]
+[PRECLAMP-IMMEDIATE-CANDIDATES ... oldDebit=151 ... selected=none]
+  Agrias active-source-like score=250 eligible=0 act=0 freshActive=0
+    stateAge=28302 actionAge=42928 activeAge=29386 ... b8=1/ba=1/bb=1
+[PRECLAMP-FORMULA-CANDIDATE ... oldDebit=151 forcedDebit=151 shouldStage=0 queuedPlan=0 ... source=none ...]
+```
+
+Conclusion:
+
+- The runtime did see Agrias as `active-source-like` with `act=0/ba=1`.
+- The rejection was caused by `freshActiveAction=0`, because the active marker was about 29 seconds
+  old at HP apply.
+- For live basic actions, the active marker can remain valid across player/animation delay, so
+  freshness should be a diagnostic or optional gate, not a mandatory rule.
+
+Runtime follow-up prepared for Test 7c:
+
+- Split `currentActiveAction` from `freshActiveAction`.
+- Allow explicitly configured zero-action-id immediate sources to remain selectable while `ba=1`
+  is currently set, even if the marker is no longer fresh.
+- Expose `action.currentActiveAction` / `act.currentActiveAction` to formulas.
+- Updated immediate-basic profile:
+  - `PreClampImmediateActionRequireFreshActive=false`;
+  - `RewriteConditionFormula="event.isDamage && a.sourceImmediate && action.sourceImmediate && action.currentActiveAction"`.
+
+Expected Test 7c:
+
+- Repeat Agrias basic attack on Beowulf.
+- If this is the missing piece, logs should show `selected=... id=0x1E/act=0/currentActive=1`,
+  `source=immediate-action`, a queued plan, and a pre-clamp rewrite.
+- If it still fails, the next suspect is phase gating (`PreClampFormulaPlanRequirePhaseZero`) or the
+  plan queue timing relative to the native pre-clamp hook.

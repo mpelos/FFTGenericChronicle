@@ -1,0 +1,335 @@
+{
+  "groups": [],
+  "nearBytes": 4096,
+  "patterns": [
+    {
+      "bytes": "e05c854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Ramza:ptr64",
+      "kind": "unit",
+      "name": "Ramza"
+    },
+    {
+      "bytes": "e05e854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Ninja:ptr64",
+      "kind": "unit",
+      "name": "Ninja"
+    },
+    {
+      "bytes": "e060854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Agrias:ptr64",
+      "kind": "unit",
+      "name": "Agrias"
+    },
+    {
+      "bytes": "e062854101000000",
+      "encoding": "ptr64",
+      "hits": 20000,
+      "key": "unit:Cloud:ptr64",
+      "kind": "unit",
+      "name": "Cloud"
+    },
+    {
+      "bytes": "e064854101000000",
+      "encoding": "ptr64",
+      "hits": 11268,
+      "key": "unit:Beowulf:ptr64",
+      "kind": "unit",
+      "name": "Beowulf"
+    },
+    {
+      "bytes": "4c",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:damage:u8",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:damage:u16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:damage:s16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "u32",
+      "hits": 17776,
+      "key": "value:damage:u32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "s32",
+      "hits": 17776,
+      "key": "value:damage:s32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "00009842",
+      "encoding": "f32",
+      "hits": 219,
+      "key": "value:damage:f32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0000000000005340",
+      "encoding": "f64",
+      "hits": 13,
+      "key": "value:damage:f64",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "64",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:chance:u8",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "6400",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:chance:u16",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "6400",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:chance:s16",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "64000000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:chance:u32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "64000000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:chance:s32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "0000c842",
+      "encoding": "f32",
+      "hits": 834,
+      "key": "value:chance:f32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "0000000000005940",
+      "encoding": "f64",
+      "hits": 319,
+      "key": "value:chance:f64",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "32",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:cloudChar:u8",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "3200",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:cloudChar:u16",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "3200",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:cloudChar:s16",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "32000000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:cloudChar:u32",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "32000000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:cloudChar:s32",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "00004842",
+      "encoding": "f32",
+      "hits": 674,
+      "key": "value:cloudChar:f32",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "0000000000004940",
+      "encoding": "f64",
+      "hits": 24,
+      "key": "value:cloudChar:f64",
+      "kind": "value",
+      "name": "cloudChar"
+    },
+    {
+      "bytes": "1e",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:agriasChar:u8",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "1e00",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:agriasChar:u16",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "1e00",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:agriasChar:s16",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "1e000000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:agriasChar:u32",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "1e000000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:agriasChar:s32",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "0000f041",
+      "encoding": "f32",
+      "hits": 3601,
+      "key": "value:agriasChar:f32",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "0000000000003e40",
+      "encoding": "f64",
+      "hits": 187,
+      "key": "value:agriasChar:f64",
+      "kind": "value",
+      "name": "agriasChar"
+    },
+    {
+      "bytes": "0000803f",
+      "encoding": "f32",
+      "hits": 20000,
+      "key": "ratio:zodiac:f32",
+      "kind": "ratio",
+      "name": "zodiac"
+    },
+    {
+      "bytes": "000000000000f03f",
+      "encoding": "f64",
+      "hits": 2135,
+      "key": "ratio:zodiac:f64",
+      "kind": "ratio",
+      "name": "zodiac"
+    },
+    {
+      "bytes": "427261766572",
+      "encoding": "ascii",
+      "hits": 41,
+      "key": "text:Braver:ascii",
+      "kind": "text",
+      "name": "Braver"
+    },
+    {
+      "bytes": "420072006100760065007200",
+      "encoding": "utf16le",
+      "hits": 0,
+      "key": "text:Braver:utf16le",
+      "kind": "text",
+      "name": "Braver"
+    }
+  ],
+  "pid": 19044,
+  "stats": {
+    "bytes_scanned": 2643898368,
+    "regions_scanned": 761,
+    "regions_skipped": 2660
+  },
+  "units": [
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    }
+  ]
+}

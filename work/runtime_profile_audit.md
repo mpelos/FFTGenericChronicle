@@ -21,6 +21,13 @@ Overall status: PASS
 | `death-flag-capture` | observe-only live capture | no HP/MP rewrites | `observe_only_death_capture` | PASS |
 | `actor-probe` | observe-only attacker RE capture | no HP/MP rewrites | `actor_probe_observe_only` | PASS |
 | `hook-register-probe` | observe-only hook register RE capture | no HP/MP rewrites | `hook_register_probe_observe_only` | PASS |
+| `action-context-probe` | observe-only charged-action RE capture | no HP/MP rewrites | `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only` | PASS |
+| `executing-action-pointer-probe` | observe-only executing-action RE capture | no HP/MP rewrites; pre-clamp hook is LogOnly | `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `preclamp_logonly_observe` | PASS |
+| `ko-pre-damage-probe` | observe-only KO/pre-damage RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only` | PASS |
+| `immediate-action-ko-boundary-probe` | observe-only immediate-action/KO-boundary RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only` | PASS |
+| `ko-landmark-probe` | observe-only KO static-landmark RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only` | PASS |
+| `ko-hp-apply-probe` | observe-only KO HP-apply lifecycle RE capture | no HP/MP rewrites | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only` | PASS |
+| `ko-preclamp-force-agrias` | live KO pre-clamp proof | mutates staged unit+0x1C4 once before vanilla HP clamp | `observe_only_death_capture`, `hook_register_probe_observe_only`, `actor_probe_observe_only`, `pending_action_tracker_observe_only`, `hp_event_probe_observe_only`, `immediate_action_probe_observe_only`, `landmark_probe_observe_only`, `preclamp_damage_rewrite_proof` | PASS |
 | `engine-death-test` | live architecture proof | rewrites HP, but never below MinHpFloor | `engine_owned_death` | PASS |
 | `custom-formula-demo` | live/offline attacker+target proof | rewrites HP when CT attacker context is present, never below MinHpFloor | `custom_formula_demo` | PASS |
 | `death-test-hp-only` | legacy/refuted death-write probe | writes HP to 0 for foes only; do not use as success path | `legacy_death_hp_only`, `foes_only`, `known_ko_flag_configured` | PASS |
@@ -103,7 +110,63 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.hook-register-probe.json`
 - Intent: Log a short burst of x64 register snapshots at the stable battle_base_ptr hook.
 - Live mutation: no HP/MP rewrites
-- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False, ctResolver=False/0ms, counterResolver=False/0ms, hookRegs=True/24
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=False, ctResolver=False/0ms, counterResolver=False/0ms, hookRegs=True/2000
+- Errors: none
+
+### action-context-probe
+
+- Path: `work/battle-runtime-settings.action-context-probe.json`
+- Intent: Correlate CT-drop scheduling, unit pending-state transitions, HP/MP resolution events, hook registers, stack slots, and pointer roots for charged actions.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/512
+- Errors: none
+
+### executing-action-pointer-probe
+
+- Path: `work/battle-runtime-settings.executing-action-pointer-probe.json`
+- Intent: Correlate pending-resolve register snapshots with native pre-clamp register/stack pointer scans to hunt for a current executing action object.
+- Live mutation: no HP/MP rewrites; pre-clamp hook is LogOnly
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/256
+- Errors: none
+
+### ko-pre-damage-probe
+
+- Path: `work/battle-runtime-settings.ko-pre-damage-probe.json`
+- Intent: Compare known nonlethal HP events with a vanilla lethal KO in one run, logging HP-event raw diffs, death follow-up, action context, hook registers, stack slots, and pointer roots.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/128
+- Errors: none
+
+### immediate-action-ko-boundary-probe
+
+- Path: `work/battle-runtime-settings.immediate-action-ko-boundary-probe.json`
+- Intent: Repeat the known Cross Slash into Ramza Rush KO path with raw-vs-applied HP event fields and ranked immediate-action candidates.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/160
+- Errors: none
+
+### ko-landmark-probe
+
+- Path: `work/battle-runtime-settings.ko-landmark-probe.json`
+- Intent: Load the low-HP Ninja autosave and validate targeted RVA landmarks around target-cache and KO/death-state candidates.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
+- Errors: none
+
+### ko-hp-apply-probe
+
+- Path: `work/battle-runtime-settings.ko-hp-apply-probe.json`
+- Intent: Hook the 0x30A51C state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.
+- Live mutation: no HP/MP rewrites
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
+- Errors: none
+
+### ko-preclamp-force-agrias
+
+- Path: `work/battle-runtime-settings.ko-preclamp-force-agrias.json`
+- Intent: Force Agrias Cross Slash staged debit before HP clamp to test engine-owned custom lethal lifecycle.
+- Live mutation: mutates staged unit+0x1C4 once before vanilla HP clamp
+- Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
 - Errors: none
 
 ### engine-death-test
@@ -119,7 +182,7 @@ Overall status: PASS
 - Path: `work/battle-runtime-settings.custom-formula-demo.json`
 - Intent: Compute damage from resolved attacker PA and target Faith while preserving engine-owned death.
 - Live mutation: rewrites HP when CT attacker context is present, never below MinHpFloor
-- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=10, deathWrite=False/0, minHpFloor=1, actorProbe=False, ctResolver=True/4000ms, counterResolver=True/1500ms, hookRegs=False/0
+- Summary: dryRun=False, hpDamage=True, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=10, deathWrite=False/0, minHpFloor=1, actorProbe=False, ctResolver=True/7000ms, counterResolver=True/1500ms, hookRegs=False/0
 - Errors: none
 
 ### death-test-hp-only

@@ -26,7 +26,7 @@ internal sealed class SettingsValidationReport
 
 internal static class RuntimeSettingsValidator
 {
-    private const int RawSize = 0x180;
+    private const int RawSize = 0x200;
 
     public static SettingsValidationReport Validate(RuntimeSettings settings, ItemCatalog catalog)
     {
@@ -79,8 +79,149 @@ internal static class RuntimeSettingsValidator
             report.Error("SuppressOwnRewriteEchoWindowMs", "SuppressOwnRewriteEchoWindowMs must be nonnegative.");
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbeEventMaxLogs < 0)
+            report.Error("HookRegisterProbeEventMaxLogs", "HookRegisterProbeEventMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbeStackSlots < 0 || settings.HookRegisterProbeStackSlots > 64)
+            report.Error("HookRegisterProbeStackSlots", "HookRegisterProbeStackSlots must be within 0..64.");
+        if (settings.HookRegisterProbePointerScanBytes < 0 || settings.HookRegisterProbePointerScanBytes > 0x2000)
+            report.Error("HookRegisterProbePointerScanBytes", "HookRegisterProbePointerScanBytes must be within 0..0x2000.");
+        if (settings.HookRegisterProbePointerMaxLogs < 0)
+            report.Error("HookRegisterProbePointerMaxLogs", "HookRegisterProbePointerMaxLogs must be nonnegative.");
+        if (settings.HookRegisterProbePointerMaxPointersPerRoot < 0 || settings.HookRegisterProbePointerMaxPointersPerRoot > 64)
+            report.Error("HookRegisterProbePointerMaxPointersPerRoot", "HookRegisterProbePointerMaxPointersPerRoot must be within 0..64.");
         if (settings.HookRegisterProbe)
             report.Warn("HookRegisterProbe", "hook register probe is for short RE captures only; keep HookRegisterProbeMaxLogs low.");
+        if (settings.HookRegisterProbeOnHpEvent ||
+            settings.HookRegisterProbeOnMpEvent ||
+            settings.HookRegisterProbeOnCtDrop ||
+            settings.HookRegisterProbeOnActionBoundary ||
+            settings.HookRegisterProbeOnPendingResolve)
+            report.Warn("HookRegisterProbeOnEvent", "event-correlated hook register snapshots are for short RE captures only.");
+        if (settings.HookRegisterProbePointerScanBytes > 0)
+            report.Warn("HookRegisterProbePointerScanBytes", "pointer scans are read-only but noisy; use only for short controlled RE captures.");
+        if (settings.LandmarkProbeMaxLogs < 0)
+            report.Error("LandmarkProbeMaxLogs", "LandmarkProbeMaxLogs must be nonnegative.");
+        if (settings.LandmarkProbeStackSlots < 0 || settings.LandmarkProbeStackSlots > 64)
+            report.Error("LandmarkProbeStackSlots", "LandmarkProbeStackSlots must be within 0..64.");
+        if (settings.LandmarkProbeEnabled)
+        {
+            report.Warn("LandmarkProbeEnabled", "landmark hooks are targeted RE probes; use only for short controlled captures.");
+            if (settings.LandmarkProbes.Count(probe => probe.Enabled) == 0)
+                report.Error("LandmarkProbes", "LandmarkProbeEnabled requires at least one enabled LandmarkProbe.");
+        }
+        foreach (var probe in settings.LandmarkProbes)
+        {
+            probe.Normalize();
+            if (!probe.TryValidate(out string error))
+                report.Error($"LandmarkProbes.{probe.TraceName}", error);
+        }
+        if (settings.PreClampDamageRewriteEnabled)
+        {
+            report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");
+            if (settings.PreClampDamageRewriteRva <= 0)
+                report.Error("PreClampDamageRewriteRva", "PreClampDamageRewriteRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.PreClampDamageRewriteExpectedBytes))
+                report.Error("PreClampDamageRewriteExpectedBytes", "Expected bytes are required for the pre-clamp hook.");
+            if (settings.PreClampDamageRewriteTargetCharId is < -1 or > 0xFF)
+                report.Error("PreClampDamageRewriteTargetCharId", "Target char id must be -1 or 0..255.");
+            if (settings.PreClampDamageRewriteTargetTeam is < -1 or > 0xFF)
+                report.Error("PreClampDamageRewriteTargetTeam", "Target team must be -1 or 0..255.");
+            if (settings.PreClampDamageRewriteExpectedDebit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteExpectedDebit", "Expected debit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteExpectedCredit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteExpectedCredit", "Expected credit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteMinHp < 0 || settings.PreClampDamageRewriteMaxHp < settings.PreClampDamageRewriteMinHp)
+                report.Error("PreClampDamageRewriteHpRange", "Pre-clamp HP range must be nonnegative and ordered.");
+            if (settings.PreClampDamageRewriteForcedDebit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteForcedDebit", "Forced debit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampDamageRewriteForcedCredit is < -1 or > short.MaxValue)
+                report.Error("PreClampDamageRewriteForcedCredit", "Forced credit must be -1 or a signed 16-bit nonnegative value.");
+            if (!settings.PreClampDamageRewriteLogOnly &&
+                settings.PreClampDamageRewriteForcedDebit < 0 &&
+                settings.PreClampDamageRewriteForcedCredit < 0 &&
+                !settings.PreClampFormulaPlanEnabled)
+                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, or PreClampFormulaPlanEnabled.");
+            if (settings.PreClampDamageRewriteMaxWrites <= 0 || settings.PreClampDamageRewriteMaxWrites > 32)
+                report.Error("PreClampDamageRewriteMaxWrites", "Max writes must be within 1..32.");
+            if (settings.PreClampPointerScanBytes < 0 || settings.PreClampPointerScanBytes > 0x4000)
+                report.Error("PreClampPointerScanBytes", "PreClampPointerScanBytes must be within 0..0x4000.");
+            if (settings.PreClampPointerMaxLogs < 0)
+                report.Error("PreClampPointerMaxLogs", "PreClampPointerMaxLogs must be nonnegative.");
+            if (settings.PreClampPointerMaxPointersPerRoot < 0 || settings.PreClampPointerMaxPointersPerRoot > 64)
+                report.Error("PreClampPointerMaxPointersPerRoot", "PreClampPointerMaxPointersPerRoot must be within 0..64.");
+            if (settings.PreClampPointerScanBytes > 0)
+                report.Warn("PreClampPointerScanBytes", "pre-clamp pointer scans are read-only but noisy; use only for short controlled RE captures.");
+            if (settings.PreClampFormulaPlanEnabled)
+            {
+                if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)
+                    report.Error("PreClampFormulaPlanSlots", "Plan slots must be within 1..32.");
+                if (settings.PreClampFormulaPlanWindowMs <= 0 || settings.PreClampFormulaPlanWindowMs > 60_000)
+                    report.Error("PreClampFormulaPlanWindowMs", "Plan window must be within 1..60000 ms.");
+                if (settings.PreClampFormulaPlanMaxWrites <= 0 || settings.PreClampFormulaPlanMaxWrites > 16)
+                    report.Error("PreClampFormulaPlanMaxWrites", "Plan max writes must be within 1..16.");
+                if (!settings.TrackPendingActions)
+                    report.Warn("PreClampFormulaPlanEnabled", "TrackPendingActions is recommended so plan entries have action context.");
+                if (!settings.LogPreClampFormulaCandidates)
+                    report.Warn("PreClampFormulaPlanEnabled", "LogPreClampFormulaCandidates is recommended during live validation.");
+            }
+            if (settings.PreClampFormulaCandidateAllowImmediateAction)
+            {
+                if (settings.PreClampFormulaCandidateRequirePendingMatch)
+                    report.Warn("PreClampFormulaCandidateAllowImmediateAction", "PreClampFormulaCandidateRequirePendingMatch=true prevents immediate-action fallback from being used.");
+                if (settings.PreClampImmediateActionMinScore < 0)
+                    report.Error("PreClampImmediateActionMinScore", "Immediate action minimum score must be nonnegative.");
+                if (settings.PreClampImmediateActionMinMargin < 0)
+                    report.Error("PreClampImmediateActionMinMargin", "Immediate action minimum margin must be nonnegative.");
+                if (settings.PreClampImmediateActionMaxAgeMs <= 0 || settings.PreClampImmediateActionMaxAgeMs > 60_000)
+                    report.Error("PreClampImmediateActionMaxAgeMs", "Immediate action max age must be within 1..60000 ms.");
+                if (settings.PreClampImmediateActionAllowZeroActionId)
+                    report.Warn("PreClampImmediateActionAllowZeroActionId", "Zero action id sources should be used only for controlled basic-attack validation.");
+                if (settings.PreClampImmediateActionPlanMaxWrites <= 0 || settings.PreClampImmediateActionPlanMaxWrites > 16)
+                    report.Error("PreClampImmediateActionPlanMaxWrites", "Immediate action plan max writes must be within 1..16.");
+                if (!settings.PreClampImmediateActionPlanRequireExpectedHp && settings.PreClampImmediateActionPlanMaxWrites > 1)
+                    report.Warn("PreClampImmediateActionPlanRequireExpectedHp", "HP-wildcard immediate plans can rewrite multiple hits from one queued formula; use only when target HP is not part of the intended formula.");
+                if (settings.PreClampImmediateActionNearbyUnitScanRadius < 0 || settings.PreClampImmediateActionNearbyUnitScanRadius > 32)
+                    report.Error("PreClampImmediateActionNearbyUnitScanRadius", "Immediate action nearby unit scan radius must be within 0..32.");
+                if (settings.PreClampImmediateActionPlanEagerTargets)
+                    report.Warn("PreClampImmediateActionPlanEagerTargets", "Eager immediate plans prequeue one positive-debit rewrite per nearby possible target; use only for controlled immediate/basic validation.");
+                if (!settings.LogActionStateChanges)
+                    report.Warn("PreClampFormulaCandidateAllowImmediateAction", "LogActionStateChanges is recommended so immediate action ages are meaningful.");
+            }
+        }
+        if (settings.HpEventProbeMaxLogs < 0)
+            report.Error("HpEventProbeMaxLogs", "HpEventProbeMaxLogs must be nonnegative.");
+        if (settings.HpEventProbeDiffMax < 0 || settings.HpEventProbeDiffMax > 256)
+            report.Error("HpEventProbeDiffMax", "HpEventProbeDiffMax must be within 0..256.");
+        if (settings.LogHpEventProbe)
+            report.Warn("LogHpEventProbe", "HP event raw diffs are noisy; use only for short controlled RE captures.");
+        if (settings.HpEventProbeDumpRaw)
+            report.Warn("HpEventProbeDumpRaw", "raw HP event dumps are verbose; keep HpEventProbeMaxLogs low.");
+        if (settings.ActionBoundaryProbeMaxLogs < 0)
+            report.Error("ActionBoundaryProbeMaxLogs", "ActionBoundaryProbeMaxLogs must be nonnegative.");
+        if (settings.ActionBoundaryProbeDiffMax < 0 || settings.ActionBoundaryProbeDiffMax > 128)
+            report.Error("ActionBoundaryProbeDiffMax", "ActionBoundaryProbeDiffMax must be within 0..128.");
+        if (settings.LogActionBoundaryProbe)
+            report.Warn("LogActionBoundaryProbe", "action boundary probes are noisy; use only for short controlled RE captures.");
+        if (settings.PendingActionCandidateMaxUnits <= 0)
+            report.Error("PendingActionCandidateMaxUnits", "PendingActionCandidateMaxUnits must be greater than zero.");
+        else if (settings.PendingActionCandidateMaxUnits > settings.MaxTrackedBattleUnits)
+            report.Warn("PendingActionCandidateMaxUnits", "candidate logging above MaxTrackedBattleUnits is usually unnecessary.");
+        if (settings.ImmediateActionCandidateMaxUnits <= 0)
+            report.Error("ImmediateActionCandidateMaxUnits", "ImmediateActionCandidateMaxUnits must be greater than zero.");
+        else if (settings.ImmediateActionCandidateMaxUnits > settings.MaxTrackedBattleUnits)
+            report.Warn("ImmediateActionCandidateMaxUnits", "candidate logging above MaxTrackedBattleUnits is usually unnecessary.");
+        if (settings.LogImmediateActionCandidatesOnEvent && !settings.LogActionStateChanges)
+            report.Warn("LogImmediateActionCandidatesOnEvent", "LogActionStateChanges is recommended so candidate stateAgeMs is meaningful.");
+        if (settings.PendingActionResolveWindowMs <= 0 || settings.PendingActionResolveWindowMs > 60_000)
+            report.Error("PendingActionResolveWindowMs", "PendingActionResolveWindowMs must be within 1..60000.");
+        else if (settings.PendingActionResolveWindowMs > 5000)
+            report.Warn("PendingActionResolveWindowMs", "wide pending-action resolve windows increase false-positive attribution risk.");
+        if (settings.PendingActionMaxBatchEvents <= 0 || settings.PendingActionMaxBatchEvents > 64)
+            report.Error("PendingActionMaxBatchEvents", "PendingActionMaxBatchEvents must be within 1..64.");
+        if (settings.PendingActionStaleMs <= 0 || settings.PendingActionStaleMs > 300_000)
+            report.Error("PendingActionStaleMs", "PendingActionStaleMs must be within 1..300000.");
+        if (settings.TrackPendingActions && !settings.LogActionStateChanges)
+            report.Warn("TrackPendingActions", "LogActionStateChanges is recommended while validating pending-action tracker decisions.");
         if (settings.UnknownDiffStart < 0 || settings.UnknownDiffStart >= RawSize)
             report.Error("UnknownDiffStart", $"UnknownDiffStart must be within 0..0x{RawSize - 1:X}.");
         if (settings.UnknownDiffEnd < settings.UnknownDiffStart || settings.UnknownDiffEnd >= RawSize)
@@ -519,6 +660,10 @@ internal static class RuntimeSettingsValidator
         context.Set("a.sourceCt", 1);
         context.Set("attacker.sourceCounter", 1);
         context.Set("a.sourceCounter", 1);
+        context.Set("attacker.sourcePending", 1);
+        context.Set("a.sourcePending", 1);
+        context.Set("attacker.sourceImmediate", 1);
+        context.Set("a.sourceImmediate", 1);
         AddActionVariables(context, settings);
         AddSlotVariables(context, "slot", settings.EquipmentSlots, catalog, preferWeapon: false);
         AddSlotVariables(context, "targetSlot", settings.EquipmentSlots, catalog, preferWeapon: false);
@@ -673,7 +818,50 @@ internal static class RuntimeSettingsValidator
         {
             context.Set($"{prefix}.present", 1);
             context.Set($"{prefix}.sourceVanillaDamage", 1);
+            context.Set($"{prefix}.sourcePending", 1);
+            context.Set($"{prefix}.sourceImmediate", 1);
             context.Set($"{prefix}.signal", 1);
+            context.Set($"{prefix}.id", 1);
+            context.Set($"{prefix}.actionId", 1);
+            context.Set($"{prefix}.batch", 1);
+            context.Set($"{prefix}.batchEvent", 1);
+            context.Set($"{prefix}.batchMaxEvents", 8);
+            context.Set($"{prefix}.batchAgeMs", 100);
+            context.Set($"{prefix}.score", 100);
+            context.Set($"{prefix}.observedHpLoss", 20);
+            context.Set($"{prefix}.targetCacheDamage", 20);
+            context.Set($"{prefix}.currentTargetCacheDamage", 20);
+            context.Set($"{prefix}.recentTargetCacheDamage", 20);
+            context.Set($"{prefix}.damageCacheMatch", 1);
+            context.Set($"{prefix}.currentDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentDamageCacheMatch", 1);
+            context.Set($"{prefix}.exactDamageCacheMatch", 1);
+            context.Set($"{prefix}.currentExactDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentExactDamageCacheMatch", 1);
+            context.Set($"{prefix}.lethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.currentLethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.recentLethalClampDamageCacheMatch", 1);
+            context.Set($"{prefix}.hasCurrentTargetMetadata", 1);
+            context.Set($"{prefix}.confidenceDamageCache", 1);
+            context.Set($"{prefix}.confidenceRecentDamageCache", 1);
+            context.Set($"{prefix}.confidenceLethalClampDamageCache", 1);
+            context.Set($"{prefix}.confidenceRecentResolve", 1);
+            context.Set($"{prefix}.runnerUpScore", 100);
+            context.Set($"{prefix}.margin", 300);
+            context.Set($"{prefix}.stateAgeMs", 100);
+            context.Set($"{prefix}.seenAgeMs", 100);
+            context.Set($"{prefix}.ctDropAgeMs", 100);
+            context.Set($"{prefix}.actionIdAgeMs", 100);
+            context.Set($"{prefix}.activeActionAgeMs", 100);
+            context.Set($"{prefix}.currentActiveAction", 1);
+            context.Set($"{prefix}.freshActionId", 1);
+            context.Set($"{prefix}.freshActiveAction", 1);
+            context.Set($"{prefix}.staleActionId", 0);
+            context.Set($"{prefix}.staleActiveAction", 0);
+            context.Set($"{prefix}.activeMarker2", 1);
+            context.Set($"{prefix}.pendingFlag", 0);
+            context.Set($"{prefix}.pendingFlag2", 0);
+            context.Set($"{prefix}.pendingTimer", 255);
             context.Set($"{prefix}.vanillaDamage", 20);
             context.Set($"{prefix}.vanillaDamageAbs", 20);
             context.Set($"{prefix}.vanillaHealing", 0);

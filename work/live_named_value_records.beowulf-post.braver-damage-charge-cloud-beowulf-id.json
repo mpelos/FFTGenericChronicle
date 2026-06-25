@@ -1,0 +1,7549 @@
+{
+  "candidates": [
+    {
+      "end": 5243888,
+      "hits": [
+        {
+          "address": 5243560,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 5243560,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 5243562,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 5243562,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 5243676,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 5243682,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 5243752,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 5243758,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 5243888,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "charge",
+        "braverId",
+        "beowulfId",
+        "cloudId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 5242880,
+      "regionSize": 327680,
+      "score": 1470.0,
+      "span": 328,
+      "start": 5243560
+    },
+    {
+      "end": 36439219,
+      "hits": [
+        {
+          "address": 36438818,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 36438888,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 36438894,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 36439024,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 36439024,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 36439076,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 36439076,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 36439219,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "beowulfId",
+        "cloudId",
+        "damage",
+        "braverId",
+        "charge"
+      ],
+      "protect": 4,
+      "regionBase": 36438016,
+      "regionSize": 8192,
+      "score": 1463.75,
+      "span": 401,
+      "start": 36438818
+    },
+    {
+      "end": 15440385,
+      "hits": [
+        {
+          "address": 15439771,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15439771,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15439850,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15439937,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15439937,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15439937,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15439937,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15440290,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15440293,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15440385,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "charge",
+        "beowulfId",
+        "braverId",
+        "cloudId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 1386.5,
+      "span": 614,
+      "start": 15439771
+    },
+    {
+      "end": 6198922,
+      "hits": [
+        {
+          "address": 6198224,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6198224,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6198224,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6198224,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6198233,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6198233,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6198233,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6198233,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6198320,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6198320,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6198320,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6198320,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6198640,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6198922,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "charge",
+        "damage",
+        "beowulfId",
+        "cloudId"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1317.5,
+      "span": 698,
+      "start": 6198224
+    },
+    {
+      "end": 7971056,
+      "hits": [
+        {
+          "address": 7970071,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7970071,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7970240,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 7970300,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7970300,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7970300,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7970300,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7970636,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7971056,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "charge",
+        "cloudId",
+        "braverId",
+        "beowulfId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1305.75,
+      "span": 985,
+      "start": 7970071
+    },
+    {
+      "end": 37422116,
+      "hits": [
+        {
+          "address": 37421107,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 37421107,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 37421852,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 37421858,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 37421928,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 37421934,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 37422064,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 37422064,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 37422116,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "charge",
+        "beowulfId",
+        "cloudId",
+        "damage",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 37421056,
+      "regionSize": 8192,
+      "score": 1299.75,
+      "span": 1009,
+      "start": 37421107
+    },
+    {
+      "end": 15442897,
+      "hits": [
+        {
+          "address": 15442065,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442200,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442200,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442498,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15442501,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15442546,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442546,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442554,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442554,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442786,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15442897,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "cloudId",
+        "beowulfId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 1284.0,
+      "span": 832,
+      "start": 15442065
+    },
+    {
+      "end": 11188213,
+      "hits": [
+        {
+          "address": 11187251,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11187251,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11187251,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11187251,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11187397,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 11187813,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11187825,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11187990,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11188005,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11188209,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 11188209,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 11188213,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "cloudId",
+        "beowulfId",
+        "braverId",
+        "charge"
+      ],
+      "protect": 4,
+      "regionBase": 11075584,
+      "regionSize": 122880,
+      "score": 1275.5,
+      "span": 962,
+      "start": 11187251
+    },
+    {
+      "end": 15442786,
+      "hits": [
+        {
+          "address": 15441985,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15441985,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15441985,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15441985,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15442065,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442065,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15442200,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442200,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442498,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15442501,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15442546,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442546,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442554,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442554,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15442786,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "damage",
+        "charge",
+        "cloudId",
+        "beowulfId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 1255.75,
+      "span": 801,
+      "start": 15441985
+    },
+    {
+      "end": 366680,
+      "hits": [
+        {
+          "address": 365728,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365791,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365821,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365885,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365943,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365984,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 365984,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 365984,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 365984,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 366120,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 366140,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 366389,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 366680,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "beowulfId",
+        "cloudId",
+        "charge",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 196608,
+      "regionSize": 172032,
+      "score": 1230.0,
+      "span": 952,
+      "start": 365728
+    },
+    {
+      "end": 7974787,
+      "hits": [
+        {
+          "address": 7973754,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7973754,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7973767,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973767,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973873,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973873,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973925,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973925,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7973962,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7973962,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7973962,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7973962,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7974020,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7974604,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7974604,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7974787,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "charge",
+        "damage",
+        "beowulfId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1209.75,
+      "span": 1033,
+      "start": 7973754
+    },
+    {
+      "end": 6535856,
+      "hits": [
+        {
+          "address": 6534496,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534650,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6535739,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6535739,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6535739,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6535739,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6535809,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6535856,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "cloudId",
+        "braverId",
+        "beowulfId",
+        "charge"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1188.0,
+      "span": 1360,
+      "start": 6534496
+    },
+    {
+      "end": 50427302,
+      "hits": [
+        {
+          "address": 50426169,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 50426196,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50426196,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50426196,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50426196,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50426922,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50426922,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50426972,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50426972,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50427066,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50427066,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50427265,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50427265,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50427265,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50427265,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50427302,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "cloudId",
+        "damage",
+        "charge",
+        "braverId",
+        "beowulfId"
+      ],
+      "protect": 4,
+      "regionBase": 49807360,
+      "regionSize": 1044480,
+      "score": 1184.75,
+      "span": 1133,
+      "start": 50426169
+    },
+    {
+      "end": 7320498,
+      "hits": [
+        {
+          "address": 7319793,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 7319794,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7319794,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7319817,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7319824,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319824,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319828,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319828,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319840,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319840,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7319949,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7319953,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7319985,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320145,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320152,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7320152,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7320193,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320205,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320277,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320281,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320313,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320473,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7320480,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7320480,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7320498,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "damage",
+        "beowulfId",
+        "charge",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1183.75,
+      "span": 705,
+      "start": 7319793
+    },
+    {
+      "end": 50338682,
+      "hits": [
+        {
+          "address": 50337260,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50337260,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50338378,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 50338421,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 50338457,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50338457,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50338457,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50338457,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 50338473,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 50338528,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 50338682,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "cloudId",
+        "beowulfId",
+        "damage",
+        "charge"
+      ],
+      "protect": 4,
+      "regionBase": 49807360,
+      "regionSize": 1044480,
+      "score": 1172.5,
+      "span": 1422,
+      "start": 50337260
+    },
+    {
+      "end": 15525777,
+      "hits": [
+        {
+          "address": 15524648,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15524648,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15524648,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15524648,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15524779,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15524850,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15524946,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15524946,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525026,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525026,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525052,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15525060,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15525403,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525403,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525482,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15525661,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525661,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15525777,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "cloudId",
+        "beowulfId",
+        "charge",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 1161.75,
+      "span": 1129,
+      "start": 15524648
+    },
+    {
+      "end": 7226638,
+      "hits": [
+        {
+          "address": 7225246,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7225246,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7225671,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225671,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225951,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225951,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225989,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7225999,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225999,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7226174,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7226174,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 7226460,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7226486,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7226638,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "beowulfId",
+        "braverId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1144.0,
+      "span": 1392,
+      "start": 7225246
+    },
+    {
+      "end": 6535739,
+      "hits": [
+        {
+          "address": 6534157,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6534222,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6534222,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6534222,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6534222,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6534496,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534496,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6534650,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6535739,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "beowulfId",
+        "charge",
+        "damage",
+        "cloudId",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1132.5,
+      "span": 1582,
+      "start": 6534157
+    },
+    {
+      "end": 365984,
+      "hits": [
+        {
+          "address": 364561,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 364561,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 364996,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365197,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365209,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365313,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365372,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365544,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365728,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365728,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 365791,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 365821,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365885,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365943,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 365984,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "beowulfId",
+        "cloudId",
+        "damage",
+        "charge"
+      ],
+      "protect": 2,
+      "regionBase": 196608,
+      "regionSize": 172032,
+      "score": 1100.25,
+      "span": 1423,
+      "start": 364561
+    },
+    {
+      "end": 8022648,
+      "hits": [
+        {
+          "address": 8020942,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8020942,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8022260,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 8022260,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 8022298,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022317,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022318,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8022318,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8022400,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022472,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022478,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022496,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8022648,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "charge",
+        "cloudId",
+        "damage",
+        "beowulfId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1077.5,
+      "span": 1706,
+      "start": 8020942
+    },
+    {
+      "end": 16103398,
+      "hits": [
+        {
+          "address": 16101770,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 16102049,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102049,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102049,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102049,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102098,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16102098,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16102661,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16102913,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102913,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102913,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16102913,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16103192,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16103192,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16103398,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "braverId",
+        "charge",
+        "beowulfId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 1073.0,
+      "span": 1628,
+      "start": 16101770
+    },
+    {
+      "end": 6817680,
+      "hits": [
+        {
+          "address": 6816505,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6816505,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6816565,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816565,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816601,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6816756,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6816884,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816884,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816884,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816884,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816956,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816956,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816956,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6816956,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817136,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817136,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817144,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6817611,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817611,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817611,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817611,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817675,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817675,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817675,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817675,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6817680,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "charge",
+        "beowulfId",
+        "cloudId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1054.25,
+      "span": 1175,
+      "start": 6816505
+    },
+    {
+      "end": 8056480,
+      "hits": [
+        {
+          "address": 8054572,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 8054584,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 8054584,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 8055952,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8055952,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8055952,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8055952,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 8056396,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8056396,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8056396,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8056396,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 8056480,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "charge",
+        "damage",
+        "braverId",
+        "beowulfId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 1039.0,
+      "span": 1908,
+      "start": 8054572
+    },
+    {
+      "end": 6496891,
+      "hits": [
+        {
+          "address": 6495672,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6495672,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6495817,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6495840,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6496045,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496045,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496185,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6496187,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496187,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496187,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496187,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496291,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496291,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496291,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496291,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496404,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496404,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496404,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496404,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496744,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496744,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496744,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496744,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496816,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496816,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496816,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496816,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6496891,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "braverId",
+        "cloudId",
+        "charge",
+        "beowulfId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 1019.25,
+      "span": 1219,
+      "start": 6495672
+    },
+    {
+      "end": 11164305,
+      "hits": [
+        {
+          "address": 11162240,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11162757,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11162757,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11163095,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11163095,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11163210,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11163210,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11163210,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11163210,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 11164029,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 11164305,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "beowulfId",
+        "charge",
+        "damage",
+        "cloudId",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 11075584,
+      "regionSize": 122880,
+      "score": 1011.75,
+      "span": 2065,
+      "start": 11162240
+    },
+    {
+      "end": 50426196,
+      "hits": [
+        {
+          "address": 50425324,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 50425372,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425372,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425436,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425436,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425500,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425500,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425628,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425628,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425684,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425684,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425690,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425690,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425755,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425755,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425755,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425755,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425812,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425812,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425818,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425818,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425818,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425818,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425883,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425883,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425883,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425883,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425940,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425940,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425946,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425946,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425946,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425946,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 50425962,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50425962,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 50426169,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 50426196,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "beowulfId",
+        "charge",
+        "braverId",
+        "cloudId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 49807360,
+      "regionSize": 1044480,
+      "score": 998.0,
+      "span": 872,
+      "start": 50425324
+    },
+    {
+      "end": 6239752,
+      "hits": [
+        {
+          "address": 6238592,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6238592,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6238592,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6238592,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6238632,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238634,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238778,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238878,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238882,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238940,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238950,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6238986,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6239008,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239008,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239008,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239008,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239179,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239179,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239179,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239179,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239307,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239307,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239307,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239307,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239499,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239499,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239499,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239499,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6239506,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6239546,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6239576,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 6239752,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "cloudId",
+        "charge",
+        "beowulfId",
+        "braverId"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": 986.0,
+      "span": 1160,
+      "start": 6238592
+    },
+    {
+      "end": 11187251,
+      "hits": [
+        {
+          "address": 11184865,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 11184865,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 11184869,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11184869,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 11185341,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 11186405,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 11187251,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "braverId",
+        "charge",
+        "cloudId",
+        "beowulfId",
+        "damage"
+      ],
+      "protect": 4,
+      "regionBase": 11075584,
+      "regionSize": 122880,
+      "score": 979.5,
+      "span": 2386,
+      "start": 11184865
+    },
+    {
+      "end": 16075409,
+      "hits": [
+        {
+          "address": 16073478,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073778,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16073778,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16074081,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16074081,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16074081,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16074081,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16074700,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16074708,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16074994,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16075064,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16075388,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16075396,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16075409,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "braverId",
+        "beowulfId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 973.25,
+      "span": 1931,
+      "start": 16073478
+    },
+    {
+      "end": 15496002,
+      "hits": [
+        {
+          "address": 15494584,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494657,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494770,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494770,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495042,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495042,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495069,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495069,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495093,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495093,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495397,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495397,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495401,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495401,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495458,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495458,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495762,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15495765,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15495842,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495842,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495864,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495864,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15496002,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "braverId",
+        "charge",
+        "cloudId",
+        "beowulfId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 957.5,
+      "span": 1418,
+      "start": 15494584
+    },
+    {
+      "end": 13438552,
+      "hits": [
+        {
+          "address": 13436080,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13436082,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13436082,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13436103,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13436106,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13436106,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13436428,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 13436428,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 13436429,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 13436429,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 13438552,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "charge",
+        "beowulfId",
+        "braverId",
+        "damage"
+      ],
+      "protect": 2,
+      "regionBase": 13434880,
+      "regionSize": 1576960,
+      "score": 910.0,
+      "span": 2472,
+      "start": 13436080
+    },
+    {
+      "end": 13529884,
+      "hits": [
+        {
+          "address": 13527784,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13527786,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13527786,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13527786,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13527786,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13528092,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13528240,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13528386,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13528397,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13529082,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529082,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529106,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529106,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529178,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529178,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529250,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529250,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529826,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529826,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13529884,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "beowulfId",
+        "damage",
+        "cloudId",
+        "charge",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 13434880,
+      "regionSize": 1576960,
+      "score": 895.0,
+      "span": 2100,
+      "start": 13527784
+    },
+    {
+      "end": 364549,
+      "hits": [
+        {
+          "address": 361961,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 361961,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 362644,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 362997,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 363265,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 363265,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 363488,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 363933,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 363972,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 364390,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 364549,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "charge",
+        "beowulfId",
+        "damage",
+        "cloudId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 196608,
+      "regionSize": 172032,
+      "score": 881.0,
+      "span": 2588,
+      "start": 361961
+    },
+    {
+      "end": 16147362,
+      "hits": [
+        {
+          "address": 16145062,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16145062,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16145062,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16145062,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16145318,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16145318,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16145883,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16145883,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16145962,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16145970,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16145970,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16146417,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16146417,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16146417,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16146417,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 16146466,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16146466,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147186,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147186,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147362,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "beowulfId",
+        "braverId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 845.0,
+      "span": 2300,
+      "start": 16145062
+    },
+    {
+      "end": 15758072,
+      "hits": [
+        {
+          "address": 15755960,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15755960,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15755960,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15755960,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15756162,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756162,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756338,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15756341,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15756578,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15756898,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756898,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756909,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756909,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756933,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756933,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756962,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756962,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756989,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15756989,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757156,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15757291,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757291,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757370,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15757458,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757458,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757549,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15757549,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15758072,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "cloudId",
+        "beowulfId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 796.0,
+      "span": 2112,
+      "start": 15755960
+    },
+    {
+      "end": 13504900,
+      "hits": [
+        {
+          "address": 13502130,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13502130,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13502130,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13502130,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13502346,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13502346,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13503208,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13503664,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13503906,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13503906,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13504122,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13504122,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13504722,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13504733,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13504900,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "beowulfId",
+        "cloudId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 13434880,
+      "regionSize": 1576960,
+      "score": 787.5,
+      "span": 2770,
+      "start": 13502130
+    },
+    {
+      "end": 15495762,
+      "hits": [
+        {
+          "address": 15493684,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15493778,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15493778,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494114,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494114,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494386,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494386,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494477,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494477,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494584,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494584,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15494657,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494657,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15494770,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15494770,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495042,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495042,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495069,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495069,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495093,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495093,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495397,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495397,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495401,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495401,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495458,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495458,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15495762,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "beowulfId",
+        "charge",
+        "damage",
+        "braverId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 756.5,
+      "span": 2078,
+      "start": 15493684
+    },
+    {
+      "end": 16074081,
+      "hits": [
+        {
+          "address": 16071372,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 16071709,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071709,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071781,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071781,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071785,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071785,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071889,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16071889,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16072600,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16072600,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16072770,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16072770,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16073164,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16073172,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16073478,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073478,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16073778,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16073778,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16074081,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "charge",
+        "beowulfId",
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 718.75,
+      "span": 2709,
+      "start": 16071372
+    },
+    {
+      "end": 15560433,
+      "hits": [
+        {
+          "address": 15558840,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15558840,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15558840,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15558840,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15558922,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15558922,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559026,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559026,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559090,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15559093,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15559170,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559170,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559330,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15559346,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559346,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559450,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559450,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559514,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559514,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559522,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559522,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559548,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15559556,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15559570,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559570,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559618,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559618,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15559952,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15560082,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560082,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560234,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560234,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560298,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560298,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560306,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560306,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560332,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15560340,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15560354,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560354,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560402,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560402,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560412,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 15560418,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560418,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15560433,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "cloudId",
+        "beowulfId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 709.75,
+      "span": 1593,
+      "start": 15558840
+    },
+    {
+      "end": 16149777,
+      "hits": [
+        {
+          "address": 16147365,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 16147464,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147464,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147602,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16147922,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16147922,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148013,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148013,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148187,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148187,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148266,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16148445,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148445,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148812,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16148820,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16148892,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16148892,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149180,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16149188,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 16149260,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149260,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149432,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16149432,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16149432,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16149432,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 16149462,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149462,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149698,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149698,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 16149777,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "charge",
+        "beowulfId",
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 697.0,
+      "span": 2412,
+      "start": 16147365
+    },
+    {
+      "end": 15528216,
+      "hits": [
+        {
+          "address": 15525777,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15525777,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15525777,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15525777,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 15526194,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15526194,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15526696,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15526696,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15526696,
+          "encoding": "u32",
+          "key": "value:braverId:u32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15526696,
+          "encoding": "s32",
+          "key": "value:braverId:s32",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 15526812,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15526820,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15526892,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15526892,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15526949,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15526949,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527333,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527333,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527337,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527337,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527490,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527490,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527531,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527531,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527610,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15527858,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527858,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 15527964,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15527972,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 15528216,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "braverId",
+        "beowulfId",
+        "cloudId"
+      ],
+      "protect": 2,
+      "regionBase": 15400960,
+      "regionSize": 815104,
+      "score": 690.25,
+      "span": 2439,
+      "start": 15525777
+    },
+    {
+      "end": 13498396,
+      "hits": [
+        {
+          "address": 13495962,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13495962,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13495962,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13495962,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 13496226,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496226,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496418,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496418,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496466,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496466,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496514,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496514,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496778,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496778,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496818,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13496874,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13496874,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497064,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 13497474,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497474,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497520,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13497570,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497570,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497594,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497594,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497802,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 13497858,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497858,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497882,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13497882,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 13498396,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "damage",
+        "charge",
+        "cloudId",
+        "beowulfId",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 13434880,
+      "regionSize": 1576960,
+      "score": 679.5,
+      "span": 2434,
+      "start": 13495962
+    },
+    {
+      "end": 7226174,
+      "hits": [
+        {
+          "address": 7223950,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 7223957,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7223959,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7223959,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7223967,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7223967,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224095,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224095,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224109,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224151,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224151,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224213,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224215,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224215,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224231,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224231,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224263,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224263,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224277,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224279,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224279,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224287,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224287,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224311,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224311,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224325,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224372,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224412,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224431,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224431,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224445,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224447,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224447,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224455,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224455,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224519,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224519,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224615,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224615,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224629,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7224631,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224631,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224639,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224639,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224679,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224679,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224711,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224711,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224727,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224727,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224743,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224743,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224759,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7224759,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225246,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7225246,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 7225671,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225671,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225951,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225951,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225989,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        },
+        {
+          "address": 7225999,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7225999,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 7226174,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        }
+      ],
+      "memType": 262144,
+      "names": [
+        "cloudId",
+        "beowulfId",
+        "charge",
+        "damage",
+        "braverId"
+      ],
+      "protect": 2,
+      "regionBase": 7208960,
+      "regionSize": 864256,
+      "score": 336.0,
+      "span": 2224,
+      "start": 7223950
+    },
+    {
+      "end": 6637121,
+      "hits": [
+        {
+          "address": 6635068,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6635068,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6635068,
+          "encoding": "u32",
+          "key": "value:damage:u32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6635068,
+          "encoding": "s32",
+          "key": "value:damage:s32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 6635563,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635563,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635563,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635563,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635587,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635587,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635587,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635587,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635595,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635595,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635595,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635595,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635603,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635603,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635603,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635603,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635611,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635611,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635611,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635611,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635635,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635635,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635635,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635635,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635643,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635643,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635643,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635643,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635667,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635667,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635667,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635667,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635675,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635675,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635675,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635675,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635771,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635771,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635771,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635771,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635827,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635827,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635827,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635827,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635835,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635835,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635835,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635835,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635843,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635843,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635843,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635843,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635851,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635851,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635851,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635851,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635859,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635859,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635859,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635859,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635867,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635867,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635867,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635867,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635875,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635875,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635875,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635875,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635883,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635883,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635883,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635883,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635955,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635955,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635955,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635955,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635963,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635963,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635963,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6635963,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6636011,
+          "encoding": "u16",
+          "key": "value:charge:u16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6636011,
+          "encoding": "s16",
+          "key": "value:charge:s16",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6636011,
+          "encoding": "u32",
+          "key": "value:charge:u32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6636011,
+          "encoding": "s32",
+          "key": "value:charge:s32",
+          "kind": "value",
+          "name": "charge"
+        },
+        {
+          "address": 6636609,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6636617,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6636713,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6636913,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6636921,
+          "encoding": "u8",
+          "key": "value:cloudId:u8",
+          "kind": "value",
+          "name": "cloudId"
+        },
+        {
+          "address": 6637098,
+          "encoding": "u16",
+          "key": "value:braverId:u16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6637098,
+          "encoding": "s16",
+          "key": "value:braverId:s16",
+          "kind": "value",
+          "name": "braverId"
+        },
+        {
+          "address": 6637121,
+          "encoding": "u8",
+          "key": "value:beowulfId:u8",
+          "kind": "value",
+          "name": "beowulfId"
+        }
+      ],
+      "memType": 131072,
+      "names": [
+        "damage",
+        "charge",
+        "cloudId",
+        "braverId",
+        "beowulfId"
+      ],
+      "protect": 4,
+      "regionBase": 6160384,
+      "regionSize": 1044480,
+      "score": -5.25,
+      "span": 2053,
+      "start": 6635068
+    }
+  ],
+  "maxSpan": 2816,
+  "nearBytes": 2304,
+  "patterns": [
+    {
+      "bytes": "0101",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:braverId:u16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "0101",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:braverId:s16",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:braverId:u32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "01010000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:braverId:s32",
+      "kind": "value",
+      "name": "braverId"
+    },
+    {
+      "bytes": "9900",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:damage:u16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "9900",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:damage:s16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "99000000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:damage:u32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "99000000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:damage:s32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "u16",
+      "hits": 20000,
+      "key": "value:charge:u16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "0200",
+      "encoding": "s16",
+      "hits": 20000,
+      "key": "value:charge:s16",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "u32",
+      "hits": 20000,
+      "key": "value:charge:u32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "02000000",
+      "encoding": "s32",
+      "hits": 20000,
+      "key": "value:charge:s32",
+      "kind": "value",
+      "name": "charge"
+    },
+    {
+      "bytes": "32",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:cloudId:u8",
+      "kind": "value",
+      "name": "cloudId"
+    },
+    {
+      "bytes": "1f",
+      "encoding": "u8",
+      "hits": 20000,
+      "key": "value:beowulfId:u8",
+      "kind": "value",
+      "name": "beowulfId"
+    }
+  ],
+  "pid": 19044,
+  "required": [
+    "braverId",
+    "damage",
+    "charge",
+    "cloudId",
+    "beowulfId"
+  ],
+  "stats": {
+    "bytes_scanned": 2621775872,
+    "regions_scanned": 787,
+    "regions_skipped": 2666
+  }
+}

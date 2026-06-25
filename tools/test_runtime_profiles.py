@@ -21,6 +21,13 @@ def main() -> int:
         "neuter-spotcheck",
         "actor-probe",
         "hook-register-probe",
+        "action-context-probe",
+        "executing-action-pointer-probe",
+        "ko-pre-damage-probe",
+        "immediate-action-ko-boundary-probe",
+        "ko-landmark-probe",
+        "ko-hp-apply-probe",
+        "ko-preclamp-force-agrias",
         "engine-death-test",
         "custom-formula-demo",
         "death-test-hp-only",
@@ -52,6 +59,80 @@ def main() -> int:
     check(profiles.truthy(hook_register_probe, "HookRegisterProbe"), "hook register probe must enable register capture")
     check(not profiles.truthy(hook_register_probe, "RewriteObservedDamage"), "hook register probe must not rewrite HP damage")
     check(hook_register_probe.get("HookRegisterProbeMaxLogs", 0) > 0, "hook register probe must limit log count")
+
+    action_context_probe = get(rows, "action-context-probe")
+    check(profiles.truthy(action_context_probe, "HookRegisterProbe"), "action context probe must enable register capture")
+    check(profiles.truthy(action_context_probe, "HookRegisterProbeOnCtDrop"), "action context probe must log CT-drop scheduling")
+    check(profiles.truthy(action_context_probe, "ActorProbeOnEvent"), "action context probe must preserve unit CT windows")
+    check(profiles.truthy(action_context_probe, "TrackPendingActions"), "action context probe must track pending action batches")
+    check(profiles.truthy(action_context_probe, "LogActionStateChanges"), "action context probe must log action-state transitions")
+    check(action_context_probe.get("PendingActionResolveWindowMs", 0) > 0, "action context probe must keep a positive resolve window")
+    check(not profiles.truthy(action_context_probe, "RewriteObservedDamage"), "action context probe must not rewrite HP damage")
+    check(not profiles.truthy(action_context_probe, "RewriteObservedMpLoss"), "action context probe must not rewrite MP loss")
+
+    executing_probe = get(rows, "executing-action-pointer-probe")
+    check(profiles.truthy(executing_probe, "HookRegisterProbeOnPendingResolve"), "executing action probe must log pending-resolve registers")
+    check(profiles.truthy(executing_probe, "PreClampDamageRewriteEnabled"), "executing action probe must install the pre-clamp hook")
+    check(profiles.truthy(executing_probe, "PreClampDamageRewriteLogOnly"), "executing action probe must keep pre-clamp capture log-only")
+    check(executing_probe.get("PreClampPointerScanBytes", 0) > 0, "executing action probe must scan pre-clamp pointer roots")
+    check(not profiles.truthy(executing_probe, "PreClampFormulaPlanEnabled"), "executing action probe must not queue pre-clamp formula plans")
+    check(not profiles.truthy(executing_probe, "RewriteObservedDamage"), "executing action probe must not rewrite HP damage")
+
+    ko_probe = get(rows, "ko-pre-damage-probe")
+    check(profiles.truthy(ko_probe, "CaptureStructOnDeath"), "KO probe must capture vanilla death diffs")
+    check(profiles.truthy(ko_probe, "LogHpEventProbe"), "KO probe must log HP event raw diffs")
+    check(profiles.truthy(ko_probe, "HpEventProbeDumpRaw"), "KO probe should dump HP event raw bytes for this short live test")
+    check(profiles.truthy(ko_probe, "HookRegisterProbeOnHpEvent"), "KO probe must log hook registers on HP events")
+    check(profiles.truthy(ko_probe, "TrackPendingActions"), "KO probe should preserve pending-action coverage")
+    check(not profiles.truthy(ko_probe, "RewriteObservedDamage"), "KO probe must not rewrite HP damage")
+    check(ko_probe.get("MinHpFloor", 0) == 0, "KO probe must leave vanilla KO untouched")
+
+    immediate_probe = get(rows, "immediate-action-ko-boundary-probe")
+    check(profiles.truthy(immediate_probe, "LogImmediateActionCandidatesOnEvent"), "immediate action probe must log ranked action candidates")
+    check(profiles.truthy(immediate_probe, "LogActionBoundaryProbe"), "immediate action probe must log action/forecast boundary transitions")
+    check(profiles.truthy(immediate_probe, "LogHpEventProbe"), "immediate action probe must log raw/applied HP event evidence")
+    check(profiles.truthy(immediate_probe, "CaptureStructOnDeath"), "immediate action probe must preserve KO death diffs")
+    check(profiles.truthy(immediate_probe, "LogActionStateChanges"), "immediate action probe must log action state changes")
+    check(not profiles.truthy(immediate_probe, "RewriteObservedDamage"), "immediate action probe must not rewrite HP damage")
+    check(immediate_probe.get("MinHpFloor", 0) == 0, "immediate action probe must leave vanilla KO untouched")
+
+    landmark_probe = get(rows, "ko-landmark-probe")
+    check(profiles.truthy(landmark_probe, "LandmarkProbeEnabled"), "KO landmark probe must enable landmark hooks")
+    check(len([probe for probe in landmark_probe.get("LandmarkProbes", []) if probe.get("Enabled")]) >= 6, "KO landmark probe must define the static RVA candidates")
+    check(profiles.truthy(landmark_probe, "LogActionBoundaryProbe"), "KO landmark probe must keep action boundary logging")
+    check(profiles.truthy(landmark_probe, "LogHpEventProbe"), "KO landmark probe must keep HP event evidence")
+    check(profiles.truthy(landmark_probe, "LogImmediateActionCandidatesOnEvent"), "KO landmark probe must keep immediate action ranking")
+    check(not profiles.truthy(landmark_probe, "RewriteObservedDamage"), "KO landmark probe must not rewrite HP damage")
+    check(landmark_probe.get("MinHpFloor", 0) == 0, "KO landmark probe must leave vanilla KO untouched")
+
+    hp_apply_probe = get(rows, "ko-hp-apply-probe")
+    check(profiles.truthy(hp_apply_probe, "LandmarkProbeEnabled"), "KO HP apply probe must enable landmark hooks")
+    hp_apply_names = {
+        str(probe.get("Name", ""))
+        for probe in hp_apply_probe.get("LandmarkProbes", [])
+        if probe.get("Enabled")
+    }
+    for name in [
+        "pre-death-status-test-61",
+        "death-state-write-1bb-early",
+        "hp-raw-sum-test",
+        "hp-write-clamped-30",
+        "ko-write-1f5",
+    ]:
+        check(name in hp_apply_names, f"KO HP apply probe must include {name}")
+    check(profiles.truthy(hp_apply_probe, "LogHpEventProbe"), "KO HP apply probe must keep HP event evidence")
+    check(not profiles.truthy(hp_apply_probe, "RewriteObservedDamage"), "KO HP apply probe must not rewrite HP damage")
+    check(hp_apply_probe.get("MinHpFloor", 0) == 0, "KO HP apply probe must leave vanilla KO untouched")
+
+    preclamp = get(rows, "ko-preclamp-force-agrias")
+    check(profiles.truthy(preclamp, "PreClampDamageRewriteEnabled"), "preclamp proof must enable the pre-clamp rewrite hook")
+    check(preclamp.get("PreClampDamageRewriteRva") == 0x30A66F, "preclamp proof must hook the staged debit read")
+    check(preclamp.get("PreClampDamageRewriteTargetCharId") == 0x1E, "preclamp proof must target Agrias")
+    check(preclamp.get("PreClampDamageRewriteExpectedDebit") == 115, "preclamp proof must guard on Agrias Cross Slash damage")
+    check(preclamp.get("PreClampDamageRewriteForcedDebit", 0) > 115, "preclamp proof must force a lethal staged debit")
+    check(preclamp.get("PreClampDamageRewriteMaxWrites") == 1, "preclamp proof must be one-shot")
+    check(not profiles.truthy(preclamp, "RewriteObservedDamage"), "preclamp proof must not use late HP rewrites")
+    check(preclamp.get("MinHpFloor", 0) == 0, "preclamp proof must let vanilla HP clamp reach zero")
 
     killflag = get(rows, "death-test-killflag")
     check(profiles.truthy(killflag, "CauseDeathOnZeroHp"), "legacy killflag probe should preserve its KO-flag write")

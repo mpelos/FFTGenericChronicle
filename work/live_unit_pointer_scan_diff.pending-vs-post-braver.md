@@ -1,0 +1,167 @@
+# Live Unit Pointer Scan Diff
+
+- Baseline: `work\live_unit_pointer_scan.pending-braver.json`
+- Pending: `work\live_unit_pointer_scan.post-braver.json`
+- Baseline groups: `139`
+- Pending groups: `142`
+- New pending groups: `77`
+- Gone groups: `74`
+
+## New Pending Groups
+| Start | Span | Names | Hits | Region |
+| --- | ---: | --- | --- | --- |
+| `0x15E800038` | `0x10` | `Beowulf, Ramza` | `Beowulf@0x15E800038, Ramza@0x15E800048` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800038` | `0x28` | `Agrias, Beowulf, Ramza` | `Beowulf@0x15E800038, Ramza@0x15E800048, Agrias@0x15E800060` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800038` | `0x30` | `Agrias, Beowulf, Ninja, Ramza` | `Beowulf@0x15E800038, Ramza@0x15E800048, Agrias@0x15E800060, Ninja@0x15E800068` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x3CDE000` | `0x50` | `Agrias, Beowulf` | `Agrias@0x3CDE000, Agrias@0x3CDE020, Agrias@0x3CDE038, Beowulf@0x3CDE050` | `base=0x3C3A000 size=0x195000 protect=0x4 type=0x20000` |
+| `0x15E805E08` | `0x1B0` | `Beowulf, Ninja` | `Ninja@0x15E805E08, Beowulf@0x15E805FB8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805E08` | `0x1B8` | `Beowulf, Cloud, Ninja` | `Ninja@0x15E805E08, Beowulf@0x15E805FB8, Cloud@0x15E805FC0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805E08` | `0x1C0` | `Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E805E08, Beowulf@0x15E805FB8, Cloud@0x15E805FC0, Ramza@0x15E805FC8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805E08` | `0x1D8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E805E08, Beowulf@0x15E805FB8, Cloud@0x15E805FC0, Ramza@0x15E805FC8, Agrias@0x15E805FE0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800038` | `0x1E8` | `Agrias, Beowulf, Ninja, Ramza` | `Beowulf@0x15E800038, Ramza@0x15E800048, Agrias@0x15E800060, Ninja@0x15E800068, Beowulf@0x15E800220` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E442A70` | `0x228` | `Cloud, Ramza` | `Cloud@0x15E442A70, Ramza@0x15E442C98` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E442378` | `0x240` | `Agrias, Ninja` | `Agrias@0x15E442378, Ninja@0x15E4425B8` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E4425B8` | `0x278` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E4425B8, Beowulf@0x15E442648, Cloud@0x15E442650, Ramza@0x15E442658, Agrias@0x15E442670, Ninja@0x15E442678, Beowulf@0x15E442830` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43AE90` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E43AE90, Ramza@0x15E43B138` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43BED0` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E43BED0, Ramza@0x15E43C178` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43CF28` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E43CF28, Ramza@0x15E43D1D0` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E800220` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E800220, Cloud@0x15E8004C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8004C8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8004C8, Ramza@0x15E800770` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801510` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E801510, Cloud@0x15E8017B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8017B8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8017B8, Ramza@0x15E801A60` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802818` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E802818, Cloud@0x15E802AC0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802AC0` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E802AC0, Ramza@0x15E802D68` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803B08` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E803B08, Cloud@0x15E803DB0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804E10` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E804E10, Cloud@0x15E8050B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8050B8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8050B8, Ramza@0x15E805360` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8061B8` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E8061B8, Cloud@0x15E806460` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806460` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E806460, Ramza@0x15E806708` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8074A8` | `0x2A8` | `Beowulf, Cloud` | `Beowulf@0x15E8074A8, Cloud@0x15E807750` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E807750` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E807750, Ramza@0x15E8079F8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43B930` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E43B930, Ninja@0x15E43BBE0` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43C970` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E43C970, Ninja@0x15E43CC20` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E800F68` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E800F68, Ninja@0x15E801218` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802270` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E802270, Ninja@0x15E802520` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803560` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E803560, Ninja@0x15E803810` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804868` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E804868, Ninja@0x15E804B18` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805B58` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E805B58, Ninja@0x15E805E08` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806F00` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E806F00, Ninja@0x15E8071B0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808208` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E808208, Ninja@0x15E8084B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803DB0` | `0x2C0` | `Cloud, Ramza` | `Cloud@0x15E803DB0, Ramza@0x15E804070` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E442378` | `0x2D0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E442378, Ninja@0x15E4425B8, Beowulf@0x15E442648` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E442378` | `0x2D8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E442378, Ninja@0x15E4425B8, Beowulf@0x15E442648, Cloud@0x15E442650` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E442378` | `0x2E0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E442378, Ninja@0x15E4425B8, Beowulf@0x15E442648, Cloud@0x15E442650, Ramza@0x15E442658` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43BBE0` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E43BBE0, Cloud@0x15E43BCF0, Ramza@0x15E43BCF8, Agrias@0x15E43BD10, Ninja@0x15E43BD18, Cloud@0x15E43BED0` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E442378` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E442378, Ninja@0x15E4425B8, Beowulf@0x15E442648, Cloud@0x15E442650, Ramza@0x15E442658, Agrias@0x15E442670` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E801218` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E801218, Beowulf@0x15E801328, Cloud@0x15E801330, Ramza@0x15E801338, Agrias@0x15E801350, Ninja@0x15E801358, Beowulf@0x15E801510` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802520` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E802520, Beowulf@0x15E802630, Cloud@0x15E802638, Ramza@0x15E802640, Agrias@0x15E802658, Ninja@0x15E802660, Beowulf@0x15E802818` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803810` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E803810, Beowulf@0x15E803920, Cloud@0x15E803928, Ramza@0x15E803930, Agrias@0x15E803948, Ninja@0x15E803950, Beowulf@0x15E803B08` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804B18` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E804B18, Beowulf@0x15E804C28, Cloud@0x15E804C30, Ramza@0x15E804C38, Agrias@0x15E804C50, Ninja@0x15E804C58, Beowulf@0x15E804E10` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8071B0` | `0x2F8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E8071B0, Beowulf@0x15E8072C0, Cloud@0x15E8072C8, Ramza@0x15E8072D0, Agrias@0x15E8072E8, Ninja@0x15E8072F0, Beowulf@0x15E8074A8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43CC20` | `0x308` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E43CC20, Cloud@0x15E43CD48, Ramza@0x15E43CD50, Agrias@0x15E43CD68, Ninja@0x15E43CD70, Cloud@0x15E43CF28` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E805E08` | `0x3B0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Ninja@0x15E805E08, Beowulf@0x15E805FB8, Cloud@0x15E805FC0, Ramza@0x15E805FC8, Agrias@0x15E805FE0, Ninja@0x15E805FE8, Beowulf@0x15E8061B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43B930` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E43B930, Ninja@0x15E43BBE0, Cloud@0x15E43BCF0` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E800F68` | `0x3C0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E800F68, Ninja@0x15E801218, Beowulf@0x15E801328` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802270` | `0x3C0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E802270, Ninja@0x15E802520, Beowulf@0x15E802630` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803560` | `0x3C0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E803560, Ninja@0x15E803810, Beowulf@0x15E803920` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804868` | `0x3C0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E804868, Ninja@0x15E804B18, Beowulf@0x15E804C28` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806F00` | `0x3C0` | `Agrias, Beowulf, Ninja` | `Agrias@0x15E806F00, Ninja@0x15E8071B0, Beowulf@0x15E8072C0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43B930` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E43B930, Ninja@0x15E43BBE0, Cloud@0x15E43BCF0, Ramza@0x15E43BCF8` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E800F68` | `0x3C8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E800F68, Ninja@0x15E801218, Beowulf@0x15E801328, Cloud@0x15E801330` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802270` | `0x3C8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E802270, Ninja@0x15E802520, Beowulf@0x15E802630, Cloud@0x15E802638` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803560` | `0x3C8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E803560, Ninja@0x15E803810, Beowulf@0x15E803920, Cloud@0x15E803928` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804868` | `0x3C8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E804868, Ninja@0x15E804B18, Beowulf@0x15E804C28, Cloud@0x15E804C30` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806F00` | `0x3C8` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E806F00, Ninja@0x15E8071B0, Beowulf@0x15E8072C0, Cloud@0x15E8072C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800F68` | `0x3D0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E800F68, Ninja@0x15E801218, Beowulf@0x15E801328, Cloud@0x15E801330, Ramza@0x15E801338` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802270` | `0x3D0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E802270, Ninja@0x15E802520, Beowulf@0x15E802630, Cloud@0x15E802638, Ramza@0x15E802640` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803560` | `0x3D0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E803560, Ninja@0x15E803810, Beowulf@0x15E803920, Cloud@0x15E803928, Ramza@0x15E803930` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804868` | `0x3D0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E804868, Ninja@0x15E804B18, Beowulf@0x15E804C28, Cloud@0x15E804C30, Ramza@0x15E804C38` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806F00` | `0x3D0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E806F00, Ninja@0x15E8071B0, Beowulf@0x15E8072C0, Cloud@0x15E8072C8, Ramza@0x15E8072D0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43C970` | `0x3D8` | `Agrias, Cloud, Ninja` | `Agrias@0x15E43C970, Ninja@0x15E43CC20, Cloud@0x15E43CD48` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43B930` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E43B930, Ninja@0x15E43BBE0, Cloud@0x15E43BCF0, Ramza@0x15E43BCF8, Agrias@0x15E43BD10` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E43C970` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E43C970, Ninja@0x15E43CC20, Cloud@0x15E43CD48, Ramza@0x15E43CD50` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E800F68` | `0x3E8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E800F68, Ninja@0x15E801218, Beowulf@0x15E801328, Cloud@0x15E801330, Ramza@0x15E801338, Agrias@0x15E801350` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803560` | `0x3E8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E803560, Ninja@0x15E803810, Beowulf@0x15E803920, Cloud@0x15E803928, Ramza@0x15E803930, Agrias@0x15E803948` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804868` | `0x3E8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E804868, Ninja@0x15E804B18, Beowulf@0x15E804C28, Cloud@0x15E804C30, Ramza@0x15E804C38, Agrias@0x15E804C50` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806F00` | `0x3E8` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E806F00, Ninja@0x15E8071B0, Beowulf@0x15E8072C0, Cloud@0x15E8072C8, Ramza@0x15E8072D0, Agrias@0x15E8072E8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802270` | `0x3F0` | `Agrias, Beowulf, Cloud, Ninja, Ramza` | `Agrias@0x15E802270, Ninja@0x15E802520, Beowulf@0x15E802630, Cloud@0x15E802638, Ramza@0x15E802640, Agrias@0x15E802658, Ninja@0x15E802660` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E43C970` | `0x3F8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E43C970, Ninja@0x15E43CC20, Cloud@0x15E43CD48, Ramza@0x15E43CD50, Agrias@0x15E43CD68` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+| `0x15E442670` | `0x400` | `Agrias, Beowulf, Cloud, Ninja` | `Agrias@0x15E442670, Ninja@0x15E442678, Beowulf@0x15E442830, Cloud@0x15E442A70` | `base=0x15E000000 size=0x4CA000 protect=0x4 type=0x20000` |
+
+## Gone Groups
+| Start | Span | Names | Hits | Region |
+| --- | ---: | --- | --- | --- |
+| `0x15E8001D0` | `0x110` | `Cloud, Ninja` | `Ninja@0x15E8001D0, Cloud@0x15E8002E0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8001D0` | `0x118` | `Cloud, Ninja, Ramza` | `Ninja@0x15E8001D0, Cloud@0x15E8002E0, Ramza@0x15E8002E8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8001D0` | `0x130` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E8001D0, Cloud@0x15E8002E0, Ramza@0x15E8002E8, Agrias@0x15E800300` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8004C0` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8004C0, Ramza@0x15E800768` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801500` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E801500, Ramza@0x15E8017A8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802558` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E802558, Ramza@0x15E802800` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E803598` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E803598, Ramza@0x15E803840` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8045F0` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8045F0, Ramza@0x15E804898` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805630` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E805630, Ramza@0x15E8058D8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806688` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E806688, Ramza@0x15E806930` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8076C8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E8076C8, Ramza@0x15E807970` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808720` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E808720, Ramza@0x15E8089C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E809760` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E809760, Ramza@0x15E809A08` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A7B8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E80A7B8, Ramza@0x15E80AA60` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B7F8` | `0x2A8` | `Cloud, Ramza` | `Cloud@0x15E80B7F8, Ramza@0x15E80BAA0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800F60` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E800F60, Ninja@0x15E801210` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802FF8` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E802FF8, Ninja@0x15E8032A8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804050` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E804050, Ninja@0x15E804300` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805090` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E805090, Ninja@0x15E805340` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8060E8` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E8060E8, Ninja@0x15E806398` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E807128` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E807128, Ninja@0x15E8073D8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808180` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E808180, Ninja@0x15E808430` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8091C0` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E8091C0, Ninja@0x15E809470` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A218` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E80A218, Ninja@0x15E80A4C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B258` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E80B258, Ninja@0x15E80B508` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80C2B0` | `0x2B0` | `Agrias, Ninja` | `Agrias@0x15E80C2B0, Ninja@0x15E80C560` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801FA0` | `0x2C8` | `Agrias, Ninja` | `Agrias@0x15E801FA0, Ninja@0x15E802268` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8001D0` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E8001D0, Cloud@0x15E8002E0, Ramza@0x15E8002E8, Agrias@0x15E800300, Ninja@0x15E800308, Cloud@0x15E8004C0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801210` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E801210, Cloud@0x15E801320, Ramza@0x15E801328, Agrias@0x15E801340, Ninja@0x15E801348, Cloud@0x15E801500` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802268` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E802268, Cloud@0x15E802378, Ramza@0x15E802380, Agrias@0x15E802398, Ninja@0x15E8023A0, Cloud@0x15E802558` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8032A8` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E8032A8, Cloud@0x15E8033B8, Ramza@0x15E8033C0, Agrias@0x15E8033D8, Ninja@0x15E8033E0, Cloud@0x15E803598` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804300` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E804300, Cloud@0x15E804410, Ramza@0x15E804418, Agrias@0x15E804430, Ninja@0x15E804438, Cloud@0x15E8045F0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805340` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E805340, Cloud@0x15E805450, Ramza@0x15E805458, Agrias@0x15E805470, Ninja@0x15E805478, Cloud@0x15E805630` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E806398` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E806398, Cloud@0x15E8064A8, Ramza@0x15E8064B0, Agrias@0x15E8064C8, Ninja@0x15E8064D0, Cloud@0x15E806688` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8073D8` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E8073D8, Cloud@0x15E8074E8, Ramza@0x15E8074F0, Agrias@0x15E807508, Ninja@0x15E807510, Cloud@0x15E8076C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808430` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E808430, Cloud@0x15E808540, Ramza@0x15E808548, Agrias@0x15E808560, Ninja@0x15E808568, Cloud@0x15E808720` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E809470` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E809470, Cloud@0x15E809580, Ramza@0x15E809588, Agrias@0x15E8095A0, Ninja@0x15E8095A8, Cloud@0x15E809760` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A4C8` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E80A4C8, Cloud@0x15E80A5D8, Ramza@0x15E80A5E0, Agrias@0x15E80A5F8, Ninja@0x15E80A600, Cloud@0x15E80A7B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B508` | `0x2F0` | `Agrias, Cloud, Ninja, Ramza` | `Ninja@0x15E80B508, Cloud@0x15E80B618, Ramza@0x15E80B620, Agrias@0x15E80B638, Ninja@0x15E80B640, Cloud@0x15E80B7F8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800F60` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E800F60, Ninja@0x15E801210, Cloud@0x15E801320` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802FF8` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E802FF8, Ninja@0x15E8032A8, Cloud@0x15E8033B8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804050` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E804050, Ninja@0x15E804300, Cloud@0x15E804410` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805090` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E805090, Ninja@0x15E805340, Cloud@0x15E805450` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8060E8` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E8060E8, Ninja@0x15E806398, Cloud@0x15E8064A8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E807128` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E807128, Ninja@0x15E8073D8, Cloud@0x15E8074E8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808180` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E808180, Ninja@0x15E808430, Cloud@0x15E808540` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8091C0` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E8091C0, Ninja@0x15E809470, Cloud@0x15E809580` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A218` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E80A218, Ninja@0x15E80A4C8, Cloud@0x15E80A5D8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B258` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E80B258, Ninja@0x15E80B508, Cloud@0x15E80B618` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80C2B0` | `0x3C0` | `Agrias, Cloud, Ninja` | `Agrias@0x15E80C2B0, Ninja@0x15E80C560, Cloud@0x15E80C670` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800F60` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E800F60, Ninja@0x15E801210, Cloud@0x15E801320, Ramza@0x15E801328` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802FF8` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E802FF8, Ninja@0x15E8032A8, Cloud@0x15E8033B8, Ramza@0x15E8033C0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804050` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E804050, Ninja@0x15E804300, Cloud@0x15E804410, Ramza@0x15E804418` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805090` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E805090, Ninja@0x15E805340, Cloud@0x15E805450, Ramza@0x15E805458` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8060E8` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E8060E8, Ninja@0x15E806398, Cloud@0x15E8064A8, Ramza@0x15E8064B0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E807128` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E807128, Ninja@0x15E8073D8, Cloud@0x15E8074E8, Ramza@0x15E8074F0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808180` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E808180, Ninja@0x15E808430, Cloud@0x15E808540, Ramza@0x15E808548` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8091C0` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E8091C0, Ninja@0x15E809470, Cloud@0x15E809580, Ramza@0x15E809588` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A218` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E80A218, Ninja@0x15E80A4C8, Cloud@0x15E80A5D8, Ramza@0x15E80A5E0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B258` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E80B258, Ninja@0x15E80B508, Cloud@0x15E80B618, Ramza@0x15E80B620` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80C2B0` | `0x3C8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E80C2B0, Ninja@0x15E80C560, Cloud@0x15E80C670, Ramza@0x15E80C678` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801FA0` | `0x3D8` | `Agrias, Cloud, Ninja` | `Agrias@0x15E801FA0, Ninja@0x15E802268, Cloud@0x15E802378` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E800F60` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E800F60, Ninja@0x15E801210, Cloud@0x15E801320, Ramza@0x15E801328, Agrias@0x15E801340` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801FA0` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E801FA0, Ninja@0x15E802268, Cloud@0x15E802378, Ramza@0x15E802380` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E804050` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E804050, Ninja@0x15E804300, Cloud@0x15E804410, Ramza@0x15E804418, Agrias@0x15E804430` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E805090` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E805090, Ninja@0x15E805340, Cloud@0x15E805450, Ramza@0x15E805458, Agrias@0x15E805470` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8060E8` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E8060E8, Ninja@0x15E806398, Cloud@0x15E8064A8, Ramza@0x15E8064B0, Agrias@0x15E8064C8` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E807128` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E807128, Ninja@0x15E8073D8, Cloud@0x15E8074E8, Ramza@0x15E8074F0, Agrias@0x15E807508` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E808180` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E808180, Ninja@0x15E808430, Cloud@0x15E808540, Ramza@0x15E808548, Agrias@0x15E808560` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E8091C0` | `0x3E0` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E8091C0, Ninja@0x15E809470, Cloud@0x15E809580, Ramza@0x15E809588, Agrias@0x15E8095A0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E802FF8` | `0x3E8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E802FF8, Ninja@0x15E8032A8, Cloud@0x15E8033B8, Ramza@0x15E8033C0, Agrias@0x15E8033D8, Ninja@0x15E8033E0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80A218` | `0x3E8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E80A218, Ninja@0x15E80A4C8, Cloud@0x15E80A5D8, Ramza@0x15E80A5E0, Agrias@0x15E80A5F8, Ninja@0x15E80A600` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E80B258` | `0x3E8` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E80B258, Ninja@0x15E80B508, Cloud@0x15E80B618, Ramza@0x15E80B620, Agrias@0x15E80B638, Ninja@0x15E80B640` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |
+| `0x15E801FA0` | `0x400` | `Agrias, Cloud, Ninja, Ramza` | `Agrias@0x15E801FA0, Ninja@0x15E802268, Cloud@0x15E802378, Ramza@0x15E802380, Agrias@0x15E802398, Ninja@0x15E8023A0` | `base=0x15E800000 size=0x1211000 protect=0x4 type=0x20000` |

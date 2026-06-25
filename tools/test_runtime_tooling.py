@@ -457,9 +457,9 @@ def main() -> int:
             "watcher should accept counter-inversion runtime attacker evidence",
         )
         check(
-            "waiting for CT-reset runtime attacker evidence"
+            "waiting for CT runtime attacker evidence"
             in describe_state(counter_state, 0, required_ct_runtime_attackers=1),
-            "watcher should wait for CT-reset runtime attacker evidence",
+            "watcher should wait for CT runtime attacker evidence",
         )
 
         dr_log = memory_log + "[GC-Probe] [RUNTIME ptr=0x2000 id=0x80] " + SAMPLE_RUNTIME_1.replace(

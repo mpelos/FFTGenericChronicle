@@ -1,0 +1,2693 @@
+{
+  "groups": [
+    {
+      "end": 95784336,
+      "hits": [
+        {
+          "address": 95784200,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784200,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784256,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 95784288,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 95784312,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 95784336,
+          "encoding": "ptr64",
+          "key": "unit:Beowulf:ptr64",
+          "kind": "unit",
+          "name": "Beowulf"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 766.5,
+      "span": 136,
+      "start": 95784200
+    },
+    {
+      "end": 95784256,
+      "hits": [
+        {
+          "address": 95784200,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784200,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784256,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 746.5,
+      "span": 56,
+      "start": 95784200
+    },
+    {
+      "end": 95784288,
+      "hits": [
+        {
+          "address": 95784200,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784200,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 95784256,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 95784288,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 94838784,
+      "regionSize": 6955008,
+      "score": 744.5,
+      "span": 88,
+      "start": 95784200
+    },
+    {
+      "end": 4997375460,
+      "hits": [
+        {
+          "address": 4997375080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 4997375168,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 4997375460,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 4996988928,
+      "regionSize": 393216,
+      "score": 726.25,
+      "span": 380,
+      "start": 4997375080
+    },
+    {
+      "end": 4997375460,
+      "hits": [
+        {
+          "address": 4997375080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 4997375168,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 4997375460,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 4997375460,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 4996988928,
+      "regionSize": 393216,
+      "score": 726.25,
+      "span": 380,
+      "start": 4997375080
+    },
+    {
+      "end": 165738080,
+      "hits": [
+        {
+          "address": 165736928,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 165736928,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 165738080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 165703680,
+      "regionSize": 36864,
+      "score": 678.0,
+      "span": 1152,
+      "start": 165736928
+    },
+    {
+      "end": 165738592,
+      "hits": [
+        {
+          "address": 165736928,
+          "encoding": "u16",
+          "key": "value:damage:u16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 165736928,
+          "encoding": "s16",
+          "key": "value:damage:s16",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 165738080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165738592,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 165703680,
+      "regionSize": 36864,
+      "score": 646.0,
+      "span": 1664,
+      "start": 165736928
+    },
+    {
+      "end": 5877089664,
+      "hits": [
+        {
+          "address": 5877087968,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088240,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088680,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088952,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5877089392,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089664,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5877087968
+    },
+    {
+      "end": 5877090376,
+      "hits": [
+        {
+          "address": 5877088680,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088952,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5877089392,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089664,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090104,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090376,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5877088680
+    },
+    {
+      "end": 5879448504,
+      "hits": [
+        {
+          "address": 5879446808,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447520,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447792,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879448504,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879446808
+    },
+    {
+      "end": 5879449216,
+      "hits": [
+        {
+          "address": 5879447520,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447792,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879448504,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448944,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449216,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879447520
+    },
+    {
+      "end": 5879449928,
+      "hits": [
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879448504,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448944,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449216,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449656,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449928,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879448232
+    },
+    {
+      "end": 5879579984,
+      "hits": [
+        {
+          "address": 5879578288,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879578560,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579000,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579984,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879578288
+    },
+    {
+      "end": 5879580696,
+      "hits": [
+        {
+          "address": 5879579000,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579984,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580424,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580696,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879579000
+    },
+    {
+      "end": 5879972840,
+      "hits": [
+        {
+          "address": 5879971144,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971416,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971856,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972128,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5879972840,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879971144
+    },
+    {
+      "end": 5879973552,
+      "hits": [
+        {
+          "address": 5879971856,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972128,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5879972840,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973280,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973552,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879971856
+    },
+    {
+      "end": 5879974264,
+      "hits": [
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5879972840,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973280,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973552,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973992,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879974264,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5879972568
+    },
+    {
+      "end": 5880104320,
+      "hits": [
+        {
+          "address": 5880102624,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880102896,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103336,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103608,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5880104048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104320,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5880102624
+    },
+    {
+      "end": 5880105032,
+      "hits": [
+        {
+          "address": 5880103336,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103608,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5880104048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104320,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104760,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105032,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 644.0,
+      "span": 1696,
+      "start": 5880103336
+    },
+    {
+      "end": 5879581408,
+      "hits": [
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579984,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580424,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580696,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879581136,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879581408,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 643.375,
+      "span": 1706,
+      "start": 5879579702
+    },
+    {
+      "end": 5880105744,
+      "hits": [
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5880104048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104320,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104760,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105032,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105472,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105744,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 643.375,
+      "span": 1706,
+      "start": 5880104038
+    },
+    {
+      "end": 165739834,
+      "hits": [
+        {
+          "address": 165738080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165738592,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739296,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739834,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 165703680,
+      "regionSize": 36864,
+      "score": 640.375,
+      "span": 1754,
+      "start": 165738080
+    },
+    {
+      "end": 165739834,
+      "hits": [
+        {
+          "address": 165738080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165738592,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739296,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739834,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 165739834,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 165703680,
+      "regionSize": 36864,
+      "score": 640.375,
+      "span": 1754,
+      "start": 165738080
+    },
+    {
+      "end": 5877089382,
+      "hits": [
+        {
+          "address": 5877087528,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877087968,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088240,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088680,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088952,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 634.125,
+      "span": 1854,
+      "start": 5877087528
+    },
+    {
+      "end": 5879579702,
+      "hits": [
+        {
+          "address": 5879577848,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879578288,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879578560,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579000,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 634.125,
+      "span": 1854,
+      "start": 5879577848
+    },
+    {
+      "end": 5880104038,
+      "hits": [
+        {
+          "address": 5880102184,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880102624,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880102896,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103336,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103608,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 634.125,
+      "span": 1854,
+      "start": 5880102184
+    },
+    {
+      "end": 5877090104,
+      "hits": [
+        {
+          "address": 5877088240,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088680,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877088952,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5877089392,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089664,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090104,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5877088240
+    },
+    {
+      "end": 5877090816,
+      "hits": [
+        {
+          "address": 5877088952,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5877089392,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089664,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090104,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090376,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090816,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5877088952
+    },
+    {
+      "end": 5879448944,
+      "hits": [
+        {
+          "address": 5879447080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447520,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447792,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879448504,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448944,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879447080
+    },
+    {
+      "end": 5879449656,
+      "hits": [
+        {
+          "address": 5879447792,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879448504,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448944,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449216,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879449656,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879447792
+    },
+    {
+      "end": 5879579712,
+      "hits": [
+        {
+          "address": 5879577848,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879578288,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879578560,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579000,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879577848
+    },
+    {
+      "end": 5879580424,
+      "hits": [
+        {
+          "address": 5879578560,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579000,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579984,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580424,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879578560
+    },
+    {
+      "end": 5879581136,
+      "hits": [
+        {
+          "address": 5879579272,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579702,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        },
+        {
+          "address": 5879579712,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879579984,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580424,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879580696,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879581136,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879579272
+    },
+    {
+      "end": 5879973280,
+      "hits": [
+        {
+          "address": 5879971416,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971856,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972128,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5879972840,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973280,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879971416
+    },
+    {
+      "end": 5879973992,
+      "hits": [
+        {
+          "address": 5879972128,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5879972840,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973280,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973552,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879973992,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5879972128
+    },
+    {
+      "end": 5880104760,
+      "hits": [
+        {
+          "address": 5880102896,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103336,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880103608,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5880104048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104320,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104760,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5880102896
+    },
+    {
+      "end": 5880105472,
+      "hits": [
+        {
+          "address": 5880103608,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104038,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5880104048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104320,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880104760,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105032,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5880105472,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.5,
+      "span": 1864,
+      "start": 5880103608
+    },
+    {
+      "end": 5877091248,
+      "hits": [
+        {
+          "address": 5877089382,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 5877089392,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877089664,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090104,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090376,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877090816,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5877091248,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 633.375,
+      "span": 1866,
+      "start": 5877089382
+    },
+    {
+      "end": 165739978,
+      "hits": [
+        {
+          "address": 165738080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165738592,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739048,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739296,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 165739834,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 165739834,
+          "encoding": "s32",
+          "key": "value:chance:s32",
+          "kind": "value",
+          "name": "chance"
+        },
+        {
+          "address": 165739978,
+          "encoding": "u32",
+          "key": "value:chance:u32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 165703680,
+      "regionSize": 36864,
+      "score": 631.375,
+      "span": 1898,
+      "start": 165738080
+    },
+    {
+      "end": 5879448318,
+      "hits": [
+        {
+          "address": 5879446368,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879446808,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447080,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447520,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879447792,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448232,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879448318,
+          "encoding": "f32",
+          "key": "value:damage:f32",
+          "kind": "value",
+          "name": "damage"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 628.125,
+      "span": 1950,
+      "start": 5879446368
+    },
+    {
+      "end": 5879972654,
+      "hits": [
+        {
+          "address": 5879970704,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971144,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971416,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879971856,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972128,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972568,
+          "encoding": "ptr64",
+          "key": "unit:Cloud:ptr64",
+          "kind": "unit",
+          "name": "Cloud"
+        },
+        {
+          "address": 5879972654,
+          "encoding": "f32",
+          "key": "value:chance:f32",
+          "kind": "value",
+          "name": "chance"
+        }
+      ],
+      "kinds": [
+        "unit",
+        "value"
+      ],
+      "memType": 131072,
+      "protect": 4,
+      "regionBase": 5872025600,
+      "regionSize": 23072768,
+      "score": 628.125,
+      "span": 1950,
+      "start": 5879970704
+    }
+  ],
+  "nearBytes": 2048,
+  "patterns": [
+    {
+      "bytes": "e05c854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Ramza:ptr64",
+      "kind": "unit",
+      "name": "Ramza"
+    },
+    {
+      "bytes": "e05e854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Ninja:ptr64",
+      "kind": "unit",
+      "name": "Ninja"
+    },
+    {
+      "bytes": "e060854101000000",
+      "encoding": "ptr64",
+      "hits": 4,
+      "key": "unit:Agrias:ptr64",
+      "kind": "unit",
+      "name": "Agrias"
+    },
+    {
+      "bytes": "e062854101000000",
+      "encoding": "ptr64",
+      "hits": 12000,
+      "key": "unit:Cloud:ptr64",
+      "kind": "unit",
+      "name": "Cloud"
+    },
+    {
+      "bytes": "e064854101000000",
+      "encoding": "ptr64",
+      "hits": 21,
+      "key": "unit:Beowulf:ptr64",
+      "kind": "unit",
+      "name": "Beowulf"
+    },
+    {
+      "bytes": "4c",
+      "encoding": "u8",
+      "hits": 12000,
+      "key": "value:damage:u8",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:damage:u16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c00",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:damage:s16",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:damage:u32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "4c000000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:damage:s32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "00009842",
+      "encoding": "f32",
+      "hits": 219,
+      "key": "value:damage:f32",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "0000000000005340",
+      "encoding": "f64",
+      "hits": 13,
+      "key": "value:damage:f64",
+      "kind": "value",
+      "name": "damage"
+    },
+    {
+      "bytes": "64",
+      "encoding": "u8",
+      "hits": 12000,
+      "key": "value:chance:u8",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "6400",
+      "encoding": "u16",
+      "hits": 12000,
+      "key": "value:chance:u16",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "6400",
+      "encoding": "s16",
+      "hits": 12000,
+      "key": "value:chance:s16",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "64000000",
+      "encoding": "u32",
+      "hits": 12000,
+      "key": "value:chance:u32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "64000000",
+      "encoding": "s32",
+      "hits": 12000,
+      "key": "value:chance:s32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "0000c842",
+      "encoding": "f32",
+      "hits": 638,
+      "key": "value:chance:f32",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "0000000000005940",
+      "encoding": "f64",
+      "hits": 341,
+      "key": "value:chance:f64",
+      "kind": "value",
+      "name": "chance"
+    },
+    {
+      "bytes": "0000803f",
+      "encoding": "f32",
+      "hits": 12000,
+      "key": "ratio:zodiac:f32",
+      "kind": "ratio",
+      "name": "zodiac"
+    },
+    {
+      "bytes": "000000000000f03f",
+      "encoding": "f64",
+      "hits": 2441,
+      "key": "ratio:zodiac:f64",
+      "kind": "ratio",
+      "name": "zodiac"
+    },
+    {
+      "bytes": "427261766572",
+      "encoding": "ascii",
+      "hits": 40,
+      "key": "text:Braver:ascii",
+      "kind": "text",
+      "name": "Braver"
+    },
+    {
+      "bytes": "420072006100760065007200",
+      "encoding": "utf16le",
+      "hits": 0,
+      "key": "text:Braver:utf16le",
+      "kind": "text",
+      "name": "Braver"
+    }
+  ],
+  "pid": 19044,
+  "stats": {
+    "bytes_scanned": 2610176000,
+    "regions_scanned": 760,
+    "regions_skipped": 2657
+  },
+  "units": [
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    }
+  ]
+}

@@ -14,6 +14,7 @@ tools/*
 !tools/summarize_weapon_baseline.py
 !tools/analyze_actor_probe_ct.py
 !tools/analyze_battleprobe_log.py
+!tools/analyze_ko_lifecycle_disasm.py
 !tools/dump_item_catalog.py
 !tools/promote_runtime_offsets.py
 !tools/build_neuter_data.py

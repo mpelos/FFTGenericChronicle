@@ -22,10 +22,12 @@ internal sealed class BattleContextResolver
         IReadOnlyDictionary<nint, UnitObservation> observations,
         long nowTick)
     {
+        string ctSummary = "";
+
         // Primary path (live-proven): the attacker is the unit whose CT (+0x41) just reset.
         if (_settings.ResolveAttackerByCt)
         {
-            var byCt = ResolveByCt(target, observations, nowTick);
+            var byCt = ResolveByCt(target, observations, nowTick, out ctSummary);
             if (byCt is not null) return byCt;
         }
 
@@ -40,7 +42,7 @@ internal sealed class BattleContextResolver
 
         // Fallback: legacy recency heuristic (hook-touch order). Off by default.
         var candidates = BuildCandidates(target, observations, nowTick);
-        string summary = FormatCandidates(candidates);
+        string summary = FormatSummaryParts(ctSummary, FormatCandidates(candidates));
         if (!_settings.InferAttackerFromRecentUnits || candidates.Count == 0)
             return new ResolvedAttacker(null, "none", summary);
 
@@ -70,8 +72,10 @@ internal sealed class BattleContextResolver
     private ResolvedAttacker? ResolveByCt(
         UnitSnapshot target,
         IReadOnlyDictionary<nint, UnitObservation> observations,
-        long nowTick)
+        long nowTick,
+        out string missSummary)
     {
+        missSummary = "";
         int dropWindowMs = Math.Clamp(_settings.CtDropWindowMs, 1, 60_000);
         var list = new List<CtCandidate>();
         foreach (var observation in observations.Values)
@@ -85,7 +89,18 @@ internal sealed class BattleContextResolver
             list.Add(new CtCandidate(unit, unit.Ct, observation.CtDropTick, observation.CtDropAmount, dropAgeMs));
         }
 
-        if (list.Count == 0) return null;
+        if (list.Count == 0)
+        {
+            var lowCtCandidates = BuildLowCtCandidates(target, observations, nowTick);
+            if (_settings.ResolveAttackerByLowCtFallback && lowCtCandidates.Count > 0)
+            {
+                var bestLow = lowCtCandidates[0];
+                return new ResolvedAttacker(bestLow.Unit, "ct-low", FormatSummaryParts("ctCandidates=none", FormatLowCtCandidates(lowCtCandidates)));
+            }
+
+            missSummary = FormatSummaryParts("ctCandidates=none", FormatLowCtCandidates(lowCtCandidates), FormatCtObserved(target, observations, nowTick));
+            return null;
+        }
 
         list.Sort((a, b) =>
         {
@@ -100,6 +115,41 @@ internal sealed class BattleContextResolver
 
         var best = list[0];
         return new ResolvedAttacker(best.Unit, "ct-reset", FormatCtCandidates(list));
+    }
+
+    private List<LowCtCandidate> BuildLowCtCandidates(
+        UnitSnapshot target,
+        IReadOnlyDictionary<nint, UnitObservation> observations,
+        long nowTick)
+    {
+        int maxCt = Math.Clamp(_settings.CtLowFallbackMaxCt, 0, 100);
+        int windowMs = Math.Clamp(_settings.CtLowFallbackWindowMs, 1, 60_000);
+        var list = new List<LowCtCandidate>();
+
+        foreach (var observation in observations.Values)
+        {
+            var unit = observation.Unit;
+            if (unit.Ptr == target.Ptr) continue;
+            if (unit.Hp <= 0) continue;
+            if (unit.Ct > maxCt) continue;
+            if (observation.SeenTick <= 0) continue;
+
+            int seenAgeMs = AgeMs(nowTick, observation.SeenTick);
+            if (seenAgeMs < 0 || seenAgeMs > windowMs) continue;
+
+            list.Add(new LowCtCandidate(unit, unit.Ct, seenAgeMs));
+        }
+
+        list.Sort((a, b) =>
+        {
+            int cmp = a.SeenAgeMs.CompareTo(b.SeenAgeMs); // most recently hook-touched first
+            if (cmp != 0) return cmp;
+            cmp = a.Ct.CompareTo(b.Ct);                   // tiebreak: lowest absolute CT
+            if (cmp != 0) return cmp;
+            return a.Unit.Ptr.ToInt64().CompareTo(b.Unit.Ptr.ToInt64());
+        });
+
+        return list;
     }
 
     private ResolvedAttacker? ResolveByCounterInversion(
@@ -197,12 +247,83 @@ internal sealed class BattleContextResolver
         return sb.ToString();
     }
 
+    private string FormatLowCtCandidates(List<LowCtCandidate> candidates)
+    {
+        if (candidates.Count == 0) return "ctLowCandidates=none";
+
+        int max = Math.Clamp(_settings.MaxAttackerCandidatesToLog, 1, 12);
+        var sb = new StringBuilder("ctLowCandidates=");
+        for (int i = 0; i < candidates.Count && i < max; i++)
+        {
+            if (i > 0) sb.Append(' ');
+            var c = candidates[i];
+            sb.Append($"ptr=0x{c.Unit.Ptr:X}/id=0x{c.Unit.CharId:X2}/{c.Unit.FactionLabel.Trim()}/t{c.Unit.Team}/CT={c.Ct}/seen={c.SeenAgeMs}ms/PA={c.Unit.Pa}");
+        }
+
+        if (candidates.Count > max)
+            sb.Append($" ... +{candidates.Count - max} more");
+        return sb.ToString();
+    }
+
+    private string FormatCtObserved(
+        UnitSnapshot target,
+        IReadOnlyDictionary<nint, UnitObservation> observations,
+        long nowTick)
+    {
+        var list = new List<CtObserved>();
+        foreach (var observation in observations.Values)
+        {
+            var unit = observation.Unit;
+            if (unit.Ptr == target.Ptr) continue;
+            if (unit.Hp <= 0) continue;
+            int seenAgeMs = observation.SeenTick > 0 ? AgeMs(nowTick, observation.SeenTick) : -1;
+            int dropAgeMs = observation.CtDropTick > 0 ? AgeMs(nowTick, observation.CtDropTick) : -1;
+            list.Add(new CtObserved(unit, unit.Ct, seenAgeMs, dropAgeMs, observation.CtDropAmount));
+        }
+
+        if (list.Count == 0) return "ctObserved=none";
+
+        list.Sort((a, b) =>
+        {
+            int aRank = a.DropAgeMs >= 0 ? a.DropAgeMs : int.MaxValue;
+            int bRank = b.DropAgeMs >= 0 ? b.DropAgeMs : int.MaxValue;
+            int cmp = aRank.CompareTo(bRank);
+            if (cmp != 0) return cmp;
+            cmp = a.Ct.CompareTo(b.Ct);
+            if (cmp != 0) return cmp;
+            return a.Unit.Ptr.ToInt64().CompareTo(b.Unit.Ptr.ToInt64());
+        });
+
+        int max = Math.Clamp(_settings.MaxAttackerCandidatesToLog, 1, 12);
+        var sb = new StringBuilder("ctObserved=");
+        for (int i = 0; i < list.Count && i < max; i++)
+        {
+            if (i > 0) sb.Append(' ');
+            var c = list[i];
+            sb.Append($"ptr=0x{c.Unit.Ptr:X}/id=0x{c.Unit.CharId:X2}/{c.Unit.FactionLabel.Trim()}/t{c.Unit.Team}/CT={c.Ct}");
+            sb.Append(c.DropAgeMs >= 0 ? $"/drop={c.DropAgeMs}ms:{c.CtDropAmount}" : "/drop=none");
+            sb.Append(c.SeenAgeMs >= 0 ? $"/seen={c.SeenAgeMs}ms" : "/seen=none");
+            sb.Append($"/PA={c.Unit.Pa}");
+        }
+
+        if (list.Count > max)
+            sb.Append($" ... +{list.Count - max} more");
+        return sb.ToString();
+    }
+
+    private static string FormatSummaryParts(params string[] parts)
+        => string.Join(" ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+
     private static int AgeMs(long nowTick, long seenTick)
         => (int)Math.Round((nowTick - seenTick) * 1000.0 / Stopwatch.Frequency);
 
     private sealed record AttackerCandidate(UnitSnapshot Unit, int AgeMs, bool Opposing, int Score);
 
     private sealed record CtCandidate(UnitSnapshot Unit, int Ct, long CtDropTick, int CtDropAmount, int DropAgeMs);
+
+    private sealed record LowCtCandidate(UnitSnapshot Unit, int Ct, int SeenAgeMs);
+
+    private sealed record CtObserved(UnitSnapshot Unit, int Ct, int SeenAgeMs, int DropAgeMs, int CtDropAmount);
 
     private sealed record RecentHpDamageEvent(
         UnitSnapshot Target,

@@ -1,0 +1,318 @@
+{
+  "pid": 27352,
+  "required": [
+    "cloud",
+    "agrias"
+  ],
+  "nearBytes": 1536,
+  "maxSpan": 2304,
+  "stats": {
+    "regions_skipped": 2650,
+    "regions_scanned": 771,
+    "bytes_scanned": 2645737472
+  },
+  "units": [
+    {
+      "name": "Ramza",
+      "ptr": 5394226400,
+      "source": "cli"
+    },
+    {
+      "name": "Ninja",
+      "ptr": 5394226912,
+      "source": "cli"
+    },
+    {
+      "name": "Agrias",
+      "ptr": 5394227424,
+      "source": "cli"
+    },
+    {
+      "name": "Cloud",
+      "ptr": 5394227936,
+      "source": "cli"
+    },
+    {
+      "name": "Beowulf",
+      "ptr": 5394228448,
+      "source": "cli"
+    }
+  ],
+  "hitCounts": {
+    "Cloud": 5000,
+    "Beowulf": 5000,
+    "Ninja": 5000,
+    "Ramza": 5000,
+    "Agrias": 5000
+  },
+  "candidates": [
+    {
+      "start": 5884739168,
+      "end": 5884739184,
+      "span": 16,
+      "score": 1262.0,
+      "repeatCount": 2,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5884739168,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884739184,
+          "relative": 16
+        }
+      ]
+    },
+    {
+      "start": 5884741600,
+      "end": 5884741624,
+      "span": 24,
+      "score": 1261.0,
+      "repeatCount": 2,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5884741600,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884741624,
+          "relative": 24
+        }
+      ]
+    },
+    {
+      "start": 5884765240,
+      "end": 5884765792,
+      "span": 552,
+      "score": 1201.0,
+      "repeatCount": 1,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5884765240,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5884765792,
+          "relative": 552
+        }
+      ]
+    },
+    {
+      "start": 5881474928,
+      "end": 5881475632,
+      "span": 704,
+      "score": 1008.0,
+      "repeatCount": 30,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5881474928,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5881475632,
+          "relative": 704
+        }
+      ]
+    },
+    {
+      "start": 5876220656,
+      "end": 5876220664,
+      "span": 8,
+      "score": 969.0,
+      "repeatCount": 2492,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5876220656,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5876220664,
+          "relative": 8
+        }
+      ]
+    },
+    {
+      "start": 5883557440,
+      "end": 5883558800,
+      "span": 1360,
+      "score": 952.0,
+      "repeatCount": 1,
+      "names": [
+        "Cloud",
+        "Beowulf",
+        "Agrias"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5883557440,
+          "relative": 0
+        },
+        {
+          "name": "Beowulf",
+          "ptr": 5394228448,
+          "address": 5883558120,
+          "relative": 680
+        },
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5883558800,
+          "relative": 1360
+        }
+      ]
+    },
+    {
+      "start": 5881412248,
+      "end": 5881412928,
+      "span": 680,
+      "score": 885.0,
+      "repeatCount": 371,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5881412248,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5881412928,
+          "relative": 680
+        }
+      ]
+    },
+    {
+      "start": 5876222496,
+      "end": 5876223184,
+      "span": 688,
+      "score": 884.0,
+      "repeatCount": 1916,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5876222496,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5876223184,
+          "relative": 688
+        }
+      ]
+    },
+    {
+      "start": 5876228032,
+      "end": 5876228744,
+      "span": 712,
+      "score": 881.0,
+      "repeatCount": 172,
+      "names": [
+        "Agrias",
+        "Cloud"
+      ],
+      "regionBase": 5872025600,
+      "regionSize": 15200256,
+      "protect": 4,
+      "memType": 131072,
+      "hits": [
+        {
+          "name": "Agrias",
+          "ptr": 5394227424,
+          "address": 5876228032,
+          "relative": 0
+        },
+        {
+          "name": "Cloud",
+          "ptr": 5394227936,
+          "address": 5876228744,
+          "relative": 712
+        }
+      ]
+    }
+  ]
+}
