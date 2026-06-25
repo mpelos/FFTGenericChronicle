@@ -1,0 +1,66 @@
+{
+  "_note": "DRY-RUN (observe-only) proof that a custom formula can read EQUIPMENT of BOTH attacker and target live in battle. Uses the now-confirmed equipment offsets (16-bit words: head +0x1A, body +0x1C, accessory +0x1E, R-weapon +0x20, L-shield +0x26) wired into the existing equipment-slot -> formula-context subsystem. The demo formula: bladed weapons (sword/knightsword/katana/ninjablade) add their weapon power; the target's body armor gives flat DR = armorHpBonus/10; final = max(1, vanilla + weaponBonus - armorDr). DryRunRewrites=true => it computes and logs [RUNTIME ...] trace but does NOT modify HP. Watch trace.* for the equipment ids/fields read from both sides and the computed result. ItemCatalogPath joins item_catalog.csv for weapon family / armorHpBonus / etc.",
+  "ItemCatalogPath": "item_catalog.csv",
+
+  "RewriteObservedDamage": true,
+  "DryRunRewrites": true,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "LogResolvedRuntimeContext": true,
+  "LogAttackerCandidates": true,
+
+  "InferAttackerFromRecentUnits": true,
+  "RecentAttackerWindowMs": 7000,
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "PendingActionMaxBatchEvents": 16,
+  "PendingActionStaleMs": 30000,
+
+  "AttackerEquipmentSlots": [
+    { "Name": "Weapon", "Offset": 32, "Width": "UInt16" },
+    { "Name": "Shield", "Offset": 38, "Width": "UInt16" }
+  ],
+  "EquipmentSlots": [
+    { "Name": "Head", "Offset": 26, "Width": "UInt16" },
+    { "Name": "Body", "Offset": 28, "Width": "UInt16" },
+    { "Name": "Accessory", "Offset": 30, "Width": "UInt16" },
+    { "Name": "Weapon", "Offset": 32, "Width": "UInt16" },
+    { "Name": "Shield", "Offset": 38, "Width": "UInt16" }
+  ],
+
+  "FormulaDerivedVariables": [
+    { "Name": "dv.bladed", "Formula": "a.present && (aslot.weapon.category_sword || aslot.weapon.category_knightsword || aslot.weapon.category_katana || aslot.weapon.category_ninjablade)" },
+    { "Name": "dv.weaponBonus", "Formula": "if(dv.bladed, aslot.weapon.weaponPower, 0)" },
+    { "Name": "dv.armorDr", "Formula": "floorDiv(tslot.body.armorHpBonus, 10)" },
+    { "Name": "dv.final", "Formula": "max(1, vanillaDamage + dv.weaponBonus - dv.armorDr)" }
+  ],
+
+  "RewriteConditionFormula": "event.isDamage",
+  "FinalDamageFormula": "dv.final",
+
+  "FormulaTraceVariables": [
+    { "Name": "trace.atkPresent", "Formula": "a.present" },
+    { "Name": "trace.atkWeaponId", "Formula": "aslot.weapon.id" },
+    { "Name": "trace.atkWeaponPower", "Formula": "aslot.weapon.weaponPower" },
+    { "Name": "trace.atkWeaponFormula", "Formula": "aslot.weapon.weaponFormula" },
+    { "Name": "trace.atkBladed", "Formula": "dv.bladed" },
+    { "Name": "trace.atkShieldId", "Formula": "aslot.shield.id" },
+    { "Name": "trace.tgtHeadId", "Formula": "tslot.head.id" },
+    { "Name": "trace.tgtBodyId", "Formula": "tslot.body.id" },
+    { "Name": "trace.tgtBodyArmorHp", "Formula": "tslot.body.armorHpBonus" },
+    { "Name": "trace.tgtAccId", "Formula": "tslot.accessory.id" },
+    { "Name": "trace.weaponBonus", "Formula": "dv.weaponBonus" },
+    { "Name": "trace.armorDr", "Formula": "dv.armorDr" },
+    { "Name": "trace.vanilla", "Formula": "vanillaDamage" },
+    { "Name": "trace.final", "Formula": "dv.final" }
+  ],
+
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64
+}

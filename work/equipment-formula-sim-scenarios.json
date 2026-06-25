@@ -1,0 +1,70 @@
+{
+  "_note": "Deterministic offline proof that the custom formula reads EQUIPMENT of both sides from the real unit-struct offsets (16-bit words) and branches on it. Equipment is injected via per-unit raw at the confirmed offsets (+0x1A head, +0x1C body, +0x1E acc, +0x20 R-weapon) using the SAME ReadUInt16 -> EquipmentSlotProbe -> AddSlotVariables code path as live. Formula: bladed weapon (sword/knightsword/katana/ninjablade) adds its weaponPower; target body armor gives DR = armorHpBonus/10; final = max(1, vanilla + weaponBonus - armorDr).",
+  "scenarios": [
+    {
+      "name": "ramza-chaosblade(knightsword,WP40)-vs-ninja(ninjagear,armorHP20)",
+      "previousHp": 300, "currentHp": 150, "vanillaDamage": 150,
+      "eventIndex": 1, "eventSeed": 1,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 188,
+        "desiredHp": 112,
+        "traceContains": [
+          "attackerSlots=weapon(present,id=37:Chaos Blade",
+          "body(present,id=197:Ninja Gear"
+        ]
+      },
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 20, "raw": { "0x20w": 37 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 150, "maxHp": 300, "isFoe": false,
+        "raw": { "0x1Aw": 168, "0x1Cw": 197, "0x1Ew": 236, "0x20w": 17, "0x24w": 18 } }
+    },
+    {
+      "name": "cloud-materiabladeplus(sword,WP10)-vs-ninja(ninjagear)",
+      "previousHp": 300, "currentHp": 200, "vanillaDamage": 100,
+      "eventIndex": 2, "eventSeed": 2,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 108,
+        "desiredHp": 192,
+        "traceContains": [
+          "attackerSlots=weapon(present,id=256:Materia Blade Plus",
+          "body(present,id=197:Ninja Gear"
+        ]
+      },
+      "attacker": { "ptr": "0x1000", "charId": 50, "pa": 14, "raw": { "0x20w": 256 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 200, "maxHp": 300, "isFoe": false,
+        "raw": { "0x1Cw": 197 } }
+    },
+    {
+      "name": "bowuser-artemisbow(bow,non-bladed)-vs-ninja(ninjagear)",
+      "previousHp": 300, "currentHp": 220, "vanillaDamage": 80,
+      "eventIndex": 3, "eventSeed": 3,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 78,
+        "desiredHp": 222,
+        "traceContains": [
+          "attackerSlots=weapon(present,id=89:Artemis Bow",
+          "body(present,id=197:Ninja Gear"
+        ]
+      },
+      "attacker": { "ptr": "0x1000", "charId": 129, "pa": 15, "raw": { "0x20w": 89 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 220, "maxHp": 300, "isFoe": false,
+        "raw": { "0x1Cw": 197 } }
+    },
+    {
+      "name": "no-attacker-target-armor-still-applies",
+      "previousHp": 300, "currentHp": 250, "vanillaDamage": 50,
+      "eventIndex": 4, "eventSeed": 4,
+      "expect": {
+        "shouldRewrite": true,
+        "finalDamage": 48,
+        "desiredHp": 252,
+        "traceContains": [ "body(present,id=197:Ninja Gear" ]
+      },
+      "attacker": null,
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 250, "maxHp": 300, "isFoe": false,
+        "raw": { "0x1Cw": 197 } }
+    }
+  ]
+}

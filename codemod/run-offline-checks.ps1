@@ -9,6 +9,7 @@ param(
     [string]$DryRunSettings = 'docs\modding\examples\battle-runtime-settings.dry-run.example.json',
     [string]$NeuterSpotcheckSettings = 'work\battle-runtime-settings.neuter-spotcheck.json',
     [string]$CustomFormulaDemoSettings = 'work\battle-runtime-settings.custom-formula-demo.json',
+    [string]$EquipmentFormulaSettings = 'work\battle-runtime-settings.equipment-formula-dryrun.json',
     [string]$SentinelCoarseSettings = 'work\battle-runtime-settings.sentinel-coarse-v1.json',
     [string]$DeathHpSettings = 'work\battle-runtime-settings.death-test.json',
     [string]$DeathKillFlagSettings = 'work\battle-runtime-settings.death-test-killflag.json',
@@ -22,6 +23,7 @@ param(
     [string]$DryRunScenarios = 'docs\modding\examples\runtime-simulation-dry-run.example.json',
     [string]$NeuterSpotcheckScenarios = 'docs\modding\examples\runtime-simulation-neuter-spotcheck.example.json',
     [string]$CustomFormulaDemoScenarios = 'work\runtime-simulation.custom-formula-demo.json',
+    [string]$EquipmentFormulaScenarios = 'work\equipment-formula-sim-scenarios.json',
     [string]$SentinelCoarseScenarios = 'work\runtime-simulation.sentinel-coarse-v1.json',
     [string]$DeathGateScenarios = 'docs\modding\examples\runtime-simulation-death-gate.example.json',
     [switch]$SkipPython,
@@ -149,6 +151,8 @@ try {
                 'work\battle-runtime-settings.engine-death-test.json',
                 'work\battle-runtime-settings.hook-register-probe.json',
                 'work\battle-runtime-settings.custom-formula-demo.json',
+                'work\battle-runtime-settings.equipment-formula-dryrun.json',
+                'work\equipment-formula-sim-scenarios.json',
                 'work\battle-runtime-settings.sentinel-coarse-v1.json',
                 'work\battle-runtime-settings.death-test.json',
                 'work\battle-runtime-settings.death-test-killflag.json',
@@ -404,6 +408,24 @@ try {
                     '--',
                     $customFormulaDemoSettingsPath,
                     $customFormulaDemoScenariosPath,
+                    '--no-trace'
+                )
+            }
+
+            $equipmentFormulaScenariosPath = Resolve-RepoPath $EquipmentFormulaScenarios
+            $equipmentFormulaSettingsPath = Resolve-RepoPath $EquipmentFormulaSettings
+            if ((Test-Path -LiteralPath $equipmentFormulaScenariosPath) -and
+                (Test-Path -LiteralPath $equipmentFormulaSettingsPath)) {
+                Write-Host "equipment-in-formula fixture -> $EquipmentFormulaSettings" -ForegroundColor DarkGray
+                Invoke-Native 'dotnet' @(
+                    'run',
+                    '--project',
+                    'codemod\fftivc.generic.chronicle.codemod.settingssimulate\fftivc.generic.chronicle.codemod.settingssimulate.csproj',
+                    '-c',
+                    'Release',
+                    '--',
+                    $equipmentFormulaSettingsPath,
+                    $equipmentFormulaScenariosPath,
                     '--no-trace'
                 )
             }

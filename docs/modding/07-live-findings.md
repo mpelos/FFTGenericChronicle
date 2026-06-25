@@ -916,7 +916,47 @@ Shield at `+0x26`), and a monster (all-zero slots). Empty hand sentinel `0x00FF`
 - Basic-attack weapon identity (action id 0) is solved via `attacker_unit+0x20`.
 - Equipment is self-contained in the unit struct (not the actor struct); no roster mapping needed.
 
+### Live read-back validation - PROVEN
+
+A fresh in-game session confirmed the offsets at the actual damage frame. With the
+`[PRECLAMP-EQUIP]` probe enabled, Ramza basic-attacked the Ninja and the runtime read **both
+sides' full equipment block** correctly from live memory (target Ninja: Thief's Cap / Ninja Gear /
+Chantage / Iga Blade + Koga Blade; caster Ramza weapon). This rules out the offsets being a dump-time
+artifact - the read works at the moment damage is computed. Evidence:
+`work/live-captures/battleprobe_log.equipment-readout-ramza-ninja.snapshot.txt`.
+
 ### Evidence / tooling
 
 - `work/equipment-block-offsets-2026-06-24.md`
 - `tools/analyze_equipment_dumps.py` (`--find` ground-truth intersect, `--equip` decode, `--rank`)
+
+## LIVE FINDING - Equipment flows into the formula and branches it (2026-06-24)
+
+### What we did
+
+With the live equipment **read** already proven (above), the remaining question was whether that
+read reaches the formula context and the formula computes on it. Because that is pure deterministic
+logic (no game timing), we proved it with the `settingssimulate` offline runner, which injects
+equipment at the real offsets and runs the **identical** pipeline that runs live:
+`ReadUInt16` -> `EquipmentSlotProbe` -> `AddSlotVariables` -> formula engine.
+
+### Result - PROVEN (4/4 scenarios pass)
+
+| Scenario | Attacker weapon (family, WP) | Target body (armorHP) | vanilla | bladed | weaponBonus | armorDr | final |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ramza | Chaos Blade (KnightSword, 40) | Ninja Gear (20) | 150 | 1 | 40 | 2 | 188 |
+| Cloud | Materia Blade Plus id=256 (Sword, 10) | Ninja Gear (20) | 100 | 1 | 10 | 2 | 108 |
+| Bow | Artemis Bow (Bow, 10) | Ninja Gear (20) | 80 | 0 | 0 | 2 | 78 |
+| no-attacker | (none) | Ninja Gear (20) | 50 | 0 | 0 | 2 | 48 |
+
+Nails four things: (1) both sides read simultaneously (attackerSlots + full targetSlots in trace);
+(2) 16-bit word width is load-bearing - `id=256:Materia Blade Plus` is impossible as a byte;
+(3) the formula branches on weapon family from the catalog join (blade -> bonus; bow -> none);
+(4) target armor -> DR, and the no-attacker case still applies target-side DR (graceful degrade).
+
+### Evidence / tooling
+
+- `work/equipment-formula-offline-proof-2026-06-24.md` (verbatim trace)
+- profile `work/battle-runtime-settings.equipment-formula-dryrun.json`
+- scenarios `work/equipment-formula-sim-scenarios.json`
+- runner `codemod/.../settingssimulate`

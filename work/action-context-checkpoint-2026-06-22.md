@@ -4080,3 +4080,37 @@ across a fresh session. Evidence:
 Recorded in `12-...` 3.1.5, `05-battle-data-map.md`, roadmap U5/P13, `07-live-findings.md`, and
 `work/equipment-block-offsets-2026-06-24.md`. Remaining before wiring into live formulas: expose
 weapon/armor/family/element to the formula context (the next step).
+
+## 2026-06-24 Success: equipment flows into the formula and branches it (U5 Q4)
+
+The next step above is done. We wired the confirmed equipment offsets into the existing
+equipment-slot -> formula-context subsystem (just configuration: correct offsets + `UInt16` width)
+and proved the formula reads and branches on equipment of BOTH sides.
+
+Because formula computation is pure deterministic logic (no game timing), we proved it with the
+`settingssimulate` offline runner instead of fighting battle-start CT-charge flakiness in a live
+capture. The runner injects equipment at the real offsets and runs the identical pipeline that runs
+live: `ReadUInt16` -> `EquipmentSlotProbe` -> `AddSlotVariables` -> formula engine. The live
+equipment **read** was already proven separately by `[PRECLAMP-EQUIP]` (above), so offline is the
+right tool for the remaining (logic-only) question.
+
+Profile `work/battle-runtime-settings.equipment-formula-dryrun.json` (target slots Head/Body/Acc/
+Weapon/Shield UInt16; attacker Weapon/Shield UInt16; `ItemCatalogPath`). Demo formula: bladed
+weapon family (sword/knightsword/katana/ninjablade) adds its `weaponPower`; target body
+`armorHpBonus/10` is flat DR; `final = max(1, vanilla + weaponBonus - armorDr)`.
+
+4/4 scenarios pass (`work/equipment-formula-sim-scenarios.json`):
+
+- Ramza Chaos Blade (KnightSword WP40) vs Ninja (Ninja Gear armorHP20): vanilla 150 -> 188.
+- Cloud Materia Blade Plus **id=256** (Sword WP10): vanilla 100 -> 108 (id=256 proves UInt16 width).
+- Bow user Artemis Bow (non-bladed): vanilla 80 -> 78 (bladed=0, weaponBonus suppressed).
+- No attacker: vanilla 50 -> 48 (target armor DR still applies; attacker terms zero out gracefully).
+
+Why it matters: this is the U5 payoff and a core project-goal demonstration - a custom damage
+formula depending on attributes AND equipment of both attacker and target, end to end. Success
+criteria U5.1-U5.3 (branch on attacker weapon family; branch on target armor; logs show item id +
+family + derived tags for both sides) are demonstrated.
+
+Evidence `work/equipment-formula-offline-proof-2026-06-24.md` (verbatim trace). Also recorded in
+roadmap U5 and `07-live-findings.md`. Remaining: flip to a real (non-dry-run) equipment-derived
+rewrite live, and design the GC DR tag scheme (U5 Q3, Q5).

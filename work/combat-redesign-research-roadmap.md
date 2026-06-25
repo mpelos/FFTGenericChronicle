@@ -673,8 +673,19 @@ units (incl. dual-wield, two-handed, shield, and a monster with all-zero slots),
 existing dumps with zero new captures. Q2 (roster mapping) is moot - equipment is self-contained in
 the unit struct. See P13, `12-...` 3.1.5, and `work/equipment-block-offsets-2026-06-24.md`. Remaining:
 live read-back validated at the damage frame (Ramza basic attack on Ninja, fresh session: the
-runtime read both sides' full block correctly via `[PRECLAMP-EQUIP]`). Remaining: expose to formula
-context (weapon/armor/family/element) and design GC DR tags (Q3-Q5).
+runtime read both sides' full block correctly via `[PRECLAMP-EQUIP]`).
+
+Update (2026-06-24, equipment-in-formula): Q4 is answered and success criteria 1-3 are
+demonstrated. The equipment read flows into the formula context and the formula branches on it,
+proven deterministically offline (same `ReadUInt16` -> `EquipmentSlotProbe` -> `AddSlotVariables`
+-> formula-engine path that runs live). 4/4 scenarios pass: attacker weapon family gates a
+weapon-power bonus (Chaos Blade KnightSword / Materia Blade Plus Sword -> bonus; Artemis Bow ->
+none), target body armor gives DR (Ninja Gear armorHpBonus 20 -> DR 2), id=256 confirms the 16-bit
+word width is load-bearing, and the no-attacker case still applies target-side DR. Profile
+`work/battle-runtime-settings.equipment-formula-dryrun.json`, scenarios
+`work/equipment-formula-sim-scenarios.json`, evidence
+`work/equipment-formula-offline-proof-2026-06-24.md`. Remaining: flip to a real (non-dry-run)
+equipment-derived rewrite live, and design GC DR tags (Q3, Q5).
 
 Why this matters:
 
