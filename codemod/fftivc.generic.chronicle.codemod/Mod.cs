@@ -157,6 +157,7 @@ public class Mod : ModBase
     private int _hookRegisterPointerScanLogs;
     private int _preClampPointerScanLogs;
     private int _preClampActorDumpLogs;
+    private int _preClampActorCtxLogs;
     private int _hpEventProbeLogs;
     private int _actionBoundaryProbeLogs;
     private int _preClampFormulaCandidateLogs;
@@ -976,6 +977,7 @@ public class Mod : ModBase
 
             Line(FormatPreClampDamageRewriteHit(sequence, slot, nowTick));
             LogPreClampPointerScanIfEnabled(sequence, slot, nowTick);
+            ResolveAndLogActorContextIfEnabled(sequence, slot, nowTick);
             needsFlush = true;
         }
 
@@ -3151,6 +3153,92 @@ public class Mod : ModBase
         }
 
         Line($"[PRECLAMP-ACTOR-DUMP root=0x{root:X} unitOff=+0x{unitOffset:X} unit=0x{unitValue:X}/id=0x{observation.Unit.CharId:X2} bytes={dumpBytes}] {string.Join(" ", bytes)}");
+    }
+
+    // Observe-only memory-only action-context resolver (register book 2.4). From the pre-clamp frame:
+    //   target   = pre-clamp unit pointer
+    //   caster   = stack/register actor (root whose +UnitOffset is a registered unit) whose unit != target
+    //   actionId = caster actor + ActionIdOffset
+    // Emits [PRECLAMP-ACTOR-CTX] for head-to-head comparison with the pending tracker / CT. No behavior
+    // change. Correlate with [PENDING-ACTION-MATCH]/[CTX] for the same target+now in analysis.
+    private void ResolveAndLogActorContextIfEnabled(int sequence, int slot, long nowTick)
+    {
+        if (!_settings.PreClampResolveActorContext) return;
+        if (_preClampActorCtxLogs >= Math.Clamp(_settings.PreClampActorContextMaxLogs, 0, 1000)) return;
+
+        nint targetPtr = Marshal.ReadIntPtr(_preClampDamageRewriteBuf, slot + P_UNIT);
+        int targetId = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_ID);
+        int oldDebit = Marshal.ReadInt32(_preClampDamageRewriteBuf, slot + P_OLD_DEBIT);
+        int unitOff = _settings.PreClampActorStructUnitOffset;
+        int actOff = _settings.PreClampActorActionIdOffset;
+
+        // Candidate roots: captured pre-clamp registers + stack slots.
+        var roots = new List<nint>(ReadPreClampRegisters(slot));
+        byte[] stackDump = ReadPreClampBytes(slot, P_STACK_DUMP, PRECLAMP_STACK_DUMP_SIZE);
+        for (int off = 0; off + IntPtr.Size <= stackDump.Length; off += IntPtr.Size)
+            roots.Add((nint)BitConverter.ToInt64(stackDump, off));
+
+        // An actor struct is a root whose +unitOff dereferences to a registered unit.
+        var actors = new List<(nint actorBase, nint unit, int unitId)>();
+        var seen = new HashSet<nint>();
+        foreach (var root in roots)
+        {
+            if (root == 0 || !seen.Add(root)) continue;
+            if (_unitObservations.ContainsKey(root)) continue; // a unit struct, not an actor wrapper
+            if (!TryReadLivePtr(root + unitOff, out var linked)) continue;
+            if (!_unitObservations.TryGetValue(linked, out var obs)) continue;
+            actors.Add((root, linked, obs.Unit.CharId));
+        }
+
+        var casterActors = actors.Where(a => a.unit != targetPtr).ToList();
+        var distinctCasters = casterActors.Select(a => a.unit).Distinct().ToList();
+
+        string casterText, actionText, verdict;
+        if (distinctCasters.Count == 1)
+        {
+            var c = casterActors[0];
+            int actionId = TryReadLiveU16(c.actorBase + actOff, out var aid) ? aid : -1;
+            casterText = $"caster=0x{c.unit:X}/id=0x{c.unitId:X2} casterActor=0x{c.actorBase:X}";
+            actionText = $"actionId={actionId}";
+            verdict = "resolved";
+        }
+        else if (distinctCasters.Count == 0)
+        {
+            casterText = "caster=none";
+            actionText = "actionId=-1";
+            verdict = "no-caster-actor";
+        }
+        else
+        {
+            casterText = "caster=ambiguous(" + string.Join(",", distinctCasters.Select(u => $"0x{u:X}")) + ")";
+            actionText = "actionId=-1";
+            verdict = "ambiguous";
+        }
+
+        _preClampActorCtxLogs++;
+        string actorList = actors.Count == 0
+            ? "none"
+            : string.Join(",", actors.Select(a => $"0x{a.actorBase:X}->id=0x{a.unitId:X2}"));
+        Line($"[PRECLAMP-ACTOR-CTX event={sequence} now={nowTick} target=0x{targetPtr:X}/id=0x{targetId:X2} " +
+             $"oldDebit={oldDebit} {casterText} {actionText} verdict={verdict} actors=[{actorList}]");
+    }
+
+    private static bool TryReadLivePtr(nint addr, out nint val)
+    {
+        val = 0;
+        var buf = new byte[IntPtr.Size];
+        if (!CurrentProcessMemory.TryRead(addr, buf, out _)) return false;
+        val = (nint)BitConverter.ToInt64(buf, 0);
+        return true;
+    }
+
+    private static bool TryReadLiveU16(nint addr, out int val)
+    {
+        val = 0;
+        var buf = new byte[2];
+        if (!CurrentProcessMemory.TryRead(addr, buf, out _)) return false;
+        val = buf[0] | (buf[1] << 8);
+        return true;
     }
 
     private void LogUnknownDiffs(nint unitPtr, int id, byte[] raw)
@@ -5732,6 +5820,15 @@ internal sealed class RuntimeSettings
     public int PreClampActorStructUnitOffset { get; set; } = 0x148;
     public int PreClampActorStructDumpMaxLogs { get; set; } = 32;
 
+    // Observe-only memory-only action-context resolver. At the pre-clamp damage frame, derive
+    // caster + action id from the battle actor array (register book 2.4): caster = stack/register actor
+    // whose +PreClampActorStructUnitOffset != target; actionId = caster actor + PreClampActorActionIdOffset.
+    // Emits [PRECLAMP-ACTOR-CTX] so it can be compared head-to-head with the pending tracker / CT before
+    // being made primary. Does not change behavior.
+    public bool PreClampResolveActorContext { get; set; } = false;
+    public int PreClampActorActionIdOffset { get; set; } = 0x142;
+    public int PreClampActorContextMaxLogs { get; set; } = 64;
+
     // Actor probe: on each HP damage event, snapshot a small byte window of EVERY registered unit so we can
     // find which unit just acted (the attacker) by its turn-state/CT signature. Window is JSON-tunable (no
     // rebuild) so we can widen/narrow the search. Goal: map reliable attacker resolution + a pre-damage signal.
@@ -5832,5 +5929,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

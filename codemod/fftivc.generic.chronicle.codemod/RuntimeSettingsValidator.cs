@@ -163,6 +163,16 @@ internal static class RuntimeSettingsValidator
                     report.Error("PreClampActorStructDumpMaxLogs", "PreClampActorStructDumpMaxLogs must be nonnegative.");
                 report.Warn("PreClampActorStructDumpEnabled", "actor-struct dumps are read-only but verbose; use only for short controlled RE captures.");
             }
+            if (settings.PreClampResolveActorContext)
+            {
+                if (settings.PreClampActorStructUnitOffset < 0 || settings.PreClampActorStructUnitOffset > 0x4000)
+                    report.Error("PreClampActorStructUnitOffset", "PreClampActorStructUnitOffset must be within 0..0x4000.");
+                if (settings.PreClampActorActionIdOffset < 0 || settings.PreClampActorActionIdOffset > 0x4000)
+                    report.Error("PreClampActorActionIdOffset", "PreClampActorActionIdOffset must be within 0..0x4000.");
+                if (settings.PreClampActorContextMaxLogs < 0)
+                    report.Error("PreClampActorContextMaxLogs", "PreClampActorContextMaxLogs must be nonnegative.");
+                report.Warn("PreClampResolveActorContext", "memory-only actor-context resolver is observe-only (logs [PRECLAMP-ACTOR-CTX]); use for controlled RE captures.");
+            }
             if (settings.PreClampFormulaPlanEnabled)
             {
                 if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)

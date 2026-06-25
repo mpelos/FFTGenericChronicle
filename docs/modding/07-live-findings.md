@@ -867,8 +867,11 @@ caster-only, targets 0); the caster-by-elimination discriminator also fired for 
 attack (both attacker and target actor structs on the pre-clamp stack); basic attack carries action
 id 0 (weapon identity must come from equipment, U5).
 
-Open: implement as a live resolver; test overlapping pending actions and counters; confirm actor RVA
-stability across a different battle/save (both captures were the same battle).
+Resolver: an observe-only memory-only resolver (`[PRECLAMP-ACTOR-CTX]`) is implemented and validated
+head-to-head for Cross Slash AoE (2026-06-24) - both hits `caster=Cloud actionId=258` from the actor
+array, agreeing 100% with the pending tracker, no CT; `no-caster-actor` for credit/tick events.
+Open: overlapping pending casters, counters, immediate-basic head-to-head, actor RVA stability across
+a different battle/save, then promote to primary (gated on oldDebit>0).
 
 Evidence:
 
@@ -876,3 +879,4 @@ Evidence:
 - `work/live-captures/battleprobe_log.executing-action-actor-dump-probe-resolved-cross-slash-agrias-ninja.snapshot.txt`
 - `work/live-captures/battleprobe_log.actor-dump-braver-agrias.snapshot.txt`
 - `work/live-captures/battleprobe_log.actor-dump-basic-agrias-beowulf.snapshot.txt`
+- `work/live-captures/battleprobe_log.executing-action-resolver-probe-cross-slash-agrias-ninja.snapshot.txt`

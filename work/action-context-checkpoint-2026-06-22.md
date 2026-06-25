@@ -3984,3 +3984,50 @@ Still open before the redesign can rely on this:
 4. Actor-array RVA/layout stability across a DIFFERENT battle/save (both runs so far were the same
    battle, so the matching addresses are not yet a real stability proof).
 5. Weapon/action identity for basic attacks via equipment (U5).
+
+## 2026-06-24 Live Result: memory-only resolver validated head-to-head
+
+Implemented an observe-only memory-only action-context resolver at the pre-clamp damage frame and ran
+it head-to-head against the pending tracker / CT. Profile:
+`work/battle-runtime-settings.executing-action-resolver-probe.json` (resolver on, ptrscan on for
+cross-check, actor dump off, no HP/MP writes). New log line: `[PRECLAMP-ACTOR-CTX ...]`.
+
+Action: Cloud Cross Slash AoE on Agrias (+Ninja). Result: Ninja `-273`, Agrias `-115`, next Ramza.
+
+Artifact:
+
+- `work/live-captures/battleprobe_log.executing-action-resolver-probe-cross-slash-agrias-ninja.snapshot.txt`
+
+### Result: resolver agrees 100% with the pending tracker, memory-only
+
+Real damage events (oldDebit > 0):
+
+```text
+[PRECLAMP-ACTOR-CTX event=2 target=Ninja  oldDebit=273 caster=Cloud(0x32) casterActor=0x140D32FC0 actionId=258 verdict=resolved actors=[Cloud,Ninja]]
+[PRECLAMP-ACTOR-CTX event=3 target=Agrias oldDebit=115 caster=Cloud(0x32) casterActor=0x140D32FC0 actionId=258 verdict=resolved actors=[Agrias,Cloud]]
+```
+
+Pending tracker for the same events: both `resolved=Cloud/id=0x32 act=258 source=pending-clear
+confidence=damage-cache`. So the two independent paths agree: caster=Cloud, action=258, for both AoE
+targets. The resolver used only the actor array (`caster = stack actor whose +0x148 != target`,
+`actionId = caster_actor + 0x142`), with no CT and no pending state.
+
+Discriminator behaved correctly per target: Ninja hit actors `[Cloud, Ninja]` -> caster Cloud; Agrias
+hit actors `[Agrias, Cloud]` -> caster Cloud.
+
+Credit/tick events (oldDebit = 0, events 1 and 4): only the target's own actor was on the stack, so
+`verdict=no-caster-actor`. The resolver naturally separates real actions (a distinct caster actor is
+present) from passive credits/ticks. When made primary, gate it on `oldDebit > 0`.
+
+### Status: milestone reached (resolver implemented + validated for AoE)
+
+Committed. Still open before making it the primary attacker/action source:
+
+1. Overlapping/simultaneous pending casters (two charged actions resolving close together): confirm
+   only the resolving caster's actor is on the damage stack, or add a tie-break.
+2. Counters / reactions (source/target inversion).
+3. Immediate basic attack head-to-head (action id 0; caster still resolvable) - actor stack presence
+   already seen, but run it through the resolver line explicitly.
+4. Actor-array RVA/layout stability across a DIFFERENT battle/save.
+5. Then: promote `[PRECLAMP-ACTOR-CTX]` to primary `DamageEvent.Attacker`/`Action` (gated on
+   oldDebit>0), keep pending tracker + CT as fallback/diagnostic.

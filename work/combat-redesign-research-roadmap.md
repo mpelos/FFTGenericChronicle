@@ -433,9 +433,13 @@ actionId = caster_actor + 0x142                     (258 Cross Slash, 257 Braver
 ```
 
 Validated across action families (Cross Slash, Braver, basic attack). This is the strongest path to
-retiring CT (U2) and a robust delayed/overlapping resolver (U4). Remaining: implement as a live
-resolver, test overlapping pending casters and counters, and confirm RVA/layout stability across a
-different battle/save (both captures so far were the same battle).
+retiring CT (U2) and a robust delayed/overlapping resolver (U4).
+
+Update (2026-06-24): an observe-only memory-only resolver (`[PRECLAMP-ACTOR-CTX]`) is implemented and
+validated head-to-head for Cross Slash AoE - it resolved both hits to `caster=Cloud actionId=258`
+from the actor array, agreeing 100% with the pending tracker, no CT; and returned `no-caster-actor`
+for credit/tick events. Remaining: overlapping pending casters, counters, immediate-basic head-to-head,
+RVA stability across a different battle, then promote to primary (gated on oldDebit>0).
 
 Implication:
 

@@ -263,9 +263,16 @@ Validated live (2026-06-24) across action families:
 - a basic attack carries action id `0` in the actor (matches `unit+0x1A2=0`), so basic = implicit
   weapon attack and its weapon identity must come from equipment (U5), not this field.
 
-Still open: implement this as a live resolver (head-to-head vs the pending tracker), validate against
-overlapping/simultaneous pending actions and counters/reactions, and confirm actor-array RVA/layout
-stability across a DIFFERENT battle/save (both captures so far were the same battle).
+Resolver status: an observe-only memory-only resolver is implemented (`PreClampResolveActorContext`,
+log line `[PRECLAMP-ACTOR-CTX]`) and validated head-to-head for Cross Slash AoE (2026-06-24): it
+resolved both hits to `caster=Cloud actionId=258` purely from the actor array, agreeing 100% with the
+pending tracker, with no CT. It also returns `no-caster-actor` for credit/tick events (oldDebit=0),
+naturally separating real actions from passive ticks.
+
+Still open before making it primary: overlapping/simultaneous pending casters, counters/reactions,
+an explicit immediate-basic head-to-head, and actor-array RVA/layout stability across a DIFFERENT
+battle/save (captures so far were the same battle). Then promote `[PRECLAMP-ACTOR-CTX]` to primary
+`DamageEvent.Attacker`/`Action` gated on `oldDebit>0`, keeping the pending tracker + CT as fallback.
 
 Probe support: `PreClampActorStructDumpEnabled` / `...DumpBytes` / `...UnitOffset` (default `0x148`) /
 `...DumpMaxLogs` emit `[PRECLAMP-ACTOR-DUMP root=0x... unit=0x.../id=0x.. bytes=N] <hex>` for any
