@@ -1,0 +1,14 @@
+{
+  "_note": "Self-test for tools/map_attributes.py using already-confirmed equipment ids as ground truth. Expect head->+0x1A:w, body->+0x1C:w, accessory->+0x1E:w, weapon->+0x20:w, all SOLID. weapon=256 (Cloud) forces the word interpretation (a byte would read 0).",
+  "names": { "0x03": "Orlandeau?", "0x81": "Archer?", "0x82": "Monster?" },
+  "known": { "head": "0x1A:w", "body": "0x1C:w", "accessory": "0x1E:w", "weapon": "0x20:w" },
+  "units": {
+    "0x01": { "head": 156, "body": 185, "accessory": 218, "weapon": 37 },
+    "0x1E": { "head": 167, "body": 207, "accessory": 216, "weapon": 30 },
+    "0x1F": { "head": 167, "body": 206, "accessory": 217, "weapon": 30 },
+    "0x32": { "head": 155, "body": 183, "accessory": 214, "weapon": 256 },
+    "0x80": { "head": 168, "body": 197, "accessory": 236, "weapon": 17 },
+    "0x03": { "head": 154, "body": 184, "accessory": 218, "weapon": 35 },
+    "0x81": { "head": 168, "body": 198, "accessory": 232, "weapon": 89 }
+  }
+}

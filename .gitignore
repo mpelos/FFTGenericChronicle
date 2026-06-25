@@ -45,6 +45,9 @@ tools/*
 !tools/check_targeting_challenge.py
 !tools/build_vanilla_reference.py
 !tools/analyze_equipment_dumps.py
+!tools/map_attributes.py
+!tools/dump_levels.py
+!tools/profile_struct.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/

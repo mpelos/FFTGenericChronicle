@@ -1,0 +1,12 @@
+{
+  "_note": "Ground truth from IMG_9915 (Ninja 'Rion', id 0x80) to validate doc-05 numeric offsets against the level-71 dump. Level is given for all 5 named units so the level-offset gets a real 5-unit check; Ninja-specific values (maxHp/maxMp/brave/faith) validate against its L71 dump.",
+  "names": { "0x80": "Ninja/Rion" },
+  "known": { "level": "0x29:b", "maxHp": "0x32:w", "maxMp": "0x36:w", "brave": "0x2B:b", "faith": "0x2D:b" },
+  "units": {
+    "0x01": { "level": 75 },
+    "0x1E": { "level": 69 },
+    "0x1F": { "level": 68 },
+    "0x32": { "level": 67 },
+    "0x80": { "level": 71, "maxHp": 377, "maxMp": 41, "brave": 87, "faith": 70 }
+  }
+}

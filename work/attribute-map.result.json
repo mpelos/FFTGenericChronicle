@@ -1,0 +1,829 @@
+{
+  "attributes": {
+    "level": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 41,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 41,
+          "kind": "b",
+          "matches": 5
+        }
+      ],
+      "ground_truth": {
+        "0x01": 75,
+        "0x1F": 68,
+        "0x1E": 69,
+        "0x32": 67,
+        "0x80": 71
+      }
+    },
+    "pa": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 62,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 62,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 56,
+          "kind": "b",
+          "matches": 3
+        },
+        {
+          "offset": 18,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 58,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 60,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 68,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 69,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 70,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 20,
+        "0x1F": 5,
+        "0x1E": 11,
+        "0x32": 14,
+        "0x80": 15
+      }
+    },
+    "ma": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 63,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 63,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 57,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 2,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 9,
+        "0x1F": 17,
+        "0x1E": 23,
+        "0x32": 13,
+        "0x80": 7
+      }
+    },
+    "speed": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 64,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 64,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 64,
+          "kind": "w",
+          "matches": 5
+        },
+        {
+          "offset": 58,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 80,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 58,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 10,
+        "0x1F": 9,
+        "0x1E": 12,
+        "0x32": 9,
+        "0x80": 16
+      }
+    },
+    "move": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 66,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 66,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 66,
+          "kind": "n0",
+          "matches": 5
+        },
+        {
+          "offset": 42,
+          "kind": "n1",
+          "matches": 3
+        },
+        {
+          "offset": 43,
+          "kind": "n1",
+          "matches": 3
+        },
+        {
+          "offset": 84,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 75,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 84,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 19,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 6,
+        "0x1F": 6,
+        "0x1E": 5,
+        "0x32": 4,
+        "0x80": 6
+      }
+    },
+    "jump": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 67,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 67,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 67,
+          "kind": "n0",
+          "matches": 5
+        },
+        {
+          "offset": 7,
+          "kind": "b",
+          "matches": 4
+        },
+        {
+          "offset": 7,
+          "kind": "n0",
+          "matches": 4
+        },
+        {
+          "offset": 125,
+          "kind": "n1",
+          "matches": 3
+        },
+        {
+          "offset": 18,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 9,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 44,
+          "kind": "n1",
+          "matches": 2
+        }
+      ],
+      "ground_truth": {
+        "0x01": 3,
+        "0x1F": 3,
+        "0x1E": 3,
+        "0x32": 3,
+        "0x80": 4
+      }
+    },
+    "brave": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 42,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 42,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 43,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 9,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 9,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 97,
+        "0x1F": 97,
+        "0x1E": 97,
+        "0x32": 97,
+        "0x80": 97
+      }
+    },
+    "faith": {
+      "verdict": "AMBIG(3)",
+      "best": {
+        "offset": 44,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 44,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 45,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 45,
+          "kind": "w",
+          "matches": 5
+        }
+      ],
+      "ground_truth": {
+        "0x01": 70,
+        "0x1F": 65,
+        "0x1E": 63,
+        "0x32": 65,
+        "0x80": 72
+      }
+    },
+    "zodiac": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 9,
+        "kind": "n1",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 9,
+          "kind": "n1",
+          "matches": 5
+        },
+        {
+          "offset": 67,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 67,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 44,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 45,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 90,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 100,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 7,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 5,
+        "0x1F": 6,
+        "0x1E": 3,
+        "0x32": 10,
+        "0x80": 4
+      }
+    },
+    "gender": {
+      "verdict": "AMBIG(19)",
+      "best": {
+        "offset": 57,
+        "kind": "n1",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 57,
+          "kind": "n1",
+          "matches": 5
+        },
+        {
+          "offset": 66,
+          "kind": "bit0",
+          "matches": 5
+        },
+        {
+          "offset": 60,
+          "kind": "bit1",
+          "matches": 5
+        },
+        {
+          "offset": 59,
+          "kind": "bit2",
+          "matches": 5
+        },
+        {
+          "offset": 64,
+          "kind": "bit2",
+          "matches": 5
+        },
+        {
+          "offset": 2,
+          "kind": "bit4",
+          "matches": 5
+        },
+        {
+          "offset": 44,
+          "kind": "bit4",
+          "matches": 5
+        },
+        {
+          "offset": 45,
+          "kind": "bit4",
+          "matches": 5
+        }
+      ],
+      "ground_truth": {
+        "0x01": 0,
+        "0x1F": 0,
+        "0x1E": 1,
+        "0x32": 0,
+        "0x80": 0
+      }
+    },
+    "weaponAtkR": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 68,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 68,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 68,
+          "kind": "w",
+          "matches": 4
+        },
+        {
+          "offset": 2,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 56,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 62,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 69,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 40,
+        "0x1F": 14,
+        "0x1E": 14,
+        "0x32": 16,
+        "0x80": 15
+      }
+    },
+    "shieldPhysParry": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 74,
+        "kind": "b",
+        "matches": 1,
+        "n": 1
+      },
+      "candidates": [
+        {
+          "offset": 74,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 74,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 50
+      }
+    },
+    "shieldMagParry": {
+      "verdict": "AMBIG(4)",
+      "best": {
+        "offset": 19,
+        "kind": "b",
+        "matches": 1,
+        "n": 1
+      },
+      "candidates": [
+        {
+          "offset": 19,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 78,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 84,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 19,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 25
+      }
+    },
+    "physEva": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 75,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 75,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 75,
+          "kind": "w",
+          "matches": 5
+        },
+        {
+          "offset": 60,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 2,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 4,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 10,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 11,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 12,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 0,
+        "0x1F": 5,
+        "0x1E": 5,
+        "0x32": 20,
+        "0x80": 30
+      }
+    },
+    "maxHp": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 48,
+        "kind": "w",
+        "matches": 4,
+        "n": 4
+      },
+      "candidates": [
+        {
+          "offset": 48,
+          "kind": "w",
+          "matches": 4
+        },
+        {
+          "offset": 50,
+          "kind": "w",
+          "matches": 4
+        }
+      ],
+      "ground_truth": {
+        "0x1F": 314,
+        "0x1E": 322,
+        "0x32": 428,
+        "0x80": 277
+      }
+    },
+    "maxMp": {
+      "verdict": "AMBIG(4)",
+      "best": {
+        "offset": 52,
+        "kind": "b",
+        "matches": 4,
+        "n": 4
+      },
+      "candidates": [
+        {
+          "offset": 52,
+          "kind": "b",
+          "matches": 4
+        },
+        {
+          "offset": 54,
+          "kind": "b",
+          "matches": 4
+        },
+        {
+          "offset": 52,
+          "kind": "w",
+          "matches": 4
+        },
+        {
+          "offset": 54,
+          "kind": "w",
+          "matches": 4
+        }
+      ],
+      "ground_truth": {
+        "0x1F": 180,
+        "0x1E": 232,
+        "0x32": 89,
+        "0x80": 41
+      }
+    },
+    "weaponAtkL": {
+      "verdict": "AMBIG(14)",
+      "best": {
+        "offset": 56,
+        "kind": "b",
+        "matches": 1,
+        "n": 1
+      },
+      "candidates": [
+        {
+          "offset": 56,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 62,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 68,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 69,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 34,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 38,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 56,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 62,
+          "kind": "n0",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x80": 15
+      }
+    },
+    "weaponParryR": {
+      "verdict": "AMBIG(4)",
+      "best": {
+        "offset": 70,
+        "kind": "b",
+        "matches": 1,
+        "n": 1
+      },
+      "candidates": [
+        {
+          "offset": 70,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 22,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 70,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 26,
+          "kind": "n1",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x80": 10
+      }
+    },
+    "weaponParryL": {
+      "verdict": "AMBIG(7)",
+      "best": {
+        "offset": 71,
+        "kind": "b",
+        "matches": 1,
+        "n": 1
+      },
+      "candidates": [
+        {
+          "offset": 71,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 71,
+          "kind": "w",
+          "matches": 1
+        },
+        {
+          "offset": 28,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 48,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 50,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 71,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 3,
+          "kind": "n1",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x80": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_note": "Master GT v2. Numeric values reconciled to the level-matched dumps (engine memory = authoritative; my photo OCR erred on some hundreds/tens digits and on Speed for Agrias/Beowulf/Ninja). Ramza maxHp/maxMp omitted (image L76 vs dump L75). Gender encoded as classic FFT bit flags: Male=bit7(0x80), Female=bit6(0x40) -> validate at 0x06:bit6 with Male0/Female1. New combat sub-block (weapon atk/parry, shield parry, phys evasion) validated against the More screens.",
+  "names": { "0x80": "Ninja/Rion" },
+  "known": {
+    "level": "0x29:b", "maxHp": "0x32:w", "maxMp": "0x36:w",
+    "pa": "0x3E:b", "ma": "0x3F:b", "speed": "0x40:b", "move": "0x42:b", "jump": "0x43:b",
+    "brave": "0x2B:b", "faith": "0x2D:b", "zodiac": "0x09:n1", "gender": "0x06:bit6",
+    "weaponAtkR": "0x44:b", "weaponAtkL": "0x45:b", "weaponParryR": "0x46:b", "weaponParryL": "0x47:b",
+    "shieldPhysParry": "0x4A:b", "physEva": "0x4B:b", "shieldMagParry": "0x4E:b"
+  },
+  "units": {
+    "0x01": { "level": 75, "pa": 20, "ma": 9, "speed": 10, "move": 6, "jump": 3, "brave": 97, "faith": 70, "zodiac": 5, "gender": 0, "weaponAtkR": 40, "shieldPhysParry": 50, "shieldMagParry": 25, "physEva": 0 },
+    "0x1F": { "level": 68, "maxHp": 314, "maxMp": 180, "pa": 5, "ma": 17, "speed": 9, "move": 6, "jump": 3, "brave": 97, "faith": 65, "zodiac": 6, "gender": 0, "weaponAtkR": 14, "physEva": 5 },
+    "0x1E": { "level": 69, "maxHp": 322, "maxMp": 232, "pa": 11, "ma": 23, "speed": 12, "move": 5, "jump": 3, "brave": 97, "faith": 63, "zodiac": 3, "gender": 1, "weaponAtkR": 14, "physEva": 5 },
+    "0x32": { "level": 67, "maxHp": 428, "maxMp": 89, "pa": 14, "ma": 13, "speed": 9, "move": 4, "jump": 3, "brave": 97, "faith": 65, "zodiac": 10, "gender": 0, "weaponAtkR": 16, "physEva": 20 },
+    "0x80": { "level": 71, "maxHp": 277, "maxMp": 41, "pa": 15, "ma": 7, "speed": 16, "move": 6, "jump": 4, "brave": 97, "faith": 72, "zodiac": 4, "gender": 0, "weaponAtkR": 15, "weaponAtkL": 15, "weaponParryR": 10, "weaponParryL": 5, "physEva": 30 }
+  }
+}
