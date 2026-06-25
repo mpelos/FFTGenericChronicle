@@ -7,8 +7,9 @@ reconciled to the **level-matched** dumps (engine memory = authoritative). 3 mil
 - The battle-unit struct is now **comprehensively mapped** — ~40 attributes CONFIRMED, including the
   three things that were still open: **job id**, the **job growth/multiplier block**, and the
   **raw/base stats**. The MEDIUM tier is now empty (everything got promoted or stayed CONFIRMED).
-- **One thing needs 5 seconds of your input:** Cloud's job. The engine says **Samurai (88)**; I had
-  read his screen as "Soldier". The mapping is not in doubt — just the label. See "Needs you" below.
+- ~~**One thing needs 5 seconds of your input:** Cloud's job.~~ **RESOLVED:** user confirmed Cloud is
+  **Samurai (88)** — primary Iaido, secondary Limit (I'd read primary/secondary swapped). Job @ +0x03
+  is now a clean 5/5. The engine value was right all along.
 - The rest of what's unmapped genuinely needs **new, targeted captures** (status/element/position/
   ability-varied units) — flagged clearly for when you want to chase them.
 
@@ -36,12 +37,12 @@ Full map: `work/battle-unit-struct-attribute-map.md`. Canonical struct: `docs/mo
 Master fixture (all 33 known offsets PASS): `work/gt-master.json`. Complete 0x00..0x180 offset
 inventory: `work/struct-profile-full.txt`. Raw-stat proof: `work/raw-stats-equipment-proof-2026-06-25.md`.
 
-## Needs you (1 quick confirm)
-- **Cloud's job label.** Dump byte +0x03 = 88 = Samurai (per baseline_jobs.csv). I had labelled him
-  "Soldier" (job 50, command "Limit") from the screenshot. Either I misread (his primary may actually
-  be Iaido = Samurai) or he was re-classed before these captures. Next time you're in-game, glance at
-  Cloud's class on the status screen and tell me Samurai or Soldier. (Doesn't change any offset — the
-  other four units anchor +0x03=job.)
+## Needs you — RESOLVED
+- ~~**Cloud's job label.**~~ Confirmed by user: Cloud is **Samurai (88)**. His primary command is
+  Iaido (Samurai) and **Limit is his secondary** (signature) — my screenshot read had primary/secondary
+  swapped. This matches the re-class pattern of the others (signature in the secondary slot). Job @
+  +0x03 is now a clean 5/5, every unit corroborated by both id and primary command. Nothing further
+  needed here.
 
 ## Flagged for later — needs NEW targeted captures (cannot do from these dumps)
 These can't reach confidence from full-HP / no-status / standing-still captures:

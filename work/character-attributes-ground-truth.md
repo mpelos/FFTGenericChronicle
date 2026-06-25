@@ -35,18 +35,18 @@ Job ids — **CONFIRMED** at +0x03 (byte); ids from `work/baseline_jobs.csv`.
 | Ramza | 0x01 | 76*/75dump | 569 | 86~ | 6 | 3 | 10~ | 20 | 9 | 97 | 70 | Virgo (5) | M (0) | Squire — job 160 (special story) |
 | Beowulf | 0x1F | 68 | 514 | 180 | 5 | 3 | 8 | 5 | 17 | 97 | 65 | Libra (6) | M (0) | Summoner — job 82 ✓ |
 | Agrias | 0x1E | 69 | 322 | 252 | 5 | 3 | 8 | 11 | 23 | 97 | 63 | Cancer (3) | F (1) | Black Mage — job 80 ✓ |
-| Cloud | 0x32 | 67 | 428 | 89 | 4 | 4 | 9 | 14 | 13 | 97 | 65 | Aquarius (10) | M (0) | Soldier? — job **88 = Samurai** in dump ⚠ |
+| Cloud | 0x32 | 67 | 428 | 89 | 4 | 4 | 9 | 14 | 13 | 97 | 65 | Aquarius (10) | M (0) | Samurai — job 88 ✓ (user-confirmed) |
 | Ninja/Rion | 0x80 | 71 | 377 | 41 | 6 | 4 | 8 | 15 | 7 | 97 | 72 | Leo (4) | M (0) | Ninja — job 89 ✓ |
 
 \* Ramza image L76 but dumps L75. Brave/Faith from user text (overrides my low-res reads).
 Ninja gender **DISCOVERED = Male (0x80)** via the +0x06 bit (≠ Agrias's Female 0x40).
 
-**Job-id confirmation:** +0x03 holds the job id. Four of five units corroborate it *twice over* — both
+**Job-id confirmation:** +0x03 holds the job id. **All five units corroborate it twice over** — both
 the id and the visible primary command agree: Beowulf Summon→Summoner(82), Agrias Black Magicks→Black
-Mage(80), Ninja Throw→Ninja(89), Ramza Mettle→Squire(special 160). **Cloud is the one open question:**
-I read his primary command as "Limit" (the Soldier command, job 50), but his dump byte is 88 = Samurai.
-Either I misread the screen or Cloud was re-classed to Samurai. The *mapping* (job@+0x03) is not in doubt
-— only Cloud's class label. **TODO(user): confirm Cloud's displayed job — Soldier or Samurai?**
+Mage(80), Ninja Throw→Ninja(89), Ramza Mettle→Squire(special 160), and Cloud Iaido→Samurai(88)
+(user-confirmed). Every unit is re-classed with its signature command in the **secondary** slot
+(Beowulf Spellblade, Agrias Holy Sword, Cloud Limit). My earlier screenshot read of Cloud had his
+primary/secondary swapped ("Limit" looked primary) — corrected. Job @ +0x03 is a clean 5/5.
 
 ## Per-unit detail (incl. evasion / weapon panel from More screens)
 
@@ -67,11 +67,12 @@ WeaponParry(R) 15%~.
 Equip: Runeblade · (empty) · Lambent Hat · Lordly Robe · Genji Gloves.
 Abilities: Black Magicks (primary) · Holy Sword (secondary) · Equip Swords (support) · Movement +2.
 
-### Cloud 0x32
+### Cloud 0x32  (Samurai — user-confirmed)
 EXP 98 · HP 428/428 · MP 89/89 · CT 100 · PhysEva 20% · MagEva 0% · WeaponAtk(R) 16 (Materia Blade+).
 Equip: Materia Blade+ · (empty, two-handed) · Genji Helm · Genji Armor · Red Shoes.
-Abilities: Limit (primary) · Iaido (secondary) · Mana Shield (reaction) · Equip Swords (support) ·
-Manafont (movement).
+Abilities: **Iaido (primary = Samurai command)** · **Limit (secondary = Cloud's signature)** ·
+Mana Shield (reaction) · Equip Swords (support) · Manafont (movement).
+(My earlier read had primary/secondary swapped; corrected per user.)
 
 ### Ninja "Rion" 0x80
 EXP 77 · HP 61/377 (current 61) · MP 41/41 · PhysEva 30% · WeaponAtk(R) 15 / (L) 15 (Iga/Koga) ·

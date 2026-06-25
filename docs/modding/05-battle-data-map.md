@@ -44,10 +44,9 @@ The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** eq
 `+0x24`/`+0x26` left-hand weapon/shield, all 16-bit `item_id` words.
 
 **MAPPED (2026-06-25, ground truth from 10 status/More screens of 5 units):**
-- `+0x03` **job id** (byte) - confirmed 5/5; corroborated twice for 4 units by both the id and the
-  visible primary command (Black Mage 80, Summoner 82, Ninja 89, Ramza special-Squire 160).
-  Classified VARIES-not-VOLATILE = stable per unit. (Cloud reads 88=Samurai vs a "Soldier" screen
-  read - flagged in the map doc; the offset itself is not in doubt.)
+- `+0x03` **job id** (byte) - confirmed 5/5; corroborated twice for all 5 units by both the id and the
+  visible primary command (Black Mage 80, Summoner 82, Ninja 89, Samurai 88 [Cloud, user-confirmed],
+  Ramza special-Squire 160). Classified VARIES-not-VOLATILE = stable per unit.
 - `+0x06` **gender flags** - bit7 0x80 Male, bit6 0x40 Female, bit5 0x20 Monster (classic FFT).
 - `+0x09` **zodiac** in the high nibble - classic order Aries0..Pisces11.
 - `+0x44/45` **weapon attack R/L** (effective), `+0x46/47` **weapon parry R/L %**, `+0x4A`

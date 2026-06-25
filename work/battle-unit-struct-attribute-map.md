@@ -18,7 +18,7 @@ full-HP/no-status captures).
 | Offset | Width | Attribute | Per-unit (Ra/Be/Ag/Cl/Ni) | Note |
 |---|---|---|---|---|
 | +0x00 | byte | Char/unit id | 01/1F/1E/32/80 | identity |
-| +0x03 | byte | **Job id** | 160/82/80/88/89 | 5/5; 80=Black Mage, 82=Summoner, 89=Ninja match visible status exactly. 160=Ramza special story-Squire (displays "Squire"). 88=Samurai for Cloud (engine value; see note). Classified VARIES-not-VOLATILE = stable per unit |
+| +0x03 | byte | **Job id** | 160/82/80/88/89 | 5/5, all user/command-corroborated: 80=Black Mage, 82=Summoner, 89=Ninja, 88=Samurai (Cloud, user-confirmed), 160=Ramza special story-Squire (displays "Squire"). Classified VARIES-not-VOLATILE = stable per unit |
 | +0x04 | byte | Team/group id | 0/0/0/0/0 | all player team |
 | +0x05 | byte | Friend/foe (bit 0x10) | — | prior live (doc05) |
 | +0x06 | byte | **Gender flags** | M/M/F/M/M | bit7 0x80=Male, bit6 0x40=Female, bit5 0x20=Monster (classic FFT). Ninja=Male (discovered) |
@@ -163,18 +163,14 @@ The engine dump is authoritative. My photo OCR of low-res screens erred on: Beow
 12/9/16). The dump values are used everywhere above. Ramza is L76 in the image but L75 in all
 dumps (leveled after the last capture) — his dumps are used only for level-independent attributes.
 
-**Cloud job name discrepancy (flagged):** the +0x03=job mapping is corroborated *twice over* for
-4 of 5 units — the stored id AND the visible primary command agree (Beowulf Summon→82, Agrias Black
-Magicks→80, Ninja Throw→89, Ramza Mettle→special-Squire 160). **Cloud is the sole tension:** his dump
-byte is 88 (= Samurai in `work/baseline_jobs.csv`), but I had read his primary command as "Limit"
-(the Soldier command, job 50). Innocent explanations: (a) I misread the low-res screen (Cloud's
-primary may actually be Iaido = Samurai), or (b) Cloud was re-classed to Samurai before these captures
-(user only confirmed *no job change yesterday→today*, not "never"); the engine value is authoritative
-either way, so the map uses 88. This does **not** weaken the offset mapping — that rests on the other
-four. Only Cloud's class *label* is open. **TODO(user): glance at Cloud's status screen — does it say
-Samurai (primary Iaido) or Soldier (primary Limit)?**
+**Cloud job — RESOLVED (user-confirmed Samurai).** The +0x03=job mapping is now corroborated *twice
+over* for **all 5 units** — the stored id AND the visible primary command agree: Beowulf Summon→82,
+Agrias Black Magicks→80, Ninja Throw→89, Ramza Mettle→special-Squire 160, and Cloud Iaido→Samurai 88.
+My earlier screenshot read had Cloud's primary/secondary swapped — his **primary is Iaido** (Samurai)
+and **Limit is his secondary** (signature command), matching the re-class pattern of the others
+(Beowulf Spellblade, Agrias Holy Sword as secondaries). The engine value (88) was right all along.
 
 ## Next steps
-1. ~~Map job~~ — DONE: job = +0x03 (CONFIRMED). (Confirm Cloud's displayed class name when convenient.)
+1. ~~Map job~~ — DONE: job = +0x03 (CONFIRMED, clean 5/5; Cloud's Samurai user-confirmed).
 2. Expose the CONFIRMED set in the formula context (attacker.* / target.*) — the project's core goal.
 3. Targeted captures for status/elemental/geometry (DEFER items).
