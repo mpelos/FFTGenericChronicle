@@ -626,9 +626,17 @@ Variables:   vanillaDamage vanillaDamageAbs vanillaHealing
              event.isMpLoss event.isMpGain event.isMpChange
              target.* or t.*:
                charId level hp maxHp mp maxMp team isFoe isAlly pa ma speed move jump brave faith
+               job zodiac genderFlags isMale isFemale isMonster maxBrave maxFaith
+               rawPa rawMa rawSpeed                       # base stats before equipment
+               weaponAtk weaponAtkL weaponParry weaponParryL shieldPhysParry shieldMagParry physEva
+               hpGrowth hpMult mpGrowth mpMult spdGrowth spdMult paGrowth paMult maGrowth maMult
              attacker.* or a.*:
                present inferred sourceRecent
                charId level hp maxHp mp maxMp team isFoe isAlly pa ma speed move jump brave faith
+               job zodiac genderFlags isMale isFemale isMonster maxBrave maxFaith
+               rawPa rawMa rawSpeed weaponAtk weaponAtkL weaponParry weaponParryL
+               shieldPhysParry shieldMagParry physEva
+               hpGrowth hpMult mpGrowth mpMult spdGrowth spdMult paGrowth paMult maGrowth maMult
              action.* or act.*:
                present sourceVanillaDamage signal vanillaDamage vanillaDamageAbs vanillaHealing
                vanillaMpChange vanillaMpLoss vanillaMpGain
@@ -726,6 +734,21 @@ Formula examples:
 if(a.sourceCt, max(1, a.pa * 10 - t.faith), vanillaDamage)
 if(a.sourceCounter, a.pa * 3, if(a.sourceCt, a.pa * 4, vanillaDamage))
 ```
+
+Newly-mapped attribute examples (job/zodiac/gender/raw stats/job growth, attacker and target):
+
+```text
+# weapon attack scaled by base PA and the job's PA multiplier (classic-FFT flavor)
+max(1, mulDiv(a.weaponAtk + a.rawPa, a.paMult, 100) - equipmentDr)
+# zodiac compatibility-style swing: same sign bonus, opposite sign penalty
+mulDiv(a.pa * 5, if(a.zodiac == t.zodiac, 125, if((a.zodiac + 6) % 12 == t.zodiac, 75, 100)), 100)
+# monster units hit harder; faith scales magic vs the target's faith
+if(a.isMonster, a.pa * 2, mulDiv(a.ma * 5, t.faith, 100))
+```
+
+These read the live struct via confirmed offsets, so they work for attacker and target alike once
+attacker context is resolved (`a.present`). Full offset/confidence map:
+`work/battle-unit-struct-attribute-map.md`.
 
 Resolved runtime-context logging:
 

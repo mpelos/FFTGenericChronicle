@@ -55,6 +55,31 @@ internal static class Program
         Check(expressionResult.FinalDamage == 30, $"attacker formula final damage expected 30, got {expressionResult.FinalDamage}");
         Check(expressionResult.DesiredHp == 20, $"attacker formula desired HP expected 20, got {expressionResult.DesiredHp}");
 
+        // Newly-mapped attribute variables (job/zodiac/gender/raw stats/job growth) wired into the
+        // formula context from confirmed struct offsets. Verifies byte, hi-nibble, and bit decoding.
+        var attrAtkRaw = new byte[0x180];
+        attrAtkRaw[0x03] = 88;     // job id (Samurai)
+        attrAtkRaw[0x06] = 0x80;   // gender flags: Male (bit7)
+        attrAtkRaw[0x09] = 0x4A;   // zodiac in hi-nibble -> 4 (low nibble ignored)
+        attrAtkRaw[0x38] = 15;     // raw/base PA
+        attrAtkRaw[0x8B] = 70;     // HP multiplier
+        attrAtkRaw[0x91] = 122;    // PA multiplier
+        var attrAttacker = new UnitSnapshot((nint)0x1500, 0x01, 71, 9999, 9999, 1, false, 20, 7, 16, 6, 4, 97, 72, attrAtkRaw, 41, 41);
+        var attrTgtRaw = new byte[0x180];
+        attrTgtRaw[0x06] = 0x40;   // gender flags: Female (bit6)
+        var attrTarget = new UnitSnapshot((nint)0x2500, 0x80, 50, 9999, 9999, 2, true, 5, 3, 6, 4, 3, 70, 60, attrTgtRaw, 18, 30);
+        var attrSettings = new RuntimeSettings
+        {
+            RewriteObservedDamage = true,
+            ApplyEquipmentDr = false,
+            FinalDamageFormula = "a.job + a.zodiac + a.isMale + a.rawPa + a.hpMult + a.paMult + t.isFemale",
+        };
+        var attrResult = new BattleFormulaEngine(attrSettings, catalog)
+            .Evaluate(new DamageEvent(attrTarget, 9999, 9979, 20, attrAttacker));
+        // 88 + 4 + 1 + 15 + 70 + 122 + 1 = 301
+        Check(attrResult.FinalDamage == 301, $"attribute formula expected 301, got {attrResult.FinalDamage}");
+        Check(attrResult.ShouldRewrite, "attribute formula should rewrite");
+
         var stagedSettings = new RuntimeSettings
         {
             RewriteObservedDamage = false,

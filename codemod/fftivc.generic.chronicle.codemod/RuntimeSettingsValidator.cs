@@ -842,6 +842,38 @@ internal static class RuntimeSettingsValidator
         context.Set($"{prefix}.jump", unit.Jump);
         context.Set($"{prefix}.brave", unit.Brave);
         context.Set($"{prefix}.faith", unit.Faith);
+
+        // Mirror of Mod.AddUnitVariables newly-mapped attributes so formulas using them validate.
+        int B(int offset) => Math.Max(0, unit.ReadByte(offset));
+        context.Set($"{prefix}.job", B(0x03));
+        context.Set($"{prefix}.zodiac", B(0x09) >> 4);
+        int genderFlags = B(0x06);
+        context.Set($"{prefix}.genderFlags", genderFlags);
+        context.Set($"{prefix}.isMale", (genderFlags & 0x80) != 0 ? 1 : 0);
+        context.Set($"{prefix}.isFemale", (genderFlags & 0x40) != 0 ? 1 : 0);
+        context.Set($"{prefix}.isMonster", (genderFlags & 0x20) != 0 ? 1 : 0);
+        context.Set($"{prefix}.maxBrave", B(0x2A));
+        context.Set($"{prefix}.maxFaith", B(0x2C));
+        context.Set($"{prefix}.rawPa", B(0x38));
+        context.Set($"{prefix}.rawMa", B(0x39));
+        context.Set($"{prefix}.rawSpeed", B(0x3A));
+        context.Set($"{prefix}.weaponAtk", B(0x44));
+        context.Set($"{prefix}.weaponAtkL", B(0x45));
+        context.Set($"{prefix}.weaponParry", B(0x46));
+        context.Set($"{prefix}.weaponParryL", B(0x47));
+        context.Set($"{prefix}.shieldPhysParry", B(0x4A));
+        context.Set($"{prefix}.physEva", B(0x4B));
+        context.Set($"{prefix}.shieldMagParry", B(0x4E));
+        context.Set($"{prefix}.hpGrowth", B(0x8A));
+        context.Set($"{prefix}.hpMult", B(0x8B));
+        context.Set($"{prefix}.mpGrowth", B(0x8C));
+        context.Set($"{prefix}.mpMult", B(0x8D));
+        context.Set($"{prefix}.spdGrowth", B(0x8E));
+        context.Set($"{prefix}.spdMult", B(0x8F));
+        context.Set($"{prefix}.paGrowth", B(0x90));
+        context.Set($"{prefix}.paMult", B(0x91));
+        context.Set($"{prefix}.maGrowth", B(0x92));
+        context.Set($"{prefix}.maMult", B(0x93));
     }
 
     private static void AddActionVariables(FormulaContext context, RuntimeSettings settings)
