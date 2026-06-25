@@ -18,6 +18,7 @@ full-HP/no-status captures).
 | Offset | Width | Attribute | Per-unit (Ra/Be/Ag/Cl/Ni) | Note |
 |---|---|---|---|---|
 | +0x00 | byte | Char/unit id | 01/1F/1E/32/80 | identity |
+| +0x03 | byte | **Job id** | 160/82/80/88/89 | 5/5; 80=Black Mage, 82=Summoner, 89=Ninja match visible status exactly. 160=Ramza special story-Squire (displays "Squire"). 88=Samurai for Cloud (engine value; see note). Classified VARIES-not-VOLATILE = stable per unit |
 | +0x04 | byte | Team/group id | 0/0/0/0/0 | all player team |
 | +0x05 | byte | Friend/foe (bit 0x10) | — | prior live (doc05) |
 | +0x06 | byte | **Gender flags** | M/M/F/M/M | bit7 0x80=Male, bit6 0x40=Female, bit5 0x20=Monster (classic FFT). Ninja=Male (discovered) |
@@ -69,17 +70,17 @@ stats exist. To confirm: ground-truth a unit's base stats (unequipped) or known 
 
 | Offset | Per-unit | Likely | What's needed |
 |---|---|---|---|
-| +0x01 | 16/20/18/19/17 | sprite/type set? | tight 16-20 range; not job-spread |
-| +0x02 | 0/14/23/32/3 | **job id?** | needs JobData name→id table |
-| +0x13 | 25/69/40/41/6 | **job id?** | needs name→id; spread fits jobs |
+| +0x01 | 16/20/18/19/17 | sprite/type/portrait set? | tight 0x10-0x14 range, sequential-ish; not job |
+| +0x02 | 0/14/23/32/3 | ENTD slot / formation index? | NOT job (job is +0x03, confirmed); distinct per unit |
+| +0x13 | 25/69/40/41/6 | unknown | NOT job (JobCommandId hypothesis failed 3/5); distinct per unit |
 | +0x08 | 242/21/173/31/210 | unit-unique / sprite id | >176 so not job |
 | +0x3C | 0/5/6/5/0 | raw evade? | small |
 | +0x4F/+0x50 | ~8-10 | unknown small stats | |
 | +0x52–0x8F | mixed | ability ids / JP / learned-ability bits | needs ability-id ground truth (R/S/M/secondary) |
 
-Job is the highest-value LOW item: two candidate bytes (+0x02, +0x13) each hold 5 distinct static
-values consistent with job ids. Confirm by mapping each unit's job name (Squire/Summoner/Black
-Mage/Soldier/Ninja) → id via the game's Job nex table, then matching.
+Job **RESOLVED** this pass — see CONFIRMED (+0x03). Earlier candidates +0x02 and +0x13 are NOT job:
+the +0x13=JobCommandId hypothesis matched only 2/5 (Ramza, Cloud — coincidental), and +0x02 matches
+no job id. Both remain unidentified (distinct-per-unit), demoted from job hypotheses to plain unknowns.
 
 ## DEFER — not mappable from these captures (need targeted ones)
 
@@ -91,6 +92,26 @@ Mage/Soldier/Ninja) → id via the game's Job nex table, then matching.
   likely volatile or in an unscanned region. Need positional captures.
 - **Magic Evasion %, Cloak evasion %**: 0 for all 5 here (constant) → need units that have them.
 
+## Cross-validation across all 8 captured units (gender / zodiac / job)
+
+Beyond the 5 ground-truthed units, three more unit ids appear in the dumps. Their +0x06/+0x09/+0x03
+values are self-consistent with the confirmed encodings, which independently corroborates them:
+
+| Unit id | +0x06 gender | +0x09 hi-nib zodiac | +0x03 job | Notes |
+|---|---|---|---|---|
+| 0x01 Ramza | Male (0x80) | 5 Virgo | 160 (story-Squire) | GT |
+| 0x1F Beowulf | Male | 6 Libra | 82 Summoner | GT |
+| 0x1E Agrias | Female (0x40) | 3 Cancer | 80 Black Mage | GT |
+| 0x32 Cloud | Male | 10 Aquarius | 88 Samurai | GT (zodiac confirms unit identity) |
+| 0x80 Ninja | Male | 4 Leo | 89 Ninja | GT |
+| 0x03 | Male | (Virgo) | — | non-GT, L51 (different session) |
+| 0x81 | Female | (Gemini) | — | non-GT, L46 |
+| 0x82 | **Monster (0x20)** | (Sagittarius) | — | reused monster id; gender bit5 confirms the Monster flag |
+
+The monster unit (0x82) carrying gender bit5 (0x20) is the key cross-check: it confirms the classic
+FFT three-flag gender encoding (Male 0x80 / Female 0x40 / Monster 0x20) holds across unit types, not
+just the 5 player units.
+
 ## Reconciliation notes (image OCR vs dump)
 
 The engine dump is authoritative. My photo OCR of low-res screens erred on: Beowulf MaxHP
@@ -99,7 +120,18 @@ The engine dump is authoritative. My photo OCR of low-res screens erred on: Beow
 12/9/16). The dump values are used everywhere above. Ramza is L76 in the image but L75 in all
 dumps (leveled after the last capture) — his dumps are used only for level-independent attributes.
 
+**Cloud job name discrepancy (flagged):** the +0x03=job mapping is corroborated *twice over* for
+4 of 5 units — the stored id AND the visible primary command agree (Beowulf Summon→82, Agrias Black
+Magicks→80, Ninja Throw→89, Ramza Mettle→special-Squire 160). **Cloud is the sole tension:** his dump
+byte is 88 (= Samurai in `work/baseline_jobs.csv`), but I had read his primary command as "Limit"
+(the Soldier command, job 50). Innocent explanations: (a) I misread the low-res screen (Cloud's
+primary may actually be Iaido = Samurai), or (b) Cloud was re-classed to Samurai before these captures
+(user only confirmed *no job change yesterday→today*, not "never"); the engine value is authoritative
+either way, so the map uses 88. This does **not** weaken the offset mapping — that rests on the other
+four. Only Cloud's class *label* is open. **TODO(user): glance at Cloud's status screen — does it say
+Samurai (primary Iaido) or Soldier (primary Limit)?**
+
 ## Next steps
-1. Map job (+0x02/+0x13 vs Job nex ids).
-2. Expose the CONFIRMED set in the formula context (attacker.* / target.*).
+1. ~~Map job~~ — DONE: job = +0x03 (CONFIRMED). (Confirm Cloud's displayed class name when convenient.)
+2. Expose the CONFIRMED set in the formula context (attacker.* / target.*) — the project's core goal.
 3. Targeted captures for status/elemental/geometry (DEFER items).

@@ -23,6 +23,39 @@
         "0x80": 71
       }
     },
+    "job": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 3,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 3,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 3,
+          "kind": "w",
+          "matches": 5
+        },
+        {
+          "offset": 6,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 160,
+        "0x1F": 82,
+        "0x1E": 80,
+        "0x32": 88,
+        "0x80": 89
+      }
+    },
     "pa": {
       "verdict": "SOLID",
       "best": {

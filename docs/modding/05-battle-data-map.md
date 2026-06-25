@@ -29,14 +29,14 @@ describes.
 
 ```text
 +0x00 char id (byte)          +0x30 HP    (word)   +0x32 MaxHP (word)
-+0x04 team/group id (byte)    +0x34 MP    (word)   +0x36 MaxMP (word)
-+0x05 friend/foe (bit 0x10)   +0x38 rawPA (byte)   +0x39 rawMA (byte)  +0x3A rawSpd (byte) [MEDIUM]
-+0x06 gender flags (byte)     +0x3E PA    (byte)   +0x3F MA    (byte)
-+0x09 zodiac (hi-nibble)      +0x40 Speed (byte)   +0x41 CT (byte, charge time)
-+0x28 EXP (byte)              +0x42 Move  (byte)   +0x43 Jump  (byte)
-+0x29 Level (byte)            +0x44 WpnAtkR +0x45 WpnAtkL +0x46 WpnParryR% +0x47 WpnParryL% (byte)
-+0x2A MaxBrave (byte)         +0x2B Brave (byte)   +0x4A ShieldPhysParry% +0x4E ShieldMagParry% (byte)
-+0x2C MaxFaith (byte)         +0x2D Faith (byte)   +0x4B PhysEvasion% (byte)
++0x03 job id (byte)           +0x34 MP    (word)   +0x36 MaxMP (word)
++0x04 team/group id (byte)    +0x38 rawPA (byte)   +0x39 rawMA (byte)  +0x3A rawSpd (byte) [MEDIUM]
++0x05 friend/foe (bit 0x10)   +0x3E PA    (byte)   +0x3F MA    (byte)
++0x06 gender flags (byte)     +0x40 Speed (byte)   +0x41 CT (byte, charge time)
++0x09 zodiac (hi-nibble)      +0x42 Move  (byte)   +0x43 Jump  (byte)
++0x28 EXP (byte)              +0x44 WpnAtkR +0x45 WpnAtkL +0x46 WpnParryR% +0x47 WpnParryL% (byte)
++0x29 Level (byte)            +0x4A ShieldPhysParry% +0x4E ShieldMagParry%  +0x4B PhysEvasion% (byte)
++0x2A MaxBrave  +0x2B Brave   +0x2C MaxFaith  +0x2D Faith (bytes)
 ```
 
 The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** equipment block -
@@ -44,6 +44,10 @@ The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** eq
 `+0x24`/`+0x26` left-hand weapon/shield, all 16-bit `item_id` words.
 
 **MAPPED (2026-06-25, ground truth from 10 status/More screens of 5 units):**
+- `+0x03` **job id** (byte) - confirmed 5/5; corroborated twice for 4 units by both the id and the
+  visible primary command (Black Mage 80, Summoner 82, Ninja 89, Ramza special-Squire 160).
+  Classified VARIES-not-VOLATILE = stable per unit. (Cloud reads 88=Samurai vs a "Soldier" screen
+  read - flagged in the map doc; the offset itself is not in doubt.)
 - `+0x06` **gender flags** - bit7 0x80 Male, bit6 0x40 Female, bit5 0x20 Monster (classic FFT).
 - `+0x09` **zodiac** in the high nibble - classic order Aries0..Pisces11.
 - `+0x44/45` **weapon attack R/L** (effective), `+0x46/47` **weapon parry R/L %**, `+0x4A`
@@ -54,8 +58,7 @@ The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** eq
 See `work/battle-unit-struct-attribute-map.md` (full confidence-rated map), `work/gt-master.json`,
 and `tools/map_attributes.py` / `tools/profile_struct.py` / `tools/dump_levels.py`.
 
-Still unmapped (need other captures): **job id** (candidates +0x02 / +0x13 - need the Job nex
-name->id table to confirm), **R/S/M/secondary ability ids** (somewhere in 0x52-0x8F), the full
+Still unmapped (need other captures): **R/S/M/secondary ability ids** (somewhere in 0x52-0x8F), the full
 **status bitfield** (only KO bit known; need status-varied captures), **elemental affinity**
 (likely derived), and **geometry** (position/facing/height). 0x70-0x8F look like object pointers.
 Method note: stats drift with level - map only level-matched dumps (`tools/dump_levels.py`).

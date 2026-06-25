@@ -17,8 +17,14 @@ Confidence per field: ✓ read clearly · ~ probable (low-res) · ? missing.
 > skillset slot. Support ability may have varied between captures (user note) → lower trust.
 
 Zodiac ids use the classic FFT order Aries0 Taurus1 Gemini2 Cancer3 Leo4 Virgo5 Libra6
-Scorpio7 Sagittarius8 Capricorn9 Aquarius10 Pisces11 (to be confirmed against the struct).
-Gender ids assumed Male0 Female1 (to be confirmed).
+Scorpio7 Sagittarius8 Capricorn9 Aquarius10 Pisces11 — **CONFIRMED** against the struct (+0x09 hi-nibble).
+Gender — **CONFIRMED** as classic bit flags at +0x06 (Male 0x80 / Female 0x40 / Monster 0x20).
+Job ids — **CONFIRMED** at +0x03 (byte); ids from `work/baseline_jobs.csv`.
+
+> **RECONCILED:** several numeric values in the raw-screen table below were low-res OCR errors
+> (MaxHP/MaxMP/Speed/Move/Jump for some units). The corrected, dump-authoritative values live in
+> `work/gt-master.json` and `work/battle-unit-struct-attribute-map.md`. This file preserves the raw
+> reads for traceability; trust the map doc for final numbers.
 
 ---
 
@@ -26,14 +32,21 @@ Gender ids assumed Male0 Female1 (to be confirmed).
 
 | unit | id | Lvl | MaxHP | MaxMP | Move | Jump | Speed | PA | MA | Brave | Faith | Zodiac | Gender | Job |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ramza | 0x01 | 76*/75dump | 569 | 86~ | 6 | 3 | 10~ | 20 | 9 | 97 | 70 | Virgo (5) | M (0) | Squire~ |
-| Beowulf | 0x1F | 68 | 514 | 180 | 5 | 3 | 8 | 5 | 17 | 97 | 65 | Libra (6) | M (0) | Summoner |
-| Agrias | 0x1E | 69 | 322 | 252 | 5 | 3 | 8 | 11 | 23 | 97 | 63 | Cancer (3) | F (1) | Black Mage |
-| Cloud | 0x32 | 67 | 428 | 89 | 4 | 4 | 9 | 14 | 13 | 97 | 65 | Aquarius (10) | M (0) | Soldier |
-| Ninja/Rion | 0x80 | 71 | 377 | 41 | 6 | 4 | 8 | 15 | 7 | 97 | 72 | Leo (4) | ? | Ninja |
+| Ramza | 0x01 | 76*/75dump | 569 | 86~ | 6 | 3 | 10~ | 20 | 9 | 97 | 70 | Virgo (5) | M (0) | Squire — job 160 (special story) |
+| Beowulf | 0x1F | 68 | 514 | 180 | 5 | 3 | 8 | 5 | 17 | 97 | 65 | Libra (6) | M (0) | Summoner — job 82 ✓ |
+| Agrias | 0x1E | 69 | 322 | 252 | 5 | 3 | 8 | 11 | 23 | 97 | 63 | Cancer (3) | F (1) | Black Mage — job 80 ✓ |
+| Cloud | 0x32 | 67 | 428 | 89 | 4 | 4 | 9 | 14 | 13 | 97 | 65 | Aquarius (10) | M (0) | Soldier? — job **88 = Samurai** in dump ⚠ |
+| Ninja/Rion | 0x80 | 71 | 377 | 41 | 6 | 4 | 8 | 15 | 7 | 97 | 72 | Leo (4) | M (0) | Ninja — job 89 ✓ |
 
 \* Ramza image L76 but dumps L75. Brave/Faith from user text (overrides my low-res reads).
-Ninja gender unknown — to be DISCOVERED by the gender bit (whichever value ≠ Agrias's).
+Ninja gender **DISCOVERED = Male (0x80)** via the +0x06 bit (≠ Agrias's Female 0x40).
+
+**Job-id confirmation:** +0x03 holds the job id. Four of five units corroborate it *twice over* — both
+the id and the visible primary command agree: Beowulf Summon→Summoner(82), Agrias Black Magicks→Black
+Mage(80), Ninja Throw→Ninja(89), Ramza Mettle→Squire(special 160). **Cloud is the one open question:**
+I read his primary command as "Limit" (the Soldier command, job 50), but his dump byte is 88 = Samurai.
+Either I misread the screen or Cloud was re-classed to Samurai. The *mapping* (job@+0x03) is not in doubt
+— only Cloud's class label. **TODO(user): confirm Cloud's displayed job — Soldier or Samurai?**
 
 ## Per-unit detail (incl. evasion / weapon panel from More screens)
 
