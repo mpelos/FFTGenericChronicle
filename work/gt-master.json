@@ -7,13 +7,16 @@
     "pa": "0x3E:b", "ma": "0x3F:b", "speed": "0x40:b", "move": "0x42:b", "jump": "0x43:b",
     "brave": "0x2B:b", "faith": "0x2D:b", "zodiac": "0x09:n1", "gender": "0x06:bit6",
     "weaponAtkR": "0x44:b", "weaponAtkL": "0x45:b", "weaponParryR": "0x46:b", "weaponParryL": "0x47:b",
-    "shieldPhysParry": "0x4A:b", "physEva": "0x4B:b", "shieldMagParry": "0x4E:b"
+    "shieldPhysParry": "0x4A:b", "physEva": "0x4B:b", "shieldMagParry": "0x4E:b",
+    "hpGrowth": "0x8A:b", "hpMult": "0x8B:b", "mpGrowth": "0x8C:b", "mpMult": "0x8D:b",
+    "spdGrowth": "0x8E:b", "spdMult": "0x8F:b", "paGrowth": "0x90:b", "paMult": "0x91:b",
+    "maGrowth": "0x92:b", "maMult": "0x93:b"
   },
   "units": {
-    "0x01": { "level": 75, "job": 160, "pa": 20, "ma": 9, "speed": 10, "move": 6, "jump": 3, "brave": 97, "faith": 70, "zodiac": 5, "gender": 0, "weaponAtkR": 40, "shieldPhysParry": 50, "shieldMagParry": 25, "physEva": 0 },
-    "0x1F": { "level": 68, "job": 82, "maxHp": 314, "maxMp": 180, "pa": 5, "ma": 17, "speed": 9, "move": 6, "jump": 3, "brave": 97, "faith": 65, "zodiac": 6, "gender": 0, "weaponAtkR": 14, "physEva": 5 },
-    "0x1E": { "level": 69, "job": 80, "maxHp": 322, "maxMp": 232, "pa": 11, "ma": 23, "speed": 12, "move": 5, "jump": 3, "brave": 97, "faith": 63, "zodiac": 3, "gender": 1, "weaponAtkR": 14, "physEva": 5 },
-    "0x32": { "level": 67, "job": 88, "maxHp": 428, "maxMp": 89, "pa": 14, "ma": 13, "speed": 9, "move": 4, "jump": 3, "brave": 97, "faith": 65, "zodiac": 10, "gender": 0, "weaponAtkR": 16, "physEva": 20 },
-    "0x80": { "level": 71, "job": 89, "maxHp": 277, "maxMp": 41, "pa": 15, "ma": 7, "speed": 16, "move": 6, "jump": 4, "brave": 97, "faith": 72, "zodiac": 4, "gender": 0, "weaponAtkR": 15, "weaponAtkL": 15, "weaponParryR": 10, "weaponParryL": 5, "physEva": 30 }
+    "0x01": { "level": 75, "job": 160, "pa": 20, "ma": 9, "speed": 10, "move": 6, "jump": 3, "brave": 97, "faith": 70, "zodiac": 5, "gender": 0, "weaponAtkR": 40, "shieldPhysParry": 50, "shieldMagParry": 25, "physEva": 0, "hpGrowth": 12, "hpMult": 80, "mpGrowth": 20, "mpMult": 90, "spdGrowth": 100, "spdMult": 100, "paGrowth": 40, "paMult": 140, "maGrowth": 50, "maMult": 80 },
+    "0x1F": { "level": 68, "job": 82, "maxHp": 314, "maxMp": 180, "pa": 5, "ma": 17, "speed": 9, "move": 6, "jump": 3, "brave": 97, "faith": 65, "zodiac": 6, "gender": 0, "weaponAtkR": 14, "physEva": 5, "hpGrowth": 13, "hpMult": 70, "mpGrowth": 8, "mpMult": 125, "spdGrowth": 100, "spdMult": 90, "paGrowth": 70, "paMult": 50, "maGrowth": 50, "maMult": 125 },
+    "0x1E": { "level": 69, "job": 80, "maxHp": 322, "maxMp": 232, "pa": 11, "ma": 23, "speed": 12, "move": 5, "jump": 3, "brave": 97, "faith": 63, "zodiac": 3, "gender": 1, "weaponAtkR": 14, "physEva": 5, "hpGrowth": 12, "hpMult": 75, "mpGrowth": 9, "mpMult": 120, "spdGrowth": 100, "spdMult": 100, "paGrowth": 60, "paMult": 60, "maGrowth": 50, "maMult": 150 },
+    "0x32": { "level": 67, "job": 88, "maxHp": 428, "maxMp": 89, "pa": 14, "ma": 13, "speed": 9, "move": 4, "jump": 3, "brave": 97, "faith": 65, "zodiac": 10, "gender": 0, "weaponAtkR": 16, "physEva": 20, "hpGrowth": 12, "hpMult": 75, "mpGrowth": 14, "mpMult": 90, "spdGrowth": 100, "spdMult": 100, "paGrowth": 45, "paMult": 128, "maGrowth": 50, "maMult": 90 },
+    "0x80": { "level": 71, "job": 89, "maxHp": 277, "maxMp": 41, "pa": 15, "ma": 7, "speed": 16, "move": 6, "jump": 4, "brave": 97, "faith": 72, "zodiac": 4, "gender": 0, "weaponAtkR": 15, "weaponAtkL": 15, "weaponParryR": 10, "weaponParryL": 5, "physEva": 30, "hpGrowth": 12, "hpMult": 70, "mpGrowth": 13, "mpMult": 50, "spdGrowth": 80, "spdMult": 120, "paGrowth": 43, "paMult": 122, "maGrowth": 50, "maMult": 75 }
   }
 }

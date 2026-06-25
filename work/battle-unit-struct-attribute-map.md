@@ -55,6 +55,34 @@ full-HP/no-status captures).
 
 (Bold = newly mapped this session.)
 
+### Job stat-growth block — CONFIRMED (NEW, +0x8A..0x93)
+
+The unit struct caches the **entire growth/multiplier row of the unit's job** (from
+`work/baseline_jobs.csv`). All 10 fields validate **5/5** against the job table for the 5 units'
+job ids (Ramza 160, Beowulf 82 Summoner, Agrias 80 Black Mage, Cloud 88 Samurai, Ninja 89):
+
+| Offset | Field | Per-unit (Ra/Be/Ag/Cl/Ni) |
+|---|---|---|
+| +0x8A | HP Growth | 12/13/12/12/12 |
+| +0x8B | HP Multiplier | 80/70/75/75/70 |
+| +0x8C | MP Growth | 20/8/9/14/13 |
+| +0x8D | MP Multiplier | 90/125/120/90/50 |
+| +0x8E | Speed Growth | 100/100/100/100/80 |
+| +0x8F | Speed Multiplier | 100/90/100/100/120 |
+| +0x90 | PA Growth | 40/70/60/45/43 |
+| +0x91 | PA Multiplier | 140/50/60/128/122 |
+| +0x92 | MA Growth | 50/50/50/50/50 (const here) |
+| +0x93 | MA Multiplier | 80/125/150/90/75 |
+
+Lower Growth = faster growth (classic FFT). This block is gold for custom formulas: it exposes a
+unit's class scaling directly, no job-table lookup needed at calc time. Bonus cross-confirm: the
+job table's `CharacterEvasion` (0/5/5/20/30) equals the `+0x4B` value mapped above — so **+0x4B is
+the job-derived character/physical evasion**, double-confirmed.
+
+Also identified: **+0x14C = unit display-name string (ASCII)** — Ninja's bytes spell `Rion`
+(82 105 111 110); other units 0 here. Trailing bytes (~+0x151) look like stale buffer content
+(`wulf`, likely left over from "Beowulf"); only the leading set name is reliable. Non-combat field.
+
 ## MEDIUM — strong structural inference, not directly ground-truthed
 
 | Offset | Width | Guess | Per-unit | Reasoning |
@@ -76,7 +104,8 @@ stats exist. To confirm: ground-truth a unit's base stats (unequipped) or known 
 | +0x08 | 242/21/173/31/210 | unit-unique / sprite id | >176 so not job |
 | +0x3C | 0/5/6/5/0 | raw evade? | small |
 | +0x4F/+0x50 | ~8-10 | unknown small stats | |
-| +0x52–0x8F | mixed | ability ids / JP / learned-ability bits | needs ability-id ground truth (R/S/M/secondary) |
+| +0x52–0x89 | mixed | ability ids / JP / learned-ability bits | needs ability-id ground truth (R/S/M/secondary); note +0x8A–0x93 just below is now RESOLVED (job stats) |
+| +0x94–0x148 | mixed | learned-ability bitfields / JP-per-job / element & status masks | dense, mostly high-byte; needs status/element/ability-varied captures |
 
 Job **RESOLVED** this pass — see CONFIRMED (+0x03). Earlier candidates +0x02 and +0x13 are NOT job:
 the +0x13=JobCommandId hypothesis matched only 2/5 (Ramza, Cloud — coincidental), and +0x02 matches

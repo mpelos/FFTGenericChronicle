@@ -55,6 +55,12 @@ The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** eq
   - all equipment-derived combat values cached in the struct (validated against the More screens).
 - `+0x38/39/3A` **raw PA/MA/Speed** (base, pre-equipment) - MEDIUM confidence (matches effective
   where the unit has no relevant gear bonus).
+- `+0x8A..0x93` **job growth/multiplier block** - the unit's job stat-scaling row copied straight
+  from `baseline_jobs.csv`, all 10 fields confirmed 5/5: `+0x8A` HPGrowth, `+0x8B` HPMult,
+  `+0x8C` MPGrowth, `+0x8D` MPMult, `+0x8E` SpeedGrowth, `+0x8F` SpeedMult, `+0x90` PAGrowth,
+  `+0x91` PAMult, `+0x92` MAGrowth, `+0x93` MAMult. (The job's `CharacterEvasion` also equals the
+  `+0x4B` value, double-confirming +0x4B = physical/character evasion.)
+- `+0x14C` **unit display-name** (ASCII string) - Ninja spells `Rion`; non-combat field.
 See `work/battle-unit-struct-attribute-map.md` (full confidence-rated map), `work/gt-master.json`,
 and `tools/map_attributes.py` / `tools/profile_struct.py` / `tools/dump_levels.py`.
 

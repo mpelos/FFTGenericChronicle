@@ -76,6 +76,11 @@
           "matches": 3
         },
         {
+          "offset": 140,
+          "kind": "b",
+          "matches": 2
+        },
+        {
           "offset": 18,
           "kind": "b",
           "matches": 1
@@ -97,11 +102,6 @@
         },
         {
           "offset": 69,
-          "kind": "b",
-          "matches": 1
-        },
-        {
-          "offset": 70,
           "kind": "b",
           "matches": 1
         }
@@ -177,6 +177,11 @@
           "matches": 1
         },
         {
+          "offset": 138,
+          "kind": "b",
+          "matches": 1
+        },
+        {
           "offset": 58,
           "kind": "w",
           "matches": 1
@@ -235,9 +240,9 @@
           "matches": 2
         },
         {
-          "offset": 19,
-          "kind": "b",
-          "matches": 1
+          "offset": 132,
+          "kind": "n0",
+          "matches": 2
         }
       ],
       "ground_truth": {
@@ -278,23 +283,23 @@
           "matches": 4
         },
         {
+          "offset": 146,
+          "kind": "n1",
+          "matches": 4
+        },
+        {
           "offset": 125,
           "kind": "n1",
           "matches": 3
         },
         {
+          "offset": 134,
+          "kind": "b",
+          "matches": 2
+        },
+        {
           "offset": 18,
           "kind": "n0",
-          "matches": 2
-        },
-        {
-          "offset": 9,
-          "kind": "n1",
-          "matches": 2
-        },
-        {
-          "offset": 44,
-          "kind": "n1",
           "matches": 2
         }
       ],
@@ -422,9 +427,9 @@
           "matches": 2
         },
         {
-          "offset": 7,
-          "kind": "b",
-          "matches": 1
+          "offset": 139,
+          "kind": "n1",
+          "matches": 2
         }
       ],
       "ground_truth": {
@@ -436,7 +441,7 @@
       }
     },
     "gender": {
-      "verdict": "AMBIG(19)",
+      "verdict": "AMBIG(25)",
       "best": {
         "offset": 57,
         "kind": "n1",
@@ -451,6 +456,11 @@
         },
         {
           "offset": 66,
+          "kind": "bit0",
+          "matches": 5
+        },
+        {
+          "offset": 129,
           "kind": "bit0",
           "matches": 5
         },
@@ -470,18 +480,13 @@
           "matches": 5
         },
         {
-          "offset": 2,
-          "kind": "bit4",
+          "offset": 133,
+          "kind": "bit2",
           "matches": 5
         },
         {
-          "offset": 44,
-          "kind": "bit4",
-          "matches": 5
-        },
-        {
-          "offset": 45,
-          "kind": "bit4",
+          "offset": 132,
+          "kind": "bit3",
           "matches": 5
         }
       ],
@@ -531,6 +536,11 @@
           "offset": 69,
           "kind": "b",
           "matches": 1
+        },
+        {
+          "offset": 144,
+          "kind": "b",
+          "matches": 1
         }
       ],
       "ground_truth": {
@@ -542,7 +552,7 @@
       }
     },
     "shieldPhysParry": {
-      "verdict": "AMBIG(2)",
+      "verdict": "AMBIG(3)",
       "best": {
         "offset": 74,
         "kind": "b",
@@ -552,6 +562,11 @@
       "candidates": [
         {
           "offset": 74,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 146,
           "kind": "b",
           "matches": 1
         },
@@ -657,6 +672,451 @@
         "0x80": 30
       }
     },
+    "hpGrowth": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 138,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 138,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 138,
+          "kind": "n0",
+          "matches": 5
+        },
+        {
+          "offset": 145,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 22,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 28,
+          "kind": "n1",
+          "matches": 2
+        },
+        {
+          "offset": 18,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 58,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 64,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 12,
+        "0x1F": 13,
+        "0x1E": 12,
+        "0x32": 12,
+        "0x80": 12
+      }
+    },
+    "hpMult": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 139,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 139,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 9,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 136,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 144,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 147,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 9,
+          "kind": "w",
+          "matches": 1
+        },
+        {
+          "offset": 147,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 80,
+        "0x1F": 70,
+        "0x1E": 75,
+        "0x32": 75,
+        "0x80": 70
+      }
+    },
+    "mpGrowth": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 140,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 140,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 62,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 80,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 5,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 56,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 58,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 70,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 136,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 20,
+        "0x1F": 8,
+        "0x1E": 9,
+        "0x32": 14,
+        "0x80": 13
+      }
+    },
+    "mpMult": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 141,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 141,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 147,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 147,
+          "kind": "w",
+          "matches": 2
+        },
+        {
+          "offset": 146,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 90,
+        "0x1F": 125,
+        "0x1E": 120,
+        "0x32": 90,
+        "0x80": 50
+      }
+    },
+    "spdGrowth": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 142,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 142,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 143,
+          "kind": "b",
+          "matches": 3
+        }
+      ],
+      "ground_truth": {
+        "0x01": 100,
+        "0x1F": 100,
+        "0x1E": 100,
+        "0x32": 100,
+        "0x80": 80
+      }
+    },
+    "spdMult": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 143,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 143,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 142,
+          "kind": "b",
+          "matches": 3
+        }
+      ],
+      "ground_truth": {
+        "0x01": 100,
+        "0x1F": 90,
+        "0x1E": 100,
+        "0x32": 100,
+        "0x80": 120
+      }
+    },
+    "paGrowth": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 144,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 144,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 68,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 139,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 145,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 68,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 40,
+        "0x1F": 70,
+        "0x1E": 60,
+        "0x32": 45,
+        "0x80": 43
+      }
+    },
+    "paMult": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 145,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 145,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 144,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 146,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 157,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 157,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 140,
+        "0x1F": 50,
+        "0x1E": 60,
+        "0x32": 128,
+        "0x80": 122
+      }
+    },
+    "maGrowth": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 146,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 146,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 0,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 74,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 141,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 145,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 74,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 50,
+        "0x1F": 50,
+        "0x1E": 50,
+        "0x32": 50,
+        "0x80": 50
+      }
+    },
+    "maMult": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 147,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 147,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 147,
+          "kind": "w",
+          "matches": 5
+        },
+        {
+          "offset": 141,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 9,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 139,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 9,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 80,
+        "0x1F": 125,
+        "0x1E": 150,
+        "0x32": 90,
+        "0x80": 75
+      }
+    },
     "maxHp": {
       "verdict": "AMBIG(2)",
       "best": {
@@ -722,7 +1182,7 @@
       }
     },
     "weaponAtkL": {
-      "verdict": "AMBIG(14)",
+      "verdict": "AMBIG(17)",
       "best": {
         "offset": 56,
         "kind": "b",
@@ -776,7 +1236,7 @@
       }
     },
     "weaponParryR": {
-      "verdict": "AMBIG(4)",
+      "verdict": "AMBIG(6)",
       "best": {
         "offset": 70,
         "kind": "b",
@@ -800,7 +1260,17 @@
           "matches": 1
         },
         {
+          "offset": 145,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
           "offset": 26,
+          "kind": "n1",
+          "matches": 1
+        },
+        {
+          "offset": 130,
           "kind": "n1",
           "matches": 1
         }
@@ -810,7 +1280,7 @@
       }
     },
     "weaponParryL": {
-      "verdict": "AMBIG(7)",
+      "verdict": "AMBIG(11)",
       "best": {
         "offset": 71,
         "kind": "b",
@@ -845,6 +1315,11 @@
         },
         {
           "offset": 71,
+          "kind": "n0",
+          "matches": 1
+        },
+        {
+          "offset": 130,
           "kind": "n0",
           "matches": 1
         },
