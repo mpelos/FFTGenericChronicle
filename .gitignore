@@ -44,6 +44,7 @@ tools/*
 !tools/check_offense_armor_composition.py
 !tools/check_targeting_challenge.py
 !tools/build_vanilla_reference.py
+!tools/analyze_equipment_dumps.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/

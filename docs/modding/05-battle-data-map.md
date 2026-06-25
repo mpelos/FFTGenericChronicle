@@ -38,11 +38,14 @@ describes.
 ```
 
 All of the above verified live across 4 distinct units (probe iter 4 full-struct hex dump). The
-0x28-0x43 block is the solid combat-stat region. Not yet anchored (need units with known
-equipment/status to map): ~0x14-0x1F (likely raw/derived stats, 16-bit words), 0x38-0x3B &
-0x44-0x47 (base/derived stats?), and 0x70-0x8F (looks like object pointers). Equipment ids,
-status bitfields, and R/S/M ability ids weren't locatable from full-HP/no-status samples - map
-them later from controlled units or at the formula hook. The current harness now captures through
+0x28-0x43 block is the solid combat-stat region. **MAPPED (2026-06-24):** the predicted
+"~0x14-0x1F 16-bit words" region is the **equipment block** - `+0x1A` head, `+0x1C` body,
+`+0x1E` accessory, `+0x20`/`+0x22` right-hand weapon/shield, `+0x24`/`+0x26` left-hand
+weapon/shield, all 16-bit `item_id` words (see `12-...` 3.1.5 and
+`work/equipment-block-offsets-2026-06-24.md`). Still not anchored: 0x38-0x3B & 0x44-0x47
+(base/derived stats?), and 0x70-0x8F (object pointers). Status bitfields and R/S/M ability ids
+weren't locatable from full-HP/no-status samples - map them later from controlled units or at
+the formula hook. The current harness now captures through
 0x17F so the next controlled battle can test whether those fields live later in the unit object.
 
 **CONFIRMED LIVE (2026-06-21, Tests 2a/2b/2c):** `+0x61` is a **status byte**, and **bit `0x20`
@@ -79,9 +82,11 @@ item-id hits from `work\item_catalog.csv`.
 
 Also reachable at the hook sites (from AOBs in `04`): the computed **damage** value (in `edx`
 before the `[rax+0x06]` store), the player/enemy tag, and the damage/JP/XP multiplier sites.
-Not yet mapped from the struct but known to exist in the classic layout: equipped item ids,
-R/S/M ability ids, active status bitfields, raw stats (RHP/RMP/...), and per-stat growth
-constants - locate these by extending the struct walk. See `04-re-strategy.md`.
+Equipped item ids are now MAPPED (2026-06-24): 16-bit words at `+0x1A` head / `+0x1C` body /
+`+0x1E` accessory / `+0x20`+`+0x22` right hand / `+0x24`+`+0x26` left hand. Still not mapped from
+the struct but known to exist in the classic layout: R/S/M ability ids, active status bitfields,
+raw stats (RHP/RMP/...), and per-stat growth constants - locate these by extending the struct
+walk. See `04-re-strategy.md`.
 
 Limits: stats are bytes (HP/MP are 16-bit words); damage stored as a 16-bit word; engine math is
 integer (the remaster applies some multipliers as AVX floats, then truncates to int).

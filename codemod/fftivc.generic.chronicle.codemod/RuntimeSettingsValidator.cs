@@ -173,6 +173,16 @@ internal static class RuntimeSettingsValidator
                     report.Error("PreClampActorContextMaxLogs", "PreClampActorContextMaxLogs must be nonnegative.");
                 report.Warn("PreClampResolveActorContext", "memory-only actor-context resolver is observe-only (logs [PRECLAMP-ACTOR-CTX]); use for controlled RE captures.");
             }
+            if (settings.PreClampLogEquipment)
+            {
+                if (settings.PreClampEquipBlockOffset < 0 || settings.PreClampEquipBlockOffset > 0x4000)
+                    report.Error("PreClampEquipBlockOffset", "PreClampEquipBlockOffset must be within 0..0x4000.");
+                if (settings.PreClampEquipMaxLogs < 0)
+                    report.Error("PreClampEquipMaxLogs", "PreClampEquipMaxLogs must be nonnegative.");
+                if (!settings.PreClampResolveActorContext)
+                    report.Warn("PreClampLogEquipment", "equipment readout uses the actor-context resolver for the caster side; enable PreClampResolveActorContext too (target side still logs).");
+                report.Warn("PreClampLogEquipment", "live equipment readout is observe-only (logs [PRECLAMP-EQUIP]); use for controlled RE captures.");
+            }
             if (settings.PreClampFormulaPlanEnabled)
             {
                 if (settings.PreClampFormulaPlanSlots <= 0 || settings.PreClampFormulaPlanSlots > 32)

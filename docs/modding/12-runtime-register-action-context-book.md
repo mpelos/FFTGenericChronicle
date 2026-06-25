@@ -325,6 +325,49 @@ Sanity validation now rejects impossible candidates such as:
 This validation exists because a stride scan once accepted a false-positive "ghost struct" whose
 fields looked superficially readable but were impossible for a real battle unit.
 
+### 3.1.5 Equipment Block
+
+Status: **proven live** (2026-06-24). Triple-confirmed offline by equip-screen ground truth across 8
+units, then **live read-back validated at the damage frame**: a Ramza basic attack on Ninja in a
+fresh session had the runtime read both sides' full equipment block correctly from live memory
+(`[PRECLAMP-EQUIP]`) - caster Ramza `rWeapon=37` Chaos Blade + `lShield=142` Venetian Shield; target
+Ninja `rWeapon=17`/`lWeapon=18` Iga+Koga (dual wield) + Thief's Cap/Ninja Gear/Chantage.
+
+Equipped item ids live inside the unit struct as **16-bit little-endian words**, in a contiguous
+block just before the stat block:
+
+| Offset | Slot | Width |
+| --- | --- | ---: |
+| `+0x1A` | Head | word |
+| `+0x1C` | Body | word |
+| `+0x1E` | Accessory | word |
+| `+0x20` | Right hand - weapon | word |
+| `+0x22` | Right hand - shield | word |
+| `+0x24` | Left hand - weapon | word |
+| `+0x26` | Left hand - shield | word |
+
+The word is the `item_id` (join `work/item_catalog.csv` for name, family, WP, element, evasion,
+HP/MP bonus, equip bonus). Sentinels: empty hand on an equip-capable unit = `0x00FF` (255);
+monster / no-equipment unit = `0x0000` in all slots.
+
+Reading rules for formulas:
+
+```text
+primary weapon = word @ +0x20 (fall back to +0x24 if +0x20 is empty/255)
+dual wield     = non-empty weapon at both +0x20 and +0x24   (Ninja, Excalibur+Defender unit)
+shield         = whichever of +0x22 / +0x26 is non-empty     (left-hand +0x26 in all samples)
+two-handed     = +0x20 set, other three hand-words empty      (Cloud Materia Blade Plus)
+```
+
+Equipment is **not** in the 0x548 actor struct; the unit struct is the source of truth (no
+roster/ENTD join needed). This also gives basic-attack weapon identity: a basic attack carries
+action id `0`, but the weapon is `attacker_unit+0x20`.
+
+Evidence: `work/equipment-block-offsets-2026-06-24.md`; live read-back
+`work/live-captures/battleprobe_log.equipment-readout-ramza-ninja.snapshot.txt`
+(`[PRECLAMP-EQUIP]`, probe `PreClampLogEquipment`); tool `tools/analyze_equipment_dumps.py`
+(`--find` / `--equip` / `--rank`).
+
 ### 3.2 Status, Action, Forecast, And Damage Fields
 
 Status: mixed, but the listed meanings are the best current model.
@@ -950,8 +993,10 @@ Highest priority:
 5. **Miss, evade, block, critical, random damage**
    We need to know whether failed hits produce no staged debit, zero debit, or separate state.
 
-6. **Equipment and DR**
-   The runtime still needs robust equipment/armor identity if armor DR is formula-owned.
+6. **Equipment and DR** (identity solved 2026-06-24 - see 3.1.5)
+   Equipped item ids are now located in the unit struct (`+0x1A` head, `+0x1C` body, `+0x1E`
+   accessory, `+0x20`/`+0x24` weapons, `+0x22`/`+0x26` shields, 16-bit words). Remaining: expose
+   them to the formula context and join `item_catalog.csv` for WP/element/DR-relevant fields.
 
 7. **Forecast hook**
    Only needed if we want UI preview to show custom damage before confirmation.

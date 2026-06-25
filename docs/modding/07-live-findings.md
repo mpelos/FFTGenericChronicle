@@ -880,3 +880,43 @@ Evidence:
 - `work/live-captures/battleprobe_log.actor-dump-braver-agrias.snapshot.txt`
 - `work/live-captures/battleprobe_log.actor-dump-basic-agrias-beowulf.snapshot.txt`
 - `work/live-captures/battleprobe_log.executing-action-resolver-probe-cross-slash-agrias-ninja.snapshot.txt`
+
+---
+
+## LIVE FINDING - Equipment block located in the unit struct (2026-06-24)
+
+### What we did
+
+No new battle. We mined the 1143 existing `[DUMP ptr=.. id=..]` lines (full 0x200 unit-struct hex
+that `Mod.cs` emits on first hook-touch) and combined them with equip-screen ground truth for 3
+units (Cloud, Agrias, Ninja), then intersected per slot the offsets where each unit's 16-bit word
+equals its known `item_id`.
+
+### Result - PROVEN
+
+Equipped item ids are 16-bit little-endian words in the battle unit struct:
+
+| Offset | Slot |
+| --- | --- |
+| `+0x1A` | Head |
+| `+0x1C` | Body |
+| `+0x1E` | Accessory |
+| `+0x20` | Right hand - weapon |
+| `+0x22` | Right hand - shield |
+| `+0x24` | Left hand - weapon |
+| `+0x26` | Left hand - shield |
+
+Triple-confirmed across 8 units: dual-wield (Ninja Iga+Koga; a unit with Excalibur+Defender),
+two-handed (Cloud Materia Blade Plus, only `+0x20`), weapon+shield (Ramza Chaos Blade + Venetian
+Shield at `+0x26`), and a monster (all-zero slots). Empty hand sentinel `0x00FF`; monster `0x0000`.
+
+### What it changes
+
+- Roadmap U5 Q1 answered; the formula context can read attacker/target equipment of both sides.
+- Basic-attack weapon identity (action id 0) is solved via `attacker_unit+0x20`.
+- Equipment is self-contained in the unit struct (not the actor struct); no roster mapping needed.
+
+### Evidence / tooling
+
+- `work/equipment-block-offsets-2026-06-24.md`
+- `tools/analyze_equipment_dumps.py` (`--find` ground-truth intersect, `--equip` decode, `--rank`)

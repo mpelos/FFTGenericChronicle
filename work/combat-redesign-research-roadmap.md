@@ -444,7 +444,26 @@ RVA stability across a different battle, then promote to primary (gated on oldDe
 Implication:
 
 - attacker/action identity no longer depends on CT or the pending-clear heuristic at damage time;
-- basic attacks still need weapon identity from equipment (U5), since their action id is 0.
+- basic attacks resolve weapon identity from equipment (U5/P13): `attacker_unit+0x20`.
+
+### P13. Equipment block located in the battle unit struct
+
+Live-proven (2026-06-24), zero new captures. Equipped item ids are 16-bit little-endian words in
+the unit struct: `+0x1A` head, `+0x1C` body, `+0x1E` accessory, `+0x20`/`+0x22` right-hand
+weapon/shield, `+0x24`/`+0x26` left-hand weapon/shield. The word is the `item_catalog.csv`
+`item_id`. Triple-confirmed by equip-screen ground truth across 8 units, covering dual-wield
+(Ninja Iga+Koga; a unit with Excalibur+Defender), two-handed (Cloud Materia Blade Plus, only
+`+0x20`), weapon+shield (Ramza Chaos Blade + Venetian Shield at `+0x26`), and a monster
+(all-zero slots). Empty hand sentinel = `0x00FF`; monster = `0x0000`.
+
+Implication:
+
+- the formula context can now read attacker and target equipment of both sides directly;
+- basic-attack weapon identity (action id 0) is solved via `attacker_unit+0x20`;
+- no roster/ENTD mapping needed - equipment is self-contained in the unit struct;
+- equipment is in the unit struct, not the 0x548 actor struct.
+
+Evidence: `work/equipment-block-offsets-2026-06-24.md`; tool `tools/analyze_equipment_dumps.py`.
 
 ## Critical Unknowns
 
@@ -646,6 +665,16 @@ Success criteria:
 - Multiple pending actions do not cross-attribute damage.
 
 ## U5. Equipment and derived defense context
+
+Update (2026-06-24): Q1 is answered. Equipped item ids live in the battle unit struct as 16-bit
+words: `+0x1A` head, `+0x1C` body, `+0x1E` accessory, `+0x20`/`+0x22` right-hand weapon/shield,
+`+0x24`/`+0x26` left-hand weapon/shield. Triple-confirmed by equip-screen ground truth across 8
+units (incl. dual-wield, two-handed, shield, and a monster with all-zero slots), mined from
+existing dumps with zero new captures. Q2 (roster mapping) is moot - equipment is self-contained in
+the unit struct. See P13, `12-...` 3.1.5, and `work/equipment-block-offsets-2026-06-24.md`. Remaining:
+live read-back validated at the damage frame (Ramza basic attack on Ninja, fresh session: the
+runtime read both sides' full block correctly via `[PRECLAMP-EQUIP]`). Remaining: expose to formula
+context (weapon/armor/family/element) and design GC DR tags (Q3-Q5).
 
 Why this matters:
 

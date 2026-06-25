@@ -4031,3 +4031,52 @@ Committed. Still open before making it the primary attacker/action source:
 4. Actor-array RVA/layout stability across a DIFFERENT battle/save.
 5. Then: promote `[PRECLAMP-ACTOR-CTX]` to primary `DamageEvent.Attacker`/`Action` (gated on
    oldDebit>0), keep pending tracker + CT as fallback/diagnostic.
+
+## 2026-06-24 Live Result: equipment block located in the unit struct (U5 Q1)
+
+We stepped back to the roadmap and picked U5 (equipment) as the highest-value next investigation -
+it is the input the project goal names ("equipment of both sides") and was the last missing piece of
+formula context. Solved it offline with **zero new captures**.
+
+### Method
+
+`Mod.cs` already emits a full 0x200 unit-struct hex dump (`[DUMP ptr=.. id=..]`) on each unit's
+first hook-touch; we had 1143 such lines across 130 captures. Auto-decoding bytes against
+`item_catalog.csv` was inconclusive (the catalog densely covers ids 0-260, so almost every byte
+"decodes" to some item). So we got equip-screen ground truth for 3 units and intersected, per slot,
+the offsets where each unit's 16-bit word equals its known item id. Every slot resolved to one
+common offset across all 3 units. New tool: `tools/analyze_equipment_dumps.py`.
+
+### Finding (16-bit little-endian words)
+
+```text
++0x1A head   +0x1C body   +0x1E accessory
++0x20 R-hand weapon   +0x22 R-hand shield   +0x24 L-hand weapon   +0x26 L-hand shield
+empty hand = 0x00FF ; monster / no equipment = 0x0000
+```
+
+Triple-confirmed across 8 units incl. dual-wield (Ninja Iga+Koga; Excalibur+Defender unit),
+two-handed (Cloud Materia Blade Plus), weapon+shield (Ramza Chaos Blade + Venetian Shield @ +0x26),
+monster (all-zero). Equipment is in the unit struct, NOT the 0x548 actor struct; no roster mapping
+needed.
+
+### Why it matters
+
+- Closes the biggest gap to the project goal: formulas can read attacker + target equipment of both
+  sides directly from the live unit struct.
+- Solves basic-attack weapon identity (action id 0) via `attacker_unit+0x20`.
+
+### Status: milestone reached (offsets located, triple-confirmed, AND live read-back validated)
+
+Live read-back validation passed (2026-06-24): an observe-only `[PRECLAMP-EQUIP]` probe
+(`PreClampLogEquipment`) reads the block for both caster and target at the pre-clamp damage frame.
+A Ramza basic attack on Ninja in a fresh session resolved `caster=Ramza actionId=0` and read both
+sides' full equipment block correctly - caster Ramza `rWeapon=37` Chaos Blade + `lShield=142`
+Venetian Shield; target Ninja `rWeapon=17`/`lWeapon=18` Iga+Koga dual-wield. Confirms live read,
+both sides per event, basic-attack weapon identity, shield slot, dual-wield, and offset stability
+across a fresh session. Evidence:
+`work/live-captures/battleprobe_log.equipment-readout-ramza-ninja.snapshot.txt`.
+
+Recorded in `12-...` 3.1.5, `05-battle-data-map.md`, roadmap U5/P13, `07-live-findings.md`, and
+`work/equipment-block-offsets-2026-06-24.md`. Remaining before wiring into live formulas: expose
+weapon/armor/family/element to the formula context (the next step).
