@@ -42,7 +42,7 @@ full-HP/no-status captures).
 | +0x41 | byte | CT (charge time) | volatile | prior live (doc05) |
 | +0x42 | byte | Move | 6/6/5/4/6 | 5/5 |
 | +0x43 | byte | Jump | 3/3/3/3/4 | 5/5 |
-| +0x44 | byte | **Weapon Attack R** (effective) | 40/14/14/16/15 | matches More screens |
+| +0x44 | byte | **Weapon Attack R** (effective) | 40/14/14/16/15 | matches More screens; == catalog weapon_power for 4/5 (Chaos Blade 40, Runeblade 14, Iga 15). Cloud's Materia Blade+ = 16 vs catalog 10 → struct holds the *effective* value incl. special/two-hand modifier |
 | +0x45 | byte | **Weapon Attack L** (effective) | 0/0/0/0/15 | Ninja dual-wield (Koga) |
 | +0x46 | byte | **Weapon Parry R %** | 20/15/15/10/10 | Ninja 10 matches More |
 | +0x47 | byte | **Weapon Parry L %** | 0/0/0/0/5 | Ninja 5 matches More |
