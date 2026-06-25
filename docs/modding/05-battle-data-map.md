@@ -53,8 +53,9 @@ The 0x28-0x47 block is the solid combat-stat region. **MAPPED (2026-06-24):** eq
 - `+0x44/45` **weapon attack R/L** (effective), `+0x46/47` **weapon parry R/L %**, `+0x4A`
   **shield physical parry %**, `+0x4E` **shield magick parry %**, `+0x4B` **physical evasion %**
   - all equipment-derived combat values cached in the struct (validated against the More screens).
-- `+0x38/39/3A` **raw PA/MA/Speed** (base, pre-equipment) - MEDIUM confidence (matches effective
-  where the unit has no relevant gear bonus).
+- `+0x38/39/3A` **raw PA/MA/Speed** (base, pre-equipment) - CONFIRMED: for all 5 units x 3 stats,
+  raw + sum(equipment PA/MA/Speed bonuses from item_catalog.csv) == effective (+0x3E/3F/40), 15/15
+  exact. Proof: `work/raw-stats-equipment-proof-2026-06-25.md`.
 - `+0x8A..0x93` **job growth/multiplier block** - the unit's job stat-scaling row copied straight
   from `baseline_jobs.csv`, all 10 fields confirmed 5/5: `+0x8A` HPGrowth, `+0x8B` HPMult,
   `+0x8C` MPGrowth, `+0x8D` MPMult, `+0x8E` SpeedGrowth, `+0x8F` SpeedMult, `+0x90` PAGrowth,

@@ -56,6 +56,160 @@
         "0x80": 89
       }
     },
+    "rawPa": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 56,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 56,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 62,
+          "kind": "b",
+          "matches": 3
+        },
+        {
+          "offset": 60,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 68,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 69,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 75,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 140,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 75,
+          "kind": "w",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 17,
+        "0x1F": 5,
+        "0x1E": 7,
+        "0x32": 14,
+        "0x80": 15
+      }
+    },
+    "rawMa": {
+      "verdict": "SOLID",
+      "best": {
+        "offset": 57,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 57,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 63,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 5,
+          "kind": "b",
+          "matches": 1
+        },
+        {
+          "offset": 126,
+          "kind": "b",
+          "matches": 1
+        }
+      ],
+      "ground_truth": {
+        "0x01": 9,
+        "0x1F": 12,
+        "0x1E": 17,
+        "0x32": 8,
+        "0x80": 7
+      }
+    },
+    "rawSpeed": {
+      "verdict": "AMBIG(2)",
+      "best": {
+        "offset": 58,
+        "kind": "b",
+        "matches": 5,
+        "n": 5
+      },
+      "candidates": [
+        {
+          "offset": 58,
+          "kind": "b",
+          "matches": 5
+        },
+        {
+          "offset": 58,
+          "kind": "n0",
+          "matches": 5
+        },
+        {
+          "offset": 58,
+          "kind": "w",
+          "matches": 3
+        },
+        {
+          "offset": 64,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 80,
+          "kind": "b",
+          "matches": 2
+        },
+        {
+          "offset": 64,
+          "kind": "w",
+          "matches": 2
+        },
+        {
+          "offset": 30,
+          "kind": "n0",
+          "matches": 2
+        },
+        {
+          "offset": 64,
+          "kind": "n0",
+          "matches": 2
+        }
+      ],
+      "ground_truth": {
+        "0x01": 10,
+        "0x1F": 8,
+        "0x1E": 11,
+        "0x32": 9,
+        "0x80": 12
+      }
+    },
     "pa": {
       "verdict": "SOLID",
       "best": {

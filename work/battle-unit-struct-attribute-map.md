@@ -33,6 +33,9 @@ full-HP/no-status captures).
 | +0x32 | word | MaxHP | 567/314/322/428/277 | 5/5 |
 | +0x34 | word | MP (current) | volatile | |
 | +0x36 | word | MaxMP | 85/180/232/89/41 | 5/5 |
+| +0x38 | byte | **raw/base PA** (pre-equip) | 17/5/7/14/15 | CONFIRMED: raw+Σ(equip bonus)==effective, 5/5 (see proof) |
+| +0x39 | byte | **raw/base MA** (pre-equip) | 9/12/17/8/7 | CONFIRMED, 5/5 |
+| +0x3A | byte | **raw/base Speed** (pre-equip) | 10/8/11/9/12 | CONFIRMED, 5/5 |
 | +0x3E | byte | PA (effective) | 20/5/11/14/15 | 5/5 |
 | +0x3F | byte | MA (effective) | 9/17/23/13/7 | 5/5 |
 | +0x40 | byte | Speed (effective) | 10/9/12/9/16 | 5/5; drives CT. ⚠ status screen appeared to show lower values for Ag/Be/Ni in my OCR — flagged, engine value trusted |
@@ -85,14 +88,25 @@ Also identified: **+0x14C = unit display-name string (ASCII)** — Ninja's bytes
 
 ## MEDIUM — strong structural inference, not directly ground-truthed
 
-| Offset | Width | Guess | Per-unit | Reasoning |
-|---|---|---|---|---|
-| +0x38 | byte | raw/base PA | 17/5/7/14/15 | == effective PA for units with no PA gear (Be/Cl/Ni); Ra 17+Bracers≈20 |
-| +0x39 | byte | raw/base MA | 9/12/17/8/7 | == effective MA where no MA gear (Ra/Ni) |
-| +0x3A | byte | raw/base Speed | 10/8/11/9/12 | base before equip speed bonus |
+_(none open — the former raw-stat entries +0x38/39/3A were promoted to CONFIRMED below; see the
+equipment-bonus proof.)_
 
-These form a raw-stat block mirroring the effective stats at +0x3E/3F/40. doc05 predicted raw
-stats exist. To confirm: ground-truth a unit's base stats (unequipped) or known gear bonuses.
+### Raw-stat proof (how +0x38/39/3A were confirmed)
+
+For all 5 units and all 3 stats, `raw(+0x38/39/3A) + Σ(equipment PA/MA/Speed bonuses) ==
+effective(+0x3E/3F/40)` — 15/15 exact. Equipment item ids were read from the struct equipment
+block (+0x1A..0x26) and their bonuses summed from `work/item_catalog.csv`:
+
+| Unit | raw PA/MA/Spd | equip bonus | == effective | key gear |
+|---|---|---|---|---|
+| Ramza | 17/9/10 | +3/0/0 | 20/9/10 ✓ | Bracers +3 PA |
+| Beowulf | 5/12/8 | +0/5/1 | 5/17/9 ✓ | Magepower Gloves, Runeblade, Lambent Hat |
+| Agrias | 7/17/11 | +4/6/1 | 11/23/12 ✓ | Genji Gloves, Lordly Robe, Runeblade, Lambent Hat |
+| Cloud | 14/8/9 | +0/5/0 | 14/13/9 ✓ | Materia Blade+ (+4 MA), Red Shoes |
+| Ninja | 15/7/12 | +0/0/4 | 15/7/16 ✓ | Thief's Cap +2, Ninja Gear +2 Spd |
+
+This closed loop independently re-confirms the raw offsets, the effective offsets, the equipment
+block, and the item catalog at once. Full record: `work/raw-stats-equipment-proof-2026-06-25.md`.
 
 ## LOW — candidate, needs more data
 
