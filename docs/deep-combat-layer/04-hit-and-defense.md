@@ -41,7 +41,7 @@ Taken from GURPS, scaled to skill:
 
 | Defense | FFT source | Behaviour | Value |
 |---------|-----------|-----------|-------|
-| **Dodge** | C-Ev + Speed | **Always on, never depletes.** The innate floor every unit has. | ~8 baseline |
+| **Dodge** | C-Ev + equipment | **Always on, never depletes.** The innate floor every unit has. **Speed removed** (validation B1) → evasion is a build axis (evasive class + light armor, paid in DR), not a Speed rider. | ~8 baseline |
 | **Parry** | W-Ev (weapon) | Strong, but **depletes** with use. | ≈ skill/2 + 3 |
 | **Block** | S-Ev (shield) | Strong, but **depletes** with use. Only with a shield. | shield-derived |
 
@@ -66,8 +66,13 @@ an emergent defensive stat**:
   until its distant next turn — its guard collapses to the Dodge floor and it gets hit.
 - A **fast** unit refreshes sooner, so it holds its full defensive ladder more often.
 
-Speed thus pulls double duty (see `01-attribute-map.md`): it feeds the Dodge floor *and* governs how
-quickly the depleting defenses come back. Tempo and survivability are linked.
+After validation B1 (2026-06-26), Speed **no longer feeds the Dodge floor** (`Dodge = C-Ev +
+equipment`); it governs **only** how quickly the depleting defenses come back. This guard-refresh tie
+is **KEPT as the intended "tempo = hold the line" mechanic** — full reset on the own turn, **not** a
+partial refresh. It is balanced at the **job-design level**: each job's Speed is calibrated against its
+offensive profile, so the agile jobs (Thief/Ninja/Archer) are fast only because their per-hit offense
+is correspondingly lower — a fast + high-offense + high-mitigation unit is never a buildable job
+(`12`, `01`).
 
 ## Calibration target (partially validated)
 

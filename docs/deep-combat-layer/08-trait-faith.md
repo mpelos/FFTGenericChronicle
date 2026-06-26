@@ -17,8 +17,10 @@ the DCL wants.
 Faith scales **both** sides of magic:
 
 - **+ Magic output** — your spells (and your friendly magic's effectiveness) scale up with Faith.
-- **− Magic vulnerability** — but high Faith also makes you take *more* magic damage and be more
-  affected by incoming spells. The devout are open conduits in both directions.
+- **− Magic vulnerability** — but high Faith also makes you take *more* magic damage **and resist
+  magical *statuses* worse** (sleep, petrify, stop… resist on **inverse Faith**: low Faith resists,
+  high Faith succumbs; the contest's offense is the caster's MA — `13`, validation A2). The devout are
+  open conduits in both directions, statuses included.
 
 So, symmetric to Brave: high Faith is a magic glass-cannon stance, low Faith is magic-resistant but
 magically inert.

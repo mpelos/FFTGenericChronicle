@@ -8,8 +8,12 @@ Review: Pending.
 ## Decision: full GURPS reach identity (option c)
 
 A weapon's **range becomes its reach** in the GURPS sense — not just "how far it can target" but a
-full spatial identity with strengths *and* a real weakness. Reach-2 weapons are spears, poles, and
-polearms; reach-1 is swords, axes, maces; reach-0 / point-blank is fists and the like.
+full spatial identity with strengths *and* a real weakness. **Only two melee reach tiers exist** — the
+FFT engine has **no reach-0 / range-0 attack** (melee `Range` is **1** at minimum; `14` locks "reach is
+1 or 2 only"). So: **reach-2** = spears, poles, polearms; **reach-1** = swords, axes, maces, **and
+fists** (standard adjacent melee — fists are reach-1, not a shorter tier; validation A3). "Point-blank"
+is **not** a fist tier — it is the **reach-2 weakness** (below): a long weapon is clumsy against a foe
+who has closed to an adjacent tile.
 
 ## The reach-2 identity
 

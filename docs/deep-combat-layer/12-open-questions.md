@@ -78,14 +78,33 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   the only stat that matters (the vanilla-FFT trap), too low and it is flavorless. Recommended
   **moderate-low**. It also bounds weapon `+Speed` grants (e.g. the knife). Finesse (Speed→damage)
   is **not** on the table — `01`.
+  - **Per-job Speed calibration (validation B1 — MANDATORY when designing jobs).** After B1, Speed
+    buys turn-frequency + the kept guard-refresh edge (Dodge is decoupled — `01`/`04`). The agile jobs
+    (Thief/Ninja/Archer) are fast **by design**, but each job's Speed MUST be calibrated against that
+    job's **offensive profile / mechanics**: more turns × *correspondingly lower per-hit offense*. A
+    fast + high-offense + high-mitigation package must never be a buildable job — fast jobs pay for
+    tempo in damage-per-hit (or another axis). This per-job calibration — not a refresh-rule change —
+    is the guardrail that keeps the kept full-refresh mechanic from making Speed dominant.
 - **Facing (`05`):** the −2 side modifier, back-strike rules for large units.
 - **Reach (`06`):** point-blank penalty, stop-hit ability numbers.
-- **Brave (`07`):** `k_off` (offense-swing size for Brave↔Faith symmetry — the key open knob),
-  curves, composure threshold; current sim constants `k_off≈0.012`, `def_div=12`.
+- **Brave (`07`):** `k_off` (offense-swing size for Brave↔Faith symmetry), curves, composure threshold.
+  **High-end offense multiplier set to ~1.35** (down from 1.56) by validation B9 tuning
+  (`sim_brave_offense`) — modest *because* its corrective (taunt) is deliberately rare; final value +
+  Faith-symmetry match + the low-end floor (toward 0.60) remain calibration. `def_div=12`.
 - **Faith (`08`):** Faith curve, magic-vulnerability slope.
 - **Zodiac (`09`):** resist/weak magnitude, whether affinity boosts dealing, Lightning neutrality.
-- **Weapon skill (`10`):** per-job/level skill tables, job×family grade matrix, Sword Master value,
-  over-cap skill→damage/penetration conversion rate.
+- **Weapon skill (`10`):** the **`skill(grade, jobLevel, charLevel)` formula shape is RESOLVED**
+  (validation A5, `sim_skill_scaling`): `skill = base[g] + rate[g]·(J·(jobLevel−1) +
+  K·(jobLevel÷8)·(charLevel−1))` with provisional `J=2.5`, `K=0.25` (→ **one job level ≈ 10 character
+  levels**, grade-independent), `rate = A1.00 B0.72 C0.50 D0.32 F0.20`, char term **gated by
+  `jobLevel÷8`** so a maxed grade-F at 99 stays sub-cap (≈13) while a grade-A reaches ≈55 — low grade
+  weak even at 99, passes all 10 design targets across a wide robust plateau. **Still calibration:** the
+  `base`/`rate`/`J`/`K`/cap magnitudes (move with the `base()` table + `G`); per-job/level skill tables;
+  job×family grade matrix; Sword Master value; over-cap skill→damage/penetration conversion rate.
+  - **Crossbow & gun = skill-primary (RESOLVED, validation A5):** their damage input is **weapon skill**,
+    not PA (`base(skill)` in `02`; crossbow→raw, gun→penetration) — trait-neutral, scales to 99 via
+    skill so they never go obsolete (no flat damage, no new-equipment dependency). The exact
+    skill→damage and skill→penetration rates are part of the formula tuning above.
 - **Equipment (`14`):** all weapon families *plus the Weight model, armor, and shield slots* are now
   *designed* in `14-equipment.md` (blades / crush / reach / magic / ranged / performer / unarmed;
   **every piece carries Weight**; armor = DR-by-type + modest HP vs Weight→−Move/−Dodge; shield = Block
@@ -149,17 +168,21 @@ A deliberate status system, applied by **explicit job skills and weapon properti
 and effect) — *not* by HP thresholds or a hidden major-wound trigger (item 1). Statuses identified
 so far:
 
-- **Stun** (mental) — lose your next action / defend poorly. Resisted by **Brave**.
+- **Stun** (**physical** — resisted by **base-HP**, not Brave; `13`, validation A1) — lose your next
+  action; can still move.
 - **Knockdown** (physical, NEW — Marcelo, 2026-06-25) — the unit is downed; on its **next turn it
   cannot move (it only stands up), but it CAN still act/attack.** Loses positioning, keeps offense.
   Clean counterpart to stun: **stun costs the action, knockdown costs the move.**
 - **Fear** (mental) — intimidation-driven; the home for the "fear" idea explored and rejected as an
   automatic *wound* mechanic. Resisted by **Brave**.
-- **Taunt / provoke** (mental) — skill-driven; pulls or forces target behaviour. Resisted by **Brave**.
+- **Taunt / provoke** (**mental, inverted** — resisted by **low** Brave; high Brave is *vulnerable*;
+  `13`, validation B9) — skill-driven; pulls target aggression onto the taunter.
 
-**Brave's "composure" half** (`07`) = the resist axis for the **mental/morale** statuses (stun, fear,
-taunt) + charged-action interruption (high Brave shrugs off; low Brave succumbs). This is the
-composure referent; the validated Brave régua is unchanged (offense↔defense trade intact).
+**Brave's "composure" half** (`07`) = the resist axis for the **will-override mental** statuses (fear,
+charm, confuse, berserk) + charged-action interruption (high Brave shrugs off; low Brave succumbs).
+**Stun/knockdown are physical** (base-HP, not Brave); **taunt is inverted** (low Brave resists, high
+Brave is vulnerable) — see `13`. The Brave régua was **amended by validation B9** to add the taunt
+vulnerability (the gear that closes the backliner min-max — `07`).
 
 To grill (detail): exact list, durations, the resist mechanic (3d6 vs a Brave-derived number?),
 whether physical **knockdown** resists via Brave or a physical stat, interaction with charge-time

@@ -20,19 +20,47 @@ the player plans around a preview number, a swingy confirmed hit is frustrating.
 For a confirmed, undefended hit:
 
 ```
-injury = max( pen_floor ,  max(0, [ base(PA) + wmod ] − DR_type) )  × wound_mult × G
+injury = max( pen_floor ,  max(0, [ base(IN) + wmod ] − DR_type) )  × wound_mult × trait_mult × G
 ```
 
 Term by term:
 
 | Term | Meaning |
 |------|---------|
-| `base(PA)` | The GURPS-style thrust/swing value derived from the attacker's **base PA** (ST), via a re-ranged table — see below. **Base PA only**: the weapon's PA bonus is *not* included here. |
+| `base(IN)` | The GURPS strength→damage value from the attacker's **damage input** `IN`, via a re-ranged table. `IN` = **base PA** (ST) for most weapons; **= weapon `skill` for crossbow & gun** (marksmanship weapons — validation A5; `10`/`14`). **Type-split (validation B2): `thr` for thrust weapons (lower), `sw` for swing/cut & crush (higher)** — see below. **Base PA only**: the weapon's PA bonus is *not* included here. |
 | `wmod` | The **weapon's flat additive modifier** (from WP). Scales fast to large endgame numbers — GURPS *structure*, FFT *pace*, not literal +1/+2 steps. |
 | `DR_type` | The target's **subtractive Damage Resistance** against this damage *type*. Different armor resists different types differently (`03`). |
 | `pen_floor` | **Penetration floor.** A minimum fraction of the pre-mult raw damage always gets through (≈15–33%), so even a bad matchup chips. |
 | `wound_mult` | The damage-type **wound multiplier** (swing ×1.5, thrust ×2, crush ×1, missile ×1) — see `03`. |
 | `G` | A global **bridge constant** mapping GURPS-native magnitudes onto FFT's HP scale. |
+| `trait_mult` | The **trait offense multiplier**: the **Brave** physical-offense multiplier (`07`, ~0.76–1.35) for ordinary physical weapons; **1.0 (trait-neutral)** for crossbow/gun skill weapons (`10`). Magic runs on its own Faith-scaled axis (`11`), not here. |
+
+**The headline is honest about its modifiers (validation B7).** `trait_mult` above is the Brave
+multiplier, shown in the equation rather than hidden. One more **documented add-on**: a master's
+**over-cap weapon skill** (`10`) feeds in as extra **damage** (into the bracket) or **penetration**
+(a DR reduction) — a real term, called out here so the "transparent" formula stays transparent.
+
+### `base(PA)` is type-split: `thr` for thrust, `sw` for swing (validation B2, 2026-06-26)
+
+`base(PA)` is **not** a single number shared by all weapons. It is the GURPS **thrust** value
+`thr(PA)` for thrust-type weapons and the **swing** value `sw(PA)` for swing/cut and crush weapons,
+where **`thr(PA) < sw(PA)`** (the GURPS table). This is load-bearing — it is what **balances the wound
+multipliers** (`wound_mult`: cut ×1.5, thrust ×2, crush ×1).
+
+The original draft left `base(PA)` as one shared value; the validation (B2) showed that a single base
+multiplied by the type's `wound_mult` makes **thrust (×2) strictly dominate cut (×1.5)** on the same
+number — and because the multiplier is outside the additive `wmod`, no weapon-power tuning can
+compensate (the gap *grows* with PA). Restoring the GURPS split fixes it at the root:
+
+- thrust's ×2 falls on the **smaller** `thr` base; cut's ×1.5 on the **larger** `sw` base.
+- On **raw** damage, cut is competitive-to-higher — e.g. ST≈11: cut `sw≈4.5 ×1.5 ≈ 6.8` vs thrust
+  `thr≈2.5 ×2 ≈ 5.0`.
+- Thrust's edge appears only **after armor / on penetration** — the ×2 doubles what got *through* DR,
+  and matters more vs high-HP. So thrust = the anti-armor/penetration specialist, cut = the raw-damage
+  generalist (strong vs light targets): a **contextual** split, not a universal ranking (P1′). This
+  also restores cut's winning contexts (validation B11). Crush is swung → `sw` base × 1 (paid back by
+  its heavier `wmod`); missile keeps its own ×1 base and earns its niche through **range/kiting**, not
+  raw damage (`03`, `06`).
 
 ### Why base PA, not weapon PA
 

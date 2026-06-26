@@ -21,9 +21,9 @@ audit below is the proof that the constraint is satisfied: every line has a home
 |---------------|-----------------|----------------|
 | **PA** (Physical Attack) | **ST (Strength) — base only.** PA is the character's strength input to the GURPS thrust/swing damage table. **Base PA excludes the weapon's PA bonus** (the weapon contributes separately as a flat damage modifier; counting both would double-count). | `02-damage-model.md` |
 | **HP** | Hit points, **decoupled from ST**; its own FFT pool (existing curves survive). **Double-homed: Base HP = the GURPS HT analogue** — innate physical resilience that resists *physical* statuses (poison, disease, stun, knockdown). Uses **base HP only** (excludes armor/equipment HP bonuses) → resilience is intrinsic, not bought with gear (the parallel to ST = base PA). | `02`, `12` (death), status |
-| **Speed** | **Double duty.** (1) Feeds **Dodge**, the always-on non-depleting active-defense floor. (2) Drives **CT/turn frequency** — which becomes *emergent defense* because guard resets on your own turn (a fast unit refreshes its depleted parry/block sooner). | `04-hit-and-defense.md` |
+| **Speed** | **Turn frequency (CT).** Drives how often a unit acts. A *residual* emergent defense remains because guard resets on your own turn (a fast unit refreshes its depleted parry/block sooner) — open follow-up. **No longer feeds Dodge** (validation B1, 2026-06-26 — see note below). | `04-hit-and-defense.md` |
 | **Move / Jump** | Positioning resources — unchanged in spirit, but far more valuable because facing, flanking, and reach now decide fights. | `05`, `06` |
-| **C-Ev** (Class Evade) | Folds into **Dodge** (the innate, non-depleting defense floor). | `04` |
+| **C-Ev** (Class Evade) | **Primary source of Dodge** (the innate, non-depleting defense floor), together with equipment. After validation B1, **Dodge = C-Ev + equipment** (Speed removed) → evasion is a real build axis (evasive class + light armor, paid in DR) and the **survival mechanism for light/leather builds**. | `04` |
 | **S-Ev** (Shield Evade) | Becomes **Block** — a strong but **depleting** active defense granted by shields. | `04` |
 | **W-Ev** (Weapon Evade) | Becomes **Parry** — a strong but **depleting** active defense granted by the weapon (≈ skill/2 + 3). | `04` |
 | **WP** (Weapon Power) | The weapon's **flat additive damage modifier** (scales fast to large endgame numbers). Pairs with the weapon's damage *type* and *reach*. | `02`, `03` |
@@ -51,20 +51,30 @@ is a design goal, not a coincidence — it is what lets the same "should I push 
 recur across three different combat dimensions. The hidden vanilla Zodiac multiplier is gone; all
 three are surfaced to the player.
 
-## Note on double-homed Speed
+## Note on Speed (amended — validation B1, 2026-06-26)
 
-Speed is the one attribute carrying two distinct loads (Dodge floor + turn frequency). This is
-intentional and load-bearing: it is what ties *tempo* to *defense*. A slow, heavily-armored unit
-that gets focus-fired will see its depleting defenses (Parry/Block) collapse before its next turn
-refreshes them, while its Dodge floor remains — so Speed indirectly governs how long a unit can
-hold a line under pressure. See `04-hit-and-defense.md` for the depletion/reset mechanic that makes
-this matter.
+The original design double-homed Speed (**Dodge floor + turn frequency**). The validation found this
+made Speed **strictly dominant** — a fast unit got more turns *and* a higher Dodge *and* faster
+guard-refresh, with no hard tradeoff (a P9 violation; `validation/report.md` B1, sim-confirmed with
+Speed isolated from Brave). **Fix: Speed is decoupled from Dodge.**
 
-Speed is deliberately **frequency + defense, not offense.** It multiplies *how often* a unit acts
-(and how well it evades); it never feeds weapon damage. A *finesse* path (light-weapon damage scaling
-off Speed, as in D&D/GURPS) was considered and **rejected**: those systems are safe because their
-agility stat grants no extra turns, whereas our Speed *does* (CT) — so Speed→damage would compound to
-~Speed² and would turn PA from a *complement* (magnitude) into a dead *substitute*. So **PA =
-magnitude, Speed = frequency**, both wanted; the breadth of an "agile" playstyle comes from **job
-skills** (tempo / mobility synergies), not from an attribute-scaling axis. Weapon `+Speed` grants
-(e.g. the knife) are fine as **stat sticks**, kept modest — they are distinct from finesse.
+- **Speed now drives turn frequency (CT) only.** `Dodge = C-Ev (class) + equipment`; Speed is out of
+  the Dodge formula. Evasion becomes a real build axis (evasive class + light armor, paid for in
+  DR/protection) — the **survival mechanism for light/leather builds**, not a free rider on Speed.
+  A fast unit still acts more often, but is no longer harder to hit for free.
+- The **guard-refresh tie is KEPT** (depleting Parry/Block fully reset on the unit's own turn — a fast
+  unit refreshes sooner, so focus-fire cracks *slow* tanks; the intended "tempo = hold the line"
+  identity; **not** a partial refresh). It is balanced not by a refresh-rule change but at the
+  **job-design level**: the agile jobs (Thief/Ninja/Archer) are fast *because* their per-hit offense
+  is set correspondingly lower — each job's Speed is calibrated against its offensive profile (`12`).
+  A fast + high-offense + high-mitigation package is therefore never a buildable job. See
+  `04-hit-and-defense.md`.
+
+Speed remains deliberately **frequency, not offense.** It multiplies *how often* a unit acts; it never
+feeds weapon damage. A *finesse* path (light-weapon damage scaling off Speed, as in D&D/GURPS) was
+considered and **rejected**: those systems are safe because their agility stat grants no extra turns,
+whereas our Speed *does* (CT) — so Speed→damage would compound to ~Speed² and would turn PA from a
+*complement* (magnitude) into a dead *substitute*. So **PA = magnitude, Speed = frequency**, both
+wanted; the breadth of an "agile" playstyle comes from **job skills** (tempo / mobility synergies),
+not from an attribute-scaling axis. Weapon `+Speed` grants (e.g. the knife) are fine as **stat
+sticks**, kept modest — they are distinct from finesse.

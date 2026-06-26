@@ -154,25 +154,34 @@ This group is the clearest example of the core philosophy. **Rate-of-fire / relo
 not modeled** (it does not fit FFT); the three are differentiated purely by *context*, and the extra
 power of each only appears inside its own context.
 
-| Família | Tipo | wmod | Alcance / LoS | Divisor | Escala c/ PA | Mãos |
-|---------|------|------|---------------|---------|--------------|------|
-| **Bow** | Míssil ×1 | médio | médio-longo, **arco** | baixo | **sim** | 2H, sem parry |
-| **Crossbow** | Míssil ×1 | médio | médio, **linha reta** | médio | não (fixo) | 2H, sem parry |
-| **Gun** | Míssil ×1 | **médio-baixo** | **longo**, linha reta | **alto** | não (fixo) | 2H, sem parry |
+| Família | Tipo | wmod | Alcance / LoS | Divisor | **Escala com** | Mãos |
+|---------|------|------|---------------|---------|----------------|------|
+| **Bow** | Míssil ×1 | médio | médio-longo, **arco** | baixo | **PA** (força) | 2H, sem parry |
+| **Crossbow** | Míssil ×1 | médio | médio, **linha reta** | médio | **skill** → dano cru | 2H, sem parry |
+| **Gun** | Míssil ×1 | **médio-baixo** | **longo**, linha reta | **alto** | **skill** → penetração | 2H, sem parry |
 
 - **Bow** — best in **vertical / broken terrain** (the **arc** clears walls, units, height) **and** on
   a **high-PA archer** (damage scales with PA). Weak on flat open ground, on a low-PA user, and vs
   armor. (Its PA-scaling keeps **PA alive for archer builds**, serving the use-or-replace rule `01`.)
-- **Crossbow** — best in the **open with a direct line**, on **any unit** (flat damage, no PA needed).
-  Weak in terrain/height (straight line is blocked) and gains nothing from high PA.
-- **Gun** — best **vs armored targets** (high divisor) and at **extreme range**. It **trades base
-  damage for penetration**: vs unarmored it does *less* than a crossbow (lower `wmod`, divisor
-  wasted). Weak vs squishy, terrain-blocked, and rare. Some SKUs are elemental (Zodiac `09`).
+- **Crossbow** — the **marksman's** weapon: damage scales with **weapon skill** (`10`), not PA — a
+  *trained* shooter is deadly regardless of strength, and the bolt keeps scaling with mastery
+  (Job Level + character level, `10`) so it never goes obsolete. Best in the **open with a direct
+  line**; weak in terrain/height (straight line is blocked). A **low-skill** user is poor with it
+  **even at high character level** (skill is gated by job grade/level — `10`).
+- **Gun** — the **armor-defeater**: also **skill-scaled** (`10`), but skill drives **penetration**
+  (the skill→penetration half of `10`'s over-cap) rather than raw — a master gunner's shot stays
+  relevant vs late-game plate by **defeating armor**, not by big numbers. Best **vs armored targets**
+  (high divisor) and at **extreme range**; vs unarmored it does *less* than a crossbow (lower `wmod`,
+  divisor wasted). Weak vs squishy, terrain-blocked, and rare. Some SKUs are elemental (Zodiac `09`).
 - All are **missile ×1, 2H, no parry** → defensively naked in melee; their defense is staying at
   range (a harder version of the reach point-blank weakness). The armor-answer is the **divisor**
   (`03`), scaling Bow(baixo) → Crossbow(médio) → Gun(alto).
-- No strict winner: flat field vs flesh → Crossbow/Bow; height → Bow; high PA → Bow; vs armor →
-  Gun; low-PA in the open → Crossbow.
+- No strict winner: height/terrain → Bow; high **PA** → Bow; high **weapon-skill marksman** →
+  Crossbow (raw) / Gun (penetration); vs armor → Gun; flat field vs flesh → Crossbow/Bow.
+- **Ranged splits on its scaling stat (`10`/`01`):** Bow = **PA** (strength archer); Crossbow/Gun =
+  **weapon skill** (marksmanship), trait-neutral. The skill weapons home **Job Level + character
+  level** in combat and reward *playing the job*, not raw strength. (The old "flat damage" is dropped:
+  a non-scaling weapon would go obsolete in a no-new-equipment mod — `12`.)
 
 ### Performer / utility — job platforms, not weapons
 

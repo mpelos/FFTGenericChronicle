@@ -21,6 +21,15 @@ The multiplier is on the **post-DR** number, so it rewards *getting through* the
 weapon that barely penetrates still gets ×1.5 on the sliver that lands, but if DR eats everything
 the multiplier multiplies the penetration floor only.
 
+> **The multipliers are NOT a power ranking — they ride different bases (validation B2).** Thrust's
+> ×2 is not a strict upgrade over cutting's ×1.5. Per `02-damage-model.md`, `base(PA)` is **type-split**:
+> thrust uses the GURPS **thrust** value `thr(PA)` (lower) and swing/cut & crush use the **swing** value
+> `sw(PA)` (higher), with `thr < sw`. So the big ×2 lands on a *smaller* number and the ×1.5 on a
+> *larger* one — on raw flesh they come out close (ST≈11: cut `sw≈4.5 ×1.5 ≈ 6.8` vs thrust
+> `thr≈2.5 ×2 ≈ 5.0`). Thrust's ×2 only pulls ahead **after armor**, where doubling what got *through*
+> DR matters — so thrust is the anti-armor/penetration specialist and cut is the raw-damage generalist
+> (strong vs light targets). Reading the ×2 alone as "best" is the exact mistake that broke B2.
+
 ## The crush ↔ cutting tradeoff
 
 Crush has the worst wound multiplier (×1) but is the answer to armor. To make that a *fair* trade

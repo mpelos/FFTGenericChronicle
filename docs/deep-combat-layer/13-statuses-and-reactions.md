@@ -33,8 +33,8 @@ them onto existing FFT attributes, completing a clean four-attribute parallel:
 |-------|-----|-------------------|
 | **ST** | **PA** (base) | melee damage input (`02`) |
 | **HT** | **HP** (base) | physical resilience — poison, disease, stun, knockdown |
-| **Will** | **Brave** | mental resilience — fear, taunt, charm, confuse, berserk |
-| (arcane) | **Faith** | magical statuses |
+| **Will** | **Brave** | mental resilience — fear, charm, confuse, berserk (**taunt inverts — low Brave resists; see below**) |
+| (arcane) | **Faith** | magical statuses — **inverse: low Faith resists, high Faith succumbs** (`08` conduit; see below) |
 
 Two deliberate points:
 
@@ -46,20 +46,42 @@ Two deliberate points:
 - **Brave = Will.** The "composure" half of Brave (`07`) is the *will* function — resisting mental
   statuses — not physical toughness.
 
-A mage (low Brave + low base HP) is therefore disruptable on **both** axes — coherent glass-cannon
-counterplay, and a real cost of the low-Brave/low-HP build.
+A mage (low Brave + low base HP + **high Faith**) is therefore disruptable on **all three** axes —
+mental (low Brave), physical (low base HP), and magical (high Faith opens it to magical statuses too —
+`08`, validation A2) — coherent glass-cannon counterplay, and a real cost of the squishy-caster build.
 
 ## Status categories
 
 | Category | Resists with | Statuses |
 |----------|--------------|----------|
-| **Mental / will** | **Brave** | Fear, Taunt (new) · Charm, Confuse, Berserk (FFT, **moved here**) |
-| **Physical / body** | **base HP** | Stun, Knockdown (new) · Poison, Disease |
-| **Magical** | Faith / MA | Sleep, Petrify, Frog, Stop, Slow, Don't Act/Move, Death Sentence … (FFT logic kept) |
+| **Mental / will** | **high Brave** | Fear (new) · Charm, Confuse, Berserk (FFT, **moved here**) |
+| **Mental — inverted** | **low Brave** | **Taunt / provoke** (new) — high Brave is *vulnerable* (validation B9) |
+| **Physical / body** | **base HP** | Stun, Knockdown (new — physical reskins of the DA/DM flags, A4) · Poison, Disease |
+| **Magical — inverted** | **low Faith** (caster **MA** = offense) | Sleep, Petrify, Frog, Stop, Slow, **Don't Act/Move** *(magical-source version — distinct from the physical Stun/Knockdown reskins, A4)*, Death Sentence … (FFT logic kept) |
 
 Moving FFT's mind-control statuses (Charm, Confuse, Berserk) onto the **Brave** axis is intentional:
 control of the mind is resisted by willpower/courage, not faith. It enriches Brave's composure half
 (high Brave = mentally tough) and makes the loss-of-control statuses target low-Brave units naturally.
+
+**Taunt is the deliberate exception — it inverts (validation B9).** The will-override statuses (fear,
+charm, confuse, berserk) *hijack* the mind, so a strong will (high Brave) resists them. Taunt does the
+opposite: it *baits* an aggression the target already has, so the hot-headed **high-Brave** unit takes
+the bait and the disciplined **low-Brave** unit refuses it. Taunt is therefore resisted by **low**
+Brave, and **high Brave is vulnerable**. This is what closes the Brave régua's P4 hole (`07`): a
+protected high-Brave attacker can be provoked out of position, where its `−active-defense` finally
+bites — so the trait's downside reaches even the min-maxing backliner. It also sharpens the tank
+fantasy: the low-Brave tank both resists taunt and is the natural taunter of enemy high-Brave
+glass-cannons.
+
+**Magical statuses also invert — on Faith (validation A2).** Faith is a *conduit*, not armor: high
+Faith buys magic output but opens the unit to magic in **both** directions (`08`). So magical statuses
+resist on **inverse Faith** — a **low-Faith** unit resists sleep/petrify/stop/etc. (the faithless
+"anti-magic" bruiser), a **high-Faith** unit succumbs (the open conduit pays for its power). The
+**caster's MA** is the offense side of the 3d6 contest (higher MA = harder to resist), not the target's
+resist stat. One rule, two directions — symmetric to Brave's two-sided composure. *Calibration watch:*
+low Faith now resists magic damage **and** most magical statuses — a lot of defensive value; the
+magic floor (resistant-not-immune, `08`) and the cost of being offensively magic-inert are what balance
+it (sim/playtest).
 
 ## New statuses
 
@@ -80,6 +102,25 @@ move** that turn — though you **can still act** (attack). Duration ~1 turn. Th
 **Implementation:** a reskin of FFT **"Don't Move"** — dead (lying) animation, keeps the **DM**
 status balloon. Cheap, same as stun.
 
+### Two versions of Don't-Act / Don't-Move — one engine flag (validation A4)
+
+The physical **Stun** (Don't-Act) and **Knockdown** (Don't-Move) reskins **share their engine flag with
+the magical Don't-Act / Don't-Move statuses** — but they are genuinely *different statuses*, and both
+exist on purpose:
+
+- **Physical** (Stun / Knockdown): short (**~1 turn**), carries the kneel / prone **animation**, comes
+  from a physical source, resists on **base-HP**.
+- **Magical** (Don't-Act / Don't-Move): a normal-duration **spell** effect, magical source, resists on
+  **inverse Faith**.
+
+The fix to the "one flag in two resist categories" clash: **resist category — and duration, and
+animation — is set when the status is *inflicted*; it is a property of the inflicting skill, not read
+off the shared engine flag.** The flag only carries the ongoing effect and the status balloon, so the
+one-stat-per-status partition holds even though the flag is reused. The single engine consequence: a
+flag-keyed **immunity** ("immune to Don't Act") covers *both* versions — a broad, rare immunity, which
+is acceptable. (Same logic settles the weak case — **Poison resists on base-HP even when a spell
+delivers it**: resist follows the affliction's *nature*, not its delivery.)
+
 ### Fear — mental (Brave resisted) · the mirror of Berserk
 
 The unit is too frightened to fight: it **auto-flees from the enemy** (forced movement away) and
@@ -97,11 +138,15 @@ self/ally/item and defensive actions, and it **moves** (the flight is the moveme
 **Implementation:** the flee uses FFT's existing flee AI (pathing jank around cliffs/corners is
 accepted); the "no action targeting an enemy" filter needs a hook.
 
-### Taunt — mental (Brave resisted) · directed aggression
+### Taunt — mental, **inverted** (low-Brave resisted) · directed aggression
 
 The tank's tool: pull an enemy's aggression onto yourself, protecting the backline. Distinct from
 Berserk (chaotic, nearest target) — Taunt is **directed** aggression (target = the taunter).
 
+- **Resisted by LOW Brave (inverted — validation B9):** the cautious decline the bait; **high Brave
+  is vulnerable.** Unlike the will-override statuses (which a strong will resists), taunt baits the
+  target's own aggression — so it punishes high Brave and is the gear that pulls a protected
+  high-Brave min-maxer out of position (`07`). See "Status categories" rationale above.
 - **Ideal (the target we want):** a directed compulsion — the taunted unit is forced to attack the
   **taunter** specifically (approaching if needed). This is where we'd like to get to.
 - **Fallback (shippable):** a **1-turn Berserk** (reuse the native Berserk status). It degrades to
@@ -150,7 +195,8 @@ two-sided design applied to reactions.
 
 - Map every FFT status into a category and confirm the moved ones (Charm/Confuse/Berserk → Brave).
 - Per-status **durations**.
-- The **Brave → 3d6 resist number** and **base HP → 3d6 resist number** curves.
+- The **Brave → 3d6 resist number**, **base HP → 3d6 resist number**, and **inverse-Faith → 3d6 resist
+  number** (vs caster MA) curves.
 - **Frequency / availability** of the control statuses (Fear, Taunt, Charm, etc.) — few jobs, real
   cost — so they stay characterful and never oppressive.
 - Per-job reaction rosters and trigger curves (with `07`, `10`).
