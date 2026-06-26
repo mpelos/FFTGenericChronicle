@@ -1,0 +1,41 @@
+docs/deep-combat-layer/12-open-questions.md
+  s_a298d5c04f383c::t_5ab4ff29272c32 111-117
+  s_a298d5c04f383c::t_fcb0af74c6ebec 135-137
+  s_a298d5c04f383c::t_cba61d317a8236 76-80
+  s_a298d5c04f383c::t_3974657f864b2f 89-102,108-110
+  s_a298d5c04f383c::t_839784bd5c4628 103-107
+  s_a298d5c04f383c::t_cd9ba292bd8195 138
+docs/deep-combat-layer/01-attribute-map.md
+  s_a298d5c04f383c::t_05dc71b3653080 62-70
+docs/deep-combat-layer/14-equipment.md
+  s_a298d5c04f383c::t_b6fd54fd565493 377-382
+  s_a298d5c04f383c::t_88134d3f64de02 235,286-287,291,295-297,307,312-314,318-345,347,407-410
+  s_a298d5c04f383c::t_96b50f219f62b5 400-404
+  s_a298d5c04f383c::t_b58d6aadcc5315 87-92
+  s_a298d5c04f383c::t_a11e8dc0f34606 79
+  s_a298d5c04f383c::t_3331b04189bbae 177,179-194
+  s_a298d5c04f383c::t_f4609b4b058147 195-203,205,207-215,217-219,221-231
+  s_a298d5c04f383c::t_e8517d95355ed9 237-285,288-290,292-294,298-306,308-311,315-317
+  s_a298d5c04f383c::t_bc0db7b7e00db3 3
+  s_a298d5c04f383c::t_a0479d07509615 411-412
+  s_a298d5c04f383c::t_b4cdab729480f2 346,348-376,383-399
+  s_a298d5c04f383c::t_29371a3dd4bf23 232-234
+  s_a298d5c04f383c::t_19987ffa54b3e5 236
+  s_a298d5c04f383c::t_1c175596ab923f 413
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "29e37d58e2ad1f226fe6b4a887405992d3833c45",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
