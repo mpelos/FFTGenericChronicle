@@ -35,6 +35,16 @@ agreeing smoothly with everything, stop — you are doing it wrong.
 
 ## Operating doctrine (hold these the whole way through)
 
+- **Understand the philosophy first — the project's *and* the domain's — then hold it as a hard rule.**
+  You cannot validate against a yardstick you do not understand. Before you judge anything, internalize
+  two things and re-read every verdict against them: (1) the **project's design philosophy** — the feel
+  it reaches for, the player fantasy it sells, why it exists at all, and what would make it a *failure*
+  even if internally consistent; and (2) the **craft of the domain you are touching** — the established
+  principles, known failure modes, and genre conventions of the field (tactical-RPG combat, economy
+  design, pacing, whatever applies). A verdict reached without both is uninformed even when it sounds
+  rigorous: you will flag deliberate genre moves as "broken" and wave through decisions that violate
+  craft the docs never thought to name. This understanding is a **standing constraint**, not a one-time
+  Phase-B chore — if a critic's verdict or a sim's read ignores the intended feel, it does not bind.
 - **Guilty until proven innocent.** Each pass, your job is to find why a decision is *wrong*, not why
   it's fine. A decision keeps its place only by surviving a genuine attempt to break it. "I couldn't
   refute it" is the bar — not "it sounds reasonable."
@@ -46,7 +56,7 @@ agreeing smoothly with everything, stop — you are doing it wrong.
   context is theater — you're still anchored to the rationale you already absorbed. The real de-bias is
   a critic that **never made the decision**: spawn a fresh-context subagent (Task/Agent) and give it a
   **rationale-redacted** view of the docs — the decision's neutral statement + its neighbors + the
-  pillars, never the author's defense. **This redaction applies to every critic you spawn, in every
+  pillars + `philosophy.md` (the intent and domain craft), never the author's defense. **This redaction applies to every critic you spawn, in every
   phase**, not just one. For the most structural decisions, and for every conflict-of-interest one,
   prefer a **different model** (the GPT peer via the Codex MCP); when no peer is available the
   cross-model requirement falls back to **two same-model critics with disjoint prompts**, never silently
@@ -105,6 +115,15 @@ critic to attack the graph itself** — which edges are missing, which in-degree
 recompute. Produce a short "how it all connects" map. **No verdicts yet** — just structure. Save to
 `map.md`.
 
+Before the pillars, **make the philosophy explicit and earn the domain — write `philosophy.md`.** Capture
+(1) the **project's design intent**: the feel it reaches for, the fantasy it sells, why it exists, and
+what would count as a *failure* even if every decision were internally consistent; and (2) the **craft of
+the domain you are touching**: the field's established principles, known failure modes, and genre
+conventions, so you can tell a deliberate genre move from an accident. **Validate both with the user
+before judging anything** — a yardstick you misread poisons every downstream verdict, and unlike the
+pillars (which you can attack mechanically) the *intent* is the one thing only the user can confirm. This
+file is then handed to every critic alongside the pillars, and every verdict is read against it.
+
 Then **pin down the L0 pillars before you judge anything against them** — they are the yardstick, and a
 wrong or incomplete pillar set makes every downstream verdict inherit the error. Because you extracted
 them while anchored, don't just nod: first **spawn a fresh- or cross-model critic to attack the pillar
@@ -143,11 +162,14 @@ the two-disjoint-prompt same-model fallback when no peer exists; never a single 
 1. **Refute it — with an independent critic whose verdict binds and is provable.** Spawn a fresh-context
    subagent (Task/Agent, read-only). Do **not** hand it excerpts you chose — you are the anchored party
    and will, even unconsciously, frame it to flatter. Hand it a **rationale-redacted view of the
-   register** — each decision's *statement* + its graph-neighbors + the pillars, with the `rationale`
-   and `alternatives` columns stripped — so it judges the decision on its merits instead of re-reading
-   the author's defense (this also resolves the otherwise-contradiction of "give it the register but
-   withhold the rationale": the register *is* the rationale until you redact it). Prompt it roughly:
-   *"Here is a decision, its connected decisions, and the pillars. Assume it is flawed. Make the
+   register** — each decision's *statement* + its graph-neighbors + the pillars + `philosophy.md`, with
+   the `rationale` and `alternatives` columns stripped — so it judges the decision on its merits instead
+   of re-reading the author's defense (this also resolves the otherwise-contradiction of "give it the
+   register but withhold the rationale": the register *is* the rationale until you redact it). Always
+   include `philosophy.md` so the critic judges against the intended feel and the domain's craft, not in
+   a vacuum. Prompt it roughly:
+   *"Here is a decision, its connected decisions, the pillars, and the project/domain philosophy. Assume
+   it is flawed. Make the
    strongest case it breaks a pillar, creates a strictly-better option, contradicts a neighbor, or fails
    in play. Default to 'broken' unless you genuinely cannot. Return: the objection, a **concrete
    reproducible failing scenario**, and a verdict — broken / holds / unsure."*
@@ -287,7 +309,8 @@ reused for the whole run. This path is **independent of which design corpus you 
 skill is general-purpose, not tied to any one project or system. Always create a new timestamped
 directory rather than reusing or writing beside the docs.
 
-Inside it: `register.md`, `map.md`, `doubts.md`, `simulations/`, and the final `report.md`. Keeping
+Inside it: `philosophy.md` (the project intent + domain craft, written first and handed to every
+critic), `register.md`, `map.md`, `doubts.md`, `simulations/`, and the final `report.md`. Keeping
 them as files (not just in your head) is itself a de-bias — it externalizes the doubts so they can't
 quietly disappear when convenient.
 
