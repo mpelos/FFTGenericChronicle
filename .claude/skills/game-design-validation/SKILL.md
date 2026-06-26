@@ -231,24 +231,42 @@ For each micro decision under test:
    before you know the outcome** — numbers reverse-engineered to flatter the conclusion prove nothing.
 2. **Build concrete units.** Instantiate the actual archetypes the design cares about (e.g. a plate
    knight, a leather skirmisher, a robe caster, an unarmed monk) with those numbers.
-3. **Run it as code, not in your head.** You are unreliable at multi-round arithmetic, and one silent
+3. **Cover the spectrum of play, not a single snapshot.** A game is exercised across countless
+   situations, and one scenario certifies only that one frame — the most common way a sim launders a
+   broken decision into a `holds` is by testing it in exactly one comfortable configuration. So before
+   you simulate, **enumerate the axes along which *this* game actually varies, then run a spread that
+   crosses them** rather than one tidy case. The axes are domain-specific and you derive them from
+   `philosophy.md`, but for a combat/systems game they almost always include: **where a unit sits in
+   progression** (weak/early vs. fully-developed/late, and the curve between), **what role or build it
+   is configured into** (and the contrasting builds it could have taken instead), **what it is matched
+   against** (the opposing archetypes, not just a mirror), and **the situational and spatial context
+   the encounter imposes** (starting position, who acts first, terrain/range, resource and tempo
+   state). The break you are hunting almost always lives in a *corner* of this space — an option that
+   is fair head-on but degenerate from an advantageous position, a build that is balanced mid-curve
+   and oppressive at the top, a number that only fails in one matchup. Name the axes you covered **and
+   the ones you deliberately skipped**, so a skipped corner is a recorded choice, not an invisible gap.
+4. **Run it as code, not in your head.** You are unreliable at multi-round arithmetic, and one silent
    slip becomes a confident wrong "read" that the doctrine then launders into *evidence*. Write a
    throwaway script (save it under `simulations/`) that computes the rounds — the damage pipeline,
-   defense rolls, the mobility/Weight cost, the turn economy, whatever the decision touches — and run
-   it. The script's output is the ground truth; your prose only interprets it. For load-bearing sims,
-   split the roles: a fresh-context agent fixes the numbers and runs the script, you only read the
-   result — so the party that wants it to hold isn't the one choosing the inputs.
-4. **Read it against intent.** Does the intended balance hold? Is any option **strictly better**? Do
-   the designed counters actually work? Does the math go degenerate (one-shots, unkillable turtles,
-   dead stats, stalemates)?
-5. **Sensitivity sweep.** Re-run with *different* plausible numbers. If the conclusion only holds for
+   defense rolls, the mobility/Weight cost, the turn economy, whatever the decision touches — across
+   the scenario spread from step 3, and run it. The script's output is the ground truth; your prose
+   only interprets it. For load-bearing sims, split the roles: a fresh-context agent fixes the numbers
+   and scenarios and runs the script, you only read the result — so the party that wants it to hold
+   isn't the one choosing the inputs *or* the cases.
+5. **Read it against intent.** Does the intended balance hold **in every scenario you ran**, or only
+   in some? Is any option **strictly better** — anywhere on the spread? Do the designed counters
+   actually work? Does the math go degenerate (one-shots, unkillable turtles, dead stats, stalemates)
+   in any corner?
+6. **Sensitivity sweep.** Re-run with *different* plausible numbers. If the conclusion only holds for
    one magic set of values, that's a **fragility flag** — the design leans on a knife-edge and the
-   register should say so.
-6. **Record every sim** under `simulations/` (the setup, the numbers, the rounds, the read) so it is
-   auditable and reusable on the next loop.
+   register should say so. (This sweeps the *numbers*; step 3 sweeps the *situations* — both are
+   required, and a decision that holds only at one point of either sweep is fragile.)
+7. **Record every sim** under `simulations/` (the setup, the numbers, the scenario spread, the rounds,
+   the read) so it is auditable and reusable on the next loop.
 
-A micro decision is **not validated** until a script has *tried to break it* — including the
-sensitivity sweep — and failed. Until then it is `unverified`; let the loop come back to it.
+A micro decision is **not validated** until a script has *tried to break it* — across the spread of
+scenarios (step 3) *and* the sensitivity sweep (step 6) — and failed. A decision exercised in exactly
+one configuration, however clean that run looked, stays `unverified`; let the loop come back to it.
 
 ## Driving it with /loop (REQUIRED)
 
