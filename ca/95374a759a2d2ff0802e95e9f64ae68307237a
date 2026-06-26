@@ -1,0 +1,22 @@
+AGENTS.md
+  s_4deb0fe62671f6::t_488b16d9283a42 28-31
+  s_4deb0fe62671f6::t_6fbe44a6311d42 1-27,32-54
+CLAUDE.md
+  s_4deb0fe62671f6::t_024dbcbb1b3494 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "ca95374a759a2d2ff0802e95e9f64ae68307237a",
+  "prompts": {},
+  "sessions": {
+    "s_4deb0fe62671f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e7ecd30e-9f19-4342-bd23-5418f1d9e80e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
