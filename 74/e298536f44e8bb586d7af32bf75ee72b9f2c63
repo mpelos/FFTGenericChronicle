@@ -1,0 +1,71 @@
+docs/deep-combat-layer/11-magic.md
+  s_a298d5c04f383c::t_f2f3427b0d17bf 274
+  s_a298d5c04f383c::t_d1ee28c6acbede 253-256
+  s_a298d5c04f383c::t_5f8bd570fc1e6b 200
+  s_a298d5c04f383c::t_f4296da8f8993a 273
+  s_a298d5c04f383c::t_217d9c45906d9d 277-281
+  s_a298d5c04f383c::t_935529fe0cae1d 168-189
+  s_a298d5c04f383c::t_2c0fe02d8633da 54
+  s_a298d5c04f383c::t_7481680ba42a2c 87-114
+  s_a298d5c04f383c::t_9cbc29afbb01c1 115-144
+  s_a298d5c04f383c::t_a84f461fa0d11f 201-208,216-220,223-229,234,237
+  s_a298d5c04f383c::t_ac2404f67d69e0 145-167
+  s_a298d5c04f383c::t_b856e4fdb495c3 53
+  s_a298d5c04f383c::t_da3ccf6c65d4c0 257-258,261-263
+  s_a298d5c04f383c::t_eebb0c440ca33a 275-276
+  s_a298d5c04f383c::t_79d0b732ce3acc 23,25-26,28-52,55-86
+  s_a298d5c04f383c::t_56f0944fad5ab3 209-215
+  s_a298d5c04f383c::t_edf254fd4ddec0 221-222,230-233,235-236
+  s_a298d5c04f383c::t_fe3d80d5d346c7 238,240-247
+  s_a298d5c04f383c::t_21e905e808748d 282-283
+docs/deep-combat-layer/01-attribute-map.md
+  s_a298d5c04f383c::t_feee2a77d0e378 36
+docs/deep-combat-layer/12-open-questions.md
+  s_a298d5c04f383c::t_e28a8e2f8e1a94 94-98
+  s_a298d5c04f383c::t_743f647ed5fbaf 99-103
+  s_a298d5c04f383c::t_1f84f1f9c090a5 129-135,141-142
+  s_a298d5c04f383c::t_1689f732aee841 166-169
+  s_a298d5c04f383c::t_b07f1c4eeafe97 178-182
+  s_a298d5c04f383c::t_d2980334efbf61 126-128
+  s_a298d5c04f383c::t_5f5f346abc2380 183-188,194-195
+  s_a298d5c04f383c::t_76ed18d2da8ca5 136-140
+  s_a298d5c04f383c::t_5beb9ff645cdcd 170-171
+  s_a298d5c04f383c::t_91f23e7aa5d104 172-177
+  s_a298d5c04f383c::t_ae36240914fbff 189-193
+  s_a298d5c04f383c::t_bf9fb02d43f9d2 163-165
+  s_a298d5c04f383c::t_fafb8deb77b25b 158-162
+docs/deep-combat-layer/05-facing-and-positioning.md
+  s_a298d5c04f383c::t_42bcc2ec32df07 61-64
+docs/deep-combat-layer/09-trait-zodiac.md
+  s_a298d5c04f383c::t_11aa09fbd1d064 82-85
+  s_a298d5c04f383c::t_a1ba41a6627b5f 34-47
+docs/deep-combat-layer/14-equipment.md
+  s_a298d5c04f383c::t_3922b13bf3cb86 380-381
+  s_a298d5c04f383c::t_8d0e1cde72f0f7 288-292
+  s_a298d5c04f383c::t_c585ef82171e43 351-370,373-377,382-387,394-396
+  s_a298d5c04f383c::t_4bf62e730e8b5d 388-393,397-400
+  s_a298d5c04f383c::t_2279ce39ae8a36 321-322,325-329
+  s_a298d5c04f383c::t_c3d13d81c4631e 443
+  s_a298d5c04f383c::t_338dd73caa8216 283-284
+  s_a298d5c04f383c::t_b3234fd868cd77 323-324
+  s_a298d5c04f383c::t_291a227c1e7cac 378-379
+  s_a298d5c04f383c::t_08576172ea0247 371-372
+  s_a298d5c04f383c::t_a4ca2a623d77c5 282
+  s_a298d5c04f383c::t_844bf07027847c 137-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "74e298536f44e8bb586d7af32bf75ee72b9f2c63",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
