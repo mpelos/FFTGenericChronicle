@@ -73,6 +73,11 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   armor-divisor values, validating the ~+35% right-tool / ~2× wrong-tool sharpness.
 - **Hit/defense (`04`):** exact Dodge/Parry/Block formulas, depletion amount per attack, validation
   of the >50% open-target and ~31% turtled-target regimes.
+- **Speed (`01`/`04`):** the **variance** of Speed across builds — how much faster a fast build is
+  than a slow one. This is the knob that sets how strong the *tempo* axis is: too high and Speed is
+  the only stat that matters (the vanilla-FFT trap), too low and it is flavorless. Recommended
+  **moderate-low**. It also bounds weapon `+Speed` grants (e.g. the knife). Finesse (Speed→damage)
+  is **not** on the table — `01`.
 - **Facing (`05`):** the −2 side modifier, back-strike rules for large units.
 - **Reach (`06`):** point-blank penalty, stop-hit ability numbers.
 - **Brave (`07`):** `k_off` (offense-swing size for Brave↔Faith symmetry — the key open knob),
@@ -81,10 +86,35 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
 - **Zodiac (`09`):** resist/weak magnitude, whether affinity boosts dealing, Lightning neutrality.
 - **Weapon skill (`10`):** per-job/level skill tables, job×family grade matrix, Sword Master value,
   over-cap skill→damage/penetration conversion rate.
-- **Equipment (`14`):** the weapon-family *design* (types, reach, parry, handedness, specials) is now
-  in `14-equipment.md` for blades / crush / reach / magic / ranged. Open: the per-family **numbers**
-  (turning the relative tiers into values), the remaining weapon families (performer/utility, fell
-  sword, unarmed), and the **armor / shield / helmet / accessory** slots (none designed yet).
+- **Equipment (`14`):** all weapon families *plus the Weight model, armor, and shield slots* are now
+  *designed* in `14-equipment.md` (blades / crush / reach / magic / ranged / performer / unarmed;
+  **every piece carries Weight**; armor = DR-by-type + modest HP vs Weight→−Move/−Dodge; shield = Block
+  top-rung + ranged coverage, DR-light; fell-sword rejected — not in TIC). Open: the per-family/per-class
+  **numbers** (relative tiers → values, incl. the `MA_wmod` curve, the untrained-fist penalty
+  `fist_pen`, per-armor-class DR/HP, **per-piece Weight values**, Block magnitude), and the **helmet /
+  accessory** slots (not designed yet).
+  - **Weight → Move/Dodge curve (`14`, RESOLVED-model 2026-06-26):** the model is locked (per-piece
+    Weight, summed, run through a curve — **never** a flat per-item `−Move`, because Move is too coarse).
+    Open **calibration:** the per-piece Weight values; the **Weight→Move breakpoints** (coarse, with a
+    generous dead-zone — most builds −0, heavy −1, extremes −2/−3); the **Weight→Dodge slope** (fine,
+    near-smooth). Locks: **no PA/ST in the calc** (same Weight = same penalty, else strong units escape
+    the tradeoff); **Weight coupled to DR** (a "tough-and-light" piece is a rationed premium only). The
+    curve is a **Tier-2 computed hook** (item 7); per-piece Weight is data.
+  - **Armor CT reserve knob (`14`, RESOLVED-with-reserve 2026-06-25):** armor costs **Move + Dodge,
+    never CT** (GURPS-faithful; CT stays pure Speed-stat, `01`). A **small heavy-armor CT penalty** is
+    held in reserve as the one knob to deploy *only if* the leather-melee proves too weak vs the
+    plate-melee in playtest. **Main calibration risk of the armor model:** whether Move + Dodge +
+    positioning is enough to make leather-melee competitive with plate-melee's reliable DR + HP.
+  - **HP pool home (`14`, OPEN):** whether armor's modest HP stays on the body slot or migrates
+    entirely to the head slot (orthogonal: body = DR + Weight, head = HP/MP pool) — decided with the
+    **helmet** slot. Base-HP stays the gear-independent status-resist stat (`13`) either way.
+  - **Shield DB reserve knob (`14`, RESOLVED-with-reserve 2026-06-25):** the shield is **Block-only,
+    DR-light, no passive Defense Bonus** — a finite per-turn resource. A modest always-on **DB** (flat
+    bonus to active defenses while facing) is held in reserve only if the shield plays too binary.
+  - **Defense coverage rule (`04`, NEW ruling 2026-06-25):** **Dodge covers everything (floor), Parry
+    is melee-only, Block (shield) covers melee *and* ranged.** This is what gives the shield its niche
+    (the melee answer to ranged / the plate-tank's survival on the approach). `04` should absorb this
+    coverage table; numbers (Block magnitude vs Parry) are calibration.
 - **Magic (`11`):** magic damage formula, magic-dodge values, AoE×facing, Faith×Zodiac stacking,
   MP economy.
 
@@ -101,6 +131,10 @@ Untouched here: which of this is data-only (Tier 1), which needs code hooks (Tie
 infeasible on the current modding surface. The DCL is currently a *design*, deliberately unconstrained
 by implementation cost during exploration. A feasibility pass against the `formula-balance` envelope
 (`docs/formula-balance/00-envelope.md`) is a future step before any of this could be built.
+
+**Known Tier-2 (code-hook) candidates flagged so far:** the **Weight → Move/Dodge curve** (`14` — a
+computed penalty from summed Weight; per-piece Weight itself is data); the reaction inverse/flat
+triggers (`07`); the status-infliction 3d6 contest and any reskinned-status behaviours (`13`).
 
 ## 8. Statuses & conditions (stun, knockdown, fear, taunt, …) — DESIGNED (see `13-statuses-and-reactions.md`)
 

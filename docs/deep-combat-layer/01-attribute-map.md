@@ -59,3 +59,12 @@ that gets focus-fired will see its depleting defenses (Parry/Block) collapse bef
 refreshes them, while its Dodge floor remains — so Speed indirectly governs how long a unit can
 hold a line under pressure. See `04-hit-and-defense.md` for the depletion/reset mechanic that makes
 this matter.
+
+Speed is deliberately **frequency + defense, not offense.** It multiplies *how often* a unit acts
+(and how well it evades); it never feeds weapon damage. A *finesse* path (light-weapon damage scaling
+off Speed, as in D&D/GURPS) was considered and **rejected**: those systems are safe because their
+agility stat grants no extra turns, whereas our Speed *does* (CT) — so Speed→damage would compound to
+~Speed² and would turn PA from a *complement* (magnitude) into a dead *substitute*. So **PA =
+magnitude, Speed = frequency**, both wanted; the breadth of an "agile" playstyle comes from **job
+skills** (tempo / mobility synergies), not from an attribute-scaling axis. Weapon `+Speed` grants
+(e.g. the knife) are fine as **stat sticks**, kept modest — they are distinct from finesse.
