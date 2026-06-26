@@ -11,7 +11,7 @@ Depends on:
 - `docs/formula-balance/04-proof-and-baseline-plan.md`
 - `docs/formula-balance/05-formula-proposal-protocol.md`
 - `docs/modding/02-formula-id-catalog.md`
-- `docs/modding/05-battle-data-map.md`
+- `docs/modding/03-battle-data-map.md`
 Review: Approved by Claude on 2026-06-20 with no required changes.
 
 ## Purpose

@@ -1,0 +1,298 @@
+# Reverse-Engineering Reference — Hooking the IVC Damage Engine
+
+The single source of truth for the reverse-engineering picture of FFT: The Ivalice
+Chronicles (IVC). It states what the engine is, what ports from classic FFT and what does
+not, where the damage logic actually lives, which code anchors are stable and hookable, and
+the live-validated control levers exposed by those anchors.
+
+Cross-references: live struct offsets, the battle actor array, and the action-context /
+attacker-resolution model are owned by `04-engine-memory-model.md`; the post-damage code-mod
+reconciler and its formula DSL are owned by `06-code-mod-runtime-dsl.md`; per-formula-id
+behavior is owned by `02-formula-id-catalog.md`.
+
+## 1. Architectural truth
+
+IVC is `FFT_enhanced.exe`, an x86-64 from-scratch re-implementation built on the FFXVI
+"Faith" engine. The 1997 source was lost, so Square Enix rebuilt the game. The build
+faithfully reproduces the WotL ruleset and the classic ability-action data model — the same
+`Formula / X / Y / Element / CT / MP` per ability — running over a battle-unit struct whose
+layout matches the classic one.
+
+`FFT_classic.exe` is a sibling on the same Faith engine. It is NOT a PSX emulator and offers
+no easier static-RE path; Enhanced is the better-mapped target. Both executables are
+Denuvo-protected.
+
+**Ports from classic/WotL FFT — design knowledge only:** exact formulas, data-struct layout,
+and the formula-dispatch architecture. Because the math and the struct are known, RE is
+guided rather than blind: the task is to find the function that computes *known math* over a
+*known struct*. The named PSX Ghidra decomp (`Talcall/FFT-1997-Decomp`, 606 named `BATTLE_*`
+functions — `BATTLE_calculator_routine(CurActionTargetData*)`, `CalcHitPercent`,
+`AttackEvadeCalc`, `Calculate_Stat_Real`, `Calculate_Zodiac_Sign`, struct `BattleUnitData`)
+is a conceptual function map. It is not matching/recompilable, and there is no decomp of WotL
+or the remaster engine.
+
+**Does NOT port — any machine code:** classic = PSX MIPS R3000 (`BATTLE.BIN`); WotL = PSP
+MIPS. IVC is x86-64. No legacy MIPS routine, byte patch, or AOB carries over. Only the design
+knowledge transfers.
+
+## 2. Denuvo conclusion — the damage routine cannot be AOB-hooked
+
+The damage routine is **Denuvo-virtualized** (translated into a private VM bytecode). Its
+16-byte damage-apply prologue is absent from the static executable and, when momentarily
+present at runtime, relocates to a different address every launch. An in-battle full-memory
+scan over all executable-readable regions finds the x86 damage-apply pattern nowhere, while
+nothing is execute-only (nothing hidden from reading). Therefore the routine is not native
+x86 at all — it cannot be located by static signature scan and cannot be AOB-hooked.
+Arbitrary custom damage math by hooking the formula dispatcher is blocked by Denuvo by design.
+
+Consequences:
+- Get damage numbers the Denuvo-proof way: read a unit's HP through a stable anchor and log
+  HP deltas (an HP drop is damage taken).
+- The "damage multiplier" / `[rax+0x06]` damage-store AOBs published in community cheat tables
+  match transiently or coincidentally; they are not reliable hook targets on this build.
+- A hardware breakpoint (VEH + DRx) on the HP write is robust to relocation but lands inside
+  the Denuvo VM dispatch, where registers do not cleanly map to game state. Last resort only.
+
+## 3. Stable hookable anchors
+
+These are real-code instructions (`.text` / `.xcode`), ASLR-stable, RVA < 0x400000, image
+base `0x140000000`, module `FFT_enhanced.exe`. They are non-virtualized and hookable with a
+Reloaded-II `CreateAsmHook` / `CreateHook`. All values are Steam v1.0 (Oct 2025) Enhanced;
+a game patch shifts them — re-locate via the neighboring stable bytes.
+
+### `.text` anchors
+
+```text
+battle_base_ptr    0x226D98   movzx eax, word [rcx+0x30]   rcx = battle unit; reads +0x30 HP (word)
+damage_mult_2      0x30A685   HP-bar / UI math (rdi = one unit; edx = MaxHP; eax = MaxHP-curHP) — NOT the formula
+jp_multiplier      0x283754
+xp_multiplier      0x283767
+min_spd_jmp_mov    0x36027F   movzx eax, byte [rdi+0x42]   reads +0x42 Move (byte)
+```
+
+The matched instruction bytes statically confirm struct offsets: +0x30 HP (word), +0x2B Brave
+(byte), +0x42 Move (byte). `damage_mult_2` is display code, not the damage formula — it sees
+only one unit and no ability/attacker.
+
+### `.xcode` anchors (outcome dispatch / apply / animation)
+
+The roll *arithmetic* (hit%, evade, damage math) is virtualized, but the **outcome dispatch,
+the result/animation selection, and the apply step run in normal hookable code**.
+
+```text
+unit/result RECORD array     0x1853CE0   stride 0x200, <=21 entries (runtime 0x141853CE0).
+                             The per-unit battle struct IS this array.
+result DISPATCHER            0x38A4FC    event-queue loop; DECISION branch at 0x38A6F1
+                             (cmp edx,0x300), edx = (category<<8)|unitIdx:
+                             0x300 = apply HP/MP/stat -> 0x30A51C
+                             0x200 = status | 0x100 = turn-done | 0xFF00 = terminator | 0xE000 = init
+APPLY path                   0x30A51C    newHP = clamp(HP + word[unit+0x1C6] - word[unit+0x1C4], 0, MaxHP)
+                             reads staged dmg word[+0x1C4], heal word[+0x1C6]; consults NO hit-flag
+pre-clamp staged-dmg HOOK    0x30A66F    0F BF 45 06 = movsx eax, word[rbp+6] (= word[unit+0x1C4]);
+                             the damage-rewrite hook — controls hit-vs-zero damage
+result/animation SELECTOR    0x205210    prologue 48 89 5C 24 08 48 89 6C 24 10;
+                             r8 = actor, record = [r8+0x148], cl (arg) = evade-type; reads +0x1E5, +0x1C4
+evade-type STAGING write      0x205B39   mov byte [rdi+0x1C0], ah   (engine writes evade-type here)
+combat-popup digit RENDER    0x266AE0    int->digit->glyph; value [rdi+0x344]; 3-digit split 0x2671BE;
+                             glyph map 0x267350; popup value mirror 0x3740200
+```
+
+Virtualized neighbors (E9/E8 into `.edata`, not hookable, not needed): roll gate `0x30FA34`;
+hit%/evade helpers `0x269760 0x2759F8 0x2B8F30 0x2740A0`; result handlers `0x38ABBC 0x38BBFC`;
+staging helpers `0x30BC3C 0x30BCF8`; evade-input scratch `0x7832E6`. The category producer at
+`0x30F0C4` walks records by the global phase dword `[0x186B044]`; its 0x300 (apply) gate is the
+VM thunk `0x30FA34` (the roll lives there).
+
+### Table read-site
+
+The `OverrideAbilityActionData` read-site is at RVA `0xEEA6E50` (VA `0x14EEA6E50`,
+"PC/Steam patch 1"), within the module. Each `>= 0` cell in that table
+(`Flags12 Flags34 Range EffectArea Vertical Element Formula X Y InflictStatus CT MPCost`) is
+cast to byte and patches the in-memory ability-action struct just before combat math runs —
+the natural starting point for tracing toward the formula dispatcher, though the dispatcher
+itself is virtualized downstream.
+
+## 4. Live-validated evade-type enum
+
+The evade-type byte at record `+0x1C0` (also passed in `cl` to the selector `0x205210`) is the
+lever that selects hit vs. which evade animation. The full enum is live-validated via an
+observe hook at the selector:
+
+```text
+0x00 = HIT                         (+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80 ; damage applies)
+0x01 = cloak / accessory evade     (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x02 = weapon parry (RH/LH guard)  (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x03 = shield parry / block (LH)   (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x04 = class evade ("Miss")        (+1BB=01 +1BE=00 +1C4=0   +1E5=00 ; +1C2=FF observed)
+0x06 = plain miss (failed accuracy roll, e.g. Steal/Charm) (+1BB=01 +1BE=00 +1C4=0 +1E5=00)
+```
+
+All six values are live-validated. 0x05 is an unobserved gap, likely unused. Hit = 0x00
+(damage applies); 0x01–0x06 are all no-damage outcomes (`+1C4 = 0`) that differ ONLY in
+`+0x1C0`, the byte that selects the on-screen animation. Every evade shares
+`+1BE=00 / +1C4=0 / +1E5=00`. Evadable physical abilities route through 0x01–0x04 like a basic
+Attack; a failed *accuracy* roll (Steal / status hit%) routes through 0x06.
+
+### Control recipe
+
+Compute a custom roll, then write the engine's already-owned fields:
+
+```text
+force-HIT(D):   word[unit+0x1C4]=D ; word[unit+0x1C6]=0 ; byte[+0x1C0]=0x00   (via 0x30A66F hook)
+force-EVADE(t): byte[+0x1C0]=t (0x01 cloak / 0x03 shield / ...) ; +0x1BE=0 ; +0x1C4=0
+                (hook the selector 0x205210 to write before it reads, or the staging write 0x205B39)
+```
+
+Force vanilla to (near-)always-hit upstream — zero the target's evade-input bytes, or turn the
+ability's `Evadeable` flag off — so the apply/selector path is reached and the custom write is
+authoritative.
+
+The forecast hit% display is virtualized (both the % math and the UI draw are VM); no single
+arbitrary-% write exists. Available levers: write target evade-input bytes (real but
+quantized), wrap a VM-thunk return at a forecast call site, or draw overlay glyphs.
+
+## 5. Formula fingerprint constants
+
+When tracing real (non-virtualized) code, routines are recognizable by their invariant
+constants. Highest-signal first:
+
+```text
+1638400            stat-display divisor: DisplayedStat = RawStat * JobMult / 1638400 (near-unique)
+10000 (/100,/100)  Faith term: MA * Q * CasterFaith/100 * TargetFaith/100
+5/4 -> 4/3 -> 3/2 -> 3/2 -> 2/3 -> 2/3   physical XA modifier chain, truncating each step
+                   (Strengthen, Atk-UP, Martial Arts, Berserk, Def-UP, Protect) — most distinctive
+Zodiac  3/2, 5/4, 3/4, 1/2   gated on a 12x12 compatibility lookup table (applied once, after the XA chain)
+(PA+Speed)/2       knife / longbow XA
+WP*WP              gun XA            PA*PA*Brave/100   bare fists
+MA*WP              staff / magic gun
+2/3                Protect / Shell damage reduction
+element            weak *2, half /2, absorb -> negate sign
+Speed*WP           Throw            PA*WP (*3/2 if polearm)   Jump
+XA + rand(1..XA) - 1                critical hit
+8 + 2*JobLevel + Level/4            JP per action; share *1/4
+EXP base 10, +/-1 per level diff, EXP-Boost *3/2
+CT += Speed; act at CT>=100; reset 100/80/60; charged action wait = 100/Speed
+```
+
+Disambiguation: `5/4` and `3/4` appear in both the XA chain and Zodiac; Zodiac applies once,
+after the XA chain, gated on the 12x12 table. The exact damage-variance variant and truncation
+order used by the remaster's float math remain unverified in the binary.
+
+## 6. In-battle unit struct (community-mapped, live-confirmed)
+
+Base pointer = the unit (`rcx`/`rdi` at the hook sites). Live reads at `battle_base_ptr`
+return sane values across every field. The authoritative live offset map is owned by
+`04-engine-memory-model.md`; the core fields are:
+
+```text
++0x00  id (byte)               +0x30  HP     (word)     +0x3E  PA   (byte)
++0x04  team/group id (byte)    +0x32  MaxHP  (word)     +0x3F  MA   (byte)
++0x05  friend/foe (bit 0x10)   +0x34  MP     (word)     +0x40  Speed(byte)
++0x28  EXP (byte)              +0x36  MaxMP  (word)     +0x42  Move (byte)
++0x29  Level (byte)            +0x2A  MaxBrave (byte)   +0x43  Jump (byte)
++0x2B  Brave (byte)            +0x2C  MaxFaith (byte)   +0x4F/0x50/0x51  X / Y / Dir (byte)
++0x2D  Faith (byte)
+```
+
+## 7. Modding-API feasibility — custom math needs a code mod
+
+Arbitrary custom damage math is not available through any existing modding API; it requires a
+Reloaded-II C# code mod.
+
+- The loader's C# table managers (`IFFTOAbilityDataManager` and ~30 siblings, all
+  `: IFFTOTableManager`) only do data-table patching: `ApplyTablePatch`, `GetOriginal*`,
+  `Get*`, `ApplyPendingFileChanges`. It is a file/table replacement system, not a runtime hook.
+  The `Ability` model surfaces only `JPCost`, `ChanceToLearn`, `Flags`, `AbilityType`,
+  `AIBehaviorFlags`; the backing `ABILITY_COMMON_DATA` is 4 bytes. There is no
+  event/delegate/hook for damage calc.
+- `Formula / X / Y / Element` DO exist as columns in the Nex `OverrideAbilityActionData` table,
+  and the loader merges `.nxd` cells — so a data-layer mod can repoint formula/X/Y by editing
+  that file (the ~100 existing formula shapes). What is missing is a *code* API for it and any
+  *damage-routine* hook.
+- Faith Framework (`Nenkai/FaithFramework`, shared base for FFXVI + IVC) is a live Nex/NXD
+  editor plus a debug-UI (ImGui) toolkit with a Nex Runtime Interface. It has no
+  hook-registration API and no event system. Editing the *algorithm* needs Reloaded.Hooks, not
+  Faith Framework.
+- The mod loader already sig-scans and hooks `FFT_enhanced.exe`
+  (`Hooks/FFTOResourceManagerHooks.cs`, via `IStartupScanner.AddMainModuleScan` + `CreateHook<T>`),
+  proving the runtime-hook mechanism on this exact executable. Prior-art code mod FFTacticsFix
+  (cipherxof) RE'd and hooked real presentation/engine functions here — but no shipped mod
+  hooks the combat/damage routine, so a gameplay-logic code mod is first-of-its-kind for the
+  engine.
+
+Therefore custom damage math is achieved by the **post-damage runtime reconciler** owned by
+`06-code-mod-runtime-dsl.md`: the data layer neuters vanilla damage into safe placeholders;
+HP/MP deltas are observed through `battle_base_ptr`; the attacker is resolved from action
+context; a C# formula computes the result; and the final HP/MP value is rewritten — all
+without touching the virtualized formula routine. The data layer alone covers a full
+job/skill/weapon/status/encounter redesign with no RE required.
+
+### Vanilla baseline data
+
+No public dump of IVC base `Formula/X/Y` exists; `OverrideAbilityActionData` is sparse `-1` and
+exposes only overrides, not resolved base values. Use FFHacktics WotL `Ability_Data` as the
+design baseline (8-byte entry: `0x07 Element, 0x08 Formula, 0x09 X, 0x0A Y, 0x0C CT, 0x0D MP`;
+layout shared PSX -> WotL -> IVC) and apply IVC rebalances on top. Documented IVC-vs-WotL
+rebalances (community RE, unofficial, possibly incomplete): enemies take ~30% less / allies
+deal ~20% more damage (global tuning, hinting at a single multiplier near the end of the damage
+routine); CT broadly reduced; assorted MP/JP tweaks (+30% JP from own actions); Arithmeticks
+attack-spell damage reduced; Chemist innate Treasure Hunter; ribbons/perfumes no longer
+gender-locked. Same WotL ability set, value rebalances only — no ID renumbering.
+
+## 8. Stable-touchpoint register classification
+
+The stable `battle_base_ptr` hook is non-virtualized and fires with `rcx = battle unit`. A
+read-only register snapshot at that touchpoint classifies each register against known battle
+state. This is a clue-finding layer, not a formula hook, and does not prove action identity by
+itself; the touchpoint is a UI/stat read, so registers usually show only the unit being read.
+The signal is useful when a second unit pointer or a battle-context object appears consistently
+around actions, giving a concrete next pointer to probe.
+
+Register-classification vocabulary:
+
+```text
+unit:touched   register == the unit pointer that fired the hook
+unit:id=...    register == another registered battle-unit pointer
+readable       points at readable process memory, not yet identified
+unreadable     VirtualQuery does not consider the address readable
+zero           literal zero
+```
+
+A pointer-scan layer follows readable non-unit register roots and scans their first bytes for
+exact known battle-unit pointers — if a register points at a battle controller / action-context
+object, the scan reveals actor/target unit pointers inside it without mutating game state. A
+stable engine context pointer found this way would supersede CT as the attacker source.
+
+## 9. CT attacker resolution (diagnostic/fallback)
+
+For immediate physical actions, the attacker can be resolved from CT evidence: `ct-reset` (a
+non-target unit whose CT recently dropped) is the strongest signal; `ct-low` (the actor still
+near its post-action CT value) is a necessary fallback when polling misses the reset frame. A
+CT drop into the low band must refresh the observation timestamp, or poll-only drops are
+excluded from `ct-low`. This proves out for immediate physical actions including dual wield.
+
+CT is only a diagnostic/fallback signal. It is not a complete source of truth: charged spells
+and delayed actions can land long after the caster's CT reset; Wait changes CT without
+producing a damage action; reactions/counters need a separate inversion path; status/poison/
+trap/reflect effects need separate handling. The full CT / action-context model and the layered
+attacker-resolution architecture are owned by `04-engine-memory-model.md`.
+
+## Sources
+
+- PSX decomp: https://github.com/Talcall/FFT-1997-Decomp
+- Cheat table (offsets + AOBs): https://github.com/bbfox0703/Mydev-Cheat-Engine-Tables (`FFT_enhanced.CT`);
+  upstream https://fearlessrevolution.com/viewtopic.php?t=36719 , https://opencheattables.com/viewtopic.php?t=1560
+- Classic-data tooling / patches: https://github.com/Glain/FFTPatcher
+- Formula docs: https://ffhacktics.com/wiki/Formulas , https://ffhacktics.com/wiki/Battle_Stats ,
+  https://ffhacktics.com/wiki/Weapon_Damage_Calculation , https://ffhacktics.com/wiki/Ability_Data
+- AeroStar Battle Mechanics Guide: https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/3876
+- Read-site / layouts: https://github.com/Nenkai/fftivc-nex-layouts (`OverrideAbilityActionData.layout`)
+- Loader API: https://nenkai.github.io/ffxvi-modding/modding/mod_loader_api_fft/
+- Loader interfaces/models + hook template: https://github.com/Nenkai/fftivc.utility.modloader
+  (`Hooks/FFTOResourceManagerHooks.cs`)
+- Reloaded hooking: https://reloaded-project.github.io/Reloaded-II/CheatSheet/CallingHookingGameFunctions/
+- Reloaded sig scan: https://reloaded-project.github.io/Reloaded-II/CheatSheet/SignatureScanning/
+- FFTacticsFix (prior-art code mod): https://github.com/cipherxof/FFTacticsFix
+- FaithFramework: https://github.com/Nenkai/FaithFramework
+- IVC changes guide: https://gamefaqs.gamespot.com/pc/538659-final-fantasy-tactics-the-ivalice-chronicles/faqs/82197
+- FFHacktics IVC board: https://ffhacktics.com/smf/index.php?board=85.0

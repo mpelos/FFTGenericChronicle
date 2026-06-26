@@ -1,8 +1,8 @@
-# Formula ID Catalog - Working Notes
+# Formula ID Catalog
 
-This is a working catalog of classic FFT/WotL Formula ids that appear to be the basis for
-Ivalice Chronicles' action math. Exact Ivalice Chronicles behavior still needs targeted
-in-game validation, but the data surfaces on this PC use the same `Formula` concept.
+Catalog of the FFT/WotL Formula ids that drive Ivalice Chronicles' action math. The game's data
+surfaces use the same `Formula` concept as classic FFT/WotL; a Formula id selects which hardcoded
+routine runs for an ability or weapon.
 
 Editable surfaces:
 
@@ -50,7 +50,7 @@ target states, and Zodiac compatibility.
 
 ## High-Value Formula IDs
 
-| ID | Working formula / behavior | Typical use |
+| ID | Formula / behavior | Typical use |
 | --- | --- | --- |
 | `0x01` | Weapon damage | Attack and many weapon-like actions |
 | `0x02` | Weapon damage with options/proc behavior | Weapons using `OptionsAbilityId` as ability |
@@ -171,15 +171,15 @@ portable by just swapping the `Formula` byte.
 
 ### Tier 2 - code mod (hook the exe): arbitrary math, any variable
 
-To go beyond the catalog (new scaling, new variable mix, more than two parameters) we hook the
-damage routine with our own Reloaded-II code mod and compute whatever we want over the in-memory
-battle-stats struct (all effective stats, Br/Fa, HP/MP cur+max, Level, Move/Jump, Zodiac,
-status, element, height, distance, turn/CT, RNG). Limits: integer arithmetic, result clamped to
-the engine's damage width (16-bit), stat bytes. **Confirmed feasible, but NO modding API exposes
-this** - neither the loader managers nor Faith Framework hook damage; we sig-scan and
-`CreateHook` the routine ourselves (it is not yet reverse-engineered, so the cost is RE, not
-plumbing). The `+0xEEA6E50` hint is unverified/unusable - sig-scan instead. Full analysis in
-`03-custom-formula-feasibility.md`.
+To go beyond the catalog (new scaling, new variable mix, more than two parameters) a Reloaded-II
+code mod computes the result in C# over the in-memory battle-stats struct (all effective stats,
+Br/Fa, HP/MP cur+max, Level, Move/Jump, Zodiac, status, element, height, distance, turn/CT, RNG).
+Limits: integer arithmetic, result clamped to the engine's damage width (16-bit), stat bytes. No
+modding API exposes a damage hook — neither the loader managers nor Faith Framework — and the
+damage routine itself is Denuvo-virtualized, so the code mod owns the final result through a
+post-damage reconciler rather than by hooking the routine directly. The reverse-engineering picture
+is in `05-reverse-engineering.md`; the code-mod runtime and formula DSL are in
+`06-code-mod-runtime-dsl.md`.
 
 **Plan for Generic Chronicle:** ~90% via Tier 1 (repoint formulas, retune X/Y/element/status,
 rebuild jobs + weapons), plus a small set of Tier 2 custom formulas for signature mechanics the

@@ -267,7 +267,7 @@ def render_report(exe_paths: list[Path], all_results: dict[Path, dict[str, list[
             "## Read",
             "",
             "- On `FFT_enhanced.exe`, the low-.text anchors should map to the live RVAs already",
-            "  documented in `docs/modding/04-re-strategy.md`: `battle_base_ptr`,",
+            "  documented in `docs/modding/05-reverse-engineering.md`: `battle_base_ptr`,",
             "  `damage_mult_2`, `jp_multiplier`, `xp_multiplier`, and `min_spd_jmp_mov`.",
             "- `damage_multiplier` being absent from the static file is expected on the current",
             "  build and supports the existing conclusion: the direct damage application site must",

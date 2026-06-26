@@ -4,14 +4,13 @@ How unit/character sprites are stored in **FINAL FANTASY TACTICS - The Ivalice C
 (Steam, Enhanced) and how to **reskin** an existing job's appearance — e.g. repurposing the
 Calculator and Mime slots into two new jobs.
 
-This surface is **separate from the battle-data/formula work** in `00`-`07`. Changing a job's
+This surface is **separate from the battle-data/formula work** in `00`–`06`. Changing a job's
 *data* (stats/skills/name via `JobData.xml` + `OverrideAbilityActionData`) does NOT change how the
 unit *looks*; the art lives in the G2D graphics container documented here. The two are fully
 independent: you can swap the job kit purely in data and leave the sprite alone, or reskin the
 sprite and leave the kit alone.
 
-Everything below was **verified empirically on this install** by extracting and parsing the real
-game files (FF16Tools + a custom YOX parser), unless tagged otherwise.
+The layout below describes the real game files, parsed with FF16Tools and a custom YOX parser.
 
 ---
 
@@ -32,11 +31,11 @@ game files (FF16Tools + a custom YOX parser), unless tagged otherwise.
   at the same index. Because it's in-place, the job→sprite mapping is untouched.
 - The community **FFT IVC Sprite Modding Toolkit** (`FFTSpriteToolkit.exe`, Nexus) already decodes
   this exact YOX/indexed format to PNG, applies palettes, and repacks `tex_<index>.bin`. Use it for
-  the art round-trip unless we choose to RE the indexed pixel format ourselves (see Open items).
+  the art round-trip unless we choose to RE the indexed pixel format ourselves (see Format limits).
 
 ---
 
-## Where the art lives (verified)
+## Where the art lives
 
 ```text
 data/enhanced/0007.pac
@@ -58,7 +57,7 @@ FF16Tools.CLI.exe unpack -g fft \
 
 ---
 
-## The `g2d.dat` (YOX) container format (reverse-engineered here)
+## The `g2d.dat` (YOX) container format
 
 ### Top header (offset 0x00)
 ```text
@@ -94,7 +93,7 @@ or `00 00 02 00 ...`. There is **no `DDS `/`TEX ` magic** — it is an indexed/p
 palette in the engine's format. This is why a dedicated decoder (the toolkit, or our own RE) is
 needed to view/edit the pixels.
 
-### Empirical entry census (this install)
+### Entry census (this install)
 ```text
 total sub-entries        : 2450   (matches the count field)
 zlib-decompressible       : 1442  (type 2; remaining 1008 are a different/empty encoding)
@@ -127,8 +126,8 @@ A full per-index manifest is generated at `work/sprite-extract/g2d_manifest.json
 Because we only **reskin in place**, the recipe is:
 
 1. **Identify the entry index** of the target job's sprite sheet (and its palette entry). This is
-   the one step that needs a visual decode — see Open items. With the Sprite Modding Toolkit this is
-   its preview/extraction step; without it we must render the indexed format ourselves.
+   the one step that needs a visual decode — see Format limits. With the Sprite Modding Toolkit this
+   is its preview/extraction step; without it we must render the indexed format ourselves.
 2. **Paint the new art** over the extracted PNG (respect 512px; keep/adjust the palette). Generic
    human jobs have **per-gender sheets**, so a full reskin handles both male and female.
 3. **Repack** the edited art back into the engine's indexed format as `tex_<index>.bin`.
@@ -155,23 +154,23 @@ job; we just changed what that entry contains.
 - **FF16Tools.CLI** (`-g fft`) — unpack `g2d.dat` from the pac, and repack a finished asset mod.
 - **FFT IVC Sprite Modding Toolkit** (`FFTSpriteToolkit.exe`, Nexus mod 20) — one-click extract of
   the YOX/indexed sheets to PNG/BMP with palette applied, an editor, palette tools, and repack to
-  `tex_<index>.bin`. It already implements the indexed-format decode this doc stops short of.
+  `tex_<index>.bin`. It already implements the indexed-format decode this doc does not cover.
 - Our own parser: `work/sprite-extract/` holds the extracted `g2d.dat` and `g2d_manifest.json`
   (entry census above). A scripted extractor/repacker can be added under `tools/` if we decide to
   own the pixel-format decode instead of depending on the toolkit.
 
 ---
 
-## Open items (what's NOT yet done)
+## Format limits and known unknowns
 
-1. **Index → unit/job identification.** We have the full 0..2449 index space and size census, but
+1. **Index → unit/job identification.** The full 0..2449 index space and size census are known, but
    mapping a specific index to "male Calculator sheet" requires rendering the indexed pixels
    (palette association + the `00 01 01 00 …` / `00 00 02 00 …` pixel layout). Either use the
    toolkit's preview, or RE the indexed format to emit PNGs we can eyeball.
 2. **Indexed pixel-format decode.** The `type`/header bytes likely encode width/height/bpp and the
    palette pointer; 1008 non-zlib entries use a second encoding still to be classified.
-3. **Per-gender / animation coverage.** Confirm how many entries make up one job (idle + action
-   frames, male/female) so a reskin replaces the complete set, not a single frame.
+3. **Per-gender / animation coverage.** How many entries make up one job (idle + action frames,
+   male/female) determines whether a reskin must replace a set rather than a single frame.
 
 ---
 

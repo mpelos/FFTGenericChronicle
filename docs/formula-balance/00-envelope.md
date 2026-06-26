@@ -24,9 +24,8 @@ This document inherits the current technical map from:
 
 - `docs/modding/00-overview.md`
 - `docs/modding/02-formula-id-catalog.md`
-- `docs/modding/03-custom-formula-feasibility.md`
-- `docs/modding/04-re-strategy.md`
-- `docs/modding/05-battle-data-map.md`
+- `docs/modding/03-battle-data-map.md`
+- `docs/modding/05-reverse-engineering.md`
 
 If this document conflicts with those research files, treat this document as the balance-facing
 summary and revisit the source research before making a final decision.

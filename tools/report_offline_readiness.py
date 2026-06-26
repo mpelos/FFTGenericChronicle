@@ -133,8 +133,8 @@ def static_scan_check() -> Check:
 def stale_death_gate_text_check() -> Check:
     paths = [
         REPO / "docs" / "modding" / "00-overview.md",
-        REPO / "docs" / "modding" / "06-code-mod-battle-runtime-architecture.md",
-        REPO / "docs" / "modding" / "07-live-findings.md",
+        REPO / "docs" / "modding" / "06-code-mod-runtime-dsl.md",
+        REPO / "docs" / "modding" / "04-engine-memory-model.md",
         REPO / "codemod" / "prepare-death-gate.ps1",
         REPO / "codemod" / "check-death-gate-readiness.ps1",
         REPO / "tools" / "report_neuter_coverage.py",
@@ -249,12 +249,12 @@ def build_checks() -> list[Check]:
         ),
         file_check(
             "death/KO canonical finding",
-            REPO / "docs" / "modding" / "07-live-findings.md",
+            REPO / "docs" / "modding" / "04-engine-memory-model.md",
             "Docs record that direct HP=0/KO writes are refuted and engine-owned death is the current architecture.",
             "MinHpFloor",
-            "REWRITE-SKIP-DEATH",
             "zombie",
-            "engine-owned death",
+            "Engine-Owned Death",
+            "owned by vanilla",
         ),
         stale_death_gate_text_check(),
         static_scan_check(),

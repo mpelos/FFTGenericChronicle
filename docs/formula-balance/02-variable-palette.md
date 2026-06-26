@@ -5,7 +5,7 @@ Date: 2026-06-20
 Depends on:
 - `docs/formula-balance/00-envelope.md`
 - `docs/formula-balance/01-principles.md`
-- `docs/modding/05-battle-data-map.md`
+- `docs/modding/03-battle-data-map.md`
 - `work/battle_data_inventory.md`
 Review: Approved by Claude on 2026-06-20 after adding the Accuracy / Hit Rate domain.
 
