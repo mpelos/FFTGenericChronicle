@@ -1,0 +1,72 @@
+docs/deep-combat-layer/14-equipment.md
+  s_a298d5c04f383c::t_dd29eb75d7221b 166-175
+  s_a298d5c04f383c::t_7005173f30c06d 157-161
+  s_a298d5c04f383c::t_79b26585ee76d5 179-184
+docs/deep-combat-layer/07-trait-brave.md
+  s_a298d5c04f383c::t_6aa2ba957e1d5a 43-45
+  s_a298d5c04f383c::t_2d720a40f6f7fe 90
+  s_a298d5c04f383c::t_c4280b0c2f960b 94-95,99-106
+  s_a298d5c04f383c::t_56822d76422bf7 111,114-124
+  s_a298d5c04f383c::t_8cebbc0b39c3ac 29-33,35-38
+docs/deep-combat-layer/06-reach.md
+  s_a298d5c04f383c::t_b0a063fa616add 11-16
+docs/deep-combat-layer/01-attribute-map.md
+  s_a298d5c04f383c::t_b4b00e1426f27b 24
+  s_a298d5c04f383c::t_04960ad066aec1 26
+  s_a298d5c04f383c::t_1af209a403d202 54,56-59,61-64,72-80
+  s_a298d5c04f383c::t_ef8d7b27663570 65-71
+docs/deep-combat-layer/13-statuses-and-reactions.md
+  s_a298d5c04f383c::t_0f4eb2d36c9249 60
+  s_a298d5c04f383c::t_1bff9cd90d61cc 141,146-149
+  s_a298d5c04f383c::t_155a514c2dba98 37
+  s_a298d5c04f383c::t_546a2eda61fac8 59
+  s_a298d5c04f383c::t_ac20617ed54f08 76-85
+  s_a298d5c04f383c::t_b3e857c710bb01 49-51
+  s_a298d5c04f383c::t_9748d4c913f505 198-199
+  s_a298d5c04f383c::t_afa17bdf4cd68e 36
+  s_a298d5c04f383c::t_55956aba9d6c9b 66-75
+  s_a298d5c04f383c::t_40284840ee2af5 57-58
+  s_a298d5c04f383c::t_f8792c5650407a 105-123
+docs/deep-combat-layer/12-open-questions.md
+  s_a298d5c04f383c::t_03cdf1ec81687a 171-172
+  s_a298d5c04f383c::t_1e91d56607ea3a 96-103
+  s_a298d5c04f383c::t_611205fed4fd08 90-93
+  s_a298d5c04f383c::t_9c37ed8001dae2 81-87
+  s_a298d5c04f383c::t_44984d60c875d9 104-107
+  s_a298d5c04f383c::t_16c8fb4b01bb09 178-185
+docs/deep-combat-layer/08-trait-faith.md
+  s_a298d5c04f383c::t_f93525af6d9780 20-23
+docs/deep-combat-layer/04-hit-and-defense.md
+  s_a298d5c04f383c::t_5c2ba79e4a0549 69
+  s_a298d5c04f383c::t_6010f9b54b6412 70-75
+  s_a298d5c04f383c::t_9958d144fc15af 44
+docs/deep-combat-layer/03-damage-types-and-armor.md
+  s_a298d5c04f383c::t_c0c55ecfdc55a4 24-32
+docs/deep-combat-layer/10-weapon-skill.md
+  s_a298d5c04f383c::t_dbf14c78b77ff4 116-125
+  s_a298d5c04f383c::t_d291e3775d9bdd 39-56,85-93
+  s_a298d5c04f383c::t_a352388af0c40c 128-131
+  s_a298d5c04f383c::t_9ad82f004ec423 57-84
+docs/deep-combat-layer/02-damage-model.md
+  s_a298d5c04f383c::t_019504743e4e3a 36-41
+  s_a298d5c04f383c::t_def79af006b35c 23
+  s_a298d5c04f383c::t_6372a8ea7c0437 30
+  s_a298d5c04f383c::t_9710a134fc6c4f 43-63
+  s_a298d5c04f383c::t_1366a9e966633e 42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "9a5270f7ee3322ff6274179a9c18306b142143cb",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
