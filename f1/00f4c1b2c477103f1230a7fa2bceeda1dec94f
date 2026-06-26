@@ -1,0 +1,38 @@
+.claude/skills/game-design-validation/SKILL.md
+  s_a298d5c04f383c::t_361da6eb312f67 1-45,57-90,97-100,107,117-118,128-131,133,166,179-188,193-197,202-204,210-211,219-227,230-238,240,261,281-294
+  s_a298d5c04f383c::t_e11a5f0e20f6bb 239,241-246,248,262
+  s_a298d5c04f383c::t_40e10935883c15 132,142
+  s_a298d5c04f383c::t_ba76a77eb62749 101-106,112-115
+  s_a298d5c04f383c::t_bae175abdea18a 134,143-165
+  s_a298d5c04f383c::t_d6c6cc1babed29 189-192
+  s_a298d5c04f383c::t_27ef805e23f23b 91-96
+  s_a298d5c04f383c::t_f9d85198d850ae 119-127
+  s_a298d5c04f383c::t_769d0e7d4fbdad 198-201
+  s_a298d5c04f383c::t_471294cdc9fbe6 212-218
+  s_a298d5c04f383c::t_42e117bc2b0ab1 249-260,263-280
+  s_a298d5c04f383c::t_d5bf66ad185496 176-178
+  s_a298d5c04f383c::t_15d6401b613539 228-229
+  s_a298d5c04f383c::t_d4901c304fc63f 205-209
+  s_a298d5c04f383c::t_365e1dd5001830 135-141
+  s_a298d5c04f383c::t_f3778008652535 108-111
+  s_a298d5c04f383c::t_5d3c86447f8228 116
+  s_a298d5c04f383c::t_09b6ba8d845036 46-56
+  s_a298d5c04f383c::t_e9cae3ecce6862 247
+  s_a298d5c04f383c::t_2c1c54be05bfd3 167-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "f100f4c1b2c477103f1230a7fa2bceeda1dec94f",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
