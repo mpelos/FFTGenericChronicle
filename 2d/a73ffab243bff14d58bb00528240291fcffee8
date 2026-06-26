@@ -1,0 +1,22 @@
+.claude/skills/game-design-validation/SKILL.md
+  s_d0c97cc1e6fee4::t_efcaa555af826a 284-292
+.gitignore
+  s_d0c97cc1e6fee4::t_06d2d3655f9d81 88-89
+  s_d0c97cc1e6fee4::t_bcd0726506653e 87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "2da73ffab243bff14d58bb00528240291fcffee8",
+  "prompts": {},
+  "sessions": {
+    "s_d0c97cc1e6fee4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d60f317-c28f-45fb-b70b-4e6bebc2936e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
