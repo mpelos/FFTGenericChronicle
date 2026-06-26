@@ -70,13 +70,15 @@ public class Mod : ModBase
     private const int SELECTOR_RECORD_DUMP_MAX = 256;        // ResultSelectorProbeRecordDumpBytes upper bound
     private const int SELECTOR_RECORD_DUMP_BASE = 0x1B8;     // window starts here (covers +0x1BB..+0x1E5)
     private const int S_COUNT = 0;
+    private const int S_CTRL_WRITES = 4;    // dword (header): total control writes performed this session (persistent)
     private const int S_EVENTS = 0x10;
     private const int S_SEQ = 0;            // dword: sequence (written last so a partial slot is detectable)
     private const int S_EVADE = 4;          // dword: evade-type from cl (zero-extended)
     private const int S_ACTOR = 8;          // native ptr: r8 (actor object)
     private const int S_RECORD = 16;        // native ptr: [r8+unitOffset] (result record), 0 if guarded
     private const int S_RECORD_DUMP = 24;   // record window [record+SELECTOR_RECORD_DUMP_BASE ..]
-    private const int SELECTOR_SLOT_SIZE = S_RECORD_DUMP + SELECTOR_RECORD_DUMP_MAX;
+    private const int S_CTRL_INFO = S_RECORD_DUMP + SELECTOR_RECORD_DUMP_MAX; // dword: [action(0/1/2), forcedEvade, forcedResult, 0]
+    private const int SELECTOR_SLOT_SIZE = S_CTRL_INFO + 4;
     private const int SELECTOR_BUFFER_SIZE = S_EVENTS + (SELECTOR_RING_SIZE * SELECTOR_SLOT_SIZE);
     private const int PRECLAMP_RING_SIZE = 32;
     private const int PRECLAMP_RING_MASK = PRECLAMP_RING_SIZE - 1;
@@ -742,7 +744,7 @@ public class Mod : ModBase
                 $"[SELECTOR-PROBE-HOOK] rva=0x{_settings.ResultSelectorProbeRva:X} addr=0x{address:X} " +
                 $"actorReg={_settings.ResultSelectorProbeActorRegister} recordUnitOffset=0x{ResultSelectorRecordUnitOffset:X} " +
                 $"dumpBytes={ResultSelectorRecordDumpBytes} maxLogs={_settings.ResultSelectorProbeMaxLogs} " +
-                $"expected={_settings.ResultSelectorProbeExpectedBytes} (observe-only)");
+                $"expected={_settings.ResultSelectorProbeExpectedBytes} {DescribeSelectorControl()}");
         }
         catch (Exception ex)
         {
@@ -788,6 +790,8 @@ public class Mod : ModBase
             $"add r9, {S_EVENTS}",
             // header: zero seq first (partial-slot guard), evade-type, actor, record
             $"mov dword [r9+{S_SEQ}], 0",
+            // zero the control marker so a stale ring entry never reads as a control event
+            $"mov dword [r9+{S_CTRL_INFO}], 0",
             // evade-type = saved cl (movzx from the byte of saved rcx on the hook stack at [rsp+24])
             "movzx ecx, byte [rsp+24]",
             $"mov dword [r9+{S_EVADE}], ecx",
@@ -803,6 +807,11 @@ public class Mod : ModBase
             "jz .selector_store_seq",
             $"mov [r9+{S_RECORD}], r8",
         };
+
+        // OPTIONAL guarded control write: with r8 = record (non-null), rax = ring base, r9 = slot base,
+        // force the evade-type (and/or result-code) so the engine renders the outcome we choose. Emits
+        // nothing when control is disabled (pure observe). All immediates baked from settings.
+        asm.AddRange(BuildSelectorControlLines());
 
         // copy the record window [record+SELECTOR_RECORD_DUMP_BASE ..] into the slot (8 bytes at a time)
         for (int offset = 0; offset < dumpBytes; offset += 8)
@@ -825,6 +834,98 @@ public class Mod : ModBase
             "pop rax",
         ]);
         return asm.ToArray();
+    }
+
+    // Builds the guarded control write injected into the selector hook. Register state at the
+    // insertion point: r8 = result record (non-null), rax = ring base, r9 = slot base, ecx = free
+    // scratch, and the natural evade-type (the selector's cl argument) is the saved rcx low byte at
+    // [rsp+24]. We force BOTH that saved cl (so the live argument carries our value through the
+    // epilogue's `pop rcx`) AND the persisted record field +0x1C0, covering whichever the engine
+    // reads. Fail-closed: any guard miss jumps to .selector_ctrl_done and nothing is written.
+    // Emits nothing at all when control is disabled (pure observe-only behavior is unchanged).
+    private string[] BuildSelectorControlLines()
+    {
+        if (!_settings.ResultSelectorControlEnabled)
+            return [];
+
+        int maxWrites = Math.Clamp(_settings.ResultSelectorControlMaxWrites, 1, SELECTOR_RING_SIZE);
+        int targetId = _settings.ResultSelectorControlTargetCharId;
+        int matchEvade = _settings.ResultSelectorControlMatchEvadeType;
+        int forceEvade = _settings.ResultSelectorControlForceEvadeType;
+        int forceResult = _settings.ResultSelectorControlForceResultCode;
+        bool logOnly = _settings.ResultSelectorControlLogOnly;
+
+        // 255 (0xFF) is the "no value" sentinel in the per-slot marker; real evade-types are 0x00..0x06.
+        int forceEvadeMark = forceEvade >= 0 ? (forceEvade & 0xFF) : 255;
+        int forceResultMark = forceResult >= 0 ? (forceResult & 0xFF) : 255;
+
+        const int recordEvadeOffset = 0x1C0;   // +0x1C0 evade-type (the animation lever)
+        const int recordResultOffset = 0x1BE;  // +0x1BE staged-result-present (0 = evade/no-damage)
+        const int savedClStackOffset = 24;     // saved rcx low byte on the hook stack (= cl argument)
+
+        var c = new List<string>();
+        if (!logOnly)
+        {
+            // MaxWrites cap (counts live writes only; persistent across the session)
+            c.Add($"mov ecx, [rax+{S_CTRL_WRITES}]");
+            c.Add($"cmp ecx, {maxWrites}");
+            c.Add("jae .selector_ctrl_done");
+        }
+        if (targetId >= 0)
+        {
+            // record char id is at +0x00
+            c.Add("movzx ecx, byte [r8]");
+            c.Add($"cmp ecx, {targetId & 0xFF}");
+            c.Add("jne .selector_ctrl_done");
+        }
+        if (matchEvade >= 0)
+        {
+            // only act when the engine's natural evade-type equals this (the saved cl argument)
+            c.Add($"movzx ecx, byte [rsp+{savedClStackOffset}]");
+            c.Add($"cmp ecx, {matchEvade & 0xFF}");
+            c.Add("jne .selector_ctrl_done");
+        }
+        if (logOnly)
+        {
+            // dry-run: record intent, perform NO write, do not consume the write budget
+            c.Add($"mov byte [r9+{S_CTRL_INFO}], 1");
+            c.Add($"mov byte [r9+{S_CTRL_INFO + 1}], {forceEvadeMark}");
+            c.Add($"mov byte [r9+{S_CTRL_INFO + 2}], {forceResultMark}");
+        }
+        else
+        {
+            // live: spend one write from the budget, then force the chosen fields
+            c.Add($"mov ecx, [rax+{S_CTRL_WRITES}]");
+            c.Add("add ecx, 1");
+            c.Add($"mov [rax+{S_CTRL_WRITES}], ecx");
+            if (forceEvade >= 0)
+            {
+                c.Add($"mov byte [r8+{recordEvadeOffset}], {forceEvade & 0xFF}");   // persist record evade-type
+                c.Add($"mov byte [rsp+{savedClStackOffset}], {forceEvade & 0xFF}"); // and force the live cl argument
+            }
+            if (forceResult >= 0)
+                c.Add($"mov byte [r8+{recordResultOffset}], {forceResult & 0xFF}");
+            c.Add($"mov byte [r9+{S_CTRL_INFO}], 2");
+            c.Add($"mov byte [r9+{S_CTRL_INFO + 1}], {forceEvadeMark}");
+            c.Add($"mov byte [r9+{S_CTRL_INFO + 2}], {forceResultMark}");
+        }
+        c.Add(".selector_ctrl_done:");
+        return c.ToArray();
+    }
+
+    // One-line control summary for the install log.
+    private string DescribeSelectorControl()
+    {
+        if (!_settings.ResultSelectorControlEnabled)
+            return "(control=off, observe-only)";
+        static string Opt(int v) => v < 0 ? "any" : $"0x{v & 0xFF:X2}";
+        string mode = _settings.ResultSelectorControlLogOnly ? "LOGONLY(dry-run)" : "LIVE";
+        return
+            $"(control={mode} max={_settings.ResultSelectorControlMaxWrites} " +
+            $"target={(_settings.ResultSelectorControlTargetCharId < 0 ? "any" : $"0x{_settings.ResultSelectorControlTargetCharId & 0xFF:X2}")} " +
+            $"match={Opt(_settings.ResultSelectorControlMatchEvadeType)} " +
+            $"forceEvade={Opt(_settings.ResultSelectorControlForceEvadeType)} " +
+            $"forceResult={Opt(_settings.ResultSelectorControlForceResultCode)})";
     }
 
     private static bool ValidateLandmarkBytes(nint address, LandmarkProbe probe, out string error)
@@ -1244,20 +1345,36 @@ public class Mod : ModBase
             : (recordPtr == 0 ? "unit:none(record-null)" : $"unit:{ClassifyRegisterValue(recordPtr, null, "record")}");
         string actorText = actorPtr == 0 ? "actor:zero" : ClassifyRegisterValue(actorPtr, recordUnit, "actor");
 
+        // control marker written by BuildSelectorControlLines: 0 none, 1 would-write (LogOnly), 2 wrote
+        int ctrlAction = Marshal.ReadByte(_resultSelectorProbeBuf, slot + S_CTRL_INFO);
+        string ctrlText = "";
+        if (ctrlAction != 0)
+        {
+            int forcedEvade = Marshal.ReadByte(_resultSelectorProbeBuf, slot + S_CTRL_INFO + 1);
+            int forcedResult = Marshal.ReadByte(_resultSelectorProbeBuf, slot + S_CTRL_INFO + 2);
+            string verb = ctrlAction == 2 ? "WROTE" : "would-write(LogOnly)";
+            string feText = forcedEvade == 0xFF ? "--" : $"0x{forcedEvade:X2}({DescribeEvadeType(forcedEvade)})";
+            string frText = forcedResult == 0xFF ? "--" : $"0x{forcedResult:X2}";
+            ctrlText = $" [CONTROL {verb} evadeType={feText} resultCode={frText}]";
+        }
+
         return
             $"[SELECTOR-PROBE event={sequence} evadeType=0x{evadeType:X2}({DescribeEvadeType(evadeType)}) " +
             $"actor=0x{actorPtr:X}:{actorText} record=0x{recordPtr:X} {unitText} now={nowTick} " +
             $"rec+1BB={Hx(RecB(0x1BB))} rec+1BE={Hx(RecB(0x1BE))} rec+1C0={Hx(RecB(0x1C0))} " +
             $"rec+1C4(dmg)={(RecW(0x1C4) < 0 ? "----" : RecW(0x1C4).ToString())} rec+1E5={Hx(RecB(0x1E5))}] " +
-            $"window={FormatResultSelectorWindow(window)}";
+            $"window={FormatResultSelectorWindow(window)}{ctrlText}";
     }
 
     private static string DescribeEvadeType(int evadeType)
         => evadeType switch
         {
+            // live-validated 2026-06-26 (see docs/modding/04-re-strategy.md)
             0x00 => "hit",
-            0x01 or 0x02 or 0x03 => "guard-variant",
-            0x04 => "block/guard",
+            0x01 => "cloak/accessory-evade",
+            0x02 => "weapon-parry",
+            0x03 => "shield-block",
+            0x04 => "class-evade",
             0x06 => "miss",
             _ => "unknown",
         };
@@ -6100,6 +6217,15 @@ internal sealed class RuntimeSettings
     public int ResultSelectorProbeRecordUnitOffset { get; set; } = 0x148;
     public int ResultSelectorProbeMaxLogs { get; set; } = 256;
     public int ResultSelectorProbeRecordDumpBytes { get; set; } = 64;
+    // Result-selector CONTROL (rides the observe hook; requires ResultSelectorProbeEnabled). Two opt-ins
+    // (Enabled + !LogOnly) before any write. Forces the rendered outcome by writing the evade-type/result-code.
+    public bool ResultSelectorControlEnabled { get; set; } = false;   // master; false => observe-only (unchanged)
+    public bool ResultSelectorControlLogOnly { get; set; } = true;    // SAFETY: true => log would-write intent, never write
+    public int ResultSelectorControlMaxWrites { get; set; } = 1;      // 1..32 cap on live writes per session
+    public int ResultSelectorControlTargetCharId { get; set; } = -1;  // -1=any; else require record[+0x00] charId == this
+    public int ResultSelectorControlMatchEvadeType { get; set; } = -1;// -1=any; else only act when natural evade-type == this
+    public int ResultSelectorControlForceEvadeType { get; set; } = -1;// -1=no change; else byte -> cl + [record+0x1C0]
+    public int ResultSelectorControlForceResultCode { get; set; } = -1;// -1=no change; else byte -> [record+0x1BE] (0 for evade)
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;

@@ -379,3 +379,28 @@ LIVE-VALIDATED (6/6):**
 0x05 unobserved (gap, likely unused). Investigation phase CLOSED — remaining work is the guarded
 control hook (write `+0x1C0` for the animation + `+0x1C4` for damage), per
 `work/hit-miss-control-implementation-plan.md`.
+
+---
+
+## LIVE CONTROL PROOF (2026-06-26) — force-evade works end-to-end
+
+The guarded control hook (extended selector hook at 0x205210) ran LIVE with
+`Match=0x03(shield-block) -> Force=0x04(class-evade)`, `MaxWrites=1`. Captured event:
+
+```
+event=12 evadeType=0x03(shield-block) record=0x141855CE0 unit:id=0x01/team=0/hp=409
+         rec+1BB=01 rec+1BE=00 rec+1C0=04 rec+1C4(dmg)=0 rec+1E5=00
+         [CONTROL WROTE evadeType=0x04(class-evade) resultCode=--]
+```
+
+The engine naturally rolled a shield-block (`evadeType=0x03`, captured at hook entry from `cl`); our
+hook matched it and overwrote `+0x1C0` (and the saved `cl` argument) to `0x04`. The dumped record
+shows `rec+1C0=04` (post-write); HP stayed 409 (no damage, it was an evade). On screen, Ramza's
+shield-block rendered as a class-evade "Miss" — confirmed by the user.
+
+**This proves the evade-type byte `+0x1C0` (+ the `cl` argument) drives the on-screen animation:
+writing it forces any of the 6 outcomes, and the engine renders the native animation.** Combined with
+the pre-clamp damage hook (`+0x1C4` at 0x30A66F), the custom formula now owns hit/miss/block/parry AND
+damage, while the engine renders natively and owns HP/KO. The hit/miss/block/parry control mandate is
+COMPLETE and live-proven. Investigation AND first-control-implementation are both done; remaining work
+is wiring the force decision to the DCL formula output (not RE).

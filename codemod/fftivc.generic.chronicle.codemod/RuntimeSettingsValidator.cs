@@ -280,6 +280,47 @@ internal static class RuntimeSettingsValidator
                 report.Error("ResultSelectorProbeExpectedBytes", "Expected bytes are required for the result-selector probe.");
             report.Warn("ResultSelectorProbeEnabled", "result-selector probe is an observe-only RE hook (logs [SELECTOR-PROBE] evade-type/record); use only for short controlled captures.");
         }
+
+        ValidateResultSelectorControl(settings, report);
+    }
+
+    private static void ValidateResultSelectorControl(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.ResultSelectorControlMaxWrites < 1 || settings.ResultSelectorControlMaxWrites > 32)
+            report.Error("ResultSelectorControlMaxWrites", "ResultSelectorControlMaxWrites must be within 1..32.");
+
+        foreach (var (name, value) in new[]
+        {
+            ("ResultSelectorControlTargetCharId", settings.ResultSelectorControlTargetCharId),
+            ("ResultSelectorControlMatchEvadeType", settings.ResultSelectorControlMatchEvadeType),
+            ("ResultSelectorControlForceEvadeType", settings.ResultSelectorControlForceEvadeType),
+            ("ResultSelectorControlForceResultCode", settings.ResultSelectorControlForceResultCode),
+        })
+        {
+            if (value < -1 || value > 255)
+                report.Error(name, $"{name} must be -1 (any / no-change) or 0..255.");
+        }
+
+        if (!settings.ResultSelectorControlEnabled)
+            return;
+
+        if (!settings.ResultSelectorProbeEnabled)
+            report.Error("ResultSelectorControlEnabled",
+                "ResultSelectorControlEnabled requires ResultSelectorProbeEnabled (the control rides the selector hook).");
+
+        if (!settings.ResultSelectorControlLogOnly &&
+            settings.ResultSelectorControlForceEvadeType < 0 &&
+            settings.ResultSelectorControlForceResultCode < 0)
+            report.Error("ResultSelectorControlEnabled",
+                "Control is live (LogOnly=false) but nothing to force (ForceEvadeType and ForceResultCode are both -1).");
+
+        if (settings.ResultSelectorControlLogOnly)
+            report.Warn("ResultSelectorControlEnabled",
+                "result-selector CONTROL armed in LOG-ONLY (dry-run): logs would-write intent, performs NO writes.");
+        else
+            report.Warn("ResultSelectorControlEnabled",
+                "result-selector CONTROL is LIVE: it writes the evade-type/result-code on matching results. " +
+                "Confine blast radius with MaxWrites / TargetCharId / MatchEvadeType.");
     }
 
     private static void ValidateTables(RuntimeSettings settings, SettingsValidationReport report)
