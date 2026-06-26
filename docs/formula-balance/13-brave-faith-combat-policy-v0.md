@@ -10,7 +10,6 @@ Depends on:
 - `docs/formula-balance/11-validated-policy-v0.2.md`
 - `docs/job-balance/10-healing-attrition-model-schema.md`
 - `docs/job-balance/15-targeting-challenge-model-schema.md`
-- `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
 
 ## Purpose
 
@@ -310,8 +309,10 @@ This keeps Brave relevant in AI and target selection without turning it into raw
 
 The following existing project artifacts must be updated after Claude review:
 
-1. `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
-   - Replace the universal Brave reaction default with the trigger-identity model.
+1. `docs/job-balance/01-cross-job-build-principles.md`
+   - Records the no-universal-default reaction trigger-identity model (the old
+     `58-physical-foundation-rsm-concrete-v0.md` producer was consolidated into the per-job
+     decision docs and this principle).
 2. `work/gpt-physical-foundation-rsm-concrete-v0.json`
    - Replace shared `reaction_chance_formula` assumptions with per-reaction trigger identity.
 3. `work/sim-inputs-v0.2.1.json`

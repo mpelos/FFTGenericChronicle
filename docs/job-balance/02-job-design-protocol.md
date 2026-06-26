@@ -5,11 +5,7 @@ Date: 2026-06-20
 Depends on:
 - `docs/job-balance/00-high-level-direction.md`
 - `docs/job-balance/01-cross-job-build-principles.md`
-- `docs/formula-balance/05-formula-proposal-protocol.md`
-- `docs/formula-balance/08-scenario-set-v0.md`
-- `docs/formula-balance/10-mitigation-and-scaling-policy-v0.md`
-- `docs/formula-balance/11-validated-policy-v0.2.md`
-- `work/sim-inputs-v0.2.json`
+- `docs/deep-combat-layer/00-overview.md` (the canonical combat engine for this phase)
 
 ## Purpose
 
@@ -19,10 +15,10 @@ and accepted.
 It protects two things at the same time:
 
 - the user's accepted high-level direction for job balance;
-- the already validated formula-balance v0.2 policy.
+- the integrity of the canonical combat engine (the deep combat layer).
 
 No job redesign should be accepted because it sounds good in isolation. It must preserve FFT build
-crafting, respect the weapon/armor formula model, and survive representative checks.
+crafting, respect the combat engine's weapon/armor model, and survive representative checks.
 
 ## Source Of Truth Order
 
@@ -30,19 +26,15 @@ When documents conflict, use this order until a later accepted document supersed
 
 1. `docs/job-balance/00-high-level-direction.md`
 2. `docs/job-balance/01-cross-job-build-principles.md`
-3. `docs/formula-balance/11-validated-policy-v0.2.md`
-4. `docs/formula-balance/10-mitigation-and-scaling-policy-v0.md`
-5. `docs/formula-balance/08-scenario-set-v0.md`
-6. `work/sim-inputs-v0.2.json`
+3. the deep-combat-layer docs (`docs/deep-combat-layer/`) for all combat-engine facts.
 
-The job phase inherits formula v0.2 as a constraint. It does not get to quietly re-litigate the
-combat model.
+The job phase inherits the deep combat layer as a constraint. It does not get to quietly
+re-litigate the combat model.
 
-Authority is split by kind. For design intent and direction, the order above applies. For numeric
-or simulation values such as multipliers, WP, penetration, armor response, stress-engine constants,
-and clamps, the pinned bundle `work/sim-inputs-v0.2.json` and its accepted successors are
-authoritative over prose docs. A prose/bundle numeric conflict is a documentation bug to fix in
-the prose, not a reason to change validated numbers.
+Authority is split by kind. For design intent and direction, the order above applies. For combat
+math — weapon-skill, damage, DR, traits, and other engine values — the deep-combat-layer docs are
+authoritative over job prose. A prose/engine conflict is a documentation bug to fix in the prose,
+not a reason to change the engine.
 
 ## Status Labels
 
@@ -58,8 +50,8 @@ Job-balance artifacts should use these statuses:
 | `Accepted` | Approved after the required verified-baseline re-sim gates are satisfied. |
 | `Rejected` | Violates direction, fails checks, or cannot be repaired without redesign. |
 
-Until the Windows `04` baseline captures real IVC weapon data and formula-balance v1 exists,
-detailed numeric job proposals should not claim final implementation acceptance.
+Until the Windows `04` baseline captures real IVC weapon data and the deep combat layer is
+calibrated, detailed numeric job proposals should not claim final implementation acceptance.
 
 ## Required Proposal Shape
 
@@ -82,7 +74,7 @@ Proposed multipliers:
 Equipment access:
 Armor class as target:
 Supported damage modes:
-Formula v0.2 coupling:
+Combat-engine (DCL) coupling:
 
 Action skillset goals:
 Mechanic preservation list:
@@ -102,7 +94,7 @@ Expected counters:
 Ramza / unique-job interaction:
 
 Scenario/check plan:
-Formula re-sim requirement:
+Engine re-validation requirement:
 Implementation assumptions:
 Open proof needs:
 Claude review verdict:
@@ -141,137 +133,23 @@ Secondary tags should be concrete, such as `crush`, `missile`, `anti-plate`, `an
 
 Avoid broad tag soup. If every job has the same tags, the taxonomy is not doing work.
 
-## Formula-Balance Hard Gates
+## Combat-Engine Hard Gates (DCL) — pending
 
-### Gate F1 - Weapon Family Identity
+The job phase is bound by the deep combat layer's own invariants — weapon-family identity and skill
+grades, the damage-type vs armor (subtractive-DR) matchup, the two-sided traits (Brave, Faith,
+Zodiac), guard depletion, reach, and the 3d6 status contest. Those invariants live in
+`docs/deep-combat-layer/` and are the authoritative constraints a job kit must respect.
 
-The v0.2 weapon families are inherited constraints:
+The earlier v0.2 formula gates (weapon routines like `pa_wp` / `ma_wp`, the multiplicative
+armor-response table, and the Two Hands / Two Swords / Attack Boost / Brave-97 / Shell-0.667 /
+magic-physical-0.6771 stress engines) are **removed**: they belonged to the parallel formula-balance
+v0.2 track, not to the canonical engine. A DCL-specific gate list and re-validation procedure will be
+written here when the job→DCL rebase pass runs.
 
-| Family | Routine | Type | Design obligation |
-| --- | --- | --- | --- |
-| `sword` | `pa_wp` | `swing` | Familiar stable physical pressure. |
-| `knight_sword` | `br_pa_wp` | `swing` | Premium Brave-linked physical pressure. |
-| `katana` | `br_pa_wp` | `swing` | Brave-linked disciplined physical identity. |
-| `knife` | `spd_pa_wp` | `thrust` | Fast precision and anti-mail access. |
-| `ninja_blade` | `spd_pa_wp` | `swing` | Fast melee burst with dual-wield lens. |
-| `longbow` | `spd_pa_wp` | `missile` | Ranged positional pressure. |
-| `crossbow` | `pa_wp` | `missile` | Direct ranged armor pressure. |
-| `gun` | `wp_wp` | `missile` | PA-independent ranged consistency. |
-| `spear` | `pa_wp` | `thrust` | Reach and anti-mail physical pressure. |
-| `staff` | `ma_wp` | `crush` | MA-based impact route. |
-| `rod` | `ma_wp` | `crush` | Caster backup impact route. |
-| `pole` | `ma_wp` | `crush` | MA/reach impact route. |
-| `axe` | `rdm_pa_wp` | `crush` | Volatile impact route. |
-| `flail` | `rdm_pa_wp` | `crush` | Higher-ceiling volatile impact route. |
-| `fists` | `br_pa_pa` | `crush` | Brave-linked unarmed impact route. |
-| `instrument` | `pampa_wp` | `missile` | Performer ranged/support route. |
-| `book` | `pampa_wp` | `crush` | Hybrid impact route. |
-| `cloth_weapon` | `pampa_wp` | `swing` | Hybrid light swing route. |
-| `bag` | `rdm_pa_wp` | `crush` | Volatile oddball impact route. |
-
-Job design may adjust which jobs can use which families, but it must not reroute a family to a
-different routine, type, or penetration identity without triggering formula re-simulation and
-Claude reapproval.
-
-### Gate F2 - Armor Matchup Identity
-
-The armor response model is inherited:
-
-| Armor class | Swing | Thrust | Crush | Missile |
-| --- | ---: | ---: | ---: | ---: |
-| `plate` | 0.65 | 0.65 | 1.15 | 0.80 |
-| `mail` | 0.75 | 1.10 | 0.95 | 1.10 |
-| `leather` | 0.95 | 0.95 | 1.00 | 0.95 |
-| `cloth` | 1.00 | 1.00 | 1.00 | 1.00 |
-
-Job equipment access must support this ecology:
-
-- plate must create demand for crush;
-- mail must create demand for thrust and missile;
-- leather should not erase identity through excessive mitigation;
-- cloth should remain physically vulnerable but tactically valuable through magic, speed, MP,
-  status, evasion, or utility.
-
-### Gate F3 - Protected Stress Engines
-
-Formula v0.2 validated coexistence with these stress engines:
-
-- Two Hands: `1.80`;
-- Two Swords: `2` hits;
-- Attack Boost: `1.3333333333333333`;
-- high Brave stress: `97`;
-- magic Faith floor: `0.60`;
-- Shell multiplier: `0.667`.
-
-Job design must not nerf, remove, or redefine these engines without explicit reapproval from
-Claude and a new formula re-sim.
-
-This does not mean these skills must stay in the same jobs, JP costs, or exact learn path. It
-means their combat role in the validated formula model cannot be changed casually.
-
-### Gate F4 - Magic/Physical Coexistence
-
-The v0.2 coexistence reference is:
-
-```text
-magic / top physical = 281 / 415 = 0.6771
-```
-
-Job proposals that change MA multipliers, Faith access, spell availability, Shell access, Arcane
-Strength-like effects, MP economy, or physical stress ceilings must report whether this coexistence
-ratio plausibly drifts.
-
-Large drift is allowed only with a written reason and re-simulation.
-
-### Gate F5 - No Silent Formula Drift
-
-Any change to the following is formula-affecting until proven otherwise:
-
-- job multipliers for HP, PA, MA, Speed, or MP;
-- job equipment compatibility;
-- growth/effective-stat model;
-- weapon-family access;
-- armor-class access;
-- Brave/Faith manipulation;
-- support engines that alter damage, hit rate, durability, or action economy;
-- reaction engines that change expected incoming or outgoing damage;
-- movement engines that change exposure or reach enough to affect scenario outcomes.
-
-Formula-affecting proposals must run the cross-phase re-sim gate before final acceptance.
-
-## Cross-Phase Re-Sim Gate
-
-The re-sim gate is mandatory whenever Gate F5 is triggered.
-
-Minimum required evidence:
-
-1. Run the formula-balance scenario set from `docs/formula-balance/08-scenario-set-v0.md`, or its
-   accepted successor.
-2. Use `tools/sim_damage.py`, or a documented successor harness, against the current pinned input
-   bundle.
-3. Recompute the v0.2 scorecard metrics:
-   - family viability;
-   - no dominance;
-   - scale band;
-   - magic coexistence;
-   - plate matchup.
-4. Preserve the dual-independent review gate:
-   - GPT harness output;
-   - Claude independent checker or independent recomputation path;
-   - `0` mismatches on agreed rows, or documented reconciliation before acceptance.
-5. Label all outputs with the formula input version, scenario-set version, and job proposal version.
-6. If a proposal creates a new job chassis or changes a job's equipment, armor class, or multipliers,
-   include that job's actual roster row in the re-sim bundle. Anchor jobs are useful controls, but
-   they are not sufficient to prove no-dominance for a new or materially changed chassis.
-
-If real IVC weapon data is still missing, the strongest possible status is:
-
-```text
-Accepted for provisional design
-```
-
-After `work/baseline_weapons.csv` exists and formula-balance v1 is accepted, affected job
-proposals must be rechecked before they can become final `Accepted` implementation data.
+Until then the timeless rule still holds: any job change that affects combat math, equipment access,
+multipliers, stress interactions, or expected incoming/outgoing damage is **engine-affecting** and
+must be re-validated against the deep combat layer before final acceptance — never accepted on prose
+alone.
 
 ## Job-Balance Check Matrix
 
@@ -280,15 +158,15 @@ Not every proposal needs the same evidence. Use the smallest check that covers t
 | Proposal type | Minimum evidence |
 | --- | --- |
 | Pure lore/flavor wording | Claude review only. |
-| Role-map classification | Consistency check against docs 00/01/11 and `work/sim-inputs-v0.2.json`. |
+| Role-map classification | Consistency check against docs 00/01 and the deep-combat-layer docs. |
 | JP-only cost change | Progression review plus mandatory-skill risk check if it affects global pieces. |
 | Prerequisite-only change | Progression timing review plus early-combo risk check. |
 | Action skill redesign | Scenario check for target role, CT/MP/range/status/accuracy, and counters. |
 | Reaction/support/move redesign | Mandatory-piece, immunity, universal-build, and opportunity-cost checks. |
-| Equipment access change | Formula ecology check and usually cross-phase re-sim. |
+| Equipment access change | Engine ecology check and usually combat-engine re-validation. |
 | Job multiplier change | Cross-phase re-sim. |
 | Growth profile change | Growth fairness check and cross-phase re-sim if effective stats change. |
-| Weapon family formula/type change | Formula proposal protocol plus cross-phase re-sim. |
+| Weapon family formula/type change | Combat-engine re-validation against the deep combat layer. |
 
 ## General Hard Gates
 
@@ -561,20 +439,13 @@ Ramza's Chapter 4 job is allowed broad flexibility, but not specialist dominance
 Broad negation above the accepted fail threshold is not allowed. True immunity is only acceptable
 for narrow, explicit, counterable cases.
 
-### Formula Re-Sim Rows
+### Combat-Engine Re-Validation Rows (DCL) — pending
 
-When Gate F5 triggers, use the formula rows from `08-scenario-set-v0.md` and preserve the five
-v0.2 metrics. At minimum, include:
-
-- early, mid, late, and stress phase coverage;
-- average and strong physical attackers;
-- fast attacker;
-- ranged attacker;
-- magic attacker;
-- hybrid attacker;
-- light, durable, magic-relevant, and evasive targets;
-- stress rows for Two Hands, Two Swords, Attack Boost, Martial Arts/Brawler, Brave/Faith, and
-  accuracy where legal.
+When a proposal is engine-affecting (see *Combat-Engine Hard Gates*), it must be re-validated
+against the deep combat layer's scenario coverage — early/mid/late/stress phases, representative
+attackers and targets across the DCL's damage types and armor classes. The exact DCL row list and
+harness are defined with the job→DCL rebase pass; the v0.2 formula rows and the five v0.2 metrics no
+longer apply.
 
 ## Skill Design Gates
 
@@ -703,7 +574,7 @@ Every multiplier proposal must state:
 - which current stats the job should be good at;
 - which current stats it should be bad at;
 - which formulas become stronger or weaker as a result;
-- whether the formula re-sim gate is triggered.
+- whether the combat-engine re-validation gate is triggered.
 
 ## Gender And Bard/Dancer Gate
 
@@ -781,7 +652,6 @@ Still open:
 - exact scenario archetype definitions after role map v0;
 - exact implementation format for `work/job-balance/` artifacts;
 - real IVC weapon baseline from the Windows `04` session;
-- formula-balance v1 re-sim after verified IVC weapon data;
-- party/formula-v1 sweeps over the actual in-scope job roster, using each job's real armor class
-  and HP, instead of only the current four representative armor anchors;
+- DCL re-validation after verified IVC weapon data and DCL calibration;
+- party sweeps over the actual in-scope job roster, using each job's real armor class and HP;
 - final job implementation acceptance criteria after data-mod feasibility is confirmed.

@@ -4,11 +4,6 @@ Status: Accepted
 Date: 2026-06-21
 Depends on:
 - `docs/job-balance/15-targeting-challenge-model-schema.md`
-- `docs/job-balance/20-time-mystic-v1-proposal.md`
-- `docs/job-balance/21-summoner-geomancer-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
 - `work/t8xsr-spell-routing-reflect-scenarios-v0.json`
 
 ## Purpose

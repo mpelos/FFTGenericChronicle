@@ -3,12 +3,6 @@
 Status: Accepted
 Date: 2026-06-21
 Depends on:
-- `docs/job-balance/21-summoner-geomancer-v1-proposal.md`
-- `docs/job-balance/24-dragoon-samurai-v1-proposal.md`
-- `docs/job-balance/26-bard-dancer-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
 - `work/t11-area-terrain-scenarios-v0.json`
 
 ## Purpose

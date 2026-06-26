@@ -3,14 +3,7 @@
 Status: Accepted
 Date: 2026-06-21
 Depends on:
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/11-ct-delay-model-schema.md`
-- `docs/job-balance/20-time-mystic-v1-proposal.md`
-- `docs/job-balance/27-necromancer-v1-proposal.md`
-- `docs/job-balance/29-vanguard-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
 - `work/t10-action-economy-scenarios-v0.json`
 
 ## Purpose

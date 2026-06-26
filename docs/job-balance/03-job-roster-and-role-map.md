@@ -6,9 +6,8 @@ Depends on:
 - `docs/job-balance/00-high-level-direction.md`
 - `docs/job-balance/01-cross-job-build-principles.md`
 - `docs/job-balance/02-job-design-protocol.md`
-- `docs/formula-balance/11-validated-policy-v0.2.md`
+- `docs/deep-combat-layer/00-overview.md` (the canonical combat engine for this phase)
 - `work/baseline_jobs.csv`
-- `work/sim-inputs-v0.2.1.json`
 
 ## Purpose
 
@@ -16,7 +15,7 @@ This document maps the in-scope job roster before detailed skill design begins.
 
 It does not define final skill lists, JP costs, multipliers, prerequisites, or exact equipment
 changes. It defines each job's provisional tactical reason to exist, growth profile, current
-formula coupling, and open risk flags.
+combat-engine coupling, and open risk flags.
 
 Detailed job kits must consume this map. They should not contradict it without writing a new
 accepted role-map version.
@@ -41,9 +40,12 @@ Out of scope:
 
 ### Equipment Family Mapping
 
-This role map uses the current formula-family mapping from v0.2.
+This table maps each baseline equipment label to its weapon family and damage mode. **It is
+v0.2-sourced and must be reconciled with the deep combat layer
+(`docs/deep-combat-layer/14-equipment.md`): under the DCL, `instrument` and `cloth_weapon` are
+crush/impact, not missile/swing.** The family names themselves carry over.
 
-| Baseline equip label | Formula family | Damage mode |
+| Baseline equip label | Weapon family | Damage mode (v0.2 — reconcile w/ DCL) |
 | --- | --- | --- |
 | `Sword` | `sword` | `swing` |
 | `KnightSword` | `knight_sword` | `swing` |
@@ -71,12 +73,14 @@ unarmed/crush home unless a later accepted proposal says otherwise.
 
 ### Armor-Class Source
 
-Armor class is the current target-profile label from `work/sim-inputs-v0.2.1.json`.
+Armor class is the target-profile label a job maps to — `plate`, `mail`, `leather`, or `cloth`.
+These four classes carry over to the deep combat layer (`docs/deep-combat-layer/14-equipment.md`);
+the labels here were first sourced from the v0.2 sim bundle.
 
 It is not final implementation data. It is the starting reconciliation point Claude requested:
 ratify or flag it; do not reinvent it silently.
 
-For v0.2.1 reconciliation, a job's target `armor_class` follows the heaviest armor tier it can
+A job's target `armor_class` follows the heaviest armor tier it can
 actually equip:
 
 - `plate`: heavy Armor/Helmet access, especially with Shield or heavy frontline posture;
@@ -88,7 +92,7 @@ Deliberate exceptions must be documented in the relevant job proposal.
 
 ## Roster Summary
 
-| Job | Direction | Primary role | Secondary tags | Growth | Armor class | Native formula families | Modes | Role reason |
+| Job | Direction | Primary role | Secondary tags | Growth | Armor class | Weapon families | Modes | Role reason |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Squire | Keep fantasy, rewrite kit | `melee-physical` | `starter`, `utility` | physical | `leather` | `sword`, `knife`, `axe`, `flail`, `fists` | swing/thrust/crush | Baseline flexible physical job; should teach weapon identity without becoming obsolete only as JP filler. |
 | Chemist | Keep fantasy, rewrite kit | `specialist` | `item`, `gun` | hybrid | `leather` | `gun`, `knife`, `fists` | missile/thrust/crush | Reliable item support plus PA-independent ranged route; should remain useful through action certainty and utility. |
@@ -102,7 +106,7 @@ Deliberate exceptions must be documented in the relevant job proposal.
 | Thief | Keep fantasy, rewrite kit | `specialist` | `fast`, `knife` | physical | `leather` | `knife`, `fists` | thrust/crush | Fast utility and precision job; should use Speed, stealing/disruption, and thrust identity without becoming pure damage. |
 | Orator | Keep fantasy, rewrite kit | `controller` | `recruit`, `gun` | hybrid | `leather` | `gun`, `knife`, `fists` | missile/thrust/crush | Social battlefield manipulator; should matter in combat through morale, speech, recruitment, Brave/Faith/status, and guns. |
 | Mystic | Keep fantasy, rewrite kit | `controller` | `Faith`, `crush` | magical | `cloth` | `pole`, `book`, `staff`, `rod`, `fists` | crush/magic | Spiritual/status controller with unusually broad MA-crush access; must not eclipse dedicated casters or crush specialists. |
-| Geomancer | Keep fantasy, rewrite kit | `hybrid` | `terrain`, `mail` | hybrid | `mail` | `axe`, `sword`, `fists` | crush/swing | PA/MA terrain hybrid; should connect physical formula identity to map state without becoming generic melee. |
+| Geomancer | Keep fantasy, rewrite kit | `hybrid` | `terrain`, `mail` | hybrid | `mail` | `axe`, `sword`, `fists` | crush/swing | PA/MA terrain hybrid; should connect physical weapon identity to map state without becoming generic melee. |
 | Dragoon | Keep fantasy, rewrite kit | `melee-physical` | `thrust`, `plate` | physical | `plate` | `spear`, `fists` | thrust/crush | Reach/jump physical specialist; should be the clean spear/thrust job and a natural anti-mail route. |
 | Samurai | Keep fantasy, rewrite kit | `melee-physical` | `katana`, `Brave` | physical | `plate` | `katana`, `fists` | swing/crush | Disciplined Brave/katana job; should be strong and stylish without becoming another universal sword answer. |
 | Ninja | Keep fantasy, rewrite kit | `melee-physical` | `fast`, `dual-wield` | physical | `leather` | `ninja_blade`, `knife`, `flail`, `fists` | swing/thrust/crush | Fast physical pressure and multi-hit stress job; must stay iconic without making all physical optimization converge on it. |
@@ -112,11 +116,11 @@ Deliberate exceptions must be documented in the relevant job proposal.
 | Mime | Replace with Vanguard | `late-reward` | `elite-knight`, `TBD` | physical | old slot has no normal armor; final TBD | current slot: `fists`; final TBD | TBD | Mime is removed. Replacement should be a late vanguard comparable in value to Holy Knight but not a clone; exact kit deferred. |
 | Ramza | Rewrite unique job | `protagonist` | `hybrid`, `leadership` | hybrid | chapter-dependent TBD | knight/mage hybrid access TBD | swing/crush/thrust/magic TBD | Ramza should evolve by chapter and reach top-tier value by Chapter 4 through flexibility, not specialist dominance. |
 
-## Formula Ecology Checks
+## Roster Ecology Checks
 
 ### Damage Mode Supply
 
-Current native access from the roster supplies every v0.2 physical mode:
+Current native access from the roster supplies every physical damage mode:
 
 - `swing`: Squire, Knight, Geomancer, Samurai, Ninja, Dancer, Ramza TBD;
 - `thrust`: Squire, Chemist, Thief, Orator, Dragoon, Ninja, Dancer, Ramza TBD;
@@ -130,7 +134,7 @@ so plate's weakness does not live only in oddball or caster-adjacent routes.
 
 ### Armor Target Distribution
 
-Current v0.2.1 target armor classes:
+Target armor classes:
 
 | Armor class | Jobs |
 | --- | --- |
@@ -148,9 +152,9 @@ Initial verdict:
 
 The final role map should still verify whether Bard/Dancer active stat and equipment differences
 create unwanted gender optimization pressure. Their global reaction/support/move parity is
-mandatory, and v0.2.1 reconciles their target armor class to the same `cloth` profile.
+mandatory, and both reconcile to the same `cloth` target profile.
 
-### Protected Formula Identities
+### Protected Weapon Identities
 
 The role map should preserve:
 
@@ -167,7 +171,7 @@ The role map should preserve:
 
 ### R1 - Crush Must Become A Real Anti-Plate Plan
 
-Formula v0.2 gives plate a crush weakness. The roster has many crush-capable families, but not yet
+The combat engine gives plate a crush weakness. The roster has many crush-capable families, but not yet
 a clearly protected late-game anti-plate job identity besides Monk/Geomancer/Ninja-adjacent routes.
 
 Later job design must ensure at least one non-gimmick crush build is attractive into plate.
@@ -182,12 +186,12 @@ If bows/crossbows are strong only as borrowed equipment on other jobs, Archer fa
 
 Guns are PA-independent missile pressure. Chemist and Orator currently own this route.
 
-If gun access becomes too broad, Chemist/Orator lose identity. If it stays too weak, the formula
-model's gun role is wasted.
+If gun access becomes too broad, Chemist/Orator lose identity. If it stays too weak, the combat
+engine's gun role is wasted.
 
 ### R4 - Caster Crush Access Needs Boundaries
 
-Staff, rod, pole, and book are all `crush` in v0.2. This gives casters useful physical-ish backup
+Staff, rod, pole, and book are all `crush`. This gives casters useful physical-ish backup
 and plate interaction.
 
 Later design must prevent MA-crush access from making dedicated physical crush jobs irrelevant.
@@ -196,7 +200,7 @@ Later design must prevent MA-crush access from making dedicated physical crush j
 
 Bard and Dancer remain gender-restricted, but reaction/support/move parity is a hard invariant.
 
-The v0.2.1 bundle reconciles both jobs to `cloth` target profiles because their real armor access
+Both jobs map to `cloth` target profiles because their real armor access
 is Clothing/Hat. Detailed Bard/Dancer design still must check active stat and equipment differences
 against the user's gender policy.
 

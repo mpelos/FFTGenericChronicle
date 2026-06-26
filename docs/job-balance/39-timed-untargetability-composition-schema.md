@@ -5,9 +5,6 @@ Date: 2026-06-21
 Depends on:
 - `docs/job-balance/11-ct-delay-model-schema.md`
 - `docs/job-balance/15-targeting-challenge-model-schema.md`
-- `docs/job-balance/25-ninja-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
 - `docs/reference/fft-vanilla-command-skillset-effect-map.md`
 - `docs/reference/fft-vanilla-ability-effect-tag-crosswalk.md`
 - `docs/reference/fft-vanilla-status-effect-map.md`

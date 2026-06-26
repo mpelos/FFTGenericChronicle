@@ -3,8 +3,6 @@
 Status: Accepted
 Date: 2026-06-21
 Depends on:
-- `docs/job-balance/06-knight-archer-v1-proposal.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/12-vanilla-skill-status-reference.md`
 - `docs/formula-balance/13-brave-faith-combat-policy-v0.md`
 - `docs/reference/fft-vanilla-ability-effect-index.md`

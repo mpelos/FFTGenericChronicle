@@ -299,7 +299,7 @@ Each job should eventually define:
 - robe/clothing/heavy armor access;
 - accessory assumptions if relevant;
 - natural damage modes it supports, such as swing, thrust, crush, missile, magic, or spirit;
-- synergy with the formula-balance model.
+- synergy with the deep combat layer (the canonical combat engine for this phase).
 
 This is especially important because the formula rebalance makes weapon and armor families more
 distinct.

@@ -3,15 +3,6 @@
 Status: Accepted
 Date: 2026-06-21
 Depends on:
-- `docs/job-balance/05-squire-chemist-v1-proposal.md`
-- `docs/job-balance/18-monk-v1-proposal.md`
-- `docs/job-balance/19-white-black-mage-v1-proposal.md`
-- `docs/job-balance/20-time-mystic-v1-proposal.md`
-- `docs/job-balance/21-summoner-geomancer-v1-proposal.md`
-- `docs/job-balance/27-necromancer-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
 - `work/t9-resource-economy-scenarios-v0.json`
 
 ## Purpose

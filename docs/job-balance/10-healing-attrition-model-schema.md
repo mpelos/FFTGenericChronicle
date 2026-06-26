@@ -3,8 +3,6 @@
 Status: Accepted
 Date: 2026-06-20
 Depends on:
-- `docs/job-balance/05-squire-chemist-v1-proposal.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/08-build-incidence-benchmark-schema.md`
 - `docs/formula-balance/13-brave-faith-combat-policy-v0.md`
 - `work/sim-inputs-v0.2.1.json`

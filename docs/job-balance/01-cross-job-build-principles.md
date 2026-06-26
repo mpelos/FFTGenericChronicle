@@ -4,8 +4,7 @@ Status: Accepted
 Date: 2026-06-20
 Depends on:
 - `docs/job-balance/00-high-level-direction.md`
-- `docs/formula-balance/11-validated-policy-v0.2.md`
-- `work/sim-inputs-v0.2.json`
+- `docs/deep-combat-layer/00-overview.md` (the canonical combat engine for this phase)
 
 ## Purpose
 
@@ -571,9 +570,70 @@ For every accepted strong build, the proposal should explain why the chosen acti
 If the same build works almost identically on many active jobs, the design must identify whether
 that is acceptable general utility or a sign that a global piece is overpowering job identity.
 
-## Cross-Phase Formula Protection
+## Reaction, Mitigation, and Slot Mechanics
 
-Job balance must not silently invalidate formula-balance v0.2.
+These are the durable build-level mechanics that every job kit shares. They are engine-neutral rules;
+the deep combat layer owns the concrete combat-side implementation (reaction taxonomy, active-defense
+math, damage-type DR), and any v0.2 magnitudes that once expressed them are provisional.
+
+### One slot each, and two supports never coexist
+
+Each unit has exactly one reaction slot, one support slot, and one movement slot. A build that would
+need **two support-slot abilities at once is not a legal single-unit build** — it is only a
+theoretical stress probe, valid only when one part is innate/native to the active job.
+
+Consequences (examples):
+
+- the legal unarmed support ceiling is `Brawler` alone; `Brawler + Martial Discipline` is a probe,
+  not an equippable build;
+- a job cannot equip both an `Equip <weapon>` unlock and `Doublehand` and count the result as one of
+  its own legal builds;
+- a **native** active job whose engine is innate (e.g. Ninja's two-hit melee) can still spend its
+  support slot on something else; a non-native job that must *learn* that engine as a support cannot.
+
+Convergence stress rows that combine two supports are kept only as ceiling probes and must be labelled
+as such, never presented as real builds.
+
+### Strongest single mitigation channel
+
+Defensive reactions, defensive supports, and defensive statuses that reduce an incoming hit all belong
+to **one mitigation channel**. When several apply to the same hit, the unit gets the **single
+strongest** applicable result — the channel members **do not multiply**.
+
+This is what keeps stacked defenses from manufacturing practical immunity: an incoming 120 reduced by
+the best applicable channel member (say ×0.60 → 72) is correct; multiplying every applicable defense
+together (→ 36) is rejected. Armor class is **separate** from this channel — wearing heavier armor
+changes the base damage-type response, it does not add a free extra mitigation layer on top.
+
+The deep combat layer expresses this through depleting active defenses (Parry/Block) plus subtractive
+DR by damage type; the no-multiply principle is the timeless rule.
+
+### Reaction discipline
+
+Reactions obey a fixed shared discipline regardless of which job owns them:
+
+- one reaction roll per triggering action;
+- no reaction recursion;
+- damage *caused by* a reaction cannot itself trigger reactions;
+- ordinary capped reactions trigger at most once per round unless a stricter cap is stated;
+- the strongest-single-mitigation-channel rule applies to any defensive reaction.
+
+Every reaction must declare a **trigger identity** (what condition fires it) before a final chance is
+acceptable; there is no universal trigger formula, and in particular no universal "scale every reaction
+off Brave." The deep combat layer's reaction taxonomy (courage / caution / neutral) is the canonical
+classification; a reaction that is deliberately off-Brave is a neutral reaction.
+
+### Movement has no universal late default
+
+Movement pieces are ranked by role, not on one ladder. No single movement skill is accepted as the
+correct late-game default: raw distance does not bypass terrain or elevation, terrain-ignore does not
+grant height or range, and height-ignore does not grant terrain or horizontal reach. Each movement
+choice should solve one thing and leave another unsolved.
+
+## Cross-Phase Combat-Engine Protection
+
+Job balance must not silently invalidate the deep combat layer (the canonical combat engine for
+this phase).
 
 This principles document does not define the full re-simulation protocol; `02-job-design-protocol.md`
 must do that. The principle is already fixed:

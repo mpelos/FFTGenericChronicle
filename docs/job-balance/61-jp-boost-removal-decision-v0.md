@@ -6,12 +6,6 @@ Depends on:
 - `docs/job-balance/00-high-level-direction.md`
 - `docs/job-balance/01-cross-job-build-principles.md`
 - `docs/job-balance/02-job-design-protocol.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
-- `docs/job-balance/50-campaign-journey-bundle-v0.md`
-- `docs/job-balance/51-progression-and-build-input-ledger-v0.md`
-- `docs/job-balance/52-squire-chemist-concrete-v0.md`
-- `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
 - `docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md`
 - `work/sim-inputs-v0.2.1.json`
 - `work/gpt-physical-foundation-rsm-concrete-v0.json`
@@ -136,50 +130,6 @@ W4/T2.1 and W5/F5 should preserve the question:
 Can a player reach a deep job, support engine, movement default, or R/S/M convergence package while
 still facing encounters whose campaign band was not meant for that power?
 ```
-
-## Patch Map
-
-The first patch pass after this decision should update active consumers before W4.
-
-Mandatory active-consumer patches:
-
-| File | Required change |
-| --- | --- |
-| `docs/job-balance/31-campaign-gameplay-validation-v1.md` | Remove active `JP Boost` design claims; reframe JP acquisition and W9 around fixed JP ordinary/optimizer/grind-heavy rows. |
-| `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md` | Delete the `JP Boost` Squire support row; elevate `Basic Training` as Squire's sole intentional support export; reframe W4/W5 follow-up. |
-| `work/gpt-physical-foundation-rsm-concrete-v0.json` | Remove Squire `JP Boost`; keep `Basic Training` unchanged. |
-| `docs/job-balance/60-prerequisite-tree-and-jp-cost-draft-v0.md` | Remove `JP Boost` from Squire support table, protected rows, and W4 optimizer-lever text; keep `Basic Training` B/C Lv3 350. |
-| `work/gpt-prerequisite-tree-jp-cost-v0.json` | Remove `JP Boost` from `rsm_export_costs` and `protected_convergence_rows`; keep other rows byte-stable where possible. |
-| `docs/job-balance/51-progression-and-build-input-ledger-v0.md` | Replace with/without `JP Boost` routing with fixed-JP ordinary/optimizer/grind-heavy routing. |
-| `docs/job-balance/50-campaign-journey-bundle-v0.md` | Remove `JP Boost` party-envelope assumptions and update A/B pacing anchors. |
-| `work/gpt-campaign-journey-bundle-v0.json` | Mirror doc 50 removal of `JP Boost` envelopes and route labels. |
-| `work/sim-inputs-v0.2.1.json` | Remove `rsm_constants.support_effects.jp_boost_multiplier`. This is a bundle re-pin, but not a damage-model change. |
-
-Supersession-note patches:
-
-| File | Required change |
-| --- | --- |
-| `docs/job-balance/32-campaign-artifacts-provisional-v0.md` | Add or adjust the active note that old `JP Boost` risk rows are superseded by fixed-JP grind-to-break rows. |
-| `docs/job-balance/47-campaign-validation-readiness-v0.md` | Reframe risk register from `JP Boost acceleration` to fixed-JP grind-to-break pacing. |
-| `work/gpt-campaign-validation-readiness-v0.json` | Mirror doc 47 risk wording. |
-| `docs/job-balance/48-milestone-note-v0.md` | Reframe the Marcelo-facing risk summary. |
-| `work/gpt-campaign-milestone-note-v0.json` | Mirror doc 48 risk wording. |
-| `docs/job-balance/52-squire-chemist-concrete-v0.md` | Reframe deferred R/S/M references so Squire support identity is `Basic Training`, not `JP Boost`. |
-
-Historical files to leave intact:
-
-| File family | Policy |
-| --- | --- |
-| `docs/job-balance/04-foundation-physical-jobs-proposal.md` | Historical V1 proposal; do not rewrite. |
-| `docs/job-balance/05-squire-chemist-v1-proposal.md` | Historical V1 proposal; do not rewrite. |
-| `docs/job-balance/28-foundation-reconciliation-v1.md` | Historical reconciliation; do not rewrite unless a later alias note is needed. |
-
-Vanilla reference files to leave intact:
-
-| File family | Policy |
-| --- | --- |
-| `docs/reference/*` | Source-game atlas truth; may continue listing vanilla id 463 `JP Boost`. |
-| `work/baseline_abilities.csv` | Source-game baseline extract; do not edit for mod design removal. |
 
 ## Review Discipline
 

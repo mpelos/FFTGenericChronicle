@@ -7,10 +7,6 @@ Depends on:
 - `docs/job-balance/11-ct-delay-model-schema.md`
 - `docs/job-balance/15-targeting-challenge-model-schema.md`
 - `docs/job-balance/16-healing-timing-composition-schema.md`
-- `docs/job-balance/27-necromancer-v1-proposal.md`
-- `docs/job-balance/30-roster-completion-and-infra-sprint-plan.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/32-campaign-artifacts-provisional-v0.md`
 - `work/t3x-t5x-t8-ko-corpse-undead-scenarios-v0.json`
 
 ## Purpose

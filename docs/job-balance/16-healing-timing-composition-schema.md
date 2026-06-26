@@ -3,8 +3,6 @@
 Status: Accepted
 Date: 2026-06-21
 Depends on:
-- `docs/job-balance/05-squire-chemist-v1-proposal.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `docs/job-balance/10-healing-attrition-model-schema.md`
 - `docs/job-balance/11-ct-delay-model-schema.md`
 - `work/t3-healing-attrition-scenarios-v0.json`

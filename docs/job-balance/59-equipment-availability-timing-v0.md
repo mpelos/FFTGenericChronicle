@@ -4,16 +4,6 @@ Status: Accepted as W3 equipment availability and practical-online timing framew
 Date: 2026-06-22
 Depends on:
 - `docs/job-balance/01-cross-job-build-principles.md`
-- `docs/job-balance/31-campaign-gameplay-validation-v1.md`
-- `docs/job-balance/50-campaign-journey-bundle-v0.md`
-- `docs/job-balance/51-progression-and-build-input-ledger-v0.md`
-- `docs/job-balance/52-squire-chemist-concrete-v0.md`
-- `docs/job-balance/53-knight-archer-concrete-v0.md`
-- `docs/job-balance/54-monk-thief-concrete-v0.md`
-- `docs/job-balance/55-orator-dragoon-concrete-v0.md`
-- `docs/job-balance/56-samurai-ninja-concrete-v0.md`
-- `docs/job-balance/57-vanguard-ramza-concrete-v0.md`
-- `docs/job-balance/58-physical-foundation-rsm-concrete-v0.md`
 - `docs/formula-balance/01-principles.md`
 - `docs/formula-balance/11-validated-policy-v0.2.md`
 - `docs/reference/README.md`

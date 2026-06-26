@@ -3,9 +3,6 @@
 Status: Accepted
 Date: 2026-06-20
 Depends on:
-- `docs/job-balance/06-knight-archer-v1-proposal.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
-- `docs/job-balance/09-accuracy-evasion-model-schema.md`
 - `docs/job-balance/10-healing-attrition-model-schema.md`
 - `work/t5-ct-delay-scenarios-v0.json`
 

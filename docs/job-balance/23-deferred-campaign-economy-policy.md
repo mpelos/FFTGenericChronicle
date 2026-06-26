@@ -5,16 +5,15 @@ Date: 2026-06-21
 Depends on:
 - `docs/job-balance/00-high-level-direction.md`
 - `docs/job-balance/01-cross-job-build-principles.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 
 ## Purpose
 
 This document records the campaign-economy and permanent-state surface that appeared during
 Thief/Orator design.
 
-It is not a combat validation gate. It is not a dual-simulation model. It does not belong in
-`docs/job-balance/07-validation-infrastructure-roadmap.md`, whose tracks are combat-resolution
-models requiring independent GPT/Claude calculation paths and zero row mismatches.
+It is not a combat validation gate. It is not a dual-simulation model. It does not belong with the
+combat-resolution validation tracks, whose models require independent calculation paths and zero row
+mismatches.
 
 ## Deferred Scope
 

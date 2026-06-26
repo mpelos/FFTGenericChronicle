@@ -5,7 +5,6 @@ Date: 2026-06-20
 Depends on:
 - `docs/job-balance/01-cross-job-build-principles.md`
 - `docs/job-balance/02-job-design-protocol.md`
-- `docs/job-balance/07-validation-infrastructure-roadmap.md`
 - `work/job-build-incidence-benchmark-v0.json`
 
 ## Purpose

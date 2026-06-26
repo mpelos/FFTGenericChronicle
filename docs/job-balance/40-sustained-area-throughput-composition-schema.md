@@ -4,7 +4,6 @@ Status: Accepted
 Date: 2026-06-21
 Depends on:
 - `docs/job-balance/11-ct-delay-model-schema.md`
-- `docs/job-balance/26-bard-dancer-v1-proposal.md`
 - `docs/job-balance/34-area-terrain-model-schema.md`
 - `docs/job-balance/39-timed-untargetability-composition-schema.md`
 - `docs/reference/fft-vanilla-command-skillset-effect-map.md`
