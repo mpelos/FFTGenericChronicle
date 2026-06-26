@@ -70,6 +70,21 @@ xp_multiplier      0x283767
 min_spd_jmp_mov    0x36027F   movzx eax, byte [rdi+0x42]   reads +0x42 Move (byte)
 ```
 
+Byte signatures — the sig-scan keys to re-locate each `.text` anchor after a game patch shifts the
+RVAs (`battle_base_ptr` is also given with its full hook context in `04-engine-memory-model.md` §4.1):
+
+```text
+battle_base_ptr   0F B7 41 30 66 89 42 0C          read-site +0x226D98; cheat-engine inject point +0x21305C
+damage_mult_2     2B C8 8D 04 11
+jp_multiplier     03 C2 8B CF 41 3B C0
+xp_multiplier     0F B7 84 7B 1E 01 00 00
+min_brave_faith   41 0F B6 5A 2B                   reads +0x2B Brave (byte)
+min_spd_jmp_mov   0F B6 47 42 66 89 43 30          reads +0x42 Move (byte)
+```
+
+The community damage-store AOB `0F B7 47 30 2B C2 85 C0 41 0F 4E CE 8A D1 E8 F2` is a non-anchor: it
+matches only transiently/coincidentally and is not a reliable hook target (see §2).
+
 The matched instruction bytes statically confirm struct offsets: +0x30 HP (word), +0x2B Brave
 (byte), +0x42 Move (byte). `damage_mult_2` is display code, not the damage formula — it sees
 only one unit and no ability/attacker.
@@ -115,8 +130,7 @@ itself is virtualized downstream.
 ## 4. Live-validated evade-type enum
 
 The evade-type byte at record `+0x1C0` (also passed in `cl` to the selector `0x205210`) is the
-lever that selects hit vs. which evade animation. The full enum is live-validated via an
-observe hook at the selector:
+lever that selects hit vs. which evade animation. The full enum (**Proven**):
 
 ```text
 0x00 = HIT                         (+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80 ; damage applies)
@@ -127,10 +141,11 @@ observe hook at the selector:
 0x06 = plain miss (failed accuracy roll, e.g. Steal/Charm) (+1BB=01 +1BE=00 +1C4=0 +1E5=00)
 ```
 
-All six values are live-validated. 0x05 is an unobserved gap, likely unused. Hit = 0x00
+0x05 is an unobserved gap, likely unused. Hit = 0x00
 (damage applies); 0x01–0x06 are all no-damage outcomes (`+1C4 = 0`) that differ ONLY in
-`+0x1C0`, the byte that selects the on-screen animation. Every evade shares
-`+1BE=00 / +1C4=0 / +1E5=00`. Evadable physical abilities route through 0x01–0x04 like a basic
+`+0x1C0`, the byte that selects the on-screen animation. Every evade shares `+1BE=00` and `+1C4=0`;
+`+0x1E5` carries the action's effect-kind (`0x00` for a basic-attack evade, nonzero when an evaded
+ability still carries an effect). Evadable physical abilities route through 0x01–0x04 like a basic
 Attack; a failed *accuracy* roll (Steal / status hit%) routes through 0x06.
 
 ### Control recipe
@@ -143,7 +158,10 @@ force-EVADE(t): byte[+0x1C0]=t (0x01 cloak / 0x03 shield / ...) ; +0x1BE=0 ; +0x
                 (hook the selector 0x205210 to write before it reads, or the staging write 0x205B39)
 ```
 
-Force vanilla to (near-)always-hit upstream — zero the target's evade-input bytes, or turn the
+Writing `+0x1C0` (and the `cl` argument) at the selector hook is **Proven** to override the rendered
+outcome: a forced evade-type replaces the engine's natural hit/evade animation and renders cleanly
+regardless of the unit's equipment (a shield-bearer forced to class-evade shows a clean dodge, no
+glitch), while the engine still owns HP via the `+0x1C4` debit. Force vanilla to (near-)always-hit upstream — zero the target's evade-input bytes, or turn the
 ability's `Evadeable` flag off — so the apply/selector path is reached and the custom write is
 authoritative.
 
@@ -237,7 +255,9 @@ rebalances (community RE, unofficial, possibly incomplete): enemies take ~30% le
 deal ~20% more damage (global tuning, hinting at a single multiplier near the end of the damage
 routine); CT broadly reduced; assorted MP/JP tweaks (+30% JP from own actions); Arithmeticks
 attack-spell damage reduced; Chemist innate Treasure Hunter; ribbons/perfumes no longer
-gender-locked. Same WotL ability set, value rebalances only — no ID renumbering.
+gender-locked. Same WotL ability set, value rebalances only — no ID renumbering. Documented worked
+examples (community RE, possibly incomplete): CT Protect/Shell 25->34, Bahamut 10->15, Graviga
+12->10; MP Protectja 24->20, Lich 40->50; JP Teleport 600->3000, Meteor 1500->900.
 
 ## 8. Stable-touchpoint register classification
 

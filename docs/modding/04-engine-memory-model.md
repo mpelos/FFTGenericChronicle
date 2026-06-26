@@ -200,15 +200,18 @@ so writing them drives the result and the native animation):
 +0x1C0  EVADE-TYPE (byte)  ** the animation lever ** (also passed in cl to the selector):
         0x00 hit | 0x01 cloak/accessory evade | 0x02 weapon parry | 0x03 shield parry/block
         0x04 class evade ("Miss") | 0x06 plain miss (failed accuracy roll, e.g. Steal)
-        ** ALL 6 LIVE-VALIDATED ** (0x05 unobserved/unused)
+        (0x05 is an unobserved gap, likely unused)
 +0x1C4  staged DAMAGE (word)    +0x1C6  staged HEAL (word)   apply: newHP = clamp(HP + heal - dmg)
 +0x1D8  charge/forecast value (word)
 +0x1E5  resultKind bits: 0x80 damage | 0x40 heal | 0x10 heal/MP | 0x08 status | 0x01 stat-change | 0x20 special
 ```
 
-A HIT shows `+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80`; every EVADE shows `+1BB=01 +1BE=00 +1C4=0
-+1E5=00` and differs ONLY in `+0x1C0` (e.g. `0x01` cloak vs `0x03` shield). The detailed RE recipe
-and anchors for driving this surface live in `05-reverse-engineering.md`.
+A HIT shows `+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80`. An EVADE shows `+1BB=01 +1BE=00 +1C4=0`, and the
+evade variants differ ONLY in `+0x1C0` (e.g. `0x01` cloak vs `0x03` shield). `+0x1E5` is orthogonal
+to hit-vs-evade: it carries the action's effect-kind, so it is `0x00` for a basic-attack evade but
+stays nonzero when an evaded ability still carries an effect (an evaded equipment-break keeps
+`+1E5=0x01`). The detailed RE recipe and anchors for driving this surface live in
+`05-reverse-engineering.md`.
 
 Important nuance on `+0x1C4`: it is not one single concept. The same location is reused by
 different phases:
