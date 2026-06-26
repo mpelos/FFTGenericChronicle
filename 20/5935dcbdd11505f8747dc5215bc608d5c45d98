@@ -1,0 +1,51 @@
+docs/deep-combat-layer/validation/register.md
+  s_a298d5c04f383c::t_51631ae99cd869 1-270
+  s_a298d5c04f383c::t_e6bb8682b1556e 271-361
+docs/deep-combat-layer/validation/critics/register-frag-00-12.md
+  s_a298d5c04f383c::t_b17ed6324a86f4 1-152
+docs/deep-combat-layer/validation/map.md
+  s_a298d5c04f383c::t_219b864347687f 1-50
+docs/deep-combat-layer/validation/critics/pillar-attack-RESPONSE.md
+  s_551c77ff47be15::t_86bebd13bd4df4 585-614
+  s_a298d5c04f383c::t_edafe3addc3b31 1-3
+  s_551c77ff47be15::t_064dd8a28c698d 297-582
+  s_551c77ff47be15::t_4b3dc61427e77b 49-294
+  s_551c77ff47be15::t_bc844d8bca4e17 295-296
+  s_551c77ff47be15::t_bee34868fd0fc7 583-584
+  s_551c77ff47be15::t_ac9ca4233ccf9c 615-617
+  s_4deb0fe62671f6::t_343000eda089b4 4-48,618-730
+docs/deep-combat-layer/validation/critics/pillar-attack-prompt.md
+  s_a298d5c04f383c::t_cf2f63f8cbc561 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "205935dcbdd11505f8747dc5215bc608d5c45d98",
+  "prompts": {},
+  "sessions": {
+    "s_4deb0fe62671f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e7ecd30e-9f19-4342-bd23-5418f1d9e80e",
+        "model": "unknown"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_551c77ff47be15": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f043d-ac02-7032-ae30-4158c36fb785",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
