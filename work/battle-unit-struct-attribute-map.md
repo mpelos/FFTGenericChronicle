@@ -117,7 +117,7 @@ block, and the item catalog at once. Full record: `work/raw-stats-equipment-proo
 | +0x13 | 25/69/40/41/6 | unknown | NOT job (JobCommandId hypothesis failed 3/5); distinct per unit |
 | +0x08 | 242/21/173/31/210 | unit-unique / sprite id | >176 so not job |
 | +0x3C | 0/5/6/5/0 | raw evade? | small |
-| +0x4F/+0x50 | ~8-10 | unknown small stats | |
+| +0x4F/+0x50/+0x51 | — | **RESOLVED → position X / Y / facing** (see Geometry section) | promoted out of LOW |
 | +0x52–0x89 | mixed | ability ids / JP / learned-ability bits | needs ability-id ground truth (R/S/M/secondary); note +0x8A–0x93 just below is now RESOLVED (job stats) |
 | +0x94–0x148 | mixed | learned-ability bitfields / JP-per-job / element & status masks | dense, mostly high-byte; needs status/element/ability-varied captures |
 
@@ -125,14 +125,32 @@ Job **RESOLVED** this pass — see CONFIRMED (+0x03). Earlier candidates +0x02 a
 the +0x13=JobCommandId hypothesis matched only 2/5 (Ramza, Cloud — coincidental), and +0x02 matches
 no job id. Both remain unidentified (distinct-per-unit), demoted from job hypotheses to plain unknowns.
 
+## GEOMETRY — position & facing (NEW 2026-06-25, movement-proven, zero new captures)
+
+Mined from the existing action-boundary capture corpus (same zero-capture method that nailed the
+equipment block). Corroborated by the public CT table (`docs/modding/04-re-strategy.md`:
+`+0x4F/0x50/0x51 = X/Y/Dir`). This is the single biggest blind blocker for the Deep Combat Layer
+(facing → defense modifier, reach → tile distance, AoE × position) and it is now in hand.
+
+| Offset | Meaning | Confidence | Evidence |
+|---|---|---|---|
+| **+0x50** | **Position Y (tile)** | **CONFIRMED (behavior)** | Changes by movement deltas on every unit that moves: 03→07, 05→08, 03→06, 02→05, 0A→09. Multi-unit, tile-range, re-sampled board-wide at each action boundary. |
+| **+0x51** | **Facing / Dir (0–3)** | **CONFIRMED (behavior)** | Only ever 0/1/2/3 across the entire corpus; flips on move/turn (03→02, 01→00, 00→03). 4-direction facing. |
+| **+0x4F** | **Position X (tile)** | **HIGH (pending E–W capture)** | CT-table-named X; tile-range small int (8/10/10/10/9 across units) adjacent to Y; did NOT change in any captured move (all captured moves were N–S). One east–west move closes it to 5/5. |
+| +0x1B9 | turn/action lifecycle flag (candidate) | LOW–MEDIUM | Flips 00→01 on the same diffs as every position change; took 01→03 at one turn-start. Candidate substrate for the DCL guard **reset-on-turn** mechanic (`deep-combat-layer/04`). |
+
+Remaining to fully pin: (1) one E–W movement capture → confirm +0x4F=X; (2) map which Dir value
+(0/1/2/3) = which compass direction, needed for the front/side/back defense calc.
+
 ## DEFER — not mappable from these captures (need targeted ones)
 
 - **Status bitfield (full)**: only the KO bit (+0x61 0x20) is known. All units here are alive/
   no-status, so the bitfield doesn't vary. Need captures of units under Poison/Haste/Protect/etc.
 - **Elemental affinity** (weak/half/absorb/null per element): not located. Likely derived at calc
   time from equipment+job, or in a region needing element-affinity-varied units. Investigate later.
-- **Geometry**: position X/Y, height, facing (front/side/back) — not in the static stat block;
-  likely volatile or in an unscanned region. Need positional captures.
+- **Geometry**: X/Y/facing are **RESOLVED** (see Geometry section: +0x4F/+0x50/+0x51). Still
+  DEFER: **height/elevation** (not yet located — needed for height-aware ranged identity) and the
+  Dir→compass mapping.
 - **Magic Evasion %, Cloak evasion %**: 0 for all 5 here (constant) → need units that have them.
 
 ## Cross-validation across all 8 captured units (gender / zodiac / job)
@@ -173,4 +191,9 @@ and **Limit is his secondary** (signature command), matching the re-class patter
 ## Next steps
 1. ~~Map job~~ — DONE: job = +0x03 (CONFIRMED, clean 5/5; Cloud's Samurai user-confirmed).
 2. Expose the CONFIRMED set in the formula context (attacker.* / target.*) — the project's core goal.
-3. Targeted captures for status/elemental/geometry (DEFER items).
+3. Geometry **mostly unlocked** (X/Y/facing at +0x4F/+0x50/+0x51, zero-capture). Pending: one E–W
+   move to confirm X, the Dir→compass map, and locating height/elevation.
+4. Targeted captures for status bitfield / elemental affinity (remaining DEFER items).
+5. **Hit/miss outcome flag** — the one true blocker for the DCL two-roll core. The vanilla hit/evade
+   calc is Denuvo-virtualized (can't hook the roll), but its *staged outcome* should be overridable
+   the same way damage is (pre-clamp). Needs a controlled miss+hit capture to locate the flag.

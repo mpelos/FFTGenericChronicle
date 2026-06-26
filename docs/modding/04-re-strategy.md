@@ -242,6 +242,77 @@ Remaining options for a damage overhaul:
 4. **Hardware breakpoint (VEH + DRx) on HP write:** robust to relocation but lands inside the
    Denuvo VM dispatch - messy, registers won't cleanly map to game state. Last resort.
 
+## BREAKTHROUGH (2026-06-26): hit/miss/block/parry runs in NON-virtualized .text
+
+Only the *roll arithmetic* (hit%, evade, damage math) is Denuvo-virtualized. The **outcome
+dispatch, the result/animation selection, and the apply step run in normal, hookable `.xcode`**
+(RVA < 0x400000, ASLR-stable, same class as `battle_base_ptr`). Byte-verified (capstone+pefile)
+and **LIVE-confirmed** via an observe hook at the selector. Image base 0x140000000; RVAs are
+module-relative. Found over 3 RE rounds; full detail `work/hit-miss-control-breakthrough.md`.
+
+Code anchors (all real `.xcode`, hookable with CreateAsmHook):
+
+```text
+unit/result RECORD array   module+0x1853CE0   stride 0x200, <=21 entries (runtime 0x141853CE0).
+                           The per-unit battle struct IS this array. Ramza(id 01)=idx16 @0x141855CE0.
+result DISPATCHER          module+0x38A4FC    event-queue loop; DECISION branch @0x38A6F1
+                           (cmp edx,0x300), edx=(category<<8)|unitIdx:
+                           0x300=apply HP/MP/stat ->0x30A51C | 0x200=status (VM 0x38ABBC)
+                           0x100=turn-done (VM 0x38BBFC) | 0xFF00=terminator | 0xE000=init
+category PRODUCER          module+0x30F0C4    walks records by global phase dword[0x186B044];
+                           the 0x300 (apply) gate is VM thunk 0x30FA34 (the roll lives here)
+APPLY path                 module+0x30A51C    newHP = clamp(HP + word[unit+0x1C6] - word[unit+0x1C4], 0, MaxHP)
+                           reads staged dmg word[+0x1C4], heal word[+0x1C6]; consults NO hit-flag
+pre-clamp staged-dmg HOOK  module+0x30A66F    0F BF 45 06 = movsx eax,word[rbp+6] (=word[unit+0x1C4]);
+                           our EXISTING damage-rewrite hook -> already controls hit-vs-zero damage
+result/animation SELECTOR  module+0x205210    prologue 48 89 5C 24 08 48 89 6C 24 10;
+                           r8=actor, record=[r8+0x148], cl(arg)=evade-type; reads +0x1E5,+0x1C4
+evade-type STAGING write    module+0x205B39    mov byte[rdi+0x1C0], ah   (engine writes evade-type here)
+combat-popup digit RENDER  module+0x266AE0    REAL int->digit->glyph; value [rdi+0x344];
+                           3-digit split 0x2671BE; glyph map 0x267350; popup value mirror 0x3740200
+
+VIRTUALIZED (E9/E8 into .edata, NOT hookable - and not needed):
+  roll gate 0x30FA34 | hit%/evade helpers 0x269760 0x2759F8 0x2B8F30 0x2740A0
+  result handlers 0x38ABBC 0x38BBFC | staging helpers 0x30BC3C 0x30BCF8 | evade-input scratch 0x7832E6
+```
+
+**The EVADE-TYPE byte (record `+0x1C0`, also passed in `cl` to the selector) is the lever** that
+selects hit vs which evade animation. **LIVE-CONFIRMED enum** (observe hook at 0x205210, 2026-06-26):
+
+```text
+0x00 = HIT                         (+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80 ; damage applies)
+0x01 = cloak/accessory evade       (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x02 = weapon parry (RH/LH guard)  (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x03 = shield parry/block (LH grd) (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
+0x04 = class evade ("Miss")        (+1BB=01 +1BE=00 +1C4=0   +1E5=00 ; +1C2=FF observed)
+0x06 = plain miss (failed ability accuracy roll, e.g. Steal/Charm) (+1BB=01 +1BE=00 +1C4=0 +1E5=00)
+```
+**ENUM COMPLETE — all 6 values LIVE-VALIDATED (2026-06-26).** 0x05 unobserved (gap, likely unused).
+Hit = 0x00 (damage applies); 0x01-0x06 are all no-damage outcomes (`+1C4=0`) that differ ONLY in
+`+0x1C0`, which selects the on-screen animation. evadable physical abilities (Rend Helm) route through
+0x01-0x04 like a basic Attack; a failed *accuracy* roll (Steal/status hit%) routes through 0x06.
+```
+Every evade shares `+1BE=00 / +1C4=0 / +1E5=00`; ONLY `+0x1C0` changes which animation plays.
+
+**CONTROL RECIPE** (compute our own DCL roll, then write the engine's already-owned fields):
+```text
+force-HIT(D):   word[unit+0x1C4]=D ; word[+0x1C6]=0 ; +0x1C0=0x00     (existing 0x30A66F hook)
+force-EVADE(t): +0x1C0=t (0x01 cloak / 0x03 shield / ...) ; +0x1BE=0 ; +0x1C4=0
+                hook the selector 0x205210 (write before it reads) or the staging write 0x205B39
+```
+Force vanilla ~always-hit upstream (target evade bytes ->0, or ability `Evadeable` off) so the
+apply/selector path is reached and our write is authoritative.
+
+**FORECAST hit% display: virtualized** (no real-code integer to substitute; both the % math and
+the UI draw are VM). Levers: (1) write target evade-input bytes (+0x4B/+0x4A/+0x4E/+0x46/+0x47) -
+real but QUANTIZED; (2) wrap a VM-thunk return at a forecast call site
+(0x26A618/0x26A746/0x26A89A -> 0x269760) - needs one live capture to pin the % slot; (3) draw our
+own glyphs (overlay). No single arbitrary-% write exists.
+
+Harness: `Mod.cs` `ResultSelectorProbe` observe hook at 0x205210; profile
+`work/battle-runtime-settings.result-selector-probe.json`. Control plan:
+`work/hit-miss-control-implementation-plan.md`.
+
 ## Historical direct-hook attack path (not current mainline)
 
 ```text

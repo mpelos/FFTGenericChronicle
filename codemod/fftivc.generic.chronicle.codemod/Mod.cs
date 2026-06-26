@@ -62,6 +62,22 @@ public class Mod : ModBase
     private const int L_ID = 4;
     private const int L_REGS = 8;
     private const int LANDMARK_BUFFER_SIZE = L_EVENTS + (LANDMARK_RING_SIZE * LANDMARK_SLOT_SIZE);
+    // Result/animation selector probe (OBSERVE-ONLY). Captures the evade-type byte (cl) the caller
+    // passes to the result selector, plus a window of the actor's result RECORD at [actor+unitOffset].
+    // Ring of fixed-size slots; the hot path never calls managed code (all formatting in the poller).
+    private const int SELECTOR_RING_SIZE = 32;
+    private const int SELECTOR_RING_MASK = SELECTOR_RING_SIZE - 1;
+    private const int SELECTOR_RECORD_DUMP_MAX = 256;        // ResultSelectorProbeRecordDumpBytes upper bound
+    private const int SELECTOR_RECORD_DUMP_BASE = 0x1B8;     // window starts here (covers +0x1BB..+0x1E5)
+    private const int S_COUNT = 0;
+    private const int S_EVENTS = 0x10;
+    private const int S_SEQ = 0;            // dword: sequence (written last so a partial slot is detectable)
+    private const int S_EVADE = 4;          // dword: evade-type from cl (zero-extended)
+    private const int S_ACTOR = 8;          // native ptr: r8 (actor object)
+    private const int S_RECORD = 16;        // native ptr: [r8+unitOffset] (result record), 0 if guarded
+    private const int S_RECORD_DUMP = 24;   // record window [record+SELECTOR_RECORD_DUMP_BASE ..]
+    private const int SELECTOR_SLOT_SIZE = S_RECORD_DUMP + SELECTOR_RECORD_DUMP_MAX;
+    private const int SELECTOR_BUFFER_SIZE = S_EVENTS + (SELECTOR_RING_SIZE * SELECTOR_SLOT_SIZE);
     private const int PRECLAMP_RING_SIZE = 32;
     private const int PRECLAMP_RING_MASK = PRECLAMP_RING_SIZE - 1;
     private const int PRECLAMP_SLOT_SIZE = 0x440;
@@ -116,8 +132,10 @@ public class Mod : ModBase
     private nint _buf;
     private nint _landmarkBuf;
     private nint _preClampDamageRewriteBuf;
+    private nint _resultSelectorProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _hook;
     private Reloaded.Hooks.Definitions.IAsmHook? _preClampDamageRewriteHook;
+    private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -165,6 +183,8 @@ public class Mod : ModBase
     private int _landmarkProbeLogs;
     private int _lastLandmarkProbeSequence;
     private int _lastPreClampDamageRewriteSequence;
+    private int _resultSelectorProbeLogs;
+    private int _lastResultSelectorProbeSequence;
     private long _probeEventIndex;
     private nint _moduleBase;
     private int _moduleSize;
@@ -181,6 +201,7 @@ public class Mod : ModBase
 
     private static readonly (int Rva, string Name)[] CodeLandmarks =
     [
+        (0x205210, "result-selector"),
         (0x226D98, "battle-base-ptr"),
         (0x2D7AC0, "target-cache-write-1c4"),
         (0x2D7AEC, "target-cache-init-1c4"),
@@ -229,6 +250,7 @@ public class Mod : ModBase
             for (int i = 0; i < B_SIZE; i++) Marshal.WriteByte(_buf, i, 0);
             InstallLandmarkProbesIfEnabled(baseAddr);
             InstallPreClampDamageRewriteIfEnabled(baseAddr);
+            InstallResultSelectorProbeIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -686,6 +708,125 @@ public class Mod : ModBase
         return asm.ToArray();
     }
 
+    // OBSERVE-ONLY result/animation selector probe. Hooks the result selector prologue (ExecuteFirst)
+    // and records: the evade-type byte the caller passes in cl, the actor object (r8), the actor's
+    // result record [r8+RecordUnitOffset], and a byte window of that record. No write/force here.
+    private void InstallResultSelectorProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.ResultSelectorProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[SELECTOR-PROBE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _resultSelectorProbeBuf = Marshal.AllocHGlobal(SELECTOR_BUFFER_SIZE);
+        for (int i = 0; i < SELECTOR_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_resultSelectorProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.ResultSelectorProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.ResultSelectorProbeExpectedBytes, out string byteError))
+        {
+            Line($"[SELECTOR-PROBE-SKIP] rva=0x{_settings.ResultSelectorProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            var asm = BuildResultSelectorProbeAsm();
+            _resultSelectorProbeHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[SELECTOR-PROBE-HOOK] rva=0x{_settings.ResultSelectorProbeRva:X} addr=0x{address:X} " +
+                $"actorReg={_settings.ResultSelectorProbeActorRegister} recordUnitOffset=0x{ResultSelectorRecordUnitOffset:X} " +
+                $"dumpBytes={ResultSelectorRecordDumpBytes} maxLogs={_settings.ResultSelectorProbeMaxLogs} " +
+                $"expected={_settings.ResultSelectorProbeExpectedBytes} (observe-only)");
+        }
+        catch (Exception ex)
+        {
+            Line($"[SELECTOR-PROBE-FAILED] rva=0x{_settings.ResultSelectorProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+
+        Flush();
+    }
+
+    // Clamp to the 8-byte-aligned dump window the slot can hold.
+    private int ResultSelectorRecordDumpBytes
+        => Math.Clamp(_settings.ResultSelectorProbeRecordDumpBytes, 0, SELECTOR_RECORD_DUMP_MAX) & ~7;
+
+    private int ResultSelectorRecordUnitOffset
+        => Math.Clamp(_settings.ResultSelectorProbeRecordUnitOffset, 0, 0x4000);
+
+    private string[] BuildResultSelectorProbeAsm()
+    {
+        string buf = $"0{_resultSelectorProbeBuf:X}h";
+        int recordUnitOffset = ResultSelectorRecordUnitOffset;
+        int dumpBytes = ResultSelectorRecordDumpBytes;
+
+        // ExecuteFirst: at entry cl = evade-type, r8 = actor. We use rax (ring base) and r9 (slot/scratch);
+        // both are saved/restored, and flags are preserved with pushfq/popfq so the original prologue runs
+        // unchanged. cl is read from the saved rcx on the hook stack (so our pushes can't perturb it).
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rcx",
+            "push r8",
+            "push r9",
+            "pushfq",
+            $"mov rax, {buf}",
+            // claim a sequence number and compute the ring slot into r9
+            $"mov ecx, [rax+{S_COUNT}]",
+            "add ecx, 1",
+            $"mov [rax+{S_COUNT}], ecx",
+            "mov r9d, ecx",
+            $"and r9d, {SELECTOR_RING_MASK}",
+            $"imul r9, r9, {SELECTOR_SLOT_SIZE}",
+            "add r9, rax",
+            $"add r9, {S_EVENTS}",
+            // header: zero seq first (partial-slot guard), evade-type, actor, record
+            $"mov dword [r9+{S_SEQ}], 0",
+            // evade-type = saved cl (movzx from the byte of saved rcx on the hook stack at [rsp+24])
+            "movzx ecx, byte [rsp+24]",
+            $"mov dword [r9+{S_EVADE}], ecx",
+            // actor = saved r8 (hook stack: pushfq=+0, r9=+8, r8=+16)
+            "mov r8, [rsp+16]",
+            $"mov [r9+{S_ACTOR}], r8",
+            $"mov qword [r9+{S_RECORD}], 0",
+            // guard: skip record load when actor==0 or record==0
+            "test r8, r8",
+            "jz .selector_store_seq",
+            $"mov r8, [r8+{recordUnitOffset}]",
+            "test r8, r8",
+            "jz .selector_store_seq",
+            $"mov [r9+{S_RECORD}], r8",
+        };
+
+        // copy the record window [record+SELECTOR_RECORD_DUMP_BASE ..] into the slot (8 bytes at a time)
+        for (int offset = 0; offset < dumpBytes; offset += 8)
+        {
+            asm.Add($"mov rax, [r8+{SELECTOR_RECORD_DUMP_BASE + offset}]");
+            asm.Add($"mov [r9+{S_RECORD_DUMP + offset}], rax");
+        }
+
+        // publish the slot by writing the real sequence last (reload count from the ring base)
+        asm.AddRange(
+        [
+            ".selector_store_seq:",
+            $"mov rax, {buf}",
+            $"mov ecx, [rax+{S_COUNT}]",
+            $"mov [r9+{S_SEQ}], ecx",
+            "popfq",
+            "pop r9",
+            "pop r8",
+            "pop rcx",
+            "pop rax",
+        ]);
+        return asm.ToArray();
+    }
+
     private static bool ValidateLandmarkBytes(nint address, LandmarkProbe probe, out string error)
         => ValidateExpectedBytes(address, probe.ExpectedBytes, out error);
 
@@ -870,6 +1011,7 @@ public class Mod : ModBase
                 CaptureHookObservation(ref lastHookCount, nowTick);
                 CaptureLandmarkProbeEvents(nowTick);
                 CapturePreClampDamageRewriteEvents(nowTick);
+                CaptureResultSelectorProbeEvents(nowTick);
                 PollRegisteredUnits(nowTick);
             }
             catch (Exception ex)
@@ -1027,6 +1169,111 @@ public class Mod : ModBase
             $"team={team} hp={hp}/{maxHp} oldDebit={oldDebit} oldCredit={oldCredit} " +
             $"forcedDebit={forcedDebit} forcedCredit={forcedCredit} flags=0x{flags:X}{actionText} now={nowTick} " +
             $"{preClampFields} {live}] regs={regs}{stackPart} stateDump={FormatHexBytes(stateDump)}";
+    }
+
+    private void CaptureResultSelectorProbeEvents(long nowTick)
+    {
+        if (_resultSelectorProbeBuf == 0 || !_settings.ResultSelectorProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_resultSelectorProbeBuf, S_COUNT);
+        if (count == _lastResultSelectorProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastResultSelectorProbeSequence + 1;
+        if (count - _lastResultSelectorProbeSequence > SELECTOR_RING_SIZE)
+        {
+            int lost = count - _lastResultSelectorProbeSequence - SELECTOR_RING_SIZE;
+            Line($"[SELECTOR-PROBE-LOST last={_lastResultSelectorProbeSequence} current={count} lost={lost}]");
+            start = count - SELECTOR_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.ResultSelectorProbeMaxLogs, 0, 100_000);
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = S_EVENTS + ((sequence & SELECTOR_RING_MASK) * SELECTOR_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_resultSelectorProbeBuf, slot + S_SEQ);
+            if (recordedSequence != sequence)
+                continue;
+            if (_resultSelectorProbeLogs >= maxLogs)
+                continue;
+
+            Line(FormatResultSelectorProbeHit(sequence, slot, nowTick));
+            _resultSelectorProbeLogs++;
+            needsFlush = true;
+        }
+
+        _lastResultSelectorProbeSequence = count;
+        if (needsFlush)
+            Flush();
+    }
+
+    private string FormatResultSelectorProbeHit(int sequence, int slot, long nowTick)
+    {
+        int evadeType = Marshal.ReadInt32(_resultSelectorProbeBuf, slot + S_EVADE) & 0xFF;
+        nint actorPtr = Marshal.ReadIntPtr(_resultSelectorProbeBuf, slot + S_ACTOR);
+        nint recordPtr = Marshal.ReadIntPtr(_resultSelectorProbeBuf, slot + S_RECORD);
+
+        // The copied window starts at SELECTOR_RECORD_DUMP_BASE (0x1B8) in the record. Map record
+        // offsets into the window so the interesting fields can be read regardless of dump length.
+        int dumpBytes = ResultSelectorRecordDumpBytes;
+        var window = new byte[dumpBytes];
+        if (dumpBytes > 0)
+            Marshal.Copy(IntPtr.Add(_resultSelectorProbeBuf, slot + S_RECORD_DUMP), window, 0, dumpBytes);
+
+        int RecB(int recordOffset)
+        {
+            int idx = recordOffset - SELECTOR_RECORD_DUMP_BASE;
+            return idx >= 0 && idx < window.Length ? window[idx] : -1;
+        }
+        int RecW(int recordOffset)
+        {
+            int lo = RecB(recordOffset);
+            int hi = RecB(recordOffset + 1);
+            return lo < 0 || hi < 0 ? -1 : (lo | (hi << 8));
+        }
+        static string Hx(int value) => value < 0 ? "--" : value.ToString("X2");
+
+        // Resolve the unit so the line carries id/team/hp like the pre-clamp formatter. The record
+        // begins with the unit/char id at +0x00; the actor links to the same unit pointer family.
+        UnitSnapshot? recordUnit = recordPtr != 0 && TryReadLiveUnitSnapshot(recordPtr, out var ru, out _) ? ru : null;
+        string unitText = recordUnit is not null
+            ? $"unit:id=0x{recordUnit.CharId:X2}/team={recordUnit.Team}/hp={recordUnit.Hp}/ct={recordUnit.Ct}"
+            : (recordPtr == 0 ? "unit:none(record-null)" : $"unit:{ClassifyRegisterValue(recordPtr, null, "record")}");
+        string actorText = actorPtr == 0 ? "actor:zero" : ClassifyRegisterValue(actorPtr, recordUnit, "actor");
+
+        return
+            $"[SELECTOR-PROBE event={sequence} evadeType=0x{evadeType:X2}({DescribeEvadeType(evadeType)}) " +
+            $"actor=0x{actorPtr:X}:{actorText} record=0x{recordPtr:X} {unitText} now={nowTick} " +
+            $"rec+1BB={Hx(RecB(0x1BB))} rec+1BE={Hx(RecB(0x1BE))} rec+1C0={Hx(RecB(0x1C0))} " +
+            $"rec+1C4(dmg)={(RecW(0x1C4) < 0 ? "----" : RecW(0x1C4).ToString())} rec+1E5={Hx(RecB(0x1E5))}] " +
+            $"window={FormatResultSelectorWindow(window)}";
+    }
+
+    private static string DescribeEvadeType(int evadeType)
+        => evadeType switch
+        {
+            0x00 => "hit",
+            0x01 or 0x02 or 0x03 => "guard-variant",
+            0x04 => "block/guard",
+            0x06 => "miss",
+            _ => "unknown",
+        };
+
+    private static string FormatResultSelectorWindow(byte[] window)
+    {
+        if (window.Length == 0)
+            return "(none)";
+        var sb = new StringBuilder(window.Length * 3 + 8);
+        sb.Append($"0x{SELECTOR_RECORD_DUMP_BASE:X3}:");
+        for (int i = 0; i < window.Length; i++)
+        {
+            sb.Append(i % 16 == 0 ? (i == 0 ? " " : " | ") : " ");
+            sb.Append(window[i].ToString("X2"));
+        }
+        return sb.ToString();
     }
 
     private byte[] ReadPreClampBytes(int slot, int offset, int length)
@@ -3433,9 +3680,13 @@ public class Mod : ModBase
     {
         _running = false;
         _hook = null;
+        _preClampDamageRewriteHook = null;
+        _resultSelectorProbeHook = null;
         _landmarkHooks.Clear();
         if (_buf != 0) { try { Marshal.FreeHGlobal(_buf); } catch { } _buf = 0; }
         if (_landmarkBuf != 0) { try { Marshal.FreeHGlobal(_landmarkBuf); } catch { } _landmarkBuf = 0; }
+        if (_preClampDamageRewriteBuf != 0) { try { Marshal.FreeHGlobal(_preClampDamageRewriteBuf); } catch { } _preClampDamageRewriteBuf = 0; }
+        if (_resultSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_resultSelectorProbeBuf); } catch { } _resultSelectorProbeBuf = 0; }
     }
 
     #region For Exports, Serialization etc.
@@ -5837,6 +6088,19 @@ internal sealed class RuntimeSettings
     public int LandmarkProbeMaxLogs { get; set; } = 160;
     public int LandmarkProbeStackSlots { get; set; } = 16;
     public List<LandmarkProbe> LandmarkProbes { get; set; } = new();
+
+    // OBSERVE-ONLY result/animation selector probe. Hooks the result selector prologue (RVA 0x205210)
+    // and logs the evade-type byte the caller passes in cl (0x00=hit, 0x04=block/guard, 0x01/2/3=guard
+    // variants, 0x06=miss) plus a window of the actor's result record at [actor+RecordUnitOffset]. This
+    // captures, for the first time, what a MISS/BLOCK looks like in memory. No write/force capability.
+    public bool ResultSelectorProbeEnabled { get; set; } = false;
+    public int ResultSelectorProbeRva { get; set; } = 0x205210;
+    public string ResultSelectorProbeExpectedBytes { get; set; } = "48 89 5C 24 08 48 89 6C 24 10";
+    public string ResultSelectorProbeActorRegister { get; set; } = "r8";
+    public int ResultSelectorProbeRecordUnitOffset { get; set; } = 0x148;
+    public int ResultSelectorProbeMaxLogs { get; set; } = 256;
+    public int ResultSelectorProbeRecordDumpBytes { get; set; } = 64;
+
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;
     public string PreClampDamageRewriteExpectedBytes { get; set; } = "0F BF 45 06";
@@ -5996,9 +6260,13 @@ internal sealed class RuntimeSettings
         foreach (var probe in LandmarkProbes)
             probe.Normalize();
         PreClampDamageRewriteExpectedBytes = PreClampDamageRewriteExpectedBytes?.Trim() ?? "";
+        ResultSelectorProbeExpectedBytes = ResultSelectorProbeExpectedBytes?.Trim() ?? "";
+        ResultSelectorProbeActorRegister = string.IsNullOrWhiteSpace(ResultSelectorProbeActorRegister)
+            ? "r8"
+            : ResultSelectorProbeActorRegister.Trim().ToLowerInvariant();
         DeathStateWrites ??= new List<DeathStateWrite>();
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, ResultSelectorProbeEnabled={ResultSelectorProbeEnabled}, ResultSelectorProbeRva=0x{ResultSelectorProbeRva:X}, ResultSelectorProbeActorRegister={ResultSelectorProbeActorRegister}, ResultSelectorProbeRecordUnitOffset=0x{ResultSelectorProbeRecordUnitOffset:X}, ResultSelectorProbeMaxLogs={ResultSelectorProbeMaxLogs}, ResultSelectorProbeRecordDumpBytes={ResultSelectorProbeRecordDumpBytes}, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

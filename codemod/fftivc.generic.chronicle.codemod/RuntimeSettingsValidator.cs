@@ -115,6 +115,7 @@ internal static class RuntimeSettingsValidator
             if (!probe.TryValidate(out string error))
                 report.Error($"LandmarkProbes.{probe.TraceName}", error);
         }
+        ValidateResultSelectorProbe(settings, report);
         if (settings.PreClampDamageRewriteEnabled)
         {
             report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");
@@ -258,6 +259,27 @@ internal static class RuntimeSettingsValidator
             report.Error("UnknownDiffStart", $"UnknownDiffStart must be within 0..0x{RawSize - 1:X}.");
         if (settings.UnknownDiffEnd < settings.UnknownDiffStart || settings.UnknownDiffEnd >= RawSize)
             report.Error("UnknownDiffEnd", $"UnknownDiffEnd must be within UnknownDiffStart..0x{RawSize - 1:X}.");
+    }
+
+    // OBSERVE-ONLY result/animation selector probe: an ExecuteFirst hook that captures the evade-type
+    // byte (cl) and a window of the actor's result record. It never writes engine memory, so the checks
+    // here only bound the capture parameters and emit a WARN that this is an RE probe.
+    private static void ValidateResultSelectorProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.ResultSelectorProbeMaxLogs < 0)
+            report.Error("ResultSelectorProbeMaxLogs", "ResultSelectorProbeMaxLogs must be nonnegative.");
+        if (settings.ResultSelectorProbeRecordDumpBytes < 0 || settings.ResultSelectorProbeRecordDumpBytes > 256)
+            report.Error("ResultSelectorProbeRecordDumpBytes", "ResultSelectorProbeRecordDumpBytes must be within 0..256.");
+        if (settings.ResultSelectorProbeRecordUnitOffset < 0 || settings.ResultSelectorProbeRecordUnitOffset > 0x4000)
+            report.Error("ResultSelectorProbeRecordUnitOffset", "ResultSelectorProbeRecordUnitOffset must be within 0..0x4000.");
+        if (settings.ResultSelectorProbeEnabled)
+        {
+            if (settings.ResultSelectorProbeRva <= 0)
+                report.Error("ResultSelectorProbeRva", "ResultSelectorProbeRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.ResultSelectorProbeExpectedBytes))
+                report.Error("ResultSelectorProbeExpectedBytes", "Expected bytes are required for the result-selector probe.");
+            report.Warn("ResultSelectorProbeEnabled", "result-selector probe is an observe-only RE hook (logs [SELECTOR-PROBE] evade-type/record); use only for short controlled captures.");
+        }
     }
 
     private static void ValidateTables(RuntimeSettings settings, SettingsValidationReport report)
