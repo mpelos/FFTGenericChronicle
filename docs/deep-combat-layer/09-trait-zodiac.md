@@ -31,6 +31,20 @@ A unit's sign grants:
 Small, transparent, always visible. It is a flavor-rich nudge, not a dominant multiplier — the
 intent is readability and identity, not a hidden swing that decides fights.
 
+### Magnitude — a modest band
+
+The resist/weak is a **modest multiplicative band**, deliberately *smaller* than Faith's two-sided
+effect so a single elemental matchup never dominates a fight (provisional **weak ×1.30 / neutral ×1.0 /
+resist ×0.70**; magnitude is calibration, confidence **Strong** on the *shape*, `sim_magic_stack`). It
+combines with Faith and Shell **multiplicatively and commutatively** — there is no stacking order, only
+the band sizes (`11`, *Zodiac, Shell, and how the bands stack*).
+
+The big vanilla-style elemental swings — **×2 weakness** or **absorb** (an element that heals its
+target) — are **not** this everyday band. They are reserved as **rare, built-around designed
+properties** (a specific monster, a cursed item): wonderful as a known exception, degenerate as the
+default sign-compatibility number (at ×2 the worst magic corner jumps toward a one-shot;
+`sim_magic_stack`). The zodiac wheel stays modest; the extremes are content, not the rule.
+
 ## 12 signs → 4 elements
 
 Marcelo's concern: there are **12 signs** but few magic elements (~4 classical). The mapping uses
@@ -65,6 +79,7 @@ interaction (`11-magic.md`).
 
 ## Open items
 
-The magnitude of the resist/weak (how big a multiplier), whether the affinity also boosts *dealing*
-that element or only resisting it, the exact handling of Lightning's neutrality, and whether
-physical elemental weapons interact with Zodiac are in `12-open-questions.md`.
+The magnitude *shape* is resolved (a modest band, provisional weak ×1.30 / resist ×0.70 — above); the
+exact band width remains calibration. Still open: whether the affinity also boosts *dealing* that
+element or only resisting it, the exact handling of Lightning's neutrality, and whether physical
+elemental weapons interact with Zodiac — `12-open-questions.md`.

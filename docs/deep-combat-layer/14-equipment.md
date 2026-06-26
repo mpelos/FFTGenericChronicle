@@ -134,19 +134,30 @@ Consequence used throughout: a weapon's defensive identity comes from its **parr
 
 ### Magic weapons — the caster's amplifier
 
-| Família | Tipo (físico) | wmod físico | **Mod mágico** | Reach | Parry | Mãos | Especial |
-|---------|---------------|-------------|----------------|-------|-------|------|----------|
-| **Rod** | Impacto ×1 | baixo | **+magia ofensiva** (alto) | 1 | baixo | 1H | elementos em SKUs (sinergia Zodiac `09`) |
-| **Staff** | Impacto ×1 | baixo | **+magia de suporte/cura** (alto) | 1 | baixo-médio | 1H | cura ao atacar (healing staff); holy em SKUs |
+The caster weapons (Rod, Staff) are pure magic implements — a mage does **not** poke at melee. Their
+basic **Attack** is a free, **range-3, MA-scaled elemental bolt** (the magic-gun pattern, engine
+Formula `0x04`) with the **element set by the weapon SKU**, not the job. This *is* the always-on **magic
+floor** (`11`, *The magic economy*): no MP, available every turn, so a mage out of spell budget still
+throws a real bolt instead of a feeble staff-whack.
 
-- A magic weapon is the **magic analogue of a physical weapon**: it adds a **magic-power modifier to
-  MA** the way a physical weapon adds `wmod` to PA. This completes the symmetry of `01`:
-  **Físico = PA + wmod, escalado por Brave** ; **Mágico = MA + mod-mágico, escalado por Faith.**
-- Physical profile deliberately weak (you do not bring a mage to melee). Physical attack is reach 1;
-  spells use the magic range system (`11`).
-- **Rod** = offensive magic (damage spells; elemental SKUs feed Zodiac `09`). **Staff** = support
-  magic (healing/holy; some heal on attack). Same offense/support split as the other pairs, on the
-  magic axis.
+| Família | Ataque básico (Attack) | **Mod mágico** | Mãos | Especial |
+|---------|------------------------|----------------|------|----------|
+| **Rod** | dardo elemental grátis, **alcance 3**, MA-escalado (elemento por SKU → Zodiac `09`) | **+magia ofensiva** (alto) | 1H | o mod amplifica o dardo + os nukes → **o piso de dano** do caster |
+| **Staff** | dardo elemental grátis, **alcance 3** (algumas SKUs = cura-ao-atacar fraca) | **+magia de suporte/cura** (alto) | 1H | o mod amplifica a cura, não o dardo → o healer **chipa** (mais fraco que o nuker) mas **nunca fica inútil** |
+
+- A magic weapon adds a **magic-power modifier to MA** the way a physical weapon adds `wmod` to PA,
+  completing the `01` symmetry: **Físico = PA + wmod, escalado por Brave** ; **Mágico = MA + mod-mágico,
+  escalado por Faith.** The Rod's mod feeds *offensive* magic (its bolt *and* its damage spells); the
+  Staff's feeds *support* (its heals), which is why a Staff's bolt stays at baseline MA — a healer
+  chips, but a nuker chips harder.
+- **Element comes from the equipment, not the job.** A Fire Rod's bolt is Fire, an Ice Rod's is Ice;
+  the player itemises the element and is **committed to it for the battle** (one equipped weapon, no
+  in-combat swap) — which keeps the Zodiac matchup (`09`) an honest, planned choice, not free per-turn
+  element-switching. Realised by re-tuning the **element field of existing** Rod/Staff SKUs (no new
+  SKUs, `00`).
+- **Staves carry elements too**, so a healer always has a useful ranged action when there is nothing to
+  heal — never a dead turn. Heal-on-attack stays a Staff SKU variant; **strong healing stays MP-gated**
+  (`11`).
 
 ### Ranged — contextual balance, no rate-of-fire
 
@@ -268,15 +279,17 @@ Illustrative only (numbers are calibration placeholders, `12`):
 
 | Weight total | Move | who lands here |
 |--------------|------|----------------|
-| 0–12 | **−0** | robe/mage, leather, **even leather + shield** |
-| 13–26 | **−1** | mail bruiser; "normal" plate |
-| 27–40 | **−2** | plate + heavy shield/helm |
+| 0–14 | **−0** | robe/mage, leather (even + light shield) |
+| 15–28 | **−1** | **mail and "normal" plate** — the typical heavy cost |
+| 29–40 | **−2** | plate + heavy shield/helm — the deliberate bunker |
 | 41+ | **−3** | the walking fortress |
 
 Tuning intent: a **generous dead-zone** (a light build, even with a shield, pays **zero** Move — only
-Dodge); **−1 is the typical heavy cost**; −2/−3 is reserved for deliberately turning yourself into a
-bunker. **The UI telegraphs the next breakpoint** ("Weight 24 / 26 → +2 more and Move drops") — that
-breakpoint *is* the equip decision.
+Dodge); **−1 is the typical heavy cost** (mail *and* normal plate); **−2/−3 is the deliberate bunker**
+(plate + heavy shield/helm). Mail shares plate's Move tier yet is never just plate-with-less-DR, because
+**lighter always dodges more** (the monotone Weight→Dodge gradient) and mail's flat DR covers plate's
+crush hole (validation B10, below). **The UI telegraphs the next breakpoint** ("Weight 24 / 26 → +2 more
+and Move drops") — that breakpoint *is* the equip decision.
 
 Two locks on the Weight model (Marcelo, 2026-06-26 — approved):
 
@@ -305,12 +318,15 @@ the Speed stat, `01`); so armor trades two opposed currencies:
 The axis is therefore **mitigation (DR) vs avoidance (Dodge) + positioning (Move)** — two different
 ways of not dying, not "more vs less of the same."
 
-| Classe | DR (corte/perf) | DR (crush) | HP | Weight (→ −Move/−Dodge) | Quem veste |
-|--------|-----------------|------------|----|-------------------------|------------|
-| **Plate (pesada)** | **alto** | **baixo** *(regra full-plate `03`)* | médio | **muito alto** | cavaleiro-âncora |
-| **Mail (média)** | médio | médio-baixo | baixo-médio | médio | bruiser |
-| **Leather (leve)** | baixo | baixo | baixo | baixo | skirmisher / archer / monk |
-| **Robe (pano)** | mínimo | mínimo | mínimo | mínimo | caster (restrito a robe) |
+| Classe | DR (corte/perf) | DR (crush) | Dodge | Move (banda Weight) | Identidade |
+|--------|-----------------|------------|-------|---------------------|------------|
+| **Plate (pesada)** | **alto** | **baixo** *(regra full-plate `03`)* | **mínimo** | **−1** *(−2 carregada)* | polo de **mitigação** — âncora anti-lâmina; buraco vs crush e penetração |
+| **Mail (média)** | médio | **médio (plano)** | médio | **−1** | DR real **sem buraco de tipo** — mais esquiva e à prova de crush que o plate, mesmo degrau de Move |
+| **Leather (leve)** | baixo | baixo | alto | **−0** | chassi de **mobilidade** — defesa = posição/flanco, não DR |
+| **Robe (pano)** | mínimo | mínimo | **máx.** | **−0** | polo de **esquiva** — caster (restrito a robe) |
+
+(HP é um **buffer modesto** em todas as classes — ruling 2 abaixo, DR-primary; não é uma corrida de HP.
+Os números relativos provisórios estão no fim desta seção e em `sim_armor_calibration` / `12`.)
 
 Design rulings (Marcelo, 2026-06-25 / 26 — approved):
 
@@ -332,25 +348,56 @@ Design rulings (Marcelo, 2026-06-25 / 26 — approved):
 5. **Light = no penalty**, not a bonus. Its edge is *relative* (it keeps the Move/Dodge that heavy
    loses); it is not over-sweetened with extra mobility.
 
-**Why this balances — the archetype triangle.** Running the builds against each other:
+**Why this balances — a two-pole axis, not a cyclic "armor triangle" (validation B10).** Measured as
+pure defense (`sim_armor_calibration`), armor is a **two-pole mitigation↔avoidance axis** — **Plate**
+(mitigation, walls honest blades) at one end, **Robe** (avoidance, plus the DR-piercing/magic that
+flows off a no-DR target) at the other — with **Mail** and **Leather** as the interior, **not** the
+cyclic `Plate > Leather > Caster > Plate` the structure first implied. Two things make that honest and
+still healthy:
 
-- **Plate-melee (Knight):** reliable physical survival (DR + HP + Block/Parry), holds ground, hits
-  big — but **slow** (kited, can't flank) and its DR is **worthless vs magic / crush / status** (a
-  low-Brave knight still gets stunned, `13`). Defense = mitigation.
-- **Leather-melee (skirmisher):** mobility → **flanks for back-attacks** (ignores the defense roll,
-  `05`) + kites + picks engagements, plus real Dodge — but **folds if caught or caught by AoE**.
-  Defense = avoidance + positioning; its offense ceiling comes from flanking (higher skill).
-- **Caster (robe):** magic **ignores physical DR** (`11`) → **punishes the plate knight** whose whole
-  investment is DR; but is the most fragile, so the leather skirmisher closes and bursts it.
+- **Armor is largely job-gated.** A mage wears robe *because it is a mage* (ruling 4); an archer wears
+  leather. You mostly choose a **job**, and the armor comes with it — so "which armor is strictly best"
+  is the wrong question for most units. The no-strictly-better pillar (`00`, P1′) bites only where a
+  single job can equip **more than one** class, and there the sim verifies **no class is dominated**.
+- **The Plate-melee / Leather-skirmisher / Caster rock-paper-scissors is a *playstyle* dynamic, not an
+  armor-tank cycle.** Leather beats Plate by **flanking and kiting** (mobility, `05`), *not* by
+  out-tanking it; the Caster beats Plate by **ignoring DR** (`11`); the Leather skirmisher closes and
+  bursts the fragile Caster. The cycle rides on Move / range / magic — the *armor* underneath each is
+  just a point on the mitigation↔avoidance axis.
 
-This yields a clean **Plate > Leather > Caster > Plate** triangle — each armor archetype has a
-predator and a prey. Plate-melee and leather-melee are not mirror-balanced; they are
-**context-balanced** (the philosophy, `00`): plate wins grind / open ground / vs-physical, leather
-wins broken terrain / flanking / objectives / vs-slow, and their direct duel is a healthy stalemate
-(a light weapon can't crack plate DR; plate can't catch leather) **resolved by the team** — bring
-crush/magic to break plate, bring accuracy/ranged to pin leather. Archers, monks, and other
-mobility-first jobs sit naturally in leather (their defense is range / HP+Dodge+reactions, not DR;
-plate would only slow them).
+Each class's honest identity:
+
+- **Plate** = the mitigation pole: best survival vs honest cut/thrust, but **holed vs crush**
+  (full-plate rule `03`) and vs **penetration/gun**, and the slowest (−1 Move, −2 when loaded with
+  shield/helm). The anvil.
+- **Robe** = the avoidance pole: dodges most, but its zero DR means **thrust (×2) and any solid hit
+  land hard**; it survives by not being hit and by being the one *casting*, not the one tanking.
+- **Leather** = the **mobility chassis**: its defense is **positioning** (flank for back-attacks `05`,
+  kite, stay at range), not DR. Never the best *tank* — that is not its job — but the natural shell of
+  archers, monks, thieves.
+- **Mail** = the **flat, no-hole** middle: real DR across *all* types (no crush gap), and being lighter
+  it **dodges more than plate** at the same Move tier. Its clean niche is the **anti-crush /
+  anti-plate-hole** tank — the frontliner who wants real DR but expects maces or mixed threats and a
+  touch more evasion than the plate anvil.
+
+Two structural rules keep the interior from collapsing (the B10 fix, `sim_armor_calibration`):
+
+1. **Lighter always grants more Dodge** — the Weight→Dodge curve is monotone and fine-grained (above),
+   so a lighter class is never "the same but worse": it trades DR for Dodge. This alone keeps adjacent
+   classes off each other's domination.
+2. **Plate's crush / penetration holes are load-bearing.** Mail and "normal" plate share the −1 Move
+   tier, yet Mail is *not* just plate-with-less-DR: its **flat DR covers plate's crush hole** (so Mail
+   is the best pick the moment the enemy brings maces), and being lighter it **dodges more** (rule 1).
+   That earns Mail a real context without having to out-move plate. *(A sharper "lighter literally moves
+   more" identity is available by pushing plate to −2 — the sim confirms that also holds — but it is
+   not needed for non-domination and it costs knight mobility, so the default keeps plate at −1.)*
+
+Provisional relative numbers satisfying both (full set + sweep in `sim_armor_calibration`, `12`;
+absolute magnitudes ride the global G / DR-scaling): DR cut/thr/crush ≈ Plate 9/8/**3**, Mail
+5/5/**5**, Leather 2/2/2, Robe 0/0/0; Weight ≈ 26 / 16 / 8 / 3 → Move: Leather/Robe 0, Mail/Plate −1
+(plate → −2 fully loaded). Against this set **no class is strictly dominated** and **each is the best
+pick in some context**; and with Speed out of Dodge (`01`, validation B1) **Plate, not Robe, holds the
+best worst-case** — the old "robe most-robust" artifact is gone.
 
 ### Shield (off-hand) — the finite active wall
 
@@ -393,7 +440,7 @@ shield adds no body DR, but a heavy one still slows you.
 
 - **Distinct from parry** (bigger, weapon-independent, and covers ranged) and **distinct from armor**
   (active / finite / facing-gated vs passive / always-on).
-- **Load-bearing for the armor triangle:** the slow plate-tank (−Move) would otherwise be **kited and
+- **Load-bearing for the mitigation pole:** the slow plate-tank (−Move) would otherwise be **kited and
   shot down before closing** — ranged would hard-counter plate. With a shield it **advances under fire
   (blocks shots on the approach)**. The shield is *how the mitigation-tank survives the approach*, and
   the melee answer to archers — completing **ranged > slow no-shield melee > (shield) > ranged**.

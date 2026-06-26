@@ -91,8 +91,16 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   **High-end offense multiplier set to ~1.35** (down from 1.56) by validation B9 tuning
   (`sim_brave_offense`) — modest *because* its corrective (taunt) is deliberately rare; final value +
   Faith-symmetry match + the low-end floor (toward 0.60) remain calibration. `def_div=12`.
-- **Faith (`08`):** Faith curve, magic-vulnerability slope.
-- **Zodiac (`09`):** resist/weak magnitude, whether affinity boosts dealing, Lightning neutrality.
+- **Faith (`08`):** Faith enters magic **twice** — caster output × target vulnerability — each on a
+  **bounded band centered at 1.0** (mid-faith neutral), provisional **[0.70, 1.30]** (`sim_magic_faith`:
+  cuts vanilla's ~11.6× buildable double-faith swing to ~3.5×; keeps a real atheist-tank identity
+  without immunity; Faith is a bounded spreader, not the stack's explosion source). Exact band width +
+  magic-vulnerability slope remain calibration.
+- **Zodiac (`09`):** the magnitude *shape* is RESOLVED (`sim_magic_stack`) — a **modest band**
+  (provisional weak **×1.30** / resist **×0.70**), **smaller than Faith's two-app effect**, combined
+  **multiplicatively & commutatively** with Faith/Shell (no stacking order to tune); big swings
+  (×2/absorb) are **rare designed properties, not the everyday band**. Still calibration: exact band
+  width, whether affinity boosts *dealing*, Lightning neutrality.
 - **Weapon skill (`10`):** the **`skill(grade, jobLevel, charLevel)` formula shape is RESOLVED**
   (validation A5, `sim_skill_scaling`): `skill = base[g] + rate[g]·(J·(jobLevel−1) +
   K·(jobLevel÷8)·(charLevel−1))` with provisional `J=2.5`, `K=0.25` (→ **one job level ≈ 10 character
@@ -115,10 +123,23 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   - **Weight → Move/Dodge curve (`14`, RESOLVED-model 2026-06-26):** the model is locked (per-piece
     Weight, summed, run through a curve — **never** a flat per-item `−Move`, because Move is too coarse).
     Open **calibration:** the per-piece Weight values; the **Weight→Move breakpoints** (coarse, with a
-    generous dead-zone — most builds −0, heavy −1, extremes −2/−3); the **Weight→Dodge slope** (fine,
-    near-smooth). Locks: **no PA/ST in the calc** (same Weight = same penalty, else strong units escape
-    the tradeoff); **Weight coupled to DR** (a "tough-and-light" piece is a rationed premium only). The
-    curve is a **Tier-2 computed hook** (item 7); per-piece Weight is data.
+    generous dead-zone — light −0, mail & normal plate −1, loaded plate −2/−3); the **Weight→Dodge
+    slope** (fine, near-smooth — and **monotone: lighter always dodges more**, which is what keeps
+    mail/plate non-dominated at the *same* Move tier — validation B10). Locks: **no PA/ST in the calc**
+    (same Weight = same penalty, else strong units escape the tradeoff); **Weight coupled to DR** (a
+    "tough-and-light" piece is a rationed premium only). The curve is a **Tier-2 computed hook**
+    (item 7); per-piece Weight is data.
+  - **Armor-class non-domination (`14`, RESOLVED, validation B10, `sim_armor_calibration`):** the
+    "armor triangle" is reframed honestly as a **2-pole mitigation↔avoidance axis** (Plate↔Robe) with
+    Mail/Leather as non-tank interior, and armor is **largely job-gated** (so P1′ bites only where one
+    job can equip more than one class). The sim fixes provisional relative numbers (DR cut/thr/crush ≈
+    Plate 9/8/3, Mail 5/5/5, Leather 2/2/2, Robe 0/0/0; Weight 26/16/8/3 → Move: leather/robe 0,
+    mail/plate −1, loaded plate −2) where **no class is strictly dominated** and **each is the best pick
+    in some context** — mail/plate stay non-dominated at the same Move tier via the monotone Dodge
+    gradient + mail's flat DR covering plate's crush hole. Mail's clean niche = the anti-crush /
+    anti-plate-hole tank; Leather = mobility chassis (positional defense). Post-B1
+    (Speed off Dodge) **plate, not robe, holds the best worst-case** — the over-robustness artifact is
+    gone. Open: only the absolute magnitudes (ride the global G / DR-scaling).
   - **Armor CT reserve knob (`14`, RESOLVED-with-reserve 2026-06-25):** armor costs **Move + Dodge,
     never CT** (GURPS-faithful; CT stays pure Speed-stat, `01`). A **small heavy-armor CT penalty** is
     held in reserve as the one knob to deploy *only if* the leather-melee proves too weak vs the
@@ -134,8 +155,44 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
     is melee-only, Block (shield) covers melee *and* ranged.** This is what gives the shield its niche
     (the melee answer to ranged / the plate-tank's survival on the approach). `04` should absorb this
     coverage table; numbers (Block magnitude vs Parry) are calibration.
-- **Magic (`11`):** magic damage formula, magic-dodge values, AoE×facing, Faith×Zodiac stacking,
-  MP economy.
+- **Magic (`11`):** the damage **shape is RESOLVED** (`sim_magic_shape`) — **multiplicative,
+  spell-centric** `base(MA) × spell_power × faith × element × G_m`, the conceptual mirror of physical
+  (**physical subtracts, magic multiplies**); magic ignores physical DR (anti-armor); base(MA) linear
+  (no GURPS table). **#1 magic risk:** no structural damper → band is calibration-held, stacked
+  multipliers compound (keep Faith the one big two-sided multiplier; Zodiac/Shell bounded bands;
+  soft-cap reserve). **Faith count is RESOLVED** (`sim_magic_faith`): **twice** (caster output × target
+  vulnerability), each a **bounded band centered at 1.0**, provisional **[0.70, 1.30]** — the only shape
+  consistent with the locked two-sided Faith (`08`/A2), and a bounded spreader (≤1.69×), not the
+  explosion source. **Zodiac/Shell stacking is RESOLVED** (`sim_magic_stack`): **all-multiplicative &
+  commutative** (no stacking order), **modest bounded bands** (provisional Zodiac weak ×1.30 / resist
+  ×0.70, Shell ×0.50), big swings (×2/absorb) kept as **rare designed properties**, **soft-cap (~2.5×)
+  in reserve** (dormant under the modest bands). The compounding corner stays ~2.2× and defense mirrors
+  offense (a hard turtle ~0.24×, never immunity, with attacker outs). **The economy is RESOLVED**
+  (`sim_magic_economy`): MP is a **per-battle budget** (small trickle) gating the **big spells**, over a
+  free always-on floor that is the **caster weapon's basic Attack** — a **range-3 MA-scaled elemental
+  bolt** (magic-gun Formula `0x04`, `14`), **element set by the equipped SKU, not the job**, committed
+  for the battle (no in-combat swap → Zodiac stays a planned choice). Staves carry the bolt too (a healer
+  is never useless); **strong healing stays MP-gated** (heal-on-attack is a floor-tier Staff SKU only).
+  So the mage acts with magic every turn (heroic), the depleted floor is the anti-armor chipper (≥
+  fighter vs plate, ~43% vs soft), and the budget (not just CT) gates bursts. This **revises `14`** (the
+  caster basic Attack: was physical reach-1, now the magic bolt). **Healing is RESOLVED**
+  (`sim_magic_heal`): same spine **minus** element/Shell — `heal = base(MA) × heal_power × faith_c ×
+  faith_t × G_m` — with the **target's Faith scaling healing received** (one Faith rule: devout = more
+  magic in/out + more healing; atheist = resists nukes **and** healed less = a wash, heal-inefficient not
+  un-healable). Same band [0.70,1.30] (gentler [0.80,1.20] in reserve); undead invert healing (designed
+  property). **Magic Evade is RESOLVED** (structure): offensive magic is **resistible per target** —
+  every unit, **including each one caught in an AoE** (almost all FFT magic is AoE), rolls Magic Evade
+  independently; a **binary** evade (fits "randomness only in landing"). **Source = equipment + jobs
+  naturally strong vs magic, NO universal floor** (unlike physical Dodge) → magic reliably lands on
+  un-invested units (its identity as the answer to evasion/armor); **off the Speed axis** (B1); **capped
+  below 100%** (never full immunity). The weapon bolt (`14`) is subject to it; status uses its own resist
+  (`13`); healing is not evaded. **AoE×facing is RESOLVED** (cut): facing does **not** affect area magic
+  — **magic owns the *position* axis, physical owns the *facing* axis** (`11`/`05`); magic's spatial
+  richness is **spell shape (burst/line/cross) × clustering**, and Magic Evade is facing-independent.
+  Still open: the **Magic Evade % values** (calibration); magnitudes — **`G_m`: `sim_magic_economy` is
+  evidence toward ~3** (balances mage~fighter/battle;
+  the placeholder 8 one-shots everyone), plus spell tiers (incl. the weapon bolt's + heal tiers),
+  Faith/Zodiac/Shell band widths, reserve-cap value, MP pool/trickle, base(MA) curve.
 
 ## 6. Player-facing readability / presentation
 

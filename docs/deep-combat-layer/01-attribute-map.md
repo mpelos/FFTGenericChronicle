@@ -33,7 +33,7 @@ audit below is the proof that the constraint is satisfied: every line has a home
 | **MA** (Magic Attack) | Magic output, on the **magic axis** (FFT-native). | `11-magic.md` |
 | **MP** | Spell resource, FFT-native. | `11` |
 | **Faith** | **Magic/spiritual temperament** — permanent two-sided trait; scales magic output *and* magic vulnerability, floor 0.60. | `08-trait-faith.md` |
-| **Magic Evade** | **Magic dodge** — lets targeted/bolt spells be evaded. | `04`, `11` |
+| **Magic Evade** | **Per-target magic resist** — every target (incl. each unit caught in an AoE) rolls to evade an offensive spell. Built from **equipment + anti-magic jobs**, no universal floor; capped below 100%. | `11` |
 | **Brave** | **Physical-aggression temperament** + the **GURPS Will analogue** — permanent two-sided trait: physical offense / courage reactions / **mental resilience** (Will: resists fear, taunt, charm, confuse, berserk) vs active-defense penalty. Does **not** touch magic. | `07-trait-brave.md` |
 | **Zodiac sign** | **Elemental temperament** — repurposed from the hidden compatibility multiplier into a transparent innate elemental affinity/weakness. | `09-trait-zodiac.md` |
 

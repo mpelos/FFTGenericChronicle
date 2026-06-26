@@ -58,5 +58,7 @@ collapse even a dedicated tank — as they should, at the cost of doing all thre
 
 ## Open items
 
-Exact facing modifiers (the −2 is provisional), back-strike rules around large/multi-tile units, and
-how facing interacts with area magic are calibration/detail items in `12-open-questions.md`.
+Facing is a **physical-only** axis: it does **not** modify area magic — magic plays the *position* axis,
+physical plays the *facing* axis (`11`, *Area spells are a positional game*). Exact facing modifiers (the
+−2 is provisional) and back-strike rules around large/multi-tile units remain calibration/detail items in
+`12-open-questions.md`.
