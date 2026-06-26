@@ -68,8 +68,6 @@ work/sprite-extract/**/*.png
 
 # === Large derived data dumps (regenerated from the game) ===
 work/*.sqlite
-work/actor_probe_ct_analysis.md
-work/battleprobe_analysis.md
 work/nxd_extract/
 work/ability_en/
 work/nxd_more/
@@ -86,11 +84,9 @@ work/claude-*.json
 work/claude_sweep_*.txt
 work/sim_inputs_*_stats.json
 
-# === Stale superseded sim result dumps (v0/v0.1; current reference = v0.2.1) ===
-work/gpt-sim-v0-results.csv
-work/gpt-sim-v0-results.json
-work/gpt-sim-v0.1-results.csv
-work/gpt-sim-v0.1-results.json
+# === Scratch / throwaway workspaces (e.g. validation runs) ===
+tmp/*
+!tmp/.keep
 
 # === OS / editor cruft ===
 Thumbs.db

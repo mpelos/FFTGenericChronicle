@@ -281,10 +281,15 @@ be real.
 
 ## Artifacts
 
-Work in a versioned validation workspace next to the design corpus (e.g.
-`<docs>/validation/`): `register.md`, `map.md`, `doubts.md`, `simulations/`, and the final `report.md`.
-Keeping them as files (not just in your head) is itself a de-bias — it externalizes the doubts so they
-can't quietly disappear when convenient.
+Work in a fresh, timestamped validation workspace at **`tmp/validation-{timestamp}/`** — where
+`{timestamp}` is generated once at the start of the run (e.g. `tmp/validation-20260626-143000/`) and
+reused for the whole run. This path is **independent of which design corpus you are validating** — the
+skill is general-purpose, not tied to any one project or system. Always create a new timestamped
+directory rather than reusing or writing beside the docs.
+
+Inside it: `register.md`, `map.md`, `doubts.md`, `simulations/`, and the final `report.md`. Keeping
+them as files (not just in your head) is itself a de-bias — it externalizes the doubts so they can't
+quietly disappear when convenient.
 
 ## Working with the user
 
