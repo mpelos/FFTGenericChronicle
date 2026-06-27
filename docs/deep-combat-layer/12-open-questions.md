@@ -255,6 +255,17 @@ To grill (detail): exact list, durations, the resist mechanic (3d6 vs a Brave-de
 whether physical **knockdown** resists via Brave or a physical stat, interaction with charge-time
 interruption, and how statuses are cured/removed.
 
+## 9. Job authoring — DESIGNED (see `15-job-authoring.md`)
+
+The method for authoring/rediscussing jobs on the DCL is designed in `15-job-authoring.md` (the five
+laws J1–J5; the fantasy→axes pipeline; the hard rules; the J1 scenario palette). **Still open
+(calibration):** the **tier count + the 21-job → tier map**; the **per-tier power budget**; the **JP
+band** value + per-ability curves; the **portability / secondary-command model** (how freely skills
+travel — load-bearing, since it is what keeps low tiers from going obsolete under tiered power); the
+**ability-authoring feasibility envelope** (what "create a skill" can be, Tier-1 vs Tier-2). Also: `00`'s
+**contextual-differentiation pillar should be refined to tier-relative** (strict non-domination within a
+tier; J1 global floor across tiers).
+
 ---
 
 When an item here is resolved, move its decision into the relevant numbered document and strike it

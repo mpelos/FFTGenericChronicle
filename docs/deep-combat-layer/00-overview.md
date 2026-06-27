@@ -84,6 +84,7 @@ magnitudes rather than using raw thrust/swing values).
 | `12-open-questions.md` | Living register of resolved/open items (calibration, rosters, presentation, feasibility). |
 | `13-statuses-and-reactions.md` | Status infliction (3d6 contest), categories, the new statuses (stun, knockdown, fear, taunt), and the Brave reaction taxonomy. |
 | `14-equipment.md` | Weapons and gear in DCL terms: the dial template, the off-hand model, and the weapon-family tables (blades, crush, reach, magic, ranged). In progress. |
+| `15-job-authoring.md` | How to author a job on the DCL: the five laws (J1–J5), the fantasy→axes pipeline, the validation rubric. |
 
 ## Status of the skeleton
 
