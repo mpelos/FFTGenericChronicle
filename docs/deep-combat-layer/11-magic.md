@@ -1,9 +1,6 @@
 # Magic
 
-Status: Draft (option c locked; tuning open)
-Date: 2026-06-25
 Depends on: 08-trait-faith, 09-trait-zodiac, 04-hit-and-defense.
-Review: Pending.
 
 ## Decision: hybrid, on its own axis (option c)
 
@@ -87,6 +84,20 @@ structural guardrail: **keep the count of *large* multipliers small and bounded*
 single big two-sided multiplier**, elemental affinity / Shell / Zodiac are *modest bounded bands*, and a
 **soft cap is held in reserve**. The magnitudes (`G_m`, spell tiers, the Faith / affinity / Shell / Zodiac bands) are calibration; the
 *shape* is what stands here.
+
+### `G_m` — the calibration anchor
+
+`G_m` is anchored to **single-target fighter-parity**: a mage's per-turn single-target output ≈ a
+fighter's against a soft target (the target named under *The magic economy* below). Confronted against
+the physical scale (`sim_core`, `sim_confront_aoe`, `sim_optionA_single_target`), that lands **`G_m` ≈
+0.58** — overturning the earlier `sim_magic_economy` "~3" read, which sat on a different scale and left
+magic 4–6× hot. The value is calibration (re-derive if the `base(MA)` / spell-power curves move); the
+**anchor — single-target parity, ≈ 0.58, not ~3 — stands here** (confidence **Strong**).
+
+Because **AoE is uncosted** (no per-target MP — the deliberate Option-A choice), a parity-anchored
+`G_m` still leaves a bounded **cluster reward (~1.5× at k=2)** over the single-target fighter; whether
+that reward is *balanced* in play is **Hypothesis** — it rides on whether the live AI exposes and
+clusters as assumed, and is the magic system's one open calibration risk (`12`).
 
 ### Faith enters twice — bounded and centered
 
@@ -193,8 +204,9 @@ lands* is rolled.
   none, so magic **reliably lands** on them; you *build* magic resistance. This is what keeps magic the
   dependable **answer to physical evasion and armour** — you cannot innately duck a fireball.
 - **Off the Speed axis** (consistent with the B1 Dodge/Speed decoupling, `01`).
-- **Capped below 100%** — stacked magic resistance is strong but **never full immunity** (the evade-roll
-  analogue of the multiplicative resists that never chip-zero, Q3/Q4): magic is never fully walled.
+- **Capped at ~50%** — stacked magic resistance is a coin-flip at best, so magic still **reliably
+  lands** (the anti-evasion identity above); **never full immunity** (the evade-roll analogue of the
+  multiplicative resists that never chip-zero, Q3/Q4): magic is never fully walled.
 - There is **no magic Parry/Block** (no depleting magic defence); Magic Evade is the whole
   magic-avoidance story. Magical **status** uses its own 3d6 resist instead (`13`); **healing** is not
   evaded.
@@ -292,7 +304,7 @@ the **economy resolved** (a per-battle **MP budget** over an always-on
 **weapon-bolt floor** — the caster weapon's range-3 elemental Attack, `14` — *The magic economy* above),
 **healing resolved** (*Healing — same spine, two-sided Faith, no resist*), and **Magic Evade resolved**
 (per-target, AoE included, built from equipment + anti-magic jobs, capped — *Magic Evade* above). Still
-open: the **Magic Evade % values**; **AoE × facing** rules; and all magnitudes (`G_m` —
-`sim_magic_economy` is evidence toward ~3 — spell tiers incl. the weapon bolt's, the
+open: the **Magic Evade %** below its ~50% ceiling; **AoE × facing** rules; and all magnitudes (`G_m`
+— anchored ≈ 0.58, see *`G_m` — the calibration anchor* — spell tiers incl. the weapon bolt's, the
 Faith / elemental-affinity / Shell / Zodiac band widths, the reserve-cap value, MP pool/trickle, the
 `base(MA)` curve) — `12-open-questions.md`.

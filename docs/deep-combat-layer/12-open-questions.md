@@ -191,14 +191,18 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   independently; a **binary** evade (fits "randomness only in landing"). **Source = equipment + jobs
   naturally strong vs magic, NO universal floor** (unlike physical Dodge) → magic reliably lands on
   un-invested units (its identity as the answer to evasion/armor); **off the Speed axis** (B1); **capped
-  below 100%** (never full immunity). The weapon bolt (`14`) is subject to it; status uses its own resist
+  at ~50%** (magic still reliably lands; never full immunity). The weapon bolt (`14`) is subject to it; status uses its own resist
   (`13`); healing is not evaded. **AoE×facing is RESOLVED** (cut): facing does **not** affect area magic
   — **magic owns the *position* axis, physical owns the *facing* axis** (`11`/`05`); magic's spatial
   richness is **spell shape (burst/line/cross) × clustering**, and Magic Evade is facing-independent.
-  Still open: the **Magic Evade % values** (calibration); magnitudes — **`G_m`: `sim_magic_economy` is
-  evidence toward ~3** (balances mage~fighter/battle;
-  the placeholder 8 one-shots everyone), plus spell tiers (incl. the weapon bolt's + heal tiers),
-  Faith / elemental-affinity / Shell / Zodiac band widths, reserve-cap value, MP pool/trickle, base(MA) curve.
+  Still open: the **Magic Evade %** below its ~50% ceiling (calibration); magnitudes — **`G_m` ≈ 0.58**,
+  anchored to single-target fighter-parity (`11` *the calibration anchor*; `sim_confront_aoe`,
+  `sim_optionA_single_target` — overturns the earlier `sim_magic_economy` "~3" read, which left magic
+  4–6× hot), plus spell tiers (incl. the weapon bolt's + heal tiers),
+  Faith / elemental-affinity / Shell / Zodiac band widths, reserve-cap value, MP pool/trickle, base(MA)
+  curve. **AoE caster-supremacy residual (Hypothesis):** AoE is uncosted (Option A — no per-target MP),
+  so the parity `G_m` leaves a bounded ~1.5× (k=2) cluster reward; whether that is balanced rides on the
+  live AI exposing/clustering as assumed — resolve on the Windows build.
 
 ## 6. Player-facing readability / presentation
 
