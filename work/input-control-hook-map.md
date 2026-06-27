@@ -1,8 +1,26 @@
 # Input-control hook map — offline RE (2026-06-26)
 
-Status: **offline static RE complete.** Input-control is VIABLE for both avoidance layers, each gated
-behind exactly ONE live test. Nothing input-control is live-proven yet (distinct from the
-output-control architecture, which IS proven — see `1782517714-miss-block-parry-control-definitive.md`).
+Status: **offline static RE complete; evade input-control LIVE-TESTED 2026-06-27 → REFUTED.**
+
+> ## ⚠️ LIVE RESULT (2026-06-27): evade input-control is INFEASIBLE — static RE mis-identified the register
+> The evade hook at `0x30F49C` was built into the harness and tested live (profile
+> `work/battle-runtime-settings.evade-input-test.json`; log
+> `work/battleprobe_log.evade-input-FAILED.*.txt`). The byte-write provably works
+> (`[EVADE-INPUT event=47 ... id=0x01 before 4B=00 -> after 4B=64] [CONTROL WROTE]`), **but `rbx` at
+> `0x30F49C` is the ACTING unit (attacker), NOT the defender** — the opposite of what the two static
+> RE passes concluded. Proof: when Agrias (0x1E) attacked Ramza (0x01) for 184, the hook fired with
+> `rbx=Agrias` (event 1); it only fired with `rbx=Ramza` when Ramza took his OWN turn (event 47,
+> immediately followed by `[CT-DROP id=0x01]`). The producer `0x30F0C4` walks units and reaches
+> `0x30F49C` once per ACTING unit; the defender/target and its evade are resolved/read INSIDE the VM
+> roll `0x30FA34`. **There is no real-code point that exposes the defender's evade before the roll**
+> (consistent with the static finding that no real-code site reads the defender's evade pre-roll).
+> ⇒ **Evade input-control (Layer C) is not viable. Neutralize Layer C in DATA** (zero evade bytes /
+> `Evadeable` off) and author outcomes with the PROVEN output-control hooks. The `0x30F49C` hook code
+> remains in the harness (disabled) but writes the attacker's bytes, so it is not useful for defender
+> control. (Reaction input-control via Brave at `0x271D20` is untested and now suspect — its register
+> role needs the same live check; data-disable of reactions is simpler and likely the answer.)
+
+Original (now-CORRECTED) offline conclusion follows; the "rbx = target" claims below are REFUTED.
 
 Method: 3 parallel static-RE passes over `FFT_enhanced.exe` (capstone + pefile, image base
 0x140000000; real code RVA < ~0x610000, Denuvo VM = E9/E8 thunks into `.edata` > ~0x610000). Frentes 1

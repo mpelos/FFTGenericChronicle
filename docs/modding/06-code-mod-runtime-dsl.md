@@ -982,6 +982,31 @@ and the second, on a fresh first-action target, passed). The shipping interface 
 and the force decision will come from the DCL formula output rather than fixed JSON immediates. Until
 then, treat these as proof knobs, not a stable API.
 
+## Input-control of avoidance (hit / miss / block / parry) — ✅ proven, the cleaner primary
+
+Beyond authoring the outcome at the hooks above, the mod can plant the **inputs** the engine reads and
+let the native roll produce the outcome — **proven live 2026-06-27** (`05-reverse-engineering.md` §4,
+Input-control; `work/input-control-evade-PROVEN.md`). Denuvo virtualizes code, not data, so the unit
+struct the VM reads is normal writable memory: write the **defender's** evade bytes before the roll and
+the VM honors them (Ramza forced to a 0%-hit preview and an evade, 0 damage, engine-rendered). This
+needs no data-gutting and no result-forging — the engine does everything from our planted values.
+
+- **Persistent evade write** (the unit poller). Settings: `EvadeOverrideEnabled`;
+  `EvadeOverrideTargetCharId` (`-1` = all units); `EvadeOverride46`/`47`/`4A`/`4B`/`4E` (the five evade
+  bytes, `0`–`100`, `-1` = leave); `EvadeOverrideMaxLogs`; `EvadeOverrideSweepSlots` (when broadcasting,
+  also sweep ±N×`0x200` of the tracked span so **untracked** units — e.g. the actual defender — are
+  boosted too; `0` = tracked only).
+- Byte → outcome (on the defender): `+0x4B`→class evade (`0x04` "Miss"); `+0x46`/`+0x47`→weapon parry
+  (`0x02`); `+0x4A`/`+0x4E`→shield block (`0x03`); **all five = `0`** → guaranteed hit (neutralizes
+  avoidance in memory). Evade applies front/side only.
+
+**Status.** The current knob writes a *static* value to every (or one) unit — a proof lever, not the
+shipping API. The shipping form will write **per-action** from the DCL formula: identify the defender
+via the pending-action tracker, compute the (attacker, defender) hit result, and write that defender's
+evade bytes just before the roll. Damage value continues to come from the pre-clamp. Reactions
+(Blade Grasp/Hamedo) are a separate, untested layer (likely the same live-read mechanism via Brave
+`+0x2B`).
+
 ## What this architecture provides
 
 - arbitrary math in C#;
@@ -992,7 +1017,8 @@ then, treat these as proof knobs, not a stable API.
 - C-bounded percent/type armor responses for `swing` / `thrust` / `crush` / `missile` matchups;
 - per-weapon/per-skill damage types;
 - custom global damage scaling and ally/enemy rules;
-- proven hit↔miss / parry / block outcome control via two native hooks (see Outcome control hooks);
+- proven hit↔miss / parry / block control by BOTH input-control (write the defender's live evade bytes
+  before the VM roll — Denuvo virtualizes code, not data) and output-control (two native hooks);
 - a foundation for custom MP, status, reaction, and AI/preview patches.
 
 Follow-up layers not owned by the config/DSL: exact damage preview text, AI scoring based on the

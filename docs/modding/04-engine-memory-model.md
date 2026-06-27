@@ -86,6 +86,15 @@ Offsets are relative to the unit pointer. The struct spans at least `0x200` byte
 | `+0x4B` | Physical evasion % | byte | = the job's `CharacterEvasion` |
 | `+0x4E` | Shield magick parry % | byte | Equipment-derived |
 
+These five evade bytes are **live inputs to the avoidance roll** — ✅ **PROVEN 2026-06-27**: the Denuvo
+VM reads them from the unit's live struct at roll time, so **writing them before the roll controls
+hit / miss / block / parry**. Denuvo virtualizes *code*, not *data* — the struct is normal writable
+memory. Set on the **defender**: `+0x4B` high ⇒ class evade ("Miss", type `0x04`); `+0x46/+0x47` high ⇒
+weapon parry (`0x02`); `+0x4A/+0x4E` high ⇒ shield block (`0x03`); all five `= 0` ⇒ guaranteed hit
+(neutralizes avoidance in memory, no data edit). Values 0–100. This is the *input-control* path — the
+cleaner primary, vs. the *output-control* hooks (pre-clamp `0x30A66F` debit §4.2 + selector `0x205210`).
+Full proof: `work/input-control-evade-PROVEN.md`; mechanism + dead ends in `05-reverse-engineering.md` §4.
+
 Raw → effective relationship (**Proven**): for PA/MA/Speed, `raw (+0x38/39/3A) + sum(equipment
 stat bonuses) == effective (+0x3E/3F/40)`.
 
@@ -212,6 +221,12 @@ to hit-vs-evade: it carries the action's effect-kind, so it is `0x00` for a basi
 stays nonzero when an evaded ability still carries an effect (an evaded equipment-break keeps
 `+1E5=0x01`). The detailed RE recipe and anchors for driving this surface live in
 `05-reverse-engineering.md`.
+
+This is the **output-control** surface (write the result after the roll). There is now a cleaner,
+✅ **proven primary**: **input-control** — write the defender's evade bytes (`+0x46/+0x47/+0x4A/+0x4B/
++0x4E`, see §2.1) *before* the roll and the VM produces these `+0x1BE/+0x1C0/+0x1C4` outcome bytes
+naturally, with the engine rendering the forecast %, animation, and damage. Prefer input-control for
+hit/miss/block/parry; reserve this output surface for cases input-control can't reach.
 
 Important nuance on `+0x1C4`: it is not one single concept. The same location is reused by
 different phases:

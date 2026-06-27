@@ -1,0 +1,61 @@
+{
+  "_note": "ROLL-VERDICT OVERRIDE TEST (new hook 0x30F4A7 = 'mov r10d,eax' right after the single VM avoidance roll 0x30FA34 returns). eax IS the hit/miss verdict in REAL code (next instr: test eax,eax; je miss). This test forces eax=0 (MISS) on a normally-GUARANTEED hit to prove eax is the master verdict switch AND that it gates the entire apply/damage path. Method: RollVerdictControl ForceVerdict=0, TargetCharId=-1 (any acting unit), MaxWrites=1, so the FIRST avoidance roll of the battle is forced to miss. The pre-clamp 0x30A66F runs in OBSERVE-ONLY (LogOnly=true): on a forced miss the apply path is SKIPPED, so the pre-clamp must NOT fire for that attack (this is the NEW signal output-control could never show - output-control zeroed the debit while the apply path still RAN; here the path is skipped entirely). The result selector is observe-only. RUN: relaunch the game (asm bakes immediates at mod load), then make Agrias->Ramza (front-on, normally 100% to hit) the FIRST attack of the battle. PASS = (1) [ROLL-VERDICT event=.. native=1(hit) final=0(miss) [VERDICT FORCED]] for the acting unit, (2) Ramza takes 0 damage / HP unchanged, (3) NO pre-clamp would-write line for that attack (apply path skipped). FAIL = Ramza takes the hit (eax override did not flip the branch) OR the pre-clamp still fires (eax does not gate the apply path). Either way the ROLL-VERDICT log tells us native vs final per roll. Safe: one guarded register override on the first roll; requires a fresh launch.",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "RollVerdictProbeEnabled": true,
+  "RollVerdictProbeMaxLogs": 128,
+  "RollVerdictControlEnabled": true,
+  "RollVerdictControlLogOnly": false,
+  "RollVerdictControlMaxWrites": 1,
+  "RollVerdictControlTargetCharId": -1,
+  "RollVerdictControlForceVerdict": 0,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": true,
+  "PreClampDamageRewriteTargetCharId": -1,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 1,
+
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": false,
+
+  "ActorProbeOnEvent": false,
+  "LogHpEventProbe": false,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 240,
+  "ActionBoundaryProbeDiffMax": 64,
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

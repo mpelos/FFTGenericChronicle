@@ -1,0 +1,55 @@
+{
+  "_note": "NATIVE-MISS CAPTURE (pure observe, no control). Purpose: settle the one fact that decides the whole architecture - does the HP-apply path (pre-clamp 0x30A66F) FIRE on a native MISS, or only on a hit? The roll-verdict hook 0x30F4A7 was REFUTED (it is a per-unit CT/turn eval that returns eax=0 always, NOT the accuracy roll - the static spine mis-identified it). What IS proven: the pre-clamp is the universal HP-apply point (it wrote debit=184 on a hit and credit=70 on a heal), and the selector logs the evade-type. METHOD: all control OFF. Pre-clamp in OBSERVE (LogOnly=true) logs EVERY apply-path firing with oldDebit/oldCredit. Selector observes evade-type. RUN: relaunch, then play a battle and cause some attacks to MISS (target dodges / 'Miss' plays) - e.g. attack a shielded/high-evade unit from the front, or let enemies attack an evasive unit; a few sub-100% attacks will miss. READ: for each MISS, check whether a [PRECLAMP-REWRITE] line appears for that defender. PRECLAMP FIRES ON MISS (oldDebit=0) => we can overwrite the debit to inject damage on a miss => FULL hit<->miss control with ZERO data changes. PRECLAMP DOES NOT FIRE ON MISS => apply path is skipped => we need a small targeted evade-off in data. Either way the selector shows the miss evade-type for comparison vs the hit (evadeType=0x00, rec+1BE=01, rec+1C0=00). Safe: observe-only.",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": true,
+  "PreClampDamageRewriteTargetCharId": -1,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 1,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": false,
+
+  "ActorProbeOnEvent": false,
+  "LogHpEventProbe": false,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 240,
+  "ActionBoundaryProbeDiffMax": 64,
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

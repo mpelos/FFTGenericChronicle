@@ -80,6 +80,43 @@ public class Mod : ModBase
     private const int S_CTRL_INFO = S_RECORD_DUMP + SELECTOR_RECORD_DUMP_MAX; // dword: [action(0/1/2), forcedEvade, forcedResult, 0]
     private const int SELECTOR_SLOT_SIZE = S_CTRL_INFO + 4;
     private const int SELECTOR_BUFFER_SIZE = S_EVENTS + (SELECTOR_RING_SIZE * SELECTOR_SLOT_SIZE);
+
+    // Evade-INPUT probe/control buffer (hook at RVA 0x30F49C; rbx = target unit just before the VM roll).
+    private const int EVADE_INPUT_RING_SIZE = 32;
+    private const int EVADE_INPUT_RING_MASK = EVADE_INPUT_RING_SIZE - 1;
+    private const int EI_COUNT = 0;          // dword header: total events
+    private const int EI_CTRL_WRITES = 4;    // dword header: live control writes (persistent)
+    private const int EI_EVENTS = 0x10;
+    private const int EI_SEQ = 0;            // dword (slot): sequence, written last
+    private const int EI_ID = 4;             // dword: target charId [rbx+0]
+    private const int EI_HP = 8;             // dword: target HP word[rbx+0x30]
+    private const int EI_CTRL = 12;          // dword: control marker (0 none, 1 logonly, 2 wrote)
+    private const int EI_TARGET = 16;        // qword: target ptr (rbx)
+    private const int EI_BEFORE = 24;        // qword: [rbx+0x46] before (bytes 0x46..0x4D)
+    private const int EI_AFTER = 32;         // qword: [rbx+0x46] after
+    private const int EI_BEFORE_4E = 40;     // dword: byte[rbx+0x4E] before
+    private const int EI_AFTER_4E = 44;      // dword: byte[rbx+0x4E] after
+    private const int EVADE_INPUT_SLOT_SIZE = 48;
+    private const int EVADE_INPUT_BUFFER_SIZE = EI_EVENTS + (EVADE_INPUT_RING_SIZE * EVADE_INPUT_SLOT_SIZE);
+
+    // Roll-VERDICT probe/control buffer (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the single VM
+    // avoidance roll 0x30FA34 returns). eax IS the hit/miss verdict in REAL code (next: test eax,eax; je
+    // miss). Forcing eax here overrides native evade+reactions (both virtualized inside the roll) WITHOUT
+    // any data change; the original "mov r10d,eax" propagates our value to the second consumer. rbx = the
+    // acting unit (attacker) at this point (live-confirmed; the producer walks units and selects the actor).
+    private const int ROLL_VERDICT_RING_SIZE = 32;
+    private const int ROLL_VERDICT_RING_MASK = ROLL_VERDICT_RING_SIZE - 1;
+    private const int RV_COUNT = 0;          // dword header: total events
+    private const int RV_CTRL_WRITES = 4;    // dword header: live control overrides (persistent)
+    private const int RV_EVENTS = 0x10;
+    private const int RV_SEQ = 0;            // dword (slot): sequence, written last
+    private const int RV_ID = 4;             // dword: acting-unit charId [rbx+0]
+    private const int RV_NATIVE = 8;         // dword: native verdict eax (pre-override)
+    private const int RV_FINAL = 12;         // dword: final verdict eax (post-override)
+    private const int RV_UNIT = 16;          // qword: acting-unit ptr (rbx)
+    private const int RV_CTRL = 24;          // dword: control marker (0 none, 1 logonly, 2 forced)
+    private const int ROLL_VERDICT_SLOT_SIZE = 32;
+    private const int ROLL_VERDICT_BUFFER_SIZE = RV_EVENTS + (ROLL_VERDICT_RING_SIZE * ROLL_VERDICT_SLOT_SIZE);
     private const int PRECLAMP_RING_SIZE = 32;
     private const int PRECLAMP_RING_MASK = PRECLAMP_RING_SIZE - 1;
     private const int PRECLAMP_SLOT_SIZE = 0x440;
@@ -138,6 +175,10 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _hook;
     private Reloaded.Hooks.Definitions.IAsmHook? _preClampDamageRewriteHook;
     private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
+    private nint _evadeInputProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
+    private nint _rollVerdictProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -187,6 +228,11 @@ public class Mod : ModBase
     private int _lastPreClampDamageRewriteSequence;
     private int _resultSelectorProbeLogs;
     private int _lastResultSelectorProbeSequence;
+    private int _evadeInputProbeLogs;
+    private int _lastEvadeInputProbeSequence;
+    private int _rollVerdictProbeLogs;
+    private int _lastRollVerdictProbeSequence;
+    private int _evadeOverrideLogs;
     private long _probeEventIndex;
     private nint _moduleBase;
     private int _moduleSize;
@@ -253,6 +299,8 @@ public class Mod : ModBase
             InstallLandmarkProbesIfEnabled(baseAddr);
             InstallPreClampDamageRewriteIfEnabled(baseAddr);
             InstallResultSelectorProbeIfEnabled(baseAddr);
+            InstallEvadeInputProbeIfEnabled(baseAddr);
+            InstallRollVerdictProbeIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -928,6 +976,463 @@ public class Mod : ModBase
             $"forceResult={Opt(_settings.ResultSelectorControlForceResultCode)})";
     }
 
+    // EVADE-INPUT probe/control. Hooks RVA 0x30F49C (the last real instruction before the single VM
+    // avoidance roll 0x30FA34; the target unit is in rbx). Optionally writes the target's evade INPUT
+    // bytes (+0x46/+0x47 weapon, +0x4A/+0x4E shield, +0x4B class) just before the VM reads them, so the
+    // engine's native roll produces our pre-decided outcome (all 0 => guaranteed hit; one source = 100 =>
+    // that evade type). Logs before/after bytes so the write and its effect are visible. The roll itself
+    // is virtualized, so whether the VM honors the write is exactly what the live test settles.
+    private void InstallEvadeInputProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.EvadeInputProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[EVADE-INPUT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _evadeInputProbeBuf = Marshal.AllocHGlobal(EVADE_INPUT_BUFFER_SIZE);
+        for (int i = 0; i < EVADE_INPUT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_evadeInputProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.EvadeInputProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.EvadeInputProbeExpectedBytes, out string byteError))
+        {
+            Line($"[EVADE-INPUT-SKIP] rva=0x{_settings.EvadeInputProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            var asm = BuildEvadeInputProbeAsm();
+            _evadeInputProbeHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[EVADE-INPUT-HOOK] rva=0x{_settings.EvadeInputProbeRva:X} addr=0x{address:X} " +
+                $"maxLogs={_settings.EvadeInputProbeMaxLogs} expected={_settings.EvadeInputProbeExpectedBytes} " +
+                $"{DescribeEvadeInputControl()}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[EVADE-INPUT-FAILED] rva=0x{_settings.EvadeInputProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+
+        Flush();
+    }
+
+    private string[] BuildEvadeInputProbeAsm()
+    {
+        string buf = $"0{_evadeInputProbeBuf:X}h";
+
+        // ExecuteFirst: at entry rbx = target unit record. We save/restore rax, rcx, r8, r9 and flags so
+        // the original prologue (mov rdx,rbx; mov [rbx+0x41],cl; call 0x30FA34) runs unchanged after us.
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rcx",
+            "push r8",
+            "push r9",
+            "pushfq",
+            "test rbx, rbx",
+            "jz .ei_done",
+            $"mov rax, {buf}",
+            // claim a sequence number and compute the ring slot into r9
+            $"mov ecx, [rax+{EI_COUNT}]",
+            "add ecx, 1",
+            $"mov [rax+{EI_COUNT}], ecx",
+            "mov r9d, ecx",
+            $"and r9d, {EVADE_INPUT_RING_MASK}",
+            $"imul r9, r9, {EVADE_INPUT_SLOT_SIZE}",
+            "add r9, rax",
+            $"add r9, {EI_EVENTS}",
+            // header: zero seq first (partial-slot guard) and the control marker
+            $"mov dword [r9+{EI_SEQ}], 0",
+            $"mov dword [r9+{EI_CTRL}], 0",
+            // target identity + BEFORE snapshot (rbx = target unit)
+            "movzx ecx, byte [rbx]",
+            $"mov [r9+{EI_ID}], ecx",
+            "movzx ecx, word [rbx+30h]",
+            $"mov [r9+{EI_HP}], ecx",
+            $"mov [r9+{EI_TARGET}], rbx",
+            "mov r8, [rbx+46h]",
+            $"mov [r9+{EI_BEFORE}], r8",
+            "movzx ecx, byte [rbx+4Eh]",
+            $"mov [r9+{EI_BEFORE_4E}], ecx",
+        };
+
+        // optional guarded control write (forces the target's evade input bytes)
+        asm.AddRange(BuildEvadeInputControlLines());
+
+        // AFTER snapshot, then publish the slot by writing the real sequence last
+        asm.AddRange(
+        [
+            "mov r8, [rbx+46h]",
+            $"mov [r9+{EI_AFTER}], r8",
+            "movzx ecx, byte [rbx+4Eh]",
+            $"mov [r9+{EI_AFTER_4E}], ecx",
+            $"mov rax, {buf}",
+            $"mov ecx, [rax+{EI_COUNT}]",
+            $"mov [r9+{EI_SEQ}], ecx",
+            ".ei_done:",
+            "popfq",
+            "pop r9",
+            "pop r8",
+            "pop rcx",
+            "pop rax",
+        ]);
+        return asm.ToArray();
+    }
+
+    // Guarded control write injected into the evade-input hook. Register state: rbx = target unit,
+    // rax = ring base, r9 = slot base, ecx = free scratch. Fail-closed: any guard miss jumps to
+    // .ei_ctrl_done and nothing is written. Emits nothing when control is disabled (pure observe).
+    private string[] BuildEvadeInputControlLines()
+    {
+        if (!_settings.EvadeInputControlEnabled)
+            return [];
+
+        int maxWrites = Math.Clamp(_settings.EvadeInputControlMaxWrites, 1, EVADE_INPUT_RING_SIZE);
+        int targetId = _settings.EvadeInputControlTargetCharId;
+        bool logOnly = _settings.EvadeInputControlLogOnly;
+
+        var c = new List<string>();
+        if (!logOnly)
+        {
+            c.Add($"mov ecx, [rax+{EI_CTRL_WRITES}]");
+            c.Add($"cmp ecx, {maxWrites}");
+            c.Add("jae .ei_ctrl_done");
+        }
+        if (targetId >= 0)
+        {
+            c.Add("movzx ecx, byte [rbx]");
+            c.Add($"cmp ecx, {targetId & 0xFF}");
+            c.Add("jne .ei_ctrl_done");
+        }
+        if (logOnly)
+        {
+            c.Add($"mov byte [r9+{EI_CTRL}], 1");
+        }
+        else
+        {
+            c.Add($"mov ecx, [rax+{EI_CTRL_WRITES}]");
+            c.Add("add ecx, 1");
+            c.Add($"mov [rax+{EI_CTRL_WRITES}], ecx");
+            if (_settings.EvadeInputForce46 >= 0) c.Add($"mov byte [rbx+46h], {_settings.EvadeInputForce46 & 0xFF}");
+            if (_settings.EvadeInputForce47 >= 0) c.Add($"mov byte [rbx+47h], {_settings.EvadeInputForce47 & 0xFF}");
+            if (_settings.EvadeInputForce4A >= 0) c.Add($"mov byte [rbx+4Ah], {_settings.EvadeInputForce4A & 0xFF}");
+            if (_settings.EvadeInputForce4B >= 0) c.Add($"mov byte [rbx+4Bh], {_settings.EvadeInputForce4B & 0xFF}");
+            if (_settings.EvadeInputForce4E >= 0) c.Add($"mov byte [rbx+4Eh], {_settings.EvadeInputForce4E & 0xFF}");
+            c.Add($"mov byte [r9+{EI_CTRL}], 2");
+        }
+        c.Add(".ei_ctrl_done:");
+        return c.ToArray();
+    }
+
+    private string DescribeEvadeInputControl()
+    {
+        if (!_settings.EvadeInputControlEnabled)
+            return "(control=off, observe-only)";
+        static string Opt(int v) => v < 0 ? "--" : $"0x{v & 0xFF:X2}";
+        string mode = _settings.EvadeInputControlLogOnly ? "LOGONLY(dry-run)" : "LIVE";
+        return
+            $"(control={mode} max={_settings.EvadeInputControlMaxWrites} " +
+            $"target={(_settings.EvadeInputControlTargetCharId < 0 ? "any" : $"0x{_settings.EvadeInputControlTargetCharId & 0xFF:X2}")} " +
+            $"force[46={Opt(_settings.EvadeInputForce46)} 47={Opt(_settings.EvadeInputForce47)} " +
+            $"4A={Opt(_settings.EvadeInputForce4A)} 4B={Opt(_settings.EvadeInputForce4B)} 4E={Opt(_settings.EvadeInputForce4E)}])";
+    }
+
+    private void CaptureEvadeInputProbeEvents(long nowTick)
+    {
+        if (_evadeInputProbeBuf == 0 || !_settings.EvadeInputProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_evadeInputProbeBuf, EI_COUNT);
+        if (count == _lastEvadeInputProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastEvadeInputProbeSequence + 1;
+        if (count - _lastEvadeInputProbeSequence > EVADE_INPUT_RING_SIZE)
+        {
+            int lost = count - _lastEvadeInputProbeSequence - EVADE_INPUT_RING_SIZE;
+            Line($"[EVADE-INPUT-LOST last={_lastEvadeInputProbeSequence} current={count} lost={lost}]");
+            start = count - EVADE_INPUT_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.EvadeInputProbeMaxLogs, 0, 100_000);
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = EI_EVENTS + ((sequence & EVADE_INPUT_RING_MASK) * EVADE_INPUT_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_SEQ);
+            if (recordedSequence != sequence)
+                continue;
+            if (_evadeInputProbeLogs >= maxLogs)
+                continue;
+
+            Line(FormatEvadeInputProbeHit(sequence, slot, nowTick));
+            _evadeInputProbeLogs++;
+            needsFlush = true;
+        }
+
+        _lastEvadeInputProbeSequence = count;
+        if (needsFlush)
+            Flush();
+    }
+
+    private string FormatEvadeInputProbeHit(int sequence, int slot, long nowTick)
+    {
+        int id = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_ID) & 0xFF;
+        int hp = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_HP) & 0xFFFF;
+        nint target = Marshal.ReadIntPtr(_evadeInputProbeBuf, slot + EI_TARGET);
+        int ctrl = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_CTRL) & 0xFF;
+
+        var before = new byte[8];
+        var after = new byte[8];
+        Marshal.Copy(IntPtr.Add(_evadeInputProbeBuf, slot + EI_BEFORE), before, 0, 8);
+        Marshal.Copy(IntPtr.Add(_evadeInputProbeBuf, slot + EI_AFTER), after, 0, 8);
+        int before4E = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_BEFORE_4E) & 0xFF;
+        int after4E = Marshal.ReadInt32(_evadeInputProbeBuf, slot + EI_AFTER_4E) & 0xFF;
+
+        // before/after hold record bytes 0x46..0x4D; the evade inputs are +0x46/+0x47/+0x4A/+0x4B and +0x4E.
+        static string Ev(byte[] w, int b4e) =>
+            $"46={w[0]:X2} 47={w[1]:X2} 4A={w[4]:X2} 4B={w[5]:X2} 4E={b4e:X2}";
+
+        string ctrlText = ctrl switch
+        {
+            2 => " [CONTROL WROTE]",
+            1 => " [CONTROL would-write(LogOnly)]",
+            _ => "",
+        };
+
+        return
+            $"[EVADE-INPUT event={sequence} target=0x{target:X} id=0x{id:X2} hp={hp} " +
+            $"before({Ev(before, before4E)}) after({Ev(after, after4E)}) now={nowTick}]{ctrlText}";
+    }
+
+    private void InstallRollVerdictProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.RollVerdictProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[ROLL-VERDICT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _rollVerdictProbeBuf = Marshal.AllocHGlobal(ROLL_VERDICT_BUFFER_SIZE);
+        for (int i = 0; i < ROLL_VERDICT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_rollVerdictProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.RollVerdictProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.RollVerdictProbeExpectedBytes, out string byteError))
+        {
+            Line($"[ROLL-VERDICT-SKIP] rva=0x{_settings.RollVerdictProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            var asm = BuildRollVerdictProbeAsm();
+            _rollVerdictProbeHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[ROLL-VERDICT-HOOK] rva=0x{_settings.RollVerdictProbeRva:X} addr=0x{address:X} " +
+                $"maxLogs={_settings.RollVerdictProbeMaxLogs} expected={_settings.RollVerdictProbeExpectedBytes} " +
+                $"{DescribeRollVerdictControl()}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[ROLL-VERDICT-FAILED] rva=0x{_settings.RollVerdictProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+
+        Flush();
+    }
+
+    private string[] BuildRollVerdictProbeAsm()
+    {
+        string buf = $"0{_rollVerdictProbeBuf:X}h";
+
+        // ExecuteFirst at 0x30F4A7 ("mov r10d,eax"). At entry: eax = native verdict, rbx = acting unit.
+        // We deliberately do NOT push/pop rax: we save the native verdict in r8d, optionally override it,
+        // and write the final verdict back to eax at exit so the stolen "mov r10d,eax" propagates it. Only
+        // rcx/r8/r9 and flags are saved.
+        var asm = new List<string>
+        {
+            "use64",
+            "push rcx",
+            "push r8",
+            "push r9",
+            "pushfq",
+            "test rbx, rbx",
+            "jz .rv_done",
+            "mov r8d, eax",               // r8d = native verdict (default final)
+            $"mov rax, {buf}",
+            // claim a sequence number and compute the ring slot into r9
+            $"mov ecx, [rax+{RV_COUNT}]",
+            "add ecx, 1",
+            $"mov [rax+{RV_COUNT}], ecx",
+            "mov r9d, ecx",
+            $"and r9d, {ROLL_VERDICT_RING_MASK}",
+            $"imul r9, r9, {ROLL_VERDICT_SLOT_SIZE}",
+            "add r9, rax",
+            $"add r9, {RV_EVENTS}",
+            // header: zero seq first (partial-slot guard) and the control marker
+            $"mov dword [r9+{RV_SEQ}], 0",
+            $"mov dword [r9+{RV_CTRL}], 0",
+            // acting-unit identity + native verdict + unit ptr
+            "movzx ecx, byte [rbx]",
+            $"mov [r9+{RV_ID}], ecx",
+            $"mov [r9+{RV_NATIVE}], r8d",
+            $"mov [r9+{RV_UNIT}], rbx",
+        };
+
+        // optional guarded override (may set r8d = forced verdict)
+        asm.AddRange(BuildRollVerdictControlLines());
+
+        // record the final verdict, publish the slot (seq last), and apply the verdict to eax
+        asm.AddRange(
+        [
+            $"mov [r9+{RV_FINAL}], r8d",
+            $"mov rax, {buf}",
+            $"mov ecx, [rax+{RV_COUNT}]",
+            $"mov [r9+{RV_SEQ}], ecx",
+            "mov eax, r8d",               // final verdict -> eax (stolen "mov r10d,eax" propagates it)
+            ".rv_done:",
+            "popfq",
+            "pop r9",
+            "pop r8",
+            "pop rcx",
+        ]);
+        return asm.ToArray();
+    }
+
+    // Guarded verdict override injected into the roll-verdict hook. Register state: rbx = acting unit,
+    // rax = ring base, r9 = slot base, r8d = current final verdict, ecx = free scratch. Fail-closed: any
+    // guard miss jumps to .rv_ctrl_done leaving r8d (native) intact. ForceVerdict<0 behaves as log-only.
+    private string[] BuildRollVerdictControlLines()
+    {
+        if (!_settings.RollVerdictControlEnabled)
+            return [];
+
+        int maxWrites = Math.Clamp(_settings.RollVerdictControlMaxWrites, 1, ROLL_VERDICT_RING_SIZE);
+        int targetId = _settings.RollVerdictControlTargetCharId;
+        int forceVerdict = _settings.RollVerdictControlForceVerdict;
+        bool logOnly = _settings.RollVerdictControlLogOnly || forceVerdict < 0;
+
+        var c = new List<string>();
+        if (!logOnly)
+        {
+            c.Add($"mov ecx, [rax+{RV_CTRL_WRITES}]");
+            c.Add($"cmp ecx, {maxWrites}");
+            c.Add("jae .rv_ctrl_done");
+        }
+        if (targetId >= 0)
+        {
+            c.Add("movzx ecx, byte [rbx]");
+            c.Add($"cmp ecx, {targetId & 0xFF}");
+            c.Add("jne .rv_ctrl_done");
+        }
+        if (logOnly)
+        {
+            c.Add($"mov byte [r9+{RV_CTRL}], 1");
+        }
+        else
+        {
+            c.Add($"mov ecx, [rax+{RV_CTRL_WRITES}]");
+            c.Add("add ecx, 1");
+            c.Add($"mov [rax+{RV_CTRL_WRITES}], ecx");
+            c.Add($"mov r8d, {forceVerdict & 0xFF}");   // OVERRIDE the verdict
+            c.Add($"mov byte [r9+{RV_CTRL}], 2");
+        }
+        c.Add(".rv_ctrl_done:");
+        return c.ToArray();
+    }
+
+    private string DescribeRollVerdictControl()
+    {
+        if (!_settings.RollVerdictControlEnabled)
+            return "(control=off, observe-only)";
+        int forceVerdict = _settings.RollVerdictControlForceVerdict;
+        bool logOnly = _settings.RollVerdictControlLogOnly || forceVerdict < 0;
+        string mode = logOnly ? "LOGONLY(dry-run)" : "LIVE";
+        string verdict = forceVerdict switch
+        {
+            0 => "0=miss",
+            1 => "1=hit",
+            2 => "2=special",
+            < 0 => "observe",
+            _ => $"{forceVerdict}",
+        };
+        return
+            $"(control={mode} force={verdict} max={_settings.RollVerdictControlMaxWrites} " +
+            $"target={(_settings.RollVerdictControlTargetCharId < 0 ? "any" : $"0x{_settings.RollVerdictControlTargetCharId & 0xFF:X2}")})";
+    }
+
+    private void CaptureRollVerdictProbeEvents(long nowTick)
+    {
+        if (_rollVerdictProbeBuf == 0 || !_settings.RollVerdictProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_rollVerdictProbeBuf, RV_COUNT);
+        if (count == _lastRollVerdictProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastRollVerdictProbeSequence + 1;
+        if (count - _lastRollVerdictProbeSequence > ROLL_VERDICT_RING_SIZE)
+        {
+            int lost = count - _lastRollVerdictProbeSequence - ROLL_VERDICT_RING_SIZE;
+            Line($"[ROLL-VERDICT-LOST last={_lastRollVerdictProbeSequence} current={count} lost={lost}]");
+            start = count - ROLL_VERDICT_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.RollVerdictProbeMaxLogs, 0, 100_000);
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = RV_EVENTS + ((sequence & ROLL_VERDICT_RING_MASK) * ROLL_VERDICT_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_rollVerdictProbeBuf, slot + RV_SEQ);
+            if (recordedSequence != sequence)
+                continue;
+            if (_rollVerdictProbeLogs >= maxLogs)
+                continue;
+
+            Line(FormatRollVerdictProbeHit(sequence, slot, nowTick));
+            _rollVerdictProbeLogs++;
+            needsFlush = true;
+        }
+
+        _lastRollVerdictProbeSequence = count;
+        if (needsFlush)
+            Flush();
+    }
+
+    private string FormatRollVerdictProbeHit(int sequence, int slot, long nowTick)
+    {
+        int id = Marshal.ReadInt32(_rollVerdictProbeBuf, slot + RV_ID) & 0xFF;
+        int native = Marshal.ReadInt32(_rollVerdictProbeBuf, slot + RV_NATIVE);
+        int final = Marshal.ReadInt32(_rollVerdictProbeBuf, slot + RV_FINAL);
+        nint unit = Marshal.ReadIntPtr(_rollVerdictProbeBuf, slot + RV_UNIT);
+        int ctrl = Marshal.ReadInt32(_rollVerdictProbeBuf, slot + RV_CTRL) & 0xFF;
+
+        string ctrlText = ctrl switch
+        {
+            2 => native != final ? " [VERDICT FORCED]" : " [VERDICT FORCED(no-op)]",
+            1 => " [would-force(LogOnly)]",
+            _ => "",
+        };
+        static string V(int v) => v switch { 0 => "0(miss)", 1 => "1(hit)", 2 => "2(special)", _ => $"{v}" };
+
+        return
+            $"[ROLL-VERDICT event={sequence} actor=0x{unit:X} id=0x{id:X2} " +
+            $"native={V(native)} final={V(final)} now={nowTick}]{ctrlText}";
+    }
+
     private static bool ValidateLandmarkBytes(nint address, LandmarkProbe probe, out string error)
         => ValidateExpectedBytes(address, probe.ExpectedBytes, out error);
 
@@ -1113,6 +1618,8 @@ public class Mod : ModBase
                 CaptureLandmarkProbeEvents(nowTick);
                 CapturePreClampDamageRewriteEvents(nowTick);
                 CaptureResultSelectorProbeEvents(nowTick);
+                CaptureEvadeInputProbeEvents(nowTick);
+                CaptureRollVerdictProbeEvents(nowTick);
                 PollRegisteredUnits(nowTick);
             }
             catch (Exception ex)
@@ -1608,6 +2115,85 @@ public class Mod : ModBase
 
             ProcessObservedUnit(target, nowTick, touchForContext: false, logStructMapping: false);
         }
+
+        ApplyEvadeOverrideSweep();
+    }
+
+    // Boost evade on EVERY unit in the battle, not just registry-tracked ones. The poller only tracks
+    // units that a hook touched or discovery found; the defender of an attack may never be tracked (e.g.
+    // Ramza was hit but never registered, so his evade was never overridden -> invalid test). We walk the
+    // address span of the tracked units (which bracket the unit array, stride 0x200) plus a margin, read
+    // each slot, and override any that validates as a unit. ReadProcessMemory is safe on unmapped pages.
+    private void ApplyEvadeOverrideSweep()
+    {
+        if (!_settings.EvadeOverrideEnabled || _settings.EvadeOverrideTargetCharId >= 0)
+            return;
+        int slots = Math.Clamp(_settings.EvadeOverrideSweepSlots, 0, 256);
+        if (slots == 0 || _unitRegistry.Count == 0)
+            return;
+
+        const int STRIDE = 0x200;
+        nint min = nint.MaxValue, max = 0;
+        foreach (var p in _unitRegistry)
+        {
+            if (p < min) min = p;
+            if (p > max) max = p;
+        }
+        nint margin = (nint)slots * STRIDE;
+        for (nint addr = min - margin; addr <= max + margin; addr += STRIDE)
+        {
+            if (_unitRegistry.Contains(addr))
+                continue; // tracked units are already boosted by the poll loop
+            if (TryReadLiveUnitSnapshot(addr, out var snap, out _))
+                ApplyEvadeOverrideIfEnabled(snap);
+        }
+    }
+
+    // Persistent INPUT-control test (the original idea): write a unit's avoidance INPUT bytes (weapon
+    // evade +0x46/+0x47, shield evade +0x4A/+0x4E, class evade +0x4B) on its LIVE battle struct every
+    // poll, BEFORE the engine's VM avoidance roll reads them. If the engine then honors these (the unit
+    // dodges / the on-screen hit% drops when attacked), the VM reads live memory => input-control works.
+    // If it ignores them (takes the hit at normal odds), the VM consumed a copy snapshotted earlier =>
+    // input-control of evade is dead and we use output-control. Defender-agnostic: we set the struct of a
+    // chosen unit and let it be attacked, so we never need to identify the defender at the roll moment.
+    private void ApplyEvadeOverrideIfEnabled(UnitSnapshot target)
+    {
+        if (!_settings.EvadeOverrideEnabled)
+            return;
+        int want = _settings.EvadeOverrideTargetCharId;
+        if (want >= 0 && target.CharId != (want & 0xFF))
+            return;
+
+        nint p = target.Ptr;
+        bool changed = false;
+        void W(int off, int val)
+        {
+            if (val < 0)
+                return;
+            if (target.ReadByte(off) != (val & 0xFF))
+                changed = true;
+            Marshal.WriteByte(p, off, (byte)(val & 0xFF));
+        }
+        W(0x46, _settings.EvadeOverride46);
+        W(0x47, _settings.EvadeOverride47);
+        W(0x4A, _settings.EvadeOverride4A);
+        W(0x4B, _settings.EvadeOverride4B);
+        W(0x4E, _settings.EvadeOverride4E);
+
+        // Log only when we actually changed a value (first set, or the engine reset it between polls),
+        // throttled, so persistent rewriting doesn't spam the log.
+        if (changed && _evadeOverrideLogs < Math.Clamp(_settings.EvadeOverrideMaxLogs, 0, 100_000))
+        {
+            _evadeOverrideLogs++;
+            static string F(int v) => v < 0 ? "--" : $"{v & 0xFF:X2}";
+            Line(
+                $"[EVADE-OVERRIDE ptr=0x{p:X} id=0x{target.CharId:X2}] " +
+                $"was(46={target.ReadByte(0x46):X2} 47={target.ReadByte(0x47):X2} 4A={target.ReadByte(0x4A):X2} " +
+                $"4B={target.ReadByte(0x4B):X2} 4E={target.ReadByte(0x4E):X2}) " +
+                $"set(46={F(_settings.EvadeOverride46)} 47={F(_settings.EvadeOverride47)} 4A={F(_settings.EvadeOverride4A)} " +
+                $"4B={F(_settings.EvadeOverride4B)} 4E={F(_settings.EvadeOverride4E)})");
+            Flush();
+        }
     }
 
     private void ProcessObservedUnit(UnitSnapshot target, long nowTick, bool touchForContext, bool logStructMapping)
@@ -1630,6 +2216,7 @@ public class Mod : ModBase
         }
 
         _unitRegistry.Add(unitPtr);
+        ApplyEvadeOverrideIfEnabled(target);
         if (touchForContext)
             DiscoverNearbyBattleUnits(unitPtr);
         UnitSnapshot? actionProbeUnit = null;
@@ -3799,11 +4386,15 @@ public class Mod : ModBase
         _hook = null;
         _preClampDamageRewriteHook = null;
         _resultSelectorProbeHook = null;
+        _evadeInputProbeHook = null;
+        _rollVerdictProbeHook = null;
         _landmarkHooks.Clear();
         if (_buf != 0) { try { Marshal.FreeHGlobal(_buf); } catch { } _buf = 0; }
         if (_landmarkBuf != 0) { try { Marshal.FreeHGlobal(_landmarkBuf); } catch { } _landmarkBuf = 0; }
         if (_preClampDamageRewriteBuf != 0) { try { Marshal.FreeHGlobal(_preClampDamageRewriteBuf); } catch { } _preClampDamageRewriteBuf = 0; }
         if (_resultSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_resultSelectorProbeBuf); } catch { } _resultSelectorProbeBuf = 0; }
+        if (_evadeInputProbeBuf != 0) { try { Marshal.FreeHGlobal(_evadeInputProbeBuf); } catch { } _evadeInputProbeBuf = 0; }
+        if (_rollVerdictProbeBuf != 0) { try { Marshal.FreeHGlobal(_rollVerdictProbeBuf); } catch { } _rollVerdictProbeBuf = 0; }
     }
 
     #region For Exports, Serialization etc.
@@ -6226,6 +6817,57 @@ internal sealed class RuntimeSettings
     public int ResultSelectorControlMatchEvadeType { get; set; } = -1;// -1=any; else only act when natural evade-type == this
     public int ResultSelectorControlForceEvadeType { get; set; } = -1;// -1=no change; else byte -> cl + [record+0x1C0]
     public int ResultSelectorControlForceResultCode { get; set; } = -1;// -1=no change; else byte -> [record+0x1BE] (0 for evade)
+
+    // Evade-INPUT control (hook at RVA 0x30F49C, the last real instr before the single VM avoidance roll
+    // 0x30FA34; target unit in rbx). Writes the target's evade INPUT bytes (+0x46/+0x47 weapon, +0x4A/+0x4E
+    // shield, +0x4B class) just before the VM reads them, so the engine's native roll produces our outcome
+    // (all 0 => guaranteed hit; one source = 100 => that evade type). Probe logs before/after bytes.
+    public bool EvadeInputProbeEnabled { get; set; } = false;
+    public int EvadeInputProbeRva { get; set; } = 0x30F49C;
+    public string EvadeInputProbeExpectedBytes { get; set; } = "48 8B D3 88 4B 41";
+    public int EvadeInputProbeMaxLogs { get; set; } = 64;
+    public bool EvadeInputControlEnabled { get; set; } = false;   // master; false => observe-only
+    public bool EvadeInputControlLogOnly { get; set; } = true;    // SAFETY: true => log would-write intent, never write
+    public int EvadeInputControlMaxWrites { get; set; } = 1;      // 1..32 cap on live writes per session
+    public int EvadeInputControlTargetCharId { get; set; } = -1;  // -1=any; else require [rbx+0x00] charId == this
+    public int EvadeInputForce46 { get; set; } = -1;             // weapon evade 1 (-1 leave; else byte)
+    public int EvadeInputForce47 { get; set; } = -1;             // weapon evade 2
+    public int EvadeInputForce4A { get; set; } = -1;             // shield evade 1
+    public int EvadeInputForce4B { get; set; } = -1;             // class evade
+    public int EvadeInputForce4E { get; set; } = -1;             // shield evade 2
+
+    // Roll-VERDICT control (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the VM avoidance roll
+    // 0x30FA34 returns). eax is the hit/miss verdict in REAL code (then: test eax,eax; je miss). Forcing
+    // eax overrides native evade+reactions (both virtualized inside the roll) with NO data change. Set
+    // ForceVerdict=1 => guaranteed hit (apply path runs; author damage at the pre-clamp); 0 => miss; 2 =
+    // engine "special" outcome. The probe logs native vs final eax per roll. Observe-only by default.
+    public bool RollVerdictProbeEnabled { get; set; } = false;
+    public int RollVerdictProbeRva { get; set; } = 0x30F4A7;
+    public string RollVerdictProbeExpectedBytes { get; set; } = "44 8B D0 BD 01 00 00 00 85 C0";
+    public int RollVerdictProbeMaxLogs { get; set; } = 128;
+    public bool RollVerdictControlEnabled { get; set; } = false;  // master; false => observe-only
+    public bool RollVerdictControlLogOnly { get; set; } = true;   // SAFETY: true => log would-override intent, never write
+    public int RollVerdictControlMaxWrites { get; set; } = 1;     // 1..32 cap on live overrides per session
+    public int RollVerdictControlTargetCharId { get; set; } = -1; // -1=any acting unit; else require [rbx+0x00] charId == this
+    public int RollVerdictControlForceVerdict { get; set; } = -1; // -1=observe; 0=miss; 1=hit; 2=engine special
+
+    // Persistent evade INPUT override (the original input-control test). The unit poller writes these evade
+    // bytes on the LIVE battle struct of the matching unit every poll (~20ms), before the VM avoidance roll
+    // reads them. Set 0x4B (class evade) etc. to 100 on a unit, then have it attacked: if it dodges / the
+    // hit% forecast drops, the VM reads live memory => input-control viable. -1 leaves a byte untouched.
+    public bool EvadeOverrideEnabled { get; set; } = false;
+    public int EvadeOverrideTargetCharId { get; set; } = -1;   // -1=all tracked units; else only this charId (+0x00)
+    public int EvadeOverride46 { get; set; } = -1;             // weapon evade 1
+    public int EvadeOverride47 { get; set; } = -1;             // weapon evade 2
+    public int EvadeOverride4A { get; set; } = -1;             // shield evade 1
+    public int EvadeOverride4B { get; set; } = -1;             // class evade
+    public int EvadeOverride4E { get; set; } = -1;             // shield evade 2
+    public int EvadeOverrideMaxLogs { get; set; } = 64;
+    // When broadcasting (TargetCharId<0), also sweep this many 0x200-slots beyond the tracked-unit span
+    // and boost any valid unit found there. Catches units the poller never registered (e.g. the defender
+    // of an attack that hasn't been near a hook). 0 = only tracked units. ReadProcessMemory is safe on
+    // unmapped addresses (returns false), so a generous margin is harmless.
+    public int EvadeOverrideSweepSlots { get; set; } = 0;
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;

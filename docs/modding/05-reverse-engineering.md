@@ -179,8 +179,10 @@ apply emitted; the accuracy gate `0x30FA34` is VM). Never try to promote a miss.
 engine to (near-)always-hit upstream, then DOWNGRADE the guaranteed hit to whatever the custom roll
 wants — collapsing control to two quadrants (keep-hit, downgrade-hit), both inside the two proven hooks.
 
-**Neutralize the engine's avoidance in DATA** — three layers, all upstream of our hooks; each must be
-killed or a residual engine outcome pre-empts ours:
+**Neutralize the engine's avoidance** — three layers, all upstream of our hooks; each must be killed or
+a residual engine outcome pre-empts ours. (Layer C is now neutralized in MEMORY — write the defender's
+evade bytes to `0` before the roll, proven above — so the DATA edits below are only needed for the
+reaction layers A/B, or as a static fallback.)
 
 - Layer A — Hamedo / First-Strike (Monk reaction): pre-empts the ENTIRE attack before any hook runs.
 - Layer B — reaction avoidance (Blade Grasp, Arrow Guard, Catch, Reflect): rolls BEFORE the evade
@@ -192,27 +194,49 @@ Levers: strip the reaction slot / blank the reaction table (kills A+B); `Evadeab
 zero the evade bytes / Concentrate (kills C). That a data-disable fully kills A+B is the one remaining
 LIVE validation (predicted yes — Hamedo/Blade Grasp survive zeroed evade bytes by canon).
 
-**Input-control alternative — mapped offline 2026-06-26, needs-1-live-test each**
-(`work/input-control-hook-map.md`). Instead of (or with) data-disabling, set the target's avoidance
-INPUTS in real code just before the single VM roll, so the native roll produces our outcome:
+### Input-control — ✅ PROVEN LIVE 2026-06-27 (the cleaner primary path)
 
-- Evade (Layer C): hook **`0x30F49C`** — the last real instruction before the VM roll `0x30FA34`,
-  target in `rdx=rbx` — and write the evade bytes (all `0` → guaranteed hit; one source `=100` → that
-  evade type). **This corrects an earlier anchor: `0x226EBC`/`0x226F39` is a UI status-panel exporter
-  (scratch buffer with no real-code readers), NOT the per-attack evade read.**
-- Reactions (Layers A/B): **there is no reaction-slot byte in the runtime battle struct** — reactions
-  resolve via the VM resolver `0x2BB0D4` from the skillset object, so "strip the reaction slot" above
-  means the DATA (ENTD / JobCommand R/S/M), not a struct write. The runtime lever is **Brave**
-  (`+0x2B`, read in real code at 6 Brave%-roll sites that funnel into VM `0x278EE0`): hook
-  **`0x271D20`** (defender in `rcx=[actor+0x148]`) and force Brave so the trigger can't fire.
+**Write the DEFENDER's evade bytes on its live battle struct BEFORE the VM avoidance roll, and the
+Denuvo VM honors them.** Denuvo virtualizes CODE, not DATA — the unit structs the VM reads are normal
+writable memory, so planting the inputs makes the native roll produce our outcome, with the engine
+rendering everything (animation, 0 damage, forecast %) on its own. No data-gutting, no result-forging.
 
-The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the one VM call
-`0x30FA34`; real code only hands it the target pointer (`rdx` at `0x30F4A2`). The attacker is never in
-a register on this path — resolve it via the actor array (`actor+0x148`), as the pre-clamp does.
+Proof (`work/input-control-evade-PROVEN.md`, log `work/battleprobe_log.evade-override-PASS*.txt`): a
+poll wrote Ramza's class-evade `+0x4B` `0→0x64` on his live struct; the attack preview then showed
+**0% hit** and Ramza **evaded** — `[SELECTOR-PROBE evadeType=0x04(class-evade) rec+1BE=00 rec+1C0=04
+rec+1C4=0 hp=567/567]`, no pre-clamp fired. The VM read live memory, not a cached forecast copy.
 
-The forecast hit% display is virtualized (both the % math and the UI draw are VM); no single
-arbitrary-% write exists. Available levers: write target evade-input bytes (real but
-quantized), wrap a VM-thunk return at a forecast call site, or draw overlay glyphs.
+Byte → outcome, set on the **defender** (`unitPtr + off`, values 0–100; evade applies front/side only):
+
+```text
++0x4B          = high   -> class evade ("Miss")  evadeType 0x04
++0x46 / +0x47  = high   -> weapon parry          evadeType 0x02
++0x4A / +0x4E  = high   -> shield block          evadeType 0x03
+all five       = 0      -> guaranteed HIT (neutralizes avoidance in MEMORY, no data edit)  0x00
+```
+
+Harness: the poller writes these every ~20 ms via `EvadeOverride*` (+ `EvadeOverrideSweepSlots`, which
+sweeps the unit array so even untracked units — i.e. the actual defender — get boosted; the two earlier
+"failures" were invalid because only the attacker/idle units were boosted, never the defender). Next
+(engineering): per-action, formula-driven writes — identify the defender via the pending-action tracker,
+compute the formula for that (attacker, defender) pair, write its evade before the roll. Damage value
+stays on the proven pre-clamp.
+
+**DEAD ENDS (both refuted live; do not retry):**
+- Hook **`0x30F49C`** ("last real instr before the roll"): `rbx` is the **ATTACKER**, not the defender —
+  the defender is never in a register here. (Also corrects the older `0x226EBC`/`0x226F39` anchor, a UI
+  status-panel exporter with no real-code readers.)
+- Hook **`0x30F4A7`** (roll-verdict `eax` override): a per-unit CT/turn eval, `eax` is always `0`, not
+  the accuracy verdict. The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the
+  one VM call `0x30FA34`; there is no real-code verdict to flip.
+
+**Reactions (Layers A/B)** are a separate, still-untested layer: no reaction-slot byte exists in the
+struct (reactions resolve via VM `0x2BB0D4` from the skillset object), so neutralize in DATA
+(ENTD / JobCommand R/S/M) — or, by analogy to evade, the live-memory lever is **Brave** (`+0x2B`); write
+the defender's Brave before the Brave%-roll to suppress the trigger. Test next.
+
+The forecast hit% display now follows the live evade bytes too (Ramza showed 0%), so writing evade is
+also the lever for an honest custom-% preview.
 
 ## 5. Formula fingerprint constants
 

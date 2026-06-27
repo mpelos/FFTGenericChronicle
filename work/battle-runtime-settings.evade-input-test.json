@@ -1,0 +1,57 @@
+{
+  "_note": "EVADE INPUT-CONTROL TEST (offline-mapped hook 0x30F49C, now built into the harness). Goal: prove the engine's NATIVE avoidance roll honors evade bytes we write on the target just before the VM reads them. Method: at 0x30F49C (last real instr before the VM roll 0x30FA34; rbx=target) force Ramza's (charId 0x01) evade INPUT bytes to class-evade=100, all other sources 0 (+0x46=0 +0x47=0 +0x4A=0 +0x4B=100 +0x4E=0). NO output-control hooks are used (pre-clamp OFF, selector control OFF) - only the input write. The selector PROBE is on (observe-only) to log the RESULTING evadeType. EvadeInputProbe defaults (Rva 0x30F49C, ExpectedBytes '48 8B D3 88 4B 41') come from code, so they are omitted here. RUN: relaunch the game, then make Agrias->Ramza (front-on, a normally-guaranteed hit) the FIRST attack that targets Ramza. PASS = Ramza plays a class-evade 'Miss' and takes 0 damage NATIVELY (selector log evadeType=0x04, evade-input log before 4B=00 -> after 4B=64). FAIL = Ramza takes the hit (selector log evadeType=0x00, damage applies) => the VM used a cached copy, input-control of evade is not viable and we fall back to data-disable + output-control. Safe: one guarded write on one target; requires a fresh launch (asm bakes immediates at mod load).",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": false,
+
+  "EvadeInputProbeEnabled": true,
+  "EvadeInputProbeMaxLogs": 128,
+  "EvadeInputControlEnabled": true,
+  "EvadeInputControlLogOnly": false,
+  "EvadeInputControlMaxWrites": 1,
+  "EvadeInputControlTargetCharId": 1,
+  "EvadeInputForce46": 0,
+  "EvadeInputForce47": 0,
+  "EvadeInputForce4A": 0,
+  "EvadeInputForce4B": 100,
+  "EvadeInputForce4E": 0,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": false,
+
+  "ActorProbeOnEvent": false,
+  "LogHpEventProbe": false,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 240,
+  "ActionBoundaryProbeDiffMax": 64,
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}
