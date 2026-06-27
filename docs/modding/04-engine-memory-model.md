@@ -320,6 +320,12 @@ What it gives: pre-apply target HP; raw staged damage (`oldDebit`) before clamp;
 (`oldCredit`) for heal/credit-like cases; a place to rewrite damage before vanilla applies HP and
 KO; a native-frame register/stack capture point for the actor array (§3).
 
+**Proven live (2026-06-26):** forcing `word[rbp+6]=0` here zeros a guaranteed hit's damage — a
+100%-to-hit attack left the target at full HP (567/567). Paired with the selector evade-type write
+(`05-reverse-engineering.md` §4, Control recipe) this gives full hit→miss control: debit-zero on this
+path + evade animation on the selector path are independent and both required. Proof log
+`work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`.
+
 Critical implementation rule:
 
 ```text

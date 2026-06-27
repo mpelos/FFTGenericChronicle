@@ -150,20 +150,47 @@ Attack; a failed *accuracy* roll (Steal / status hit%) routes through 0x06.
 
 ### Control recipe
 
-Compute a custom roll, then write the engine's already-owned fields:
+**Proven live (2026-06-26): full hit↔miss authority against the engine's roll.** The result render
+and the HP debit are TWO INDEPENDENT paths on different call trees, so authoring an outcome needs the
+right write on EACH path:
 
 ```text
-force-HIT(D):   word[unit+0x1C4]=D ; word[unit+0x1C6]=0 ; byte[+0x1C0]=0x00   (via 0x30A66F hook)
-force-EVADE(t): byte[+0x1C0]=t (0x01 cloak / 0x03 shield / ...) ; +0x1BE=0 ; +0x1C4=0
-                (hook the selector 0x205210 to write before it reads, or the staging write 0x205B39)
+force-HIT(D):   pre-clamp 0x30A66F -> word[rbp+6]=D (=target+0x1C4) ; word[rbp+8]=0 (=+0x1C6)
+                selector 0x205210  -> leave +0x1BE=01 / +0x1C0=0x00          => damage popup, HP -D
+force-EVADE(t): pre-clamp 0x30A66F -> word[rbp+6]=0 ; word[rbp+8]=0           (no HP change)  AND
+                selector 0x205210  -> +0x1BE=0 ; +0x1C0=t (0x04 class / 0x03 shield / 0x02 weapon
+                                      / 0x01 cloak / 0x06 miss) + force saved cl=t  => evade anim, HP kept
 ```
 
-Writing `+0x1C0` (and the `cl` argument) at the selector hook is **Proven** to override the rendered
-outcome: a forced evade-type replaces the engine's natural hit/evade animation and renders cleanly
-regardless of the unit's equipment (a shield-bearer forced to class-evade shows a clean dodge, no
-glitch), while the engine still owns HP via the `+0x1C4` debit. Force vanilla to (near-)always-hit upstream — zero the target's evade-input bytes, or turn the
-ability's `Evadeable` flag off — so the apply/selector path is reached and the custom write is
-authoritative.
+The decisive proof: a guaranteed 100%-to-hit basic attack (Agrias→Ramza) was rendered as a
+class-evade "Miss" AND dealt 0 damage (HP 567/567) — the pre-clamp forced the staged debit `184->0`
+and the selector flipped `+0x1C0` `0x00(hit)->0x04(class-evade)`. Proof log
+`work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`; full analysis
+`work/1782517714-miss-block-parry-control-definitive.md`.
+
+**Both writes are required (this corrects the earlier note).** Writing only `+0x1C0`/`+0x1BE` at the
+selector is render-complete but **damage-incomplete**: the selector render and the HP apply run on
+different frames, so the staged debit survives and HP still drops. To make a downgraded hit deal no
+damage you MUST also zero the debit at the pre-clamp. (The old "the engine still owns HP via the
+`+0x1C4` debit" held only for a NATURAL evade, which already arrives with `+0x1C4=0`.)
+
+**Miss → hit is impossible at the dispatcher** — a miss never stages damage (`+0x1C4=0`, no `0x300`
+apply emitted; the accuracy gate `0x30FA34` is VM). Never try to promote a miss. Instead force the
+engine to (near-)always-hit upstream, then DOWNGRADE the guaranteed hit to whatever the custom roll
+wants — collapsing control to two quadrants (keep-hit, downgrade-hit), both inside the two proven hooks.
+
+**Neutralize the engine's avoidance in DATA** — three layers, all upstream of our hooks; each must be
+killed or a residual engine outcome pre-empts ours:
+
+- Layer A — Hamedo / First-Strike (Monk reaction): pre-empts the ENTIRE attack before any hook runs.
+- Layer B — reaction avoidance (Blade Grasp, Arrow Guard, Catch, Reflect): rolls BEFORE the evade
+  bytes; Brave%-triggered; **zeroing evade bytes does NOT stop it.**
+- Layer C — the 4 equipment/class evade bytes (class `+0x4B`, shield `+0x4A`/`+0x4E`, weapon
+  `+0x46`/`+0x47`).
+
+Levers: strip the reaction slot / blank the reaction table (kills A+B); `Evadeable` flag off and/or
+zero the evade bytes / Concentrate (kills C). That a data-disable fully kills A+B is the one remaining
+LIVE validation (predicted yes — Hamedo/Blade Grasp survive zeroed evade bytes by canon).
 
 The forecast hit% display is virtualized (both the % math and the UI draw are VM); no single
 arbitrary-% write exists. Available levers: write target evade-input bytes (real but

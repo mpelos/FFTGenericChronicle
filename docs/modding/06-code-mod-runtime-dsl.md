@@ -953,6 +953,35 @@ If `FlatDamageReduction` is greater than zero it takes precedence
 (`finalDamage = max(0, vanillaDamage - FlatDamageReduction)`); otherwise the proof uses
 `finalDamage = ProofFinalDamage`. A matching `DamageRules` entry overrides both.
 
+## Outcome control hooks (hit↔miss authority) — proven, validation-grade
+
+Beyond the reconciler (which adjusts HP/MP *after* vanilla applies), two native hooks let the mod
+author the hit-vs-evade OUTCOME itself — proven live (2026-06-26) to turn a guaranteed 100%-hit into a
+0-damage "Miss" (`05-reverse-engineering.md` §4, Control recipe; proof
+`work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`). The render and the HP debit are independent paths,
+so a downgraded hit needs BOTH hooks.
+
+- **Pre-clamp staged-debit hook** (`0x30A66F`) — forces/zeros the staged HP debit before vanilla
+  applies it. Settings: `PreClampDamageRewriteEnabled`; `PreClampDamageRewriteForcedDebit` /
+  `…ForcedCredit` (`0` = zero the damage, `-1` = leave); `PreClampDamageRewriteTargetCharId`
+  (`-1` = any target); `PreClampDamageRewriteMinHp` / `…MaxHp` (HP-range guard, default `1`/`9999`);
+  `PreClampDamageRewriteMaxWrites`; `PreClampDamageRewriteLogOnly`.
+- **Result/animation selector hook** (`0x205210`) — sets the evade-type render. Settings:
+  `ResultSelectorControlEnabled`; `ResultSelectorControlForceEvadeType` (enum per 05 §4: `0x04`
+  class-evade / `0x03` shield / `0x02` weapon / `0x01` cloak / `0x06` miss / `0x00` hit);
+  `ResultSelectorControlForceResultCode` (`+0x1BE`: `0` = evade path); `ResultSelectorControlMatchEvadeType`
+  (only act on a record currently showing this type; `0` = a natural hit); `ResultSelectorControlTargetCharId`;
+  `ResultSelectorControlMaxWrites`; `ResultSelectorControlLogOnly`. The probe side
+  (`ResultSelectorProbe*`, RVA `2118160`) logs every selector pass.
+
+**Validation-grade caveat.** The current guards are a *global* `MaxWrites` budget plus
+`TargetCharId` / `MatchEvadeType` filters — fine for single-shot proofs but scenario-fragile (an
+earlier qualifying pass can spend the budget; this is exactly why the first hit→miss attempt failed
+and the second, on a fresh first-action target, passed). The shipping interface will harden to
+**per-action arming** on both hooks plus selector `+0x1BE!=0` gating (skip resting/teardown passes),
+and the force decision will come from the DCL formula output rather than fixed JSON immediates. Until
+then, treat these as proof knobs, not a stable API.
+
 ## What this architecture provides
 
 - arbitrary math in C#;
@@ -963,6 +992,7 @@ If `FlatDamageReduction` is greater than zero it takes precedence
 - C-bounded percent/type armor responses for `swing` / `thrust` / `crush` / `missile` matchups;
 - per-weapon/per-skill damage types;
 - custom global damage scaling and ally/enemy rules;
+- proven hit↔miss / parry / block outcome control via two native hooks (see Outcome control hooks);
 - a foundation for custom MP, status, reaction, and AI/preview patches.
 
 Follow-up layers not owned by the config/DSL: exact damage preview text, AI scoring based on the
