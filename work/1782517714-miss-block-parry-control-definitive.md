@@ -80,7 +80,7 @@ This document resolves 3 and 4 definitively.
 | # | Approach | Verdict | Why |
 |---|---|---|---|
 | 1 | **Force always-hit upstream, then AUTHOR the outcome at our 2 proven hooks** (`0x30A66F` debit + `0x205210` evade-type) | **PRIMARY — VIABLE (HIGH)** | Engine always reaches apply+selector with a hit-shaped record; we then keep it a hit or downgrade to any evade. Never needs the impossible "miss→hit". |
-| 2 | **Deterministic evade-byte extremes** — write target evade bytes to 0/100 per-hit (`0x226F39`), let the engine roll our pre-decided outcome natively | ALTERNATIVE — CONDITIONAL (MED) | all-zero→hit is HIGH; single-source=100→that specific animation is MEDIUM (the source-combine + `+0x1C0` write are in the VM). Most elegant *if* it holds; settle with 1 live test. |
+| 2 | **Deterministic evade-byte extremes** — write target evade bytes to 0/100 per-hit at **`0x30F49C`** (last real instr before the VM roll; target in `rdx=rbx`), let the engine roll our pre-decided outcome natively | ALTERNATIVE — CONDITIONAL (MED) | all-zero→hit is HIGH; single-source=100→that specific animation is MEDIUM (the source-combine + `+0x1C0` write are in the VM). Most elegant *if* it holds; settle with 1 live test. Hook mapped in `input-control-hook-map.md`; **corrects the earlier `0x226F39`** (that is a UI status-panel exporter, not the evade read). |
 | 3 | **Dispatcher category rewrite** (flip `0x300`↔`0x200` at `0x38A6F1`) | **DEAD** | miss→hit applies nothing (no staged damage); hit→miss routes into a VM thunk untested with a damaging record. Adds nothing over the existing hooks. |
 | 4 | Staging-write hook at `0x205B39` (`mov [rdi+0x1C0],ah`) | SUBSUMED | selector-entry hook already lands the value the renderer reads (live-proven). Keep only as fallback if entry proves too early. |
 | 5 | HP-write reconciler + custom overlay (no native animation) | FALLBACK | last resort; loses native dodge/parry/block visuals. Already exists for HP. |
@@ -150,8 +150,12 @@ pre-clamp has `TargetCharId` (`cmp edx,id`) + `MaxWrites` 1..32; selector has `M
    `work/battle-runtime-settings.hit-to-miss-test-v2.json`; proof `work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`.
 2. **Reaction test** — force a hit (`+1C0=0/debit=D`) into a high-Brave Blade Grasp unit and a Hamedo
    Monk. Confirms whether disabling reactions in data is mandatory (predicted: yes — Hamedo pre-empts).
-3. **(Optional) Option-2 test** — hook `0x226F39`, set `+0x4B=100`/others 0 → does it render class-evade
-   0x04? Confirms the deterministic-evade-byte path (the more elegant alternative).
+3. **(Optional) Option-2 test** — hook `0x30F49C` (corrected from `0x226F39`; see
+   `input-control-hook-map.md`), set target `+0x4B=100`/others 0 → does it render class-evade 0x04?
+   Confirms the deterministic-evade-byte path (the more elegant alternative).
+4. **Reaction input-control test** — hook `0x271D20` (defender Brave% roll), force the defender's Brave
+   `+0x2B` → Blade Grasp/Hamedo should not trigger. (No struct reaction-slot exists; Brave is the
+   real-code lever. Otherwise strip reactions in data.)
 
 ## Confidence ledger
 - Architecture (force-always-hit + author at the 2 hooks): **PROVEN LIVE** (2026-06-26 — debit-zero +

@@ -192,6 +192,24 @@ Levers: strip the reaction slot / blank the reaction table (kills A+B); `Evadeab
 zero the evade bytes / Concentrate (kills C). That a data-disable fully kills A+B is the one remaining
 LIVE validation (predicted yes — Hamedo/Blade Grasp survive zeroed evade bytes by canon).
 
+**Input-control alternative — mapped offline 2026-06-26, needs-1-live-test each**
+(`work/input-control-hook-map.md`). Instead of (or with) data-disabling, set the target's avoidance
+INPUTS in real code just before the single VM roll, so the native roll produces our outcome:
+
+- Evade (Layer C): hook **`0x30F49C`** — the last real instruction before the VM roll `0x30FA34`,
+  target in `rdx=rbx` — and write the evade bytes (all `0` → guaranteed hit; one source `=100` → that
+  evade type). **This corrects an earlier anchor: `0x226EBC`/`0x226F39` is a UI status-panel exporter
+  (scratch buffer with no real-code readers), NOT the per-attack evade read.**
+- Reactions (Layers A/B): **there is no reaction-slot byte in the runtime battle struct** — reactions
+  resolve via the VM resolver `0x2BB0D4` from the skillset object, so "strip the reaction slot" above
+  means the DATA (ENTD / JobCommand R/S/M), not a struct write. The runtime lever is **Brave**
+  (`+0x2B`, read in real code at 6 Brave%-roll sites that funnel into VM `0x278EE0`): hook
+  **`0x271D20`** (defender in `rcx=[actor+0x148]`) and force Brave so the trigger can't fire.
+
+The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the one VM call
+`0x30FA34`; real code only hands it the target pointer (`rdx` at `0x30F4A2`). The attacker is never in
+a register on this path — resolve it via the actor array (`actor+0x148`), as the pre-clamp does.
+
 The forecast hit% display is virtualized (both the % math and the UI draw are VM); no single
 arbitrary-% write exists. Available levers: write target evade-input bytes (real but
 quantized), wrap a VM-thunk return at a forecast call site, or draw overlay glyphs.
