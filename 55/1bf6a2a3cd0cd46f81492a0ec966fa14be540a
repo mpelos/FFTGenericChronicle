@@ -1,0 +1,28 @@
+docs/deep-combat-layer/15-job-authoring.md
+  s_a298d5c04f383c::t_d5b5430e8b73f2 181-186
+  s_a298d5c04f383c::t_6503e5551cfb81 87-93
+  s_a298d5c04f383c::t_5174969fb0c7d3 205-208,212-214
+  s_a298d5c04f383c::t_cb9636c7e022a9 125-157
+  s_a298d5c04f383c::t_6efb4555c4c352 1-86,94-106,108,112-113,117-124,158-180,187-204,209-211,215-235
+  s_a298d5c04f383c::t_8053331d477055 107,109-111,114-116
+docs/deep-combat-layer/12-open-questions.md
+  s_a298d5c04f383c::t_c8b939e4a79776 252-262
+docs/deep-combat-layer/00-overview.md
+  s_a298d5c04f383c::t_f91fc490be4aaa 84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "551bf6a2a3cd0cd46f81492a0ec966fa14be540a",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
