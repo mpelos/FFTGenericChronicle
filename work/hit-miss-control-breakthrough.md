@@ -404,3 +404,24 @@ the pre-clamp damage hook (`+0x1C4` at 0x30A66F), the custom formula now owns hi
 damage, while the engine renders natively and owns HP/KO. The hit/miss/block/parry control mandate is
 COMPLETE and live-proven. Investigation AND first-control-implementation are both done; remaining work
 is wiring the force decision to the DCL formula output (not RE).
+
+---
+
+> ## ⚠️ CORRECTION (2026-06-26, later) — "COMPLETE" overstated; see the DEFINITIVE doc
+> The proof above only covers the **easy quadrants**: keep a natural hit, and swap one natural *evade*
+> animation for another (a natural evade already has `+1C4=0`, so no damage coordination was needed).
+> It does **NOT** prove imposing our decision *against* the engine's roll. A 4-investigation RE pass
+> resolved the full problem — see **`work/1782517714-miss-block-parry-control-definitive.md`**:
+> - **Miss → hit is impossible at the dispatcher** (a miss never stages damage; `+0x1C4=0`; the
+>   accuracy gate `0x30FA34` is virtualized). The **dispatcher category-rewrite approach is DEAD.**
+> - **Definitive architecture:** neutralize the engine's *three* avoidance layers in DATA
+>   (Layer A Hamedo pre-empt, Layer B reactions Blade-Grasp/Catch/etc. — neither stopped by zeroing
+>   evade — and Layer C the 4 evade bytes), so every attack lands; then **author the outcome at the two
+>   proven real-code hooks**: pre-clamp `0x30A66F` (force/zero the HP debit via global `[0x186AF70]+6/+8`)
+>   + selector `0x205210` (`+1BE=0`,`+1C0`=evade-type for the animation).
+> - **Hit → miss needs BOTH writes** (the old `{+1C0,+1BE}`-only is render-complete but
+>   damage-incomplete — debit must be zeroed at the pre-clamp; debit and animation are separate paths).
+> - **✅ PROVEN LIVE 2026-06-26:** the decisive test PASSED. A 100%-to-hit Agrias→Ramza attack rendered
+>   as a class-evade "Miss" AND dealt 0 damage (HP 567/567). Both hooks fired on the same hit (pre-clamp
+>   debit 184→0, selector `0x00→0x04`). Profile `work/battle-runtime-settings.hit-to-miss-test-v2.json`;
+>   proof `work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`. See the DEFINITIVE doc's PROVEN banner.
