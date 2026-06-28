@@ -1072,21 +1072,27 @@ then writes our value at copy time, on the same redraw the renderer draws, with 
   this only paints the forecast. The shipping form will feed `PreviewHitPctForcedValue` from the DCL
   formula's (attacker, defender) hit result so the preview matches the real authored odds.
 
-### Forecast DAMAGE preview (number + HP-bar) — ✅ proven live 2026-06-28
+### Forecast HP preview (number + HP-bar)
 
-The forecast **damage** number and the target **HP-bar ghost-depletion** both read one field:
-`obj+0x6 == unit+0x1C4`, the staged HP-damage — the *same* field the pre-clamp (`PreClampDamageRewrite`)
-rewrites to author the real result (RE in §11 of `05`). Control it and preview *and* result agree.
+The forecast HP amount and the target HP-bar ghost both read staged HP fields from the forecast object
+(`obj == target_unit + 0x1BE`):
+
+- damage/debit: `obj+0x6 == unit+0x1C4`, the staged HP-damage;
+- healing/credit: `obj+0x8 == unit+0x1C6`, the staged HP-heal.
+
+These are the same fields the pre-clamp (`PreClampDamageRewrite`) rewrites to author the real result
+(RE in §11 of `05`). Control the matching field and preview *and* result agree.
 Three levers, escalating from robust-but-laggy to clean-but-narrow:
 
-- **`PreviewForecastPoke*` — the universal lever (use this).** A poll-write of `obj+0x6`. Settings:
-  `PreviewForecastPokeEnabled`; `PreviewForecastPokeValue` (staged damage to show; `-1` = off). Each
-  poll it derefs the forecast global, validates the pointer lands in the unit table, and writes the
-  value (structural RVAs `PreviewForecastGlobalRva` `0x2FF3CF8`, `PreviewForecastUnitTableRva`
-  `0x1853CE0`, `…UnitStride` `0x200`, `…ObjOffset` `0x1BE`, `…DamageFieldOffset` `0x6` are overridable).
-  Works for **any** action (physical + magic). Because the panel is retained-mode (drawn once per
-  open, §11), the value shows on the **(re)open** of the preview, not while it is held. Logs the first
-  few writes as `[FORECAST-POKE] obj=… unitIdx=… wrote unit+0x1C4=…`.
+- **`PreviewForecastPoke*` — the universal lever (use this).** A poll-write of the configured forecast
+  amount field. Settings: `PreviewForecastPokeEnabled`; `PreviewForecastPokeValue` (staged amount to
+  show; `-1` = off); `PreviewForecastDamageFieldOffset` (`0x6` for damage/debit, `0x8` for
+  healing/credit). Each poll it derefs the forecast global, validates the pointer lands in the unit
+  table, and writes the value (structural RVAs `PreviewForecastGlobalRva` `0x2FF3CF8`,
+  `PreviewForecastUnitTableRva` `0x1853CE0`, `…UnitStride` `0x200`, `…ObjOffset` `0x1BE` are
+  overridable). Works for **any** action. Because the panel is retained-mode (drawn once per open,
+  §11), the value shows on the **(re)open** of the preview, not while it is held. Logs the first few
+  writes as `[FORECAST-POKE] obj=… unitIdx=… wrote unit+0x1C4=…` or `unit+0x1C6=…`.
 - **`PreviewForecastSource*` — compute-time finalizer hooks (first-open clean).** Force the
   `obj+0x6` store as the engine computes it, so the number+bar are right on the *first* open. Settings:
   `PreviewForecastSourceControlEnabled`; `PreviewForecastSourceForcedValue` (`-1` = observe);
@@ -1102,8 +1108,20 @@ Three levers, escalating from robust-but-laggy to clean-but-narrow:
 **Coherent recipe (proven):** `PreviewForecastPoke` (+ optional `PreviewForecastSource`/`PreviewDamage`)
 authors the preview number+bar, and `PreClampDamageRewrite` at the **correct** RVA `0x30A66F`
 (decimal `3188335` — *not* `3188847`=`0x30A86F`, which silently SKIPs) authors the result; feed both
-the same value and preview == result. Live 2026-06-28: Agrias→Ramza, physical attack AND Fire each
-previewed `11%` / `500` with the bar to ~67 and removed exactly 500 HP.
+the same value and preview == result. For damage, poke `obj+0x6` and force `word[+0x1C4]`; for healing,
+poke `obj+0x8` and force `word[+0x1C6]`. Healing preview uses `+0x1C4=0`, `+0x1C6=heal`, and
+`+0x1E5=0x40`; the ghost refill clamps at MaxHP.
+
+Healing formulas need stricter context gating than damage proofs. Regen-style passive HP credit and
+explicit action healing both arrive as `event.isHealing` over `+0x1C6`; shipping profiles should gate
+on fresh actor/action context or action identity, not only `event.isHealing`. `PreviewForecastPoke` is
+a proof lever until it is armed per selected action/target.
+
+Delayed explicit heals should prefer pending-action context with `action.sourcePending` and
+`action.creditCacheMatch`; the tracker matches the staged `+0x1C6` credit the same way damage uses the
+`+0x1C4` debit. Formula-backed healing profiles should also require the target cache to still be in
+phase zero before queueing a pre-clamp plan, so the authored result-phase credit is not interpreted as
+a fresh formula candidate.
 
 ## What this architecture provides
 
@@ -1119,8 +1137,8 @@ previewed `11%` / `500` with the bar to ~67 and removed exactly 500 HP.
   before the VM roll — Denuvo virtualizes code, not data) and output-control (two native hooks);
 - proven status control (`StatusOverride*`, live-confirmed Undead), reaction control (`BraveOverride*`,
   Brave%-gate), MP control (combined pre-clamp `+0x1C8`/`+0x1CA`), and **full forecast display control —
-  hit-% (`PreviewHitPct*`) and damage number + HP-bar (`PreviewForecastPoke*`), both proven live for
-  physical and magic, coherent with the applied result** — each a working lever, with per-action
+  hit-% (`PreviewHitPct*`) plus HP amount number + HP-bar ghost (`PreviewForecastPoke*`) for damage,
+  magic, and healing actions, coherent with the applied result** — each a working lever, with per-action
   formula-driven arming as the remaining engineering step;
 - a foundation for AI scoring on the custom formula and richer preview/animation patches.
 

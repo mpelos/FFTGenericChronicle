@@ -1,0 +1,51 @@
+{
+  "_note": "Live hot-swap test for coherent healing preview. Writes the forecast object's credit/heal field (obj+0x8 == unit+0x1C6) to 123 while a natural healing preview is open. No result/pre-clamp rewrite is enabled; do not confirm the action.",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "PreviewDamageControlEnabled": false,
+  "PreviewForecastSourceControlEnabled": false,
+  "PreviewForecastPokeEnabled": true,
+  "PreviewForecastPokeValue": 123,
+  "PreviewForecastDamageFieldOffset": 8,
+  "PreviewHitPctControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": false,
+  "PreClampFormulaPlanEnabled": false,
+  "LogPreClampFormulaCandidates": false,
+  "PreClampResolveActorContext": false,
+  "PreClampLogEquipment": false,
+
+  "TrackPendingActions": true,
+  "LogActionStateChanges": true,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 220,
+  "ActionBoundaryProbeDiffMax": 64,
+
+  "LogUnknownFieldDiffs": true,
+  "UnknownDiffStart": 432,
+  "UnknownDiffEnd": 496,
+  "MaxUnknownDiffsPerUnit": 260,
+
+  "LogHpEventProbe": false,
+  "ActorProbeOnEvent": false,
+  "LogPendingActionCandidatesOnEvent": false,
+  "LogImmediateActionCandidatesOnEvent": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+  "LogResolvedRuntimeContext": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+
+  "UnitPollIntervalMs": 10,
+  "MaxTrackedBattleUnits": 64
+}

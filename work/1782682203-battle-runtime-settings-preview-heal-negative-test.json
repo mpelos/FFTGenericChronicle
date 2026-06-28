@@ -1,0 +1,43 @@
+{
+  "_note": "LIVE VISUAL ONLY - preview-as-heal probe. Forces the forecast damage source and display-number paint to two's-complement -100 (0xFF9C / 65436) without changing the real result. Purpose: learn whether writing a signed negative value into obj+0x6 (= unit+0x1C4) makes the forecast render as healing, a huge unsigned number, a weird bar, or no coherent heal at all. Do NOT confirm the action during this probe unless intentionally testing leakage; just open previews and report number/label/color/bar.",
+
+  "PreviewHitPctControlEnabled": false,
+
+  "PreviewDamageControlEnabled": true,
+  "PreviewDamageForcedValue": 65436,
+  "PreviewDamageLogOnly": false,
+
+  "PreviewForecastSourceControlEnabled": true,
+  "PreviewForecastSourceForcedValue": 65436,
+  "PreviewForecastSourceLogOnly": false,
+
+  "PreviewForecastPokeEnabled": false,
+  "PreviewForecastPokeValue": -1,
+
+  "PreClampDamageRewriteEnabled": false,
+  "PreClampFormulaPlanEnabled": false,
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "LogActionStateChanges": true,
+  "LogUnknownFieldDiffs": false,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "PendingActionMaxBatchEvents": 16,
+  "PendingActionStaleMs": 30000,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

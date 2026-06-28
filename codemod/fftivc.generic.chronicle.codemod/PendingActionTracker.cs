@@ -7,6 +7,7 @@ internal sealed record ActionProbeState(
     int PendingTimer,
     int ActionId,
     int ForecastDamage,
+    int ForecastCredit,
     int ForecastCharge,
     int ForecastFlag,
     int PendingFlag2,
@@ -20,6 +21,7 @@ internal sealed record ActionProbeState(
             unit.ReadByte(0x18D),
             unit.ReadUInt16(0x1A2),
             unit.ReadUInt16(0x1C4),
+            unit.ReadUInt16(0x1C6),
             unit.ReadByte(0x1D8),
             unit.ReadByte(0x1E5),
             unit.ReadByte(0x1EF),
@@ -47,6 +49,7 @@ internal sealed record ActionProbeState(
         PendingTimer != 0xFF ||
         ActionId != 0 ||
         ForecastDamage != 0 ||
+        ForecastCredit != 0 ||
         ForecastCharge != 0 ||
         ForecastFlag != 0 ||
         PendingFlag2 != 0 ||
@@ -59,6 +62,7 @@ internal sealed record ActionProbeState(
         PendingTimer,
         ActionId,
         ForecastDamage,
+        ForecastCredit,
         ForecastCharge,
         ForecastFlag,
         PendingFlag2,
@@ -70,10 +74,10 @@ internal sealed record ActionProbeState(
         $"s61={PendingFlag}/t18D={PendingTimer}/act={ActionId}/f1EF={PendingFlag2}";
 
     public string TargetCacheFields =>
-        $"dmg1C4={ForecastDamage}/chg1D8={ForecastCharge}/f1E5={ForecastFlag}/bb={PhaseMarker}";
+        $"dmg1C4={ForecastDamage}/cred1C6={ForecastCredit}/chg1D8={ForecastCharge}/f1E5={ForecastFlag}/bb={PhaseMarker}";
 
     public string AllFields =>
-        $"{PendingFields}/dmg1C4={ForecastDamage}/chg1D8={ForecastCharge}/f1E5={ForecastFlag}" +
+        $"{PendingFields}/dmg1C4={ForecastDamage}/cred1C6={ForecastCredit}/chg1D8={ForecastCharge}/f1E5={ForecastFlag}" +
         $"/b8={ActiveMarker}/ba={ActiveMarker2}/bb={PhaseMarker}";
 }
 
@@ -92,15 +96,23 @@ internal sealed record PendingActionMatch(
     int ObservedHpLoss,
     bool CurrentDamageCacheMatches,
     bool RecentDamageCacheMatches,
+    bool CurrentCreditCacheMatches,
+    bool RecentCreditCacheMatches,
     bool CurrentDamageCacheExactMatches,
     bool RecentDamageCacheExactMatches,
+    bool CurrentCreditCacheExactMatches,
+    bool RecentCreditCacheExactMatches,
     bool CurrentDamageCacheLethalClampMatches,
     bool RecentDamageCacheLethalClampMatches,
     bool HasCurrentTargetMetadata,
     int CurrentTargetCacheDamage,
-    int RecentTargetCacheDamage)
+    int RecentTargetCacheDamage,
+    int CurrentTargetCacheCredit,
+    int RecentTargetCacheCredit)
 {
     public bool HasDamageCacheMatch => CurrentDamageCacheMatches || RecentDamageCacheMatches;
+    public bool HasCreditCacheMatch => CurrentCreditCacheMatches || RecentCreditCacheMatches;
+    public bool HasHpCacheMatch => HasDamageCacheMatch || HasCreditCacheMatch;
 }
 
 internal sealed class PendingActionTracker
@@ -209,7 +221,12 @@ internal sealed class PendingActionTracker
         ActionProbeState targetState,
         RuntimeSettings settings,
         long nowTick)
-        => MatchDamageEvidence(kind, eventIndex, target, targetState, targetState.ForecastDamage, settings, nowTick, consumeBatchEvent: false);
+    {
+        int signedHpLoss = targetState.ForecastDamage > 0
+            ? targetState.ForecastDamage
+            : targetState.ForecastCredit > 0 ? -targetState.ForecastCredit : 0;
+        return MatchDamageEvidence(kind, eventIndex, target, targetState, signedHpLoss, settings, nowTick, consumeBatchEvent: false);
+    }
 
     private PendingActionMatchResult MatchDamageEvidence(
         string kind,
@@ -264,15 +281,21 @@ internal sealed class PendingActionTracker
             cacheEvidence.Confidence,
             best.Score,
             observedHpLoss,
-            cacheEvidence.CurrentMatch,
-            cacheEvidence.RecentMatch,
+            cacheEvidence.CurrentDamageMatch,
+            cacheEvidence.RecentDamageMatch,
+            cacheEvidence.CurrentCreditMatch,
+            cacheEvidence.RecentCreditMatch,
             cacheEvidence.CurrentExactMatch,
             cacheEvidence.RecentExactMatch,
+            cacheEvidence.CurrentCreditMatch,
+            cacheEvidence.RecentCreditMatch,
             cacheEvidence.CurrentLethalClampMatch,
             cacheEvidence.RecentLethalClampMatch,
             cacheEvidence.HasCurrentTargetMetadata,
             cacheEvidence.CurrentDamage,
-            cacheEvidence.RecentDamage);
+            cacheEvidence.RecentDamage,
+            cacheEvidence.CurrentCredit,
+            cacheEvidence.RecentCredit);
         lines.Add(
             $"[PENDING-ACTION-MATCH kind={kind} event={eventIndex} target=0x{target.Ptr:X}/id=0x{target.CharId:X2} " +
             $"resolved=0x{best.Batch.Caster.Ptr:X}/id=0x{best.Batch.Caster.CharId:X2} " +
@@ -315,7 +338,7 @@ internal sealed class PendingActionTracker
         bool touchForContext,
         List<string> lines)
     {
-        bool hasDamageCache = state.ForecastDamage > 0;
+        bool hasDamageCache = state.ForecastDamage > 0 || state.ForecastCredit > 0;
         if (hasDamageCache)
         {
             string key = state.TargetCacheFields;
@@ -428,9 +451,9 @@ internal sealed class PendingActionTracker
     private static int Score(ResolvingActionBatch batch, TargetCacheEvidence cacheEvidence, long nowTick)
     {
         int score = 100_000 - Math.Clamp(AgeMs(nowTick, batch.OpenTick), 0, 100_000);
-        if (cacheEvidence.CurrentMatch)
+        if (cacheEvidence.HasCurrentMatch)
             score += 1_000_000;
-        else if (cacheEvidence.RecentMatch)
+        else if (cacheEvidence.HasRecentMatch)
             score += 500_000;
         else if (cacheEvidence.HasCurrentTargetMetadata)
             score += 10_000;
@@ -446,12 +469,18 @@ internal sealed class PendingActionTracker
     {
         string current = targetState?.TargetCacheFields ?? "targetCache=unavailable";
         int currentDamage = targetState?.ForecastDamage ?? 0;
+        int currentCredit = targetState?.ForecastCredit ?? 0;
         bool currentExactMatch = targetState is not null &&
                                  targetState.ForecastDamage > 0 &&
                                  targetState.ForecastDamage == observedHpLoss;
+        bool currentCreditExactMatch = targetState is not null &&
+                                       targetState.ForecastCredit > 0 &&
+                                       observedHpLoss < 0 &&
+                                       targetState.ForecastCredit == -observedHpLoss;
         bool currentLethalClampMatch = targetState is not null &&
                                        IsLethalClampDamageCacheMatch(target.Hp, observedHpLoss, targetState.ForecastDamage);
-        bool currentMatch = currentExactMatch || currentLethalClampMatch;
+        bool currentDamageMatch = currentExactMatch || currentLethalClampMatch;
+        bool currentMatch = currentDamageMatch || currentCreditExactMatch;
         bool hasCurrentMetadata = targetState is not null &&
                                   (targetState.ForecastCharge != 0 ||
                                    targetState.ForecastFlag != 0 ||
@@ -459,9 +488,12 @@ internal sealed class PendingActionTracker
 
         int staleMs = Math.Clamp(settings.PendingActionStaleMs, 1, 300_000);
         bool recentMatch = false;
+        bool recentDamageMatch = false;
         bool recentExactMatch = false;
+        bool recentCreditExactMatch = false;
         bool recentLethalClampMatch = false;
         int recentDamage = 0;
+        int recentCredit = 0;
         string recent = "recentCache=none";
         if (_targetCacheByUnit.TryGetValue(target.Ptr, out var cache))
         {
@@ -471,26 +503,42 @@ internal sealed class PendingActionTracker
             recentExactMatch = recentEnough &&
                                cache.LastState.ForecastDamage > 0 &&
                                cache.LastState.ForecastDamage == observedHpLoss;
+            recentCreditExactMatch = recentEnough &&
+                                     cache.LastState.ForecastCredit > 0 &&
+                                     observedHpLoss < 0 &&
+                                     cache.LastState.ForecastCredit == -observedHpLoss;
             recentLethalClampMatch = recentEnough &&
                                      IsLethalClampDamageCacheMatch(target.Hp, observedHpLoss, cache.LastState.ForecastDamage);
-            recentMatch = recentExactMatch || recentLethalClampMatch;
+            recentDamageMatch = recentExactMatch || recentLethalClampMatch;
+            recentMatch = recentDamageMatch || recentCreditExactMatch;
             recentDamage = cache.LastState.ForecastDamage;
+            recentCredit = cache.LastState.ForecastCredit;
             recent = $"recentCache={cache.LastState.TargetCacheFields}/lastSeenAge={lastSeenAge}ms" +
                      (clearAge >= 0 ? $"/clearAge={clearAge}ms" : "/clearAge=live") +
-                     $"/match={(recentMatch ? 1 : 0)}/exact={(recentExactMatch ? 1 : 0)}/lethalClamp={(recentLethalClampMatch ? 1 : 0)}";
+                     $"/match={(recentMatch ? 1 : 0)}/dmgExact={(recentExactMatch ? 1 : 0)}" +
+                     $"/creditExact={(recentCreditExactMatch ? 1 : 0)}/lethalClamp={(recentLethalClampMatch ? 1 : 0)}";
         }
 
         string confidence = currentExactMatch
             ? "damage-cache"
-            : recentExactMatch
-                ? "recent-damage-cache"
-                : currentLethalClampMatch
-                    ? "damage-cache-lethal-clamp"
-                    : recentLethalClampMatch
-                        ? "recent-damage-cache-lethal-clamp"
-                        : "recent-resolve";
-        string details = $"currentCache={current}/match={(currentMatch ? 1 : 0)}/exact={(currentExactMatch ? 1 : 0)}/lethalClamp={(currentLethalClampMatch ? 1 : 0)} {recent}";
+            : currentCreditExactMatch
+                ? "credit-cache"
+                : recentExactMatch
+                    ? "recent-damage-cache"
+                    : recentCreditExactMatch
+                        ? "recent-credit-cache"
+                        : currentLethalClampMatch
+                            ? "damage-cache-lethal-clamp"
+                            : recentLethalClampMatch
+                                ? "recent-damage-cache-lethal-clamp"
+                                : "recent-resolve";
+        string details = $"currentCache={current}/match={(currentMatch ? 1 : 0)}/dmgExact={(currentExactMatch ? 1 : 0)}" +
+                         $"/creditExact={(currentCreditExactMatch ? 1 : 0)}/lethalClamp={(currentLethalClampMatch ? 1 : 0)} {recent}";
         return new TargetCacheEvidence(
+            currentDamageMatch,
+            recentDamageMatch,
+            currentCreditExactMatch,
+            recentCreditExactMatch,
             currentMatch,
             recentMatch,
             currentExactMatch,
@@ -501,7 +549,9 @@ internal sealed class PendingActionTracker
             confidence,
             details,
             currentDamage,
-            recentDamage);
+            recentDamage,
+            currentCredit,
+            recentCredit);
     }
 
     private static bool IsLethalClampDamageCacheMatch(int currentHp, int observedHpLoss, int cachedDamage)
@@ -564,8 +614,12 @@ internal sealed class PendingActionTracker
     }
 
     private sealed record TargetCacheEvidence(
-        bool CurrentMatch,
-        bool RecentMatch,
+        bool CurrentDamageMatch,
+        bool RecentDamageMatch,
+        bool CurrentCreditMatch,
+        bool RecentCreditMatch,
+        bool HasCurrentMatch,
+        bool HasRecentMatch,
         bool CurrentExactMatch,
         bool RecentExactMatch,
         bool CurrentLethalClampMatch,
@@ -574,7 +628,9 @@ internal sealed class PendingActionTracker
         string Confidence,
         string Details,
         int CurrentDamage,
-        int RecentDamage);
+        int RecentDamage,
+        int CurrentCredit,
+        int RecentCredit);
 
     private sealed class ResolvingActionBatch
     {

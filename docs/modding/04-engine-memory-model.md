@@ -188,8 +188,8 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 | `+0x1BB` | hit/phase marker (`bb`) | **Proven** | `0x02` on damage-apply (hit), `0x01` on an evade |
 | `+0x1BE` | staged-result-present | **Proven** | `0x01` = damage result staged, `0x00` = evade / no-damage |
 | `+0x1C0` | EVADE-TYPE (animation lever) | **Proven** | see enum below |
-| `+0x1C4` | forecast damage / staged HP-debit / target cache | **Proven**, context-dependent | also "staged DAMAGE (word)" at apply |
-| `+0x1C6` | staged HP-HEAL | **Proven** | apply: `newHP = clamp(HP + heal - dmg)` |
+| `+0x1C4` | forecast HP-debit / staged HP-debit / target cache | **Proven**, context-dependent | damage preview number + ghost depletion; also "staged DAMAGE (word)" at apply |
+| `+0x1C6` | forecast HP-credit / staged HP-credit / target cache | **Proven**, context-dependent | healing preview number + ghost refill; apply: `newHP = clamp(HP + heal - dmg)` |
 | `+0x1C8` | staged MP-debit (word) | **Strong** (static-proven) | MP analogue of `+0x1C4` |
 | `+0x1CA` | staged MP-credit (word) | **Strong** | apply: `newMP = clamp(MP + 0x1CA - 0x1C8)` |
 | `+0x1D8` | forecast / charge / target metadata | **Strong** | charge/forecast value (word) |
@@ -228,18 +228,20 @@ so writing them drives the result and the native animation):
         0x04 class evade ("Miss") | 0x06 plain miss (failed accuracy roll, e.g. Steal)
         0x0B Blade Grasp (reaction; live-observed)
         (0x05 / 0x07–0x0A are unobserved gaps, likely unused)
-+0x1C4  staged HP-DMG (word)   +0x1C6  staged HP-HEAL (word)   apply: newHP = clamp(HP + heal - dmg)
++0x1C4  forecast/staged HP-DMG (word)   +0x1C6  forecast/staged HP-HEAL (word)
+        apply: newHP = clamp(HP + heal - dmg)
 +0x1C8  staged MP-DEBIT (word) +0x1CA  staged MP-CREDIT (word)  apply: newMP = clamp(MP + 0x1CA - 0x1C8)
 +0x1D8  charge/forecast value (word)
 +0x1E5  resultKind bits: 0x80 damage | 0x40 heal | 0x10 heal/MP | 0x08 status | 0x01 stat-change | 0x20 special
 ```
 
-A HIT shows `+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80`. An EVADE shows `+1BB=01 +1BE=00 +1C4=0`, and the
-evade variants differ ONLY in `+0x1C0` (e.g. `0x01` cloak vs `0x03` shield). `+0x1E5` is orthogonal
-to hit-vs-evade: it carries the action's effect-kind, so it is `0x00` for a basic-attack evade but
-stays nonzero when an evaded ability still carries an effect (an evaded equipment-break keeps
-`+1E5=0x01`). The detailed RE recipe and anchors for driving this surface live in
-`05-reverse-engineering.md`.
+A damage hit shows `+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80`. A healing result shows `+1C4=0`,
+`+1C6=heal`, and `+1E5=0x40`; the forecast HP bar refills from `+0x1C6` and clamps at MaxHP. An
+EVADE shows `+1BB=01 +1BE=00 +1C4=0`, and the evade variants differ ONLY in `+0x1C0` (e.g. `0x01`
+cloak vs `0x03` shield). `+0x1E5` is orthogonal to hit-vs-evade: it carries the action's effect-kind,
+so it is `0x00` for a basic-attack evade but stays nonzero when an evaded ability still carries an
+effect (an evaded equipment-break keeps `+1E5=0x01`). The detailed RE recipe and anchors for driving
+this surface live in `05-reverse-engineering.md`.
 
 This is the **output-control** surface (write the result after the roll). There is now a cleaner,
 ✅ **proven primary**: **input-control** — write the defender's evade bytes (`+0x46/+0x47/+0x4A/+0x4B/
@@ -256,6 +258,15 @@ different phases:
   rewrite;
 - for AoE, secondary targets may not show forecast damage there, but do get staged damage at final
   HP application.
+
+Important nuance on `+0x1C6`: it is the HP-credit twin of `+0x1C4`. During forecast, it holds preview
+healing for the selected/primary target and drives both the green healing number and the HP-bar ghost
+refill. Around resolution, it holds staged healing for the actual HP-write target. The forecast object
+alias is `target_unit + 0x1BE`, so `obj+0x8 == unit+0x1C6`.
+
+`+0x1C6` is not exclusive to explicit healing spells/items. Passive or side-effect healing, including
+Regen-style HP credit, also uses the same staged-credit surface. Formula control therefore must gate
+healing rewrites by action context/effect identity; a generic "any HP-credit event" rule is too broad.
 
 ### 2.4 Preview Hit-% UI Buffer — **Proven** (DCL Layer 1, visual)
 
@@ -521,7 +532,7 @@ The pending-tracker implementation model:
 track pending caster/action while it exists (s61=8, act!=0, f1EF=8, timer not idle)
 -> when caster transitions pending -> cleared with same act, mark action as resolving briefly
 -> attach near-term HP events to that resolving action batch
--> target = each HP-write target; dmg1C4 is a validation signal
+-> target = each HP-write target; dmg1C4 validates damage and cred1C6 validates healing
 ```
 
 Hard open problem: with multiple simultaneous pending actions, which one is resolving for a given HP
@@ -529,6 +540,12 @@ event? The robust answer is the actor array (§3) or a richer pending table with
 selected unit/tile/epicenter, and batch timing. Wait remains a negative control — it changes
 current-turn/CT state and may clear a unit's own target-local forecast fields, but it does not erase
 the caster's pending-action state, separating action ownership from current active unit.
+
+For healing, the same pending tracker uses `+0x1C6` as a credit-cache match. A delayed explicit heal
+can therefore resolve as `source=pending-clear` with `credit-cache`, giving formulas a real caster and
+target without CT. Phase/result markers still matter: after a staged rewrite, `+0x1C6` may reflect the
+authored credit during result phase, so formula-plan profiles should avoid queueing new plans from
+post-apply target-cache echoes.
 
 ## 6. Damage → Clamp → KO Path — **Proven**
 

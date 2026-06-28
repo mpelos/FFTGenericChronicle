@@ -182,8 +182,8 @@ lethal damage in the same hit — with a post-damage reconciler as fallback, rat
 virtualized routine directly. **Accuracy/avoidance is also Tier-2-controllable** (not a data field):
 hit/miss/block/parry by writing the defender's live evade bytes (input-control) or repainting the
 result selector (output-control); status, reactions (Brave), MP, and the full forecast display
-(hit-%, damage number + HP-bar — the `obj+0x6`==`unit+0x1C4` staged-damage field, coherent with the
-applied result) are likewise code-mod levers. The reverse-engineering picture is in `05-reverse-engineering.md`; the
+(hit-%, HP amount number + HP-bar ghost — `obj+0x6`==`unit+0x1C4` for damage, `obj+0x8`==`unit+0x1C6`
+for healing, coherent with the applied result) are likewise code-mod levers. The reverse-engineering picture is in `05-reverse-engineering.md`; the
 code-mod runtime, formula DSL, and control levers are in `06-code-mod-runtime-dsl.md`.
 
 **Plan for Generic Chronicle:** ~90% via Tier 1 (repoint formulas, retune X/Y/element/status,

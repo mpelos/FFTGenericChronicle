@@ -1931,9 +1931,10 @@ public class Mod : ModBase
 
     private int PollIntervalMs => Math.Clamp(_settings.UnitPollIntervalMs, 1, 1000);
 
-    // FORECAST PREVIEW POKE — the UNIVERSAL preview-damage lever (proven live 2026-06-28 for physical AND
-    // magic). The forecast "object" pointed to by global 0x142FF3CF8 is just target_unit+0x1BE, so obj+0x6
-    // == unit+0x1C4 == the staged-damage field that drives BOTH the on-screen number and the HP-bar ghost.
+    // FORECAST PREVIEW POKE — the universal preview HP-amount lever. The forecast "object" pointed to by
+    // global 0x142FF3CF8 is just target_unit+0x1BE, so obj+0x6 == unit+0x1C4 is the staged damage/debit
+    // field and obj+0x8 == unit+0x1C6 is the staged heal/credit field. The selected field drives BOTH the
+    // on-screen number and the HP-bar ghost.
     // The engine computes obj+6 ONCE per preview (does NOT rewrite per-frame — proven 300/300 writes stuck),
     // so a 20ms poll-write holds our value; number + bar both follow it. This supersedes the finalizer hooks
     // (which only covered some action types) and the cosmetic display-number paint. Safe: we only write when
@@ -2813,9 +2814,9 @@ public class Mod : ModBase
                 LogImmediateActionCandidatesIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, actionProbeState, prev, hp, signedDamage, nowTick);
                 PendingActionMatch? pendingCandidate = null;
                 PendingActionMatch? pendingMatch = null;
-                if (signedDamage > 0 && RefreshPendingActionTrackerForEvent(nowTick))
+                if (signedDamage != 0 && RefreshPendingActionTrackerForEvent(nowTick))
                     needsFlush = true;
-                if (signedDamage > 0)
+                if (signedDamage != 0)
                 {
                     var pendingResult = MatchPendingActionIfEnabled(eventTag.ToLowerInvariant(), eventIndex, target, actionProbeState, signedDamage, nowTick);
                     pendingCandidate = pendingResult.Match;
@@ -2847,7 +2848,7 @@ public class Mod : ModBase
                     {
                         string rejected = pendingCandidate is null
                             ? ""
-                            : $"pendingRejected=batch={pendingCandidate.BatchId}/act={pendingCandidate.ActionId}/confidence={pendingCandidate.Confidence}/reason=no-damage-cache-match ";
+                            : $"pendingRejected=batch={pendingCandidate.BatchId}/act={pendingCandidate.ActionId}/confidence={pendingCandidate.Confidence}/reason=no-hp-cache-match ";
                         Line($"[CTX ptr=0x{unitPtr:X} id=0x{id:X2}] {resolved} {rejected}{fallbackAttacker.Summary}");
                     }
                 }
@@ -3728,6 +3729,7 @@ public class Mod : ModBase
             int pendingTimer = unit.ReadByte(0x18D);
             int actionId = unit.ReadUInt16(0x1A2);
             int forecastDamage = unit.ReadUInt16(0x1C4);
+            int forecastCredit = unit.ReadUInt16(0x1C6);
             int forecastCharge = unit.ReadByte(0x1D8);
             int forecastFlag = unit.ReadByte(0x1E5);
             int pendingFlag2 = unit.ReadByte(0x1EF);
@@ -3739,6 +3741,7 @@ public class Mod : ModBase
                 pendingTimer != 0xFF ||
                 actionId != 0 ||
                 forecastDamage != 0 ||
+                forecastCredit != 0 ||
                 forecastCharge != 0 ||
                 forecastFlag != 0 ||
                 pendingFlag2 != 0 ||
@@ -3749,7 +3752,7 @@ public class Mod : ModBase
             parts.Add(
                 $"0x{ptr:X}/id=0x{unit.CharId:X2}/hp={unit.Hp}/ct={unit.Ct}" +
                 $"/s61={pendingFlag}/t18D={pendingTimer}/act={actionId}" +
-                $"/dmg1C4={forecastDamage}/chg1D8={forecastCharge}/f1E5={forecastFlag}" +
+                $"/dmg1C4={forecastDamage}/cred1C6={forecastCredit}/chg1D8={forecastCharge}/f1E5={forecastFlag}" +
                 $"/f1EF={pendingFlag2}/b8={activeMarker}/bb={phaseMarker}");
         }
 
@@ -3831,7 +3834,7 @@ public class Mod : ModBase
             if (!TryReadActionProbeSnapshot(ptr, expectedId, out var target, out var targetState))
                 continue;
             TrackActionProbeAges(ptr, targetState, nowTick);
-            if (targetState.ForecastDamage <= 0)
+            if (targetState.ForecastDamage <= 0 && targetState.ForecastCredit <= 0)
                 continue;
 
             if (LogPreClampFormulaCandidateIfEnabled(target, targetState, nowTick))
@@ -3849,7 +3852,7 @@ public class Mod : ModBase
         if ((!canLogCandidate && !canQueuePlan) || !_settings.TrackPendingActions)
             return false;
 
-        if (targetState.ForecastDamage <= 0)
+        if (targetState.ForecastDamage <= 0 && targetState.ForecastCredit <= 0)
         {
             _lastPreClampFormulaCandidateKey.Remove(target.Ptr);
             return false;
@@ -3887,13 +3890,17 @@ public class Mod : ModBase
             : immediateMatch is not null
                 ? new PreClampFormulaPlanContext("immediate-action", immediateMatch.State.ActionId, -1)
                 : null;
-        int syntheticCurrentHp = Math.Max(0, target.Hp - targetState.ForecastDamage);
-        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, targetState.ForecastDamage);
+        int stagedHpDelta = targetState.ForecastCredit > 0 && targetState.ForecastDamage <= 0
+            ? targetState.ForecastCredit
+            : -targetState.ForecastDamage;
+        int syntheticCurrentHp = Math.Clamp(target.Hp + stagedHpDelta, 0, target.MaxHp);
+        int stagedVanillaDamage = target.Hp - syntheticCurrentHp;
+        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, stagedVanillaDamage);
         var stagedEvent = new DamageEvent(
             target,
             target.Hp,
             syntheticCurrentHp,
-            targetState.ForecastDamage,
+            stagedVanillaDamage,
             attackerUnit,
             attackerSource,
             actionSignal,
@@ -3909,6 +3916,7 @@ public class Mod : ModBase
             planContext?.Source ?? "none",
             attackerKey,
             targetState.ForecastDamage,
+            targetState.ForecastCredit,
             formulaResult.ShouldRewrite ? "1" : "0",
             formulaResult.FinalDamage,
             formulaResult.RuleName);
@@ -3919,10 +3927,13 @@ public class Mod : ModBase
         _lastPreClampFormulaCandidateKey[target.Ptr] = key;
         int forcedDebit = formulaResult.ShouldRewrite && stagedEvent.IsDamage
             ? Math.Clamp(formulaResult.FinalDamage, 0, 9999)
-            : targetState.ForecastDamage;
+            : stagedEvent.IsHealing ? 0 : targetState.ForecastDamage;
+        int forcedCredit = formulaResult.ShouldRewrite && stagedEvent.IsHealing
+            ? Math.Clamp(-formulaResult.FinalDamage, 0, 9999)
+            : stagedEvent.IsDamage ? 0 : targetState.ForecastCredit;
         bool shouldQueuePlan = canQueuePlan &&
                                formulaResult.ShouldRewrite &&
-                               stagedEvent.IsDamage &&
+                               (stagedEvent.IsDamage || stagedEvent.IsHealing) &&
                                (!_settings.PreClampFormulaPlanRequirePhaseZero || targetState.PhaseMarker == 0);
         bool queuedPlan = shouldQueuePlan &&
                           TryQueuePreClampFormulaPlan(
@@ -3930,9 +3941,9 @@ public class Mod : ModBase
                               target,
                               planContext,
                               targetState.ForecastDamage,
-                              oldCredit: 0,
+                              targetState.ForecastCredit,
                               forcedDebit,
-                              forcedCredit: 0,
+                              forcedCredit,
                               nowTick);
 
         if (!canLogCandidate)
@@ -3955,7 +3966,8 @@ public class Mod : ModBase
             : $"immediate=0x{immediateMatch.Unit.Ptr:X}/id=0x{immediateMatch.Unit.CharId:X2}/act={immediateMatch.State.ActionId}/score={immediateMatch.Score.Score}/runnerUp={immediateMatch.RunnerUpScore}/margin={immediateMatch.Margin}/currentActive={(immediateMatch.Score.CurrentActiveAction ? 1 : 0)}/actionAge={immediateMatch.ActionIdAgeMs}ms/activeAge={immediateMatch.ActiveActionAgeMs}ms";
         Line(
             $"[PRECLAMP-FORMULA-CANDIDATE event={eventIndex} ptr=0x{target.Ptr:X} id=0x{target.CharId:X2} " +
-            $"hp={target.Hp}/{target.MaxHp} oldDebit={targetState.ForecastDamage} forcedDebit={forcedDebit} " +
+            $"hp={target.Hp}/{target.MaxHp} oldDebit={targetState.ForecastDamage} oldCredit={targetState.ForecastCredit} " +
+            $"forcedDebit={forcedDebit} forcedCredit={forcedCredit} eventKind={(stagedEvent.IsHealing ? "healing" : stagedEvent.IsDamage ? "damage" : "other")} " +
             $"shouldStage={(formulaResult.ShouldRewrite ? 1 : 0)} queuedPlan={(queuedPlan ? 1 : 0)} rule={formulaResult.RuleName} " +
             $"attacker={attacker} source={attackerSource} {pending} {immediate} now={nowTick} action={targetState.AllFields}]");
         if (_settings.LogResolvedRuntimeContext && !string.IsNullOrWhiteSpace(formulaResult.Trace))
@@ -3968,6 +3980,9 @@ public class Mod : ModBase
         int targetCacheDamage = match.CurrentTargetCacheDamage > 0
             ? match.CurrentTargetCacheDamage
             : match.RecentTargetCacheDamage;
+        int targetCacheCredit = match.CurrentTargetCacheCredit > 0
+            ? match.CurrentTargetCacheCredit
+            : match.RecentTargetCacheCredit;
         var variables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         {
             ["signal"] = match.ActionId,
@@ -3980,14 +3995,25 @@ public class Mod : ModBase
             ["score"] = match.Score,
             ["observedHpLoss"] = match.ObservedHpLoss,
             ["targetCacheDamage"] = targetCacheDamage,
+            ["targetCacheCredit"] = targetCacheCredit,
+            ["targetCacheHealing"] = targetCacheCredit,
+            ["targetCacheAmount"] = targetCacheCredit > 0 && targetCacheDamage <= 0 ? targetCacheCredit : targetCacheDamage,
             ["currentTargetCacheDamage"] = match.CurrentTargetCacheDamage,
+            ["currentTargetCacheCredit"] = match.CurrentTargetCacheCredit,
             ["recentTargetCacheDamage"] = match.RecentTargetCacheDamage,
+            ["recentTargetCacheCredit"] = match.RecentTargetCacheCredit,
             ["damageCacheMatch"] = match.CurrentDamageCacheMatches || match.RecentDamageCacheMatches ? 1 : 0,
             ["currentDamageCacheMatch"] = match.CurrentDamageCacheMatches ? 1 : 0,
             ["recentDamageCacheMatch"] = match.RecentDamageCacheMatches ? 1 : 0,
+            ["creditCacheMatch"] = match.CurrentCreditCacheMatches || match.RecentCreditCacheMatches ? 1 : 0,
+            ["currentCreditCacheMatch"] = match.CurrentCreditCacheMatches ? 1 : 0,
+            ["recentCreditCacheMatch"] = match.RecentCreditCacheMatches ? 1 : 0,
             ["exactDamageCacheMatch"] = match.CurrentDamageCacheExactMatches || match.RecentDamageCacheExactMatches ? 1 : 0,
             ["currentExactDamageCacheMatch"] = match.CurrentDamageCacheExactMatches ? 1 : 0,
             ["recentExactDamageCacheMatch"] = match.RecentDamageCacheExactMatches ? 1 : 0,
+            ["exactCreditCacheMatch"] = match.CurrentCreditCacheExactMatches || match.RecentCreditCacheExactMatches ? 1 : 0,
+            ["currentExactCreditCacheMatch"] = match.CurrentCreditCacheExactMatches ? 1 : 0,
+            ["recentExactCreditCacheMatch"] = match.RecentCreditCacheExactMatches ? 1 : 0,
             ["lethalClampDamageCacheMatch"] = match.CurrentDamageCacheLethalClampMatches || match.RecentDamageCacheLethalClampMatches ? 1 : 0,
             ["currentLethalClampDamageCacheMatch"] = match.CurrentDamageCacheLethalClampMatches ? 1 : 0,
             ["recentLethalClampDamageCacheMatch"] = match.RecentDamageCacheLethalClampMatches ? 1 : 0,
@@ -4045,7 +4071,7 @@ public class Mod : ModBase
                     stateAgeMs,
                     seenAgeMs,
                     ctDropAgeMs,
-                    state.ForecastDamage,
+                    Math.Max(state.ForecastDamage, state.ForecastCredit),
                     actionIdAgeMs,
                     activeActionAgeMs)
                 {
@@ -4114,7 +4140,7 @@ public class Mod : ModBase
                 .Select(candidate => candidate.Text));
         candidateLine =
             $"[PRECLAMP-IMMEDIATE-CANDIDATES target=0x{target.Ptr:X}/id=0x{target.CharId:X2} " +
-            $"oldDebit={targetState.ForecastDamage} minScore={minScore} minMargin={minMargin} maxAgeMs={maxAgeMs} " +
+            $"oldDebit={targetState.ForecastDamage} oldCredit={targetState.ForecastCredit} minScore={minScore} minMargin={minMargin} maxAgeMs={maxAgeMs} " +
             $"requireFreshActive={(_settings.PreClampImmediateActionRequireFreshActive ? 1 : 0)} {selected}] {body}";
         return best;
     }
@@ -4144,17 +4170,26 @@ public class Mod : ModBase
             ["pendingFlag2"] = match.State.PendingFlag2,
             ["pendingTimer"] = match.State.PendingTimer,
             ["targetCacheDamage"] = targetState.ForecastDamage,
+            ["targetCacheCredit"] = targetState.ForecastCredit,
+            ["targetCacheHealing"] = targetState.ForecastCredit,
+            ["targetCacheAmount"] = targetState.ForecastCredit > 0 && targetState.ForecastDamage <= 0
+                ? targetState.ForecastCredit
+                : targetState.ForecastDamage,
             ["currentTargetCacheDamage"] = targetState.ForecastDamage,
+            ["currentTargetCacheCredit"] = targetState.ForecastCredit,
             ["recentTargetCacheDamage"] = 0,
+            ["recentTargetCacheCredit"] = 0,
             ["damageCacheMatch"] = targetState.ForecastDamage > 0 ? 1 : 0,
             ["currentDamageCacheMatch"] = targetState.ForecastDamage > 0 ? 1 : 0,
+            ["creditCacheMatch"] = targetState.ForecastCredit > 0 ? 1 : 0,
+            ["currentCreditCacheMatch"] = targetState.ForecastCredit > 0 ? 1 : 0,
             ["hasCurrentTargetMetadata"] = targetState.ForecastCharge != 0 || targetState.ForecastFlag != 0 || targetState.PhaseMarker != 0 ? 1 : 0,
         };
         return new ActionSignal($"immediate-action-{match.State.ActionId}", "immediate-action", variables);
     }
 
     private static bool ShouldUsePendingActionMatch(PendingActionMatch? match)
-        => match is not null && match.HasDamageCacheMatch;
+        => match is not null && match.HasHpCacheMatch;
 
     private static int ClampFormulaInt(long value)
     {
@@ -4213,7 +4248,7 @@ public class Mod : ModBase
         Line(
             $"[ACTION-STATE ptr=0x{unitPtr:X} id=0x{unit.CharId:X2} now={nowTick} touch={(touchForContext ? 1 : 0)}] " +
             $"hp={unit.Hp} ct={unit.Ct} s61={state.PendingFlag} t18D={state.PendingTimer} act={state.ActionId} " +
-            $"dmg1C4={state.ForecastDamage} chg1D8={state.ForecastCharge} f1E5={state.ForecastFlag} f1EF={state.PendingFlag2} " +
+            $"dmg1C4={state.ForecastDamage} cred1C6={state.ForecastCredit} chg1D8={state.ForecastCharge} f1E5={state.ForecastFlag} f1EF={state.PendingFlag2} " +
             $"b8={state.ActiveMarker} ba={state.ActiveMarker2} bb={state.PhaseMarker}");
         return true;
     }
@@ -4264,11 +4299,14 @@ public class Mod : ModBase
         int currHp = ReadUInt16Raw(currentRaw, 0x30);
         int prevDamage = ReadUInt16Raw(previousRaw, 0x1C4);
         int currDamage = ReadUInt16Raw(currentRaw, 0x1C4);
+        int prevCredit = ReadUInt16Raw(previousRaw, 0x1C6);
+        int currCredit = ReadUInt16Raw(currentRaw, 0x1C6);
         int prevAction = ReadUInt16Raw(previousRaw, 0x1A2);
         int currAction = ReadUInt16Raw(currentRaw, 0x1A2);
 
         if (prevHp != currHp) reasons.Add(currHp == 0 && prevHp > 0 ? "hp-zero" : "hp-change");
         if (prevDamage != currDamage) reasons.Add("forecast-damage-change");
+        if (prevCredit != currCredit) reasons.Add("forecast-credit-change");
         if (prevAction != currAction) reasons.Add("action-id-change");
         if (ReadByteRaw(previousRaw, 0x1D8) != ReadByteRaw(currentRaw, 0x1D8)) reasons.Add("forecast-charge-change");
         if (ReadByteRaw(previousRaw, 0x1E5) != ReadByteRaw(currentRaw, 0x1E5)) reasons.Add("forecast-flag-change");
@@ -4296,6 +4334,7 @@ public class Mod : ModBase
         => $"hp={ReadUInt16Raw(raw, 0x30)}/ct={ReadByteRaw(raw, 0x41)}" +
            $"/s61={ReadByteRaw(raw, 0x61)}/t18D={ReadByteRaw(raw, 0x18D)}" +
            $"/act={ReadUInt16Raw(raw, 0x1A2)}/dmg1C4={ReadUInt16Raw(raw, 0x1C4)}" +
+           $"/cred1C6={ReadUInt16Raw(raw, 0x1C6)}" +
            $"/chg1D8={ReadByteRaw(raw, 0x1D8)}/f1E5={ReadByteRaw(raw, 0x1E5)}" +
            $"/f1EF={ReadByteRaw(raw, 0x1EF)}/b8={ReadByteRaw(raw, 0x1B8)}" +
            $"/ba={ReadByteRaw(raw, 0x1BA)}/bb={ReadByteRaw(raw, 0x1BB)}";
@@ -5733,14 +5772,25 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.score", action?.Get("score") ?? 0);
         context.Set($"{prefix}.observedHpLoss", action?.Get("observedHpLoss") ?? 0);
         context.Set($"{prefix}.targetCacheDamage", action?.Get("targetCacheDamage") ?? 0);
+        context.Set($"{prefix}.targetCacheCredit", action?.Get("targetCacheCredit") ?? 0);
+        context.Set($"{prefix}.targetCacheHealing", action?.Get("targetCacheHealing") ?? 0);
+        context.Set($"{prefix}.targetCacheAmount", action?.Get("targetCacheAmount") ?? 0);
         context.Set($"{prefix}.currentTargetCacheDamage", action?.Get("currentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.currentTargetCacheCredit", action?.Get("currentTargetCacheCredit") ?? 0);
         context.Set($"{prefix}.recentTargetCacheDamage", action?.Get("recentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.recentTargetCacheCredit", action?.Get("recentTargetCacheCredit") ?? 0);
         context.Set($"{prefix}.damageCacheMatch", action?.Get("damageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentDamageCacheMatch", action?.Get("currentDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentDamageCacheMatch", action?.Get("recentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.creditCacheMatch", action?.Get("creditCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentCreditCacheMatch", action?.Get("currentCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentCreditCacheMatch", action?.Get("recentCreditCacheMatch") ?? 0);
         context.Set($"{prefix}.exactDamageCacheMatch", action?.Get("exactDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentExactDamageCacheMatch", action?.Get("currentExactDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentExactDamageCacheMatch", action?.Get("recentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.exactCreditCacheMatch", action?.Get("exactCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentExactCreditCacheMatch", action?.Get("currentExactCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentExactCreditCacheMatch", action?.Get("recentExactCreditCacheMatch") ?? 0);
         context.Set($"{prefix}.lethalClampDamageCacheMatch", action?.Get("lethalClampDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentLethalClampDamageCacheMatch", action?.Get("currentLethalClampDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentLethalClampDamageCacheMatch", action?.Get("recentLethalClampDamageCacheMatch") ?? 0);
@@ -5816,14 +5866,25 @@ internal sealed class BattleFormulaEngine
         context.Set($"{prefix}.score", action?.Get("score") ?? 0);
         context.Set($"{prefix}.observedHpLoss", action?.Get("observedHpLoss") ?? 0);
         context.Set($"{prefix}.targetCacheDamage", action?.Get("targetCacheDamage") ?? 0);
+        context.Set($"{prefix}.targetCacheCredit", action?.Get("targetCacheCredit") ?? 0);
+        context.Set($"{prefix}.targetCacheHealing", action?.Get("targetCacheHealing") ?? 0);
+        context.Set($"{prefix}.targetCacheAmount", action?.Get("targetCacheAmount") ?? 0);
         context.Set($"{prefix}.currentTargetCacheDamage", action?.Get("currentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.currentTargetCacheCredit", action?.Get("currentTargetCacheCredit") ?? 0);
         context.Set($"{prefix}.recentTargetCacheDamage", action?.Get("recentTargetCacheDamage") ?? 0);
+        context.Set($"{prefix}.recentTargetCacheCredit", action?.Get("recentTargetCacheCredit") ?? 0);
         context.Set($"{prefix}.damageCacheMatch", action?.Get("damageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentDamageCacheMatch", action?.Get("currentDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentDamageCacheMatch", action?.Get("recentDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.creditCacheMatch", action?.Get("creditCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentCreditCacheMatch", action?.Get("currentCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentCreditCacheMatch", action?.Get("recentCreditCacheMatch") ?? 0);
         context.Set($"{prefix}.exactDamageCacheMatch", action?.Get("exactDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentExactDamageCacheMatch", action?.Get("currentExactDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentExactDamageCacheMatch", action?.Get("recentExactDamageCacheMatch") ?? 0);
+        context.Set($"{prefix}.exactCreditCacheMatch", action?.Get("exactCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.currentExactCreditCacheMatch", action?.Get("currentExactCreditCacheMatch") ?? 0);
+        context.Set($"{prefix}.recentExactCreditCacheMatch", action?.Get("recentExactCreditCacheMatch") ?? 0);
         context.Set($"{prefix}.lethalClampDamageCacheMatch", action?.Get("lethalClampDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.currentLethalClampDamageCacheMatch", action?.Get("currentLethalClampDamageCacheMatch") ?? 0);
         context.Set($"{prefix}.recentLethalClampDamageCacheMatch", action?.Get("recentLethalClampDamageCacheMatch") ?? 0);
@@ -7400,17 +7461,17 @@ internal sealed class RuntimeSettings
     public int PreviewForecastSourceForcedValue { get; set; } = -1;             // 0..65535 to force; -1 = observe only
     public bool PreviewForecastSourceLogOnly { get; set; } = false;             // record natural staged-damage without overwriting
 
-    // FORECAST PREVIEW POKE — the universal preview-damage lever (poll-write of obj+0x6 == unit+0x1C4).
-    // Drives the on-screen forecast NUMBER and the HP-bar ghost together, for physical AND magic, any action.
-    // Proven live 2026-06-28. Set Enabled + PokeValue (the staged damage to display); structural RVAs default
-    // to the known stable addresses (no ASLR) but stay overridable in case of a game update.
+    // FORECAST PREVIEW POKE — the universal preview HP-amount lever. With DamageFieldOffset=0x6 it writes
+    // obj+0x6 == unit+0x1C4 (damage/debit); with 0x8 it writes obj+0x8 == unit+0x1C6 (healing/credit).
+    // Drives the on-screen forecast NUMBER and the HP-bar ghost together. Set Enabled + PokeValue; structural
+    // RVAs default to the known stable addresses (no ASLR) but stay overridable in case of a game update.
     public bool PreviewForecastPokeEnabled { get; set; } = false;
-    public int PreviewForecastPokeValue { get; set; } = -1;                     // staged-damage value to show; -1 = off
+    public int PreviewForecastPokeValue { get; set; } = -1;                     // staged HP amount to show; -1 = off
     public int PreviewForecastGlobalRva { get; set; } = 0x2FF3CF8;              // global holding the forecast object ptr (0x142FF3CF8)
     public int PreviewForecastUnitTableRva { get; set; } = 0x1853CE0;          // unit table base (0x141853CE0)
     public int PreviewForecastUnitStride { get; set; } = 0x200;                // per-unit stride
     public int PreviewForecastObjOffset { get; set; } = 0x1BE;                 // forecast object = unit + 0x1BE
-    public int PreviewForecastDamageFieldOffset { get; set; } = 0x6;           // obj+0x6 == unit+0x1C4 staged damage
+    public int PreviewForecastDamageFieldOffset { get; set; } = 0x6;           // obj+0x6 damage/debit; obj+0x8 healing/credit
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;

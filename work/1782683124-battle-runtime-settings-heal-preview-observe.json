@@ -1,0 +1,49 @@
+{
+  "_note": "Observe-only profile for natural healing preview. No force/rewrite controls are enabled. It logs action-state, target-cache, boundary, and unknown diffs around the preview/apply fields so we can learn how the game represents healing forecasts versus damage forecasts.",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "PreviewDamageControlEnabled": false,
+  "PreviewForecastSourceControlEnabled": false,
+  "PreviewForecastPokeEnabled": false,
+  "PreviewHitPctControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": false,
+  "PreClampFormulaPlanEnabled": false,
+  "LogPreClampFormulaCandidates": false,
+  "PreClampResolveActorContext": false,
+  "PreClampLogEquipment": false,
+
+  "TrackPendingActions": true,
+  "LogActionStateChanges": true,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 200,
+  "ActionBoundaryProbeDiffMax": 64,
+
+  "LogUnknownFieldDiffs": true,
+  "UnknownDiffStart": 432,
+  "UnknownDiffEnd": 496,
+  "MaxUnknownDiffsPerUnit": 240,
+
+  "LogHpEventProbe": false,
+  "ActorProbeOnEvent": false,
+  "LogPendingActionCandidatesOnEvent": false,
+  "LogImmediateActionCandidatesOnEvent": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+  "LogResolvedRuntimeContext": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+
+  "UnitPollIntervalMs": 10,
+  "MaxTrackedBattleUnits": 64
+}

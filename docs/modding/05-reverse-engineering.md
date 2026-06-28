@@ -430,41 +430,51 @@ untouched). Both the screen and memory agree: the displayed forecast hit-% is fu
 time; painting `0x7832C0` changes only the forecast number, not the outcome. This is DCL Layer 1
 (show a custom hit-% from our own formula); the matching *outcome* control is sections 4/9.
 
-## 11. Forecast DAMAGE preview + result — the unified `+0x1C4` lever — ✅ CONFIRMED LIVE 2026-06-28
+## 11. Forecast HP preview + result — the unified `+0x1C4` / `+0x1C6` levers
 
 The single most important forecast fact: **the "forecast object" is not a separate UI object — it
-is `target_unit + 0x1BE`**, and **`obj+0x6 == unit+0x1C4` is the staged HP-damage field**. That one
-16-bit field drives **all three** of:
+is `target_unit + 0x1BE`**. Its HP amount fields are:
+
+- `obj+0x6 == unit+0x1C4`: staged HP-debit / damage.
+- `obj+0x8 == unit+0x1C6`: staged HP-credit / healing.
+
+For damage, `obj+0x6` drives **all three** of:
 
 1. the forecast **damage NUMBER** (the red "500 Damage" in the panel),
 2. the **HP-bar ghost-depletion** (how much of the target bar greys out), and
 3. the **apply path** — it is the *same* staged debit `word[unit+0x1C4]` that APPLY (`0x30A51C`)
    reads and the pre-clamp hook (`0x30A66F`, §4) rewrites at resolution.
 
+For healing, `obj+0x8` drives the forecast **healing NUMBER** (green `+N HP`) and the **HP-bar ghost
+refill**. The same staged credit `word[unit+0x1C6]` is read by APPLY (`0x30A51C`) as
+`newHP = clamp(HP + credit - debit, 0, MaxHP)`. A natural healing forecast uses `+0x1C4 = 0`,
+`+0x1C6 = heal`, and `+0x1E5 = 0x40`. The ghost refill clamps at MaxHP.
+
 The forecast object is reachable through three aliased globals that all hold the same pointer:
 `0x142FF3CF8` (used by the number formatter and hit-% copy §10), `0x14186AF70`, `0x14186AF60`.
 Companion fields on the same object: `obj+0x2C == unit+0x1EA` = the hit-% source (§10).
 
-**Retained-mode draw (the key timing fact).** The engine computes `obj+0x6` **once** when the
-preview opens and **does not rewrite it per frame** — proven live: 300/300 external writes to
-`obj+0x6` stuck (the engine never overwrote them while the preview was held). The number and bar
-are drawn from `obj+0x6` **at open time only**; a value written *after* that draw shows only on the
-**next** open. (This is why an external poke "only changed things when I reopened the preview.")
+**Retained-mode draw (the key timing fact).** The engine computes the forecast amount once when the
+preview opens and does not rewrite it per frame. The number and HP-bar ghost are drawn at open time;
+a value written after that draw shows only on the next open. This applies to both damage
+(`obj+0x6`) and healing (`obj+0x8`).
 
-### Three levers for the preview damage (number + bar)
+### Three levers for the preview HP amount (number + bar)
 
 | Lever | What it touches | Timing | Coverage | Mod setting |
 | --- | --- | --- | --- | --- |
-| **Poke** (poll-write `obj+0x6`) | source field → number **and** bar | shows on (re)open | **universal** (any action) | `PreviewForecastPoke*` |
+| **Poke** (poll-write `obj+0x6` or `obj+0x8`) | source field → number **and** bar | shows on (re)open | **universal** (any action) | `PreviewForecastPoke*` |
 | **Finalizer hooks** (force the `obj+0x6` store) | source field → number **and** bar | **first-open clean** (no reopen) | per-formula (whack-a-mole) | `PreviewForecastSource*` |
 | **Number paint** (force the format dispatch) | display buffer `0x1407832BE` only | first-open clean | number only — **NOT the bar** | `PreviewDamage*` |
 
 1. **Universal poke — the robust catch-all (PROVEN physical + magic).** Each poll, deref
    `[0x142FF3CF8]`; if it points cleanly into the unit table (base `0x141853CE0`, stride `0x200`,
-   `obj = unit + 0x1BE`), write our value to `obj+0x6`. Works for **every** action type because it
-   overwrites whatever any finalizer computed. Safe: at resolution the producer re-stages `+0x1C4`
-   before APPLY, so a preview poke never leaks into the real result (the pre-clamp owns the result).
-   Caveat: retained-mode means it lands on the **next** open, not while held.
+   `obj = unit + 0x1BE`), write our value to the configured forecast field. Use
+   `PreviewForecastDamageFieldOffset = 0x6` for damage/debit (`unit+0x1C4`) and `0x8` for
+   healing/credit (`unit+0x1C6`). Works for **every** action type because it overwrites whatever any
+   finalizer computed. Safe: at resolution the producer re-stages `+0x1C4/+0x1C6` before APPLY, so a
+   preview poke never leaks into the real result (the pre-clamp owns the result). Caveat:
+   retained-mode means it lands on the **next** open, not while held.
 
 2. **Compute-time finalizer hooks — first-open clean, but per-formula.** Hook the instruction that
    *writes* `obj+0x6` during the forecast compute (`ExecuteFirst`, force the store register) so the
@@ -486,7 +496,7 @@ are drawn from `obj+0x6` **at open time only**; a value written *after* that dra
    number leaves the bar natural** — the exact "shows 500 but the bar says 184" symptom. Use it only
    as a number guarantee layered on top of the poke/finalizer, never alone for coherence.
 
-### The result (actual applied damage)
+### The result (actual applied HP change)
 
 Force the staged debit at the pre-clamp hook **`0x30A66F`** (§4), bytes `0F BF 45 06`
 (`movsx eax, word[rbp+6]` = `word[unit+0x1C4]`). ⚠️ **Decimal gotcha:** `0x30A66F` = **`3188335`**,
@@ -495,20 +505,25 @@ not `3188847` (which is `0x30A86F`, where the bytes are `8B D5 41 8D` — a wron
 (the dispatcher keys on effect-kind `0x300` = apply-HP, not weapon-vs-spell), so one hook covers
 physical and magic results alike.
 
-### The coherent recipe (PROVEN LIVE 2026-06-28, Agrias→Ramza, value 500)
+Healing/credit uses the same pre-clamp record at `word[rbp+8] == word[unit+0x1C6]`. A coherent heal
+control writes `obj+0x8` for preview and forces the staged credit at pre-clamp for the actual HP
+gain; the native APPLY clamp still owns the MaxHP boundary. Passive/side-effect healing uses the
+same `+0x1C6` surface, so runtime formulas must distinguish explicit action heals from passive
+HP-credit events before forcing credit.
+
+### The coherent recipes
 
 ```
-preview  = poke (or finalizer) writes obj+0x6 = formula     → number + bar both show it
-result   = pre-clamp 0x30A66F forces word[+0x1C4] = formula  → actual HP loss = it
-                       └── same field (+0x1C4), two moments ──┘
+damage preview = poke (or finalizer) writes obj+0x6 = formula      -> damage number + ghost depletion
+damage result  = pre-clamp 0x30A66F forces word[+0x1C4] = formula  -> actual HP loss
+
+heal preview   = poke writes obj+0x8 = formula                     -> healing number + ghost refill
+heal result    = pre-clamp forces word[+0x1C6] = formula           -> actual HP gain
 ```
 
-Feed both the *same* formula value and the preview (number **and** bar) equals the result. Live:
-both the **physical attack** and the **Fire** previews on Ramza showed `11%` / `500` with the bar
-dropping 567→~67, and the actual attack and the actual Fire each removed exactly 500
-(`[FORECAST-POKE] … wrote unit+0x1C4=500`, `[PRECLAMP-REWRITE-HOOK] … forcedDebit=500`). This closes
-the forecast half of the DCL: damage NUMBER + bar + hit-% display + applied result are all
-code-mod-owned, for physical and magic.
+Feed both the same formula value and the preview (number **and** bar) equals the result. The forecast
+half of the DCL owns hit-% display, damage number + ghost depletion, healing number + ghost refill,
+and the applied HP amount for physical, magic, and healing actions.
 
 **Still open — magic AVOIDANCE.** Damage, preview, and the hit-% *display* are unified across
 physical/magic, but magic *avoidance* is a separate Faith roll (`0x304E33`, §9); zeroing the

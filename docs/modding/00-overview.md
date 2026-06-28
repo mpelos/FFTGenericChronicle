@@ -35,9 +35,9 @@ virtualized math. Proven control (2026-06-27):
 - **Hit / miss / block / parry** — write the defender's live evade bytes before the roll
   (input-control, the proven primary), or repaint the result selector `0x205210` (output-control).
 - **Status** (live-confirmed Undead via `+0x1EF/+0x61`), **reactions** (Brave-gate via `+0x2B`), and
-  the **full forecast display** — hit-% (hook `0x227FFE`) and the damage number + HP-bar ghost
-  (poll-write of `obj+0x6`==`unit+0x1C4`, the same staged-damage field the result uses) — are likewise
-  controllable, coherent with the applied result for physical and magic (proven live 2026-06-28).
+  the **full forecast display** — hit-% (hook `0x227FFE`) plus HP amount number/bar ghost
+  (poll-write of `obj+0x6`==`unit+0x1C4` for damage, `obj+0x8`==`unit+0x1C6` for healing) — are
+  likewise controllable and coherent with the applied result for physical, magic, and healing actions.
 
 Attacker/action context is resolved at the damage frame, with CT as a fallback signal. Live struct
 offsets, the hook map, and the runtime DSL/control levers are documented in `04`, `05`, and `06`.
@@ -49,7 +49,7 @@ The mod has four distinct editing surfaces:
 - **Layer A - Runtime code mod (Reloaded-II, `FFT_enhanced.exe`).** Hooks stable `.text`
   touchpoints to read the live battle-unit struct (HP/MP/PA/MA/Speed/Brave/Faith/Level/etc.) and
   rewrite computed damage/HP/MP. It also authors combat OUTCOMES (hit/miss/block/parry), status,
-  reactions, and the full forecast display (hit-%, damage number + HP-bar) via additional stable
+  reactions, and the full forecast display (hit-%, HP amount number + HP-bar ghost) via additional stable
   hooks and live-struct writes. This
   is how arbitrary Level-2 math is done. The hardcoded formula
   routines (the math each "Formula id" computes, classic WotL catalog ids 0x00-0x64) also live in
@@ -75,8 +75,8 @@ The mod has four distinct editing surfaces:
   routine can't be hooked, but the memory it reads/writes can: damage/MP via the pre-clamp hook
   (`0x30A66F`, same-hit), hit/miss/block/parry via the defender's live evade bytes (input-control) or
   the result selector (`0x205210`, output-control), status via `+0x1EF/+0x61`, reactions via Brave
-  `+0x2B`, and the full forecast display — hit-% (hook `0x227FFE`) and damage number + HP-bar (the
-  `obj+0x6`==`unit+0x1C4` staged-damage field via poll-write/finalizer, coherent with the result).
+  `+0x2B`, and the full forecast display — hit-% (hook `0x227FFE`) and HP amount number + HP-bar
+  ghost (`obj+0x6`==`unit+0x1C4` for damage, `obj+0x8`==`unit+0x1C6` for healing).
   The committed build target is the Deep
   Combat Layer (DCL): "output-control first, input only where output can't." Details in `04`/`05`/`06`.
 - **No modding API exposes a battle-formula callback.** Loader managers only patch data tables;
@@ -101,7 +101,7 @@ The mod has four distinct editing surfaces:
 | `03-battle-data-map.md` | master variable map: every accessible field by domain, full enum vocabularies, hard limits, and how to access each |
 | `04-engine-memory-model.md` | live battle-unit struct offsets; equipment block; battle actor array; hooks; damage→clamp→KO path |
 | `05-reverse-engineering.md` | using classic knowledge for RE: PSX decomp, cheat-table struct offsets + AOBs, formula fingerprint sheet, attack path, Denuvo notes |
-| `06-code-mod-runtime-dsl.md` | runtime code-mod: data placeholders, unit registry, event detector, context resolver, C# formula engine, HP/MP reconciler, and the proven control levers (pre-clamp damage/MP, evade input-control, result selector, status/Brave, full forecast display: hit-% + damage number + HP-bar) |
+| `06-code-mod-runtime-dsl.md` | runtime code-mod: data placeholders, unit registry, event detector, context resolver, C# formula engine, HP/MP reconciler, and the proven control levers (pre-clamp damage/healing/MP, evade input-control, result selector, status/Brave, full forecast display: hit-% + HP amount number/bar) |
 | `07-sprite-asset-pipeline.md` | sprite/asset extraction and replacement pipeline |
 
 ## Stable reference artifacts (this repo)

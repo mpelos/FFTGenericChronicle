@@ -150,7 +150,7 @@ internal static class RuntimeSettingsValidator
             if (settings.PreviewForecastGlobalRva <= 0)
                 report.Error("PreviewForecastGlobalRva", "Forecast global RVA must be positive.");
             if (settings.PreviewForecastPokeValue >= 0)
-                report.Warn("PreviewForecastPokeEnabled", "forecast poke poll-writes obj+0x6 (=unit+0x1C4); drives the preview NUMBER + HP-bar together for any action, but not the real result (that is the pre-clamp lever).");
+                report.Warn("PreviewForecastPokeEnabled", "forecast poke poll-writes the configured HP amount field (offset 0x6 = unit+0x1C4 damage/debit, 0x8 = unit+0x1C6 healing/credit); drives the preview NUMBER + HP-bar together, but not the real result (that is the pre-clamp lever).");
         }
         if (settings.PreClampDamageRewriteEnabled)
         {
@@ -993,14 +993,25 @@ internal static class RuntimeSettingsValidator
             context.Set($"{prefix}.score", 100);
             context.Set($"{prefix}.observedHpLoss", 20);
             context.Set($"{prefix}.targetCacheDamage", 20);
+            context.Set($"{prefix}.targetCacheCredit", 20);
+            context.Set($"{prefix}.targetCacheHealing", 20);
+            context.Set($"{prefix}.targetCacheAmount", 20);
             context.Set($"{prefix}.currentTargetCacheDamage", 20);
+            context.Set($"{prefix}.currentTargetCacheCredit", 20);
             context.Set($"{prefix}.recentTargetCacheDamage", 20);
+            context.Set($"{prefix}.recentTargetCacheCredit", 20);
             context.Set($"{prefix}.damageCacheMatch", 1);
             context.Set($"{prefix}.currentDamageCacheMatch", 1);
             context.Set($"{prefix}.recentDamageCacheMatch", 1);
+            context.Set($"{prefix}.creditCacheMatch", 1);
+            context.Set($"{prefix}.currentCreditCacheMatch", 1);
+            context.Set($"{prefix}.recentCreditCacheMatch", 1);
             context.Set($"{prefix}.exactDamageCacheMatch", 1);
             context.Set($"{prefix}.currentExactDamageCacheMatch", 1);
             context.Set($"{prefix}.recentExactDamageCacheMatch", 1);
+            context.Set($"{prefix}.exactCreditCacheMatch", 1);
+            context.Set($"{prefix}.currentExactCreditCacheMatch", 1);
+            context.Set($"{prefix}.recentExactCreditCacheMatch", 1);
             context.Set($"{prefix}.lethalClampDamageCacheMatch", 1);
             context.Set($"{prefix}.currentLethalClampDamageCacheMatch", 1);
             context.Set($"{prefix}.recentLethalClampDamageCacheMatch", 1);
