@@ -1,0 +1,60 @@
+{
+  "_note": "CLOAK EVADE TEST (G4). Offline RE inferred +0x49 = accessory/cloak physical evade (aggregators take max(+0x49, shield +0x4A); struct map's unmapped 'cloak evasion' field). The evade-type +0x1C0 is VM-produced, so this tests whether setting +0x49 high (others 0) makes the VM emit evadeType=0x01 (cloak) - input-control, same mechanism as the proven class/parry/block bytes. Broadcast (TargetCharId=-1 + sweep=32) like the proven evade test: +0x49=100, all other evade bytes (46/47/48/4A/4B/4C/4D/4E)=0. RUN: relaunch, ATTACK any unit (e.g. Ramza) FROM THE FRONT with a physical melee a few times. OBSERVE: the dodge animation + the [SELECTOR-PROBE] evadeType in the log. PASS = evadeType=0x01 (cloak) -> +0x49 is the cloak source and 0x01 is input-selectable. If it shows 0x03 (shield) or 0x00 (hit) instead, +0x49 is NOT the cloak driver -> we fall back to output-control (selector 0x205210 forcing +0x1C0=0x01, already a proven mechanism). BONUS determinism check (G6): this profile also confirms 'all evade bytes except 49 = 0' still allows hits when 49 is irrelevant. Safe: struct writes only.",
+
+  "EvadeOverrideEnabled": true,
+  "EvadeOverrideTargetCharId": -1,
+  "EvadeOverride46": 0,
+  "EvadeOverride47": 0,
+  "EvadeOverride48": 0,
+  "EvadeOverride49": 100,
+  "EvadeOverride4A": 0,
+  "EvadeOverride4B": 0,
+  "EvadeOverride4C": 0,
+  "EvadeOverride4D": 0,
+  "EvadeOverride4E": 0,
+  "EvadeOverrideMaxLogs": 64,
+  "EvadeOverrideSweepSlots": 32,
+
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": true,
+  "PreClampDamageRewriteTargetCharId": -1,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 1,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

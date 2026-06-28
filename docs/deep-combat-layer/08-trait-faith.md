@@ -8,7 +8,7 @@ Review: Pending.
 ## Role
 
 Faith is the **magic/spiritual** member of the permanent-trait trio (Brave = body, Faith = spirit,
-Zodiac = element). It stays **FFT-native** in shape — Faith is already a two-sided slider in vanilla
+Zodiac = sign compatibility). It stays **FFT-native** in shape — Faith is already a two-sided slider in vanilla
 FFT and the DCL keeps that, because it is exactly the kind of permanent, transparent, two-gumes axis
 the DCL wants.
 
@@ -49,12 +49,13 @@ decoupling is the core of the trait design.
 
 ## Holy and Dark belong here
 
-Sacred (Holy) and Dark damage are **spiritual** damage and sit on the Faith axis, not the elemental
-Zodiac axis (`09`). They scale with and are resisted by Faith like other magic, fitting their
-flavor as faith-aligned forces rather than elements.
+Sacred (Holy) and Dark damage are **spiritual** damage and sit on the Faith axis, not the **elemental
+affinity** axis (`element_mult`, `11`). They scale with and are resisted by Faith like other magic,
+fitting their flavor as faith-aligned forces rather than elements. (Zodiac, `09`, is a separate
+sign-compatibility matchup that applies to *all* attacks regardless of element.)
 
 ## Open items
 
-Exact Faith curve, the magic-vulnerability slope, how Faith interacts with the Zodiac elemental
-multiplier on a spell that is both elemental *and* faith-scaled, and final tuning are in
-`12-open-questions.md` and `11-magic.md`.
+Exact Faith curve, the magic-vulnerability slope, how Faith stacks with the elemental-affinity
+multiplier (`element_mult`) and the Zodiac sign-compatibility multiplier on a spell that is elemental
+*and* faith-scaled, and final tuning are in `12-open-questions.md` and `11-magic.md`.

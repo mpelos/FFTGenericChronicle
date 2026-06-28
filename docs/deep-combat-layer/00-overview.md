@@ -54,11 +54,14 @@ magnitudes rather than using raw thrust/swing values).
 - **Every existing FFT attribute is used or replaced.** This is a hard constraint: nothing in the
   character menu may be dead weight. The full audit lives in `01-attribute-map.md`.
 - **Deterministic damage, random contest.** Preview must equal result.
-- **Two-sided permanent traits.** Brave, Faith, and Zodiac are each a permanent personal "régua"
-  (slider) with a real upside *and* a real downside — there is no universally-best setting. See
-  `07`–`09`.
-- **Legibility over hidden math.** Vanilla's hidden Zodiac compatibility multiplier and opaque
-  evade stacking are replaced by transparent, readable systems.
+- **Two-sided traits — two sliders and a matchup web.** Brave and Faith are each a permanent
+  personal "régua" (slider) with a real upside *and* a real downside — no universally-best setting.
+  **Zodiac is the third axis but a *relational* one** (attacker × target sign compatibility, `09`),
+  not a personal slider; by the grid's symmetry no sign is stronger than another, so it is still
+  two-sided — a web of matchups rather than a régua. See `07`–`09`.
+- **Legibility over hidden math.** Vanilla's Zodiac compatibility multiplier is **kept but surfaced
+  and softened** (shown in the preview, on a much subtler band — `09`); opaque evade stacking is
+  replaced by transparent, readable systems.
 - **No new equipment.** Per the project-wide rule, the DCL re-uses existing items; it never adds
   new ones. Weapons gain meaning through *type*, *reach*, and *modifier*, not through new SKUs.
 
@@ -75,7 +78,7 @@ magnitudes rather than using raw thrust/swing values).
 | `06-reach.md` | Reach identity: outrange, escape-counter, point-blank weakness, stop-hit. |
 | `07-trait-brave.md` | Brave — physical-aggression temperament (validated). |
 | `08-trait-faith.md` | Faith — magic/spiritual temperament. |
-| `09-trait-zodiac.md` | Zodiac — elemental temperament (12 signs → 4 elements). |
+| `09-trait-zodiac.md` | Zodiac — attacker × target sign compatibility (subtle damage + hit modifier). |
 | `10-weapon-skill.md` | Weapon skill per family, grown by job level. |
 | `11-magic.md` | Magic on its own FFT-native axis. |
 | `12-open-questions.md` | Living register of resolved/open items (calibration, rosters, presentation, feasibility). |

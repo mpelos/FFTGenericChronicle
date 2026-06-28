@@ -142,7 +142,7 @@ throws a real bolt instead of a feeble staff-whack.
 
 | Família | Ataque básico (Attack) | **Mod mágico** | Mãos | Especial |
 |---------|------------------------|----------------|------|----------|
-| **Rod** | dardo elemental grátis, **alcance 3**, MA-escalado (elemento por SKU → Zodiac `09`) | **+magia ofensiva** (alto) | 1H | o mod amplifica o dardo + os nukes → **o piso de dano** do caster |
+| **Rod** | dardo elemental grátis, **alcance 3**, MA-escalado (elemento por SKU → afinidade elemental do alvo, `11`) | **+magia ofensiva** (alto) | 1H | o mod amplifica o dardo + os nukes → **o piso de dano** do caster |
 | **Staff** | dardo elemental grátis, **alcance 3** (algumas SKUs = cura-ao-atacar fraca) | **+magia de suporte/cura** (alto) | 1H | o mod amplifica a cura, não o dardo → o healer **chipa** (mais fraco que o nuker) mas **nunca fica inútil** |
 
 - A magic weapon adds a **magic-power modifier to MA** the way a physical weapon adds `wmod` to PA,
@@ -152,8 +152,8 @@ throws a real bolt instead of a feeble staff-whack.
   chips, but a nuker chips harder.
 - **Element comes from the equipment, not the job.** A Fire Rod's bolt is Fire, an Ice Rod's is Ice;
   the player itemises the element and is **committed to it for the battle** (one equipped weapon, no
-  in-combat swap) — which keeps the Zodiac matchup (`09`) an honest, planned choice, not free per-turn
-  element-switching. Realised by re-tuning the **element field of existing** Rod/Staff SKUs (no new
+  in-combat swap) — which keeps the **elemental** matchup (target affinity, `11`) an honest, planned
+  choice, not free per-turn element-switching. Realised by re-tuning the **element field of existing** Rod/Staff SKUs (no new
   SKUs, `00`).
 - **Staves carry elements too**, so a healer always has a useful ranged action when there is nothing to
   heal — never a dead turn. Heal-on-attack stays a Staff SKU variant; **strong healing stays MP-gated**
@@ -183,7 +183,7 @@ power of each only appears inside its own context.
   (the skill→penetration half of `10`'s over-cap) rather than raw — a master gunner's shot stays
   relevant vs late-game plate by **defeating armor**, not by big numbers. Best **vs armored targets**
   (high divisor) and at **extreme range**; vs unarmored it does *less* than a crossbow (lower `wmod`,
-  divisor wasted). Weak vs squishy, terrain-blocked, and rare. Some SKUs are elemental (Zodiac `09`).
+  divisor wasted). Weak vs squishy, terrain-blocked, and rare. Some SKUs are elemental (elemental affinity, `11`).
 - All are **missile ×1, 2H, no parry** → defensively naked in melee; their defense is staying at
   range (a harder version of the reach point-blank weakness). The armor-answer is the **divisor**
   (`03`), scaling Bow(baixo) → Crossbow(médio) → Gun(alto).

@@ -12,7 +12,8 @@ pipeline. The GURPS-derived machinery (thrust/swing, subtractive DR, wound multi
 is for *physical* combat. Magic keeps FFT's own model:
 
 - Driven by **MA / MP / Faith** plus the spell's **element** and the target's **Shell / elemental
-  affinity (Zodiac)**.
+  affinity** (from equipment/status/job/content, not the sign), with the **Zodiac sign matchup** (`09`)
+  as a subtle multiplier over the top.
 - **Deterministic** damage, like the physical side (preview = result; randomness only in landing).
 - **Does not pass through physical DR or wound multipliers** — armor that stops swords does not stop
   fireballs (that's what Shell and Faith are for).
@@ -25,8 +26,9 @@ from the physical layer — dodgeable bolts (below).
 Magic spans six categories, but only **three need a damage equation**, and those three share **one
 spine**:
 
-- **Elemental damage** (Fire/Ice/Lightning/…) — numeric; interacts with Zodiac + Shell.
-- **Spiritual damage** (Holy/Dark) — numeric; Faith-scaled, *outside* the Zodiac wheel.
+- **Elemental damage** (Fire/Ice/Lightning/…) — numeric; interacts with the target's elemental affinity
+  + Shell (and the Zodiac sign matchup, like all attacks).
+- **Spiritual damage** (Holy/Dark) — numeric; Faith-scaled, *outside* the elemental-affinity axis.
 - **Healing / restoration** (Cure/Raise) — numeric; "negative damage" on HP.
 - **Magical status** (sleep/petrify/silence/…) — *not* a damage equation; runs the `13` 3d6 contest
   (inverse-Faith resist, caster MA = offense).
@@ -43,7 +45,7 @@ Magic damage is **multiplicative and spell-centric** — the *conceptual* (not l
 physical pipeline (`02`):
 
 ```
-dmg = base(MA) × spell_power × faith_mult × element_mult × G_m
+dmg = base(MA) × spell_power × faith_mult × element_mult × zodiac_mult × G_m
 ```
 
 | term | meaning |
@@ -51,12 +53,13 @@ dmg = base(MA) × spell_power × faith_mult × element_mult × G_m
 | `base(MA)` | the caster's magic base — **linear in MA** (magic does *not* inherit the GURPS thrust/swing table; GURPS has no magic damage spine, which is *why* magic is FFT-native, not GURPS-derived). |
 | `spell_power` | the **per-spell tier** (Fire < Fira < Firaga). The spell carries the damage identity — magic is **spell-centric** where physical is **weapon-centric**. |
 | `faith_mult` | the two-sided **Faith** multiplier (`08`) — magic's *one* big trait multiplier. Applied **twice**: caster output × target vulnerability, each a *bounded band centered at 1.0* (see below). |
-| `element_mult` | the **Zodiac** affinity/weakness (`09`) + **Shell** resist — *modest bounded bands* (provisional weak ×1.30 / resist ×0.70, Shell ×0.50), multiplicative and commutative (see *Zodiac, Shell, and how the bands stack* below). |
+| `element_mult` | the target's **elemental affinity** (resist/weak/halve/absorb vs the spell's element) + **Shell** resist — *modest bounded bands* (provisional weak ×1.30 / resist ×0.70, Shell ×0.50), multiplicative and commutative. **Source is equipment / status / job-innate / designed content — NOT the Zodiac sign** (see *Elemental affinity, Shell, Zodiac…* below). |
+| `zodiac_mult` | the **Zodiac sign-compatibility** matchup (attacker × target sign, `09`) — a **subtle** multiplier on all magic, **not** an elemental resist. "Subtle" band: Good ×1.10 / Bad ×0.90 / Best ×1.20 / Worst ×0.80. |
 | `G_m` | magic bridge constant to FFT's HP scale (calibration). |
 
 **Physical subtracts, magic multiplies — a deliberate paradigm split.** Physical mitigates by
 *subtraction* (`base − DR`, then wound mult, floored by `pen_floor`); magic mitigates by
-*multiplication* (Shell/Zodiac/Faith cut a *fraction*). Two legible, distinct ways not to die — the
+*multiplication* (Shell / elemental affinity / Faith / Zodiac cut a *fraction*). Two legible, distinct ways not to die — the
 reason the two axes stay separate. Consequences:
 
 - **Magic ignores physical DR** → it is the **anti-armor answer** (a plate knight's DR does nothing to
@@ -70,18 +73,19 @@ end-game every tier converges. Multiplicative keeps the ratio = `spell_power` at
 picking the right spell stays meaningful the whole game. This is **structural, not calibration**
 (`sim_magic_shape` Part A — confidence **Strong**).
 
-**The three numeric categories differ only in their resist term:** elemental carries Zodiac + Shell;
-spiritual (Holy/Dark) carries Faith only (no Zodiac); healing carries no resist. One spine, three skins.
+**The three numeric categories differ only in their resist term:** elemental carries elemental affinity
++ Shell; spiritual (Holy/Dark) carries Faith only (no elemental affinity); healing carries no resist.
+The **Zodiac sign matchup multiplies all three** (it is attacker × target, not a resist). One spine, three skins.
 
 ### Risk: magic has no structural damper (the #1 magic calibration risk)
 
 Unlike physical — whose subtractive DR + `pen_floor` cap both ends — multiplicative magic has **no
 natural floor or ceiling**; its safe band is held **entirely by calibration**, and **stacked
-multipliers compound** (`MA × spell_power × Faith × Zodiac-weakness` can multiply into a one-shot —
+multipliers compound** (`MA × spell_power × Faith × elemental-weakness` can multiply into a one-shot —
 the magic flavor of the `02` / B7 compounding-multiplier risk; `sim_magic_shape` Part C). The
 structural guardrail: **keep the count of *large* multipliers small and bounded** — **Faith is the
-single big two-sided multiplier**, Zodiac/Shell are *modest bounded bands*, and a **soft cap is held
-in reserve**. The magnitudes (`G_m`, spell tiers, the Faith/Zodiac/Shell bands) are calibration; the
+single big two-sided multiplier**, elemental affinity / Shell / Zodiac are *modest bounded bands*, and a
+**soft cap is held in reserve**. The magnitudes (`G_m`, spell tiers, the Faith / affinity / Shell / Zodiac bands) are calibration; the
 *shape* is what stands here.
 
 ### Faith enters twice — bounded and centered
@@ -101,7 +105,7 @@ application on a **bounded band centered at 1.0** — mid-Faith is *neutral*, de
 
 - **Centered, so Faith spreads rather than shifts.** Averaged over a roster, the mean multiplier is
   ~1.0 — Faith changes *who* magic punishes, not the global magic power level (that is `G_m`).
-- **Bounded, so the devout/devout corner is ~1.69×** — about the size of a Zodiac weakness, *not* a
+- **Bounded, so the devout/devout corner is ~1.69×** — about the size of an elemental weakness, *not* a
   runaway. Faith is a **bounded spreader, not the stack's explosion source** (the big number is the
   `MA × spell_power × G_m` spine — the `02`/Q2 calibration target, not Faith).
 - **A real resist that is never immunity.** A low-Faith target takes ~70% from a neutral caster (an
@@ -112,35 +116,42 @@ application on a **bounded band centered at 1.0** — mid-Faith is *neutral*, de
 
 The exact band is calibration; the **shape — twice, centered, bounded — stands here**.
 
-### Zodiac, Shell, and how the bands stack
+### Elemental affinity, Shell, Zodiac, and how the bands stack
 
-Faith is the big lever; **Zodiac** (the target's elemental affinity, `09`) and **Shell** (a magic-armor
-buff) are the *modest* ones. The structural rules for how everything combines (confidence **Strong**,
+Faith is the big lever; the **elemental affinity** (the target's resist/weak vs the spell's element,
+from equipment/status/job/content), **Shell** (a magic-armor buff), and the **Zodiac sign matchup**
+(`09`) are the *modest* ones. The structural rules for how everything combines (confidence **Strong**,
 `sim_magic_stack`):
 
-- **Everyday bands are modest.** Zodiac runs a *small* band — provisional weak **×1.30** / neutral ×1.0
-  / resist **×0.70** — deliberately *smaller* than Faith's two-application effect, so a single matchup
-  never dominates. Shell is a provisional **×0.50** (strong, but it costs a buff turn and is temporary).
+- **Everyday bands are modest.** Elemental affinity runs a *small* band — provisional weak **×1.30** /
+  neutral ×1.0 / resist **×0.70** — deliberately *smaller* than Faith's two-application effect, so a
+  single matchup never dominates. Shell is a provisional **×0.50** (strong, but it costs a buff turn and
+  is temporary). **Zodiac is smaller still** — the "Subtle" band (Good ×1.10 / Bad ×0.90 / Best ×1.20 /
+  Worst ×0.80, `09`), the finest lever in the stack (a *tilt*, not a swing).
 - **Big elemental swings are rare designed properties, not the everyday band.** Vanilla-style ×2
   weakness or *absorb* (a fireball that heals its target) are wonderful as a **known, built-around**
-  exception — a specific monster, a cursed item — but degenerate as the default sign-compatibility
-  number: at ×2 the worst corner jumps from ~2.2× to ~3.4× (toward a one-shot), and absorb is a
-  coin-flip swing if it is common. The everyday wheel stays modest; the extremes are content.
+  exception — a specific monster, a cursed item — but degenerate as the default elemental number: at ×2
+  the worst corner jumps from ~2.2× to ~3.4× (toward a one-shot), and absorb is a coin-flip swing if it
+  is common. The everyday affinity stays modest; the extremes are content. (This is also why the Zodiac
+  **Worst ×0.80** is reserved for designed content, `09`.)
 - **All-multiplicative, therefore commutative — there is no "stacking order."** Every term is an
-  independent fraction (`faith_c × faith_t × zodiac × shell × …`), so order never changes the result and
-  the player can read each effect on its own (legibility, `12` P5). The *only* non-multiplicative term
-  is a **soft cap on the product, held in reserve** — dormant under the modest bands (the worst realistic
-  corner ~2.2× sits under a ~2.5× cap) and earning its keep only if calibration later widens a band.
+  independent fraction (`faith_c × faith_t × element_mult × shell × zodiac`), so order never changes the
+  result and the player can read each effect on its own (legibility, `12` P5). The *only*
+  non-multiplicative term is a **soft cap on the product, held in reserve** — dormant under the modest
+  bands (the worst realistic corner ~2.2× sits under a ~2.5× cap) and earning its keep only if
+  calibration later widens a band. The subtle Zodiac band adds little pressure here (Best ×1.20).
 - **Defense mirrors offense.** Because both sides are multiplicative, every offensive multiplier has an
   inverse counter: a high-Faith caster is answered by a low-Faith *or* shelled target; an elemental
   weakness is answered by the matching resist or by Shell. Stacked defense (atheist + resist + Shell)
   pulls a burst down to ~0.24× — a **hard turtle, but never immunity** (a multiplicative resist never
   chip-zeros), and the attacker still has outs: switch to the target's weak element, cast spiritual
-  (Holy/Dark ignore Zodiac), or wait Shell out. The defensive corner is *conditional*, not an auto-win.
+  (Holy/Dark ignore elemental affinity), or wait Shell out. Zodiac is the one term *neither* side can
+  rebuild for (sign is fixed) — but it is the smallest, so it only ever **tips** a stack, never decides
+  it. The defensive corner is *conditional*, not an auto-win.
 
 So the magic stack is **self-correcting**: offense and defense both stack bounded fractions, the
-compounding corner stays ~2.2×, and the magnitudes (the exact Zodiac/Shell bands, the reserve cap) are
-calibration — the *structure* stands here.
+compounding corner stays ~2.2×, and the magnitudes (the exact affinity/Shell/Zodiac bands, the reserve
+cap) are calibration — the *structure* stands here.
 
 ### Healing — same spine, two-sided Faith, no resist
 
@@ -254,30 +265,34 @@ Magic sits at the intersection of two of the three permanent traits:
   equation **twice** (caster output × target vulnerability) on a bounded centered band — see *Faith
   enters twice* above. This — *not* Brave — is the magic offense axis, which is what keeps the Brave
   slider clean (`07`).
-- **Zodiac** (`09`) gives the target an elemental resist/weakness that applies to elemental spells — a
-  *modest bounded band* (see *Zodiac, Shell, and how the bands stack* above).
+- **Zodiac** (`09`) is the **attacker × target sign-compatibility** matchup — a *subtle* multiplier on
+  **all** magic, **not** an elemental resist. (Elemental resist/weakness is `element_mult`, sourced from
+  equipment/status/job/content — see *Elemental affinity, Shell, Zodiac…* above.)
 - **Brave does not touch magic at all.**
 
-A spell that is both elemental and Faith-scaled stacks both interactions (Faith × Zodiac × Shell), all
-**multiplicative and commutative** — there is no stacking *order* to tune, only the band magnitudes and
-the reserve cap (`12`).
+A spell that is elemental and Faith-scaled stacks all interactions (Faith × element_mult × Shell ×
+Zodiac), all **multiplicative and commutative** — there is no stacking *order* to tune, only the band
+magnitudes and the reserve cap (`12`).
 
 ## Holy and Dark
 
 Sacred (Holy) and Dark are **spiritual**, not elemental: they scale with and are resisted by
-**Faith** (`08`), and are *outside* the Zodiac elemental wheel (`09`). Lightning is a neutral
-element with no zodiac sign attached.
+**Faith** (`08`), and are *outside* the elemental-affinity axis (`element_mult`). Lightning is a normal
+element with no special affinity tie. (The Zodiac sign matchup, `09`, still applies to Holy/Dark like
+any attack — it is element-independent.)
 
 ## Open items
 
 The magic damage **shape is resolved** (above): multiplicative, spell-centric, `base(MA) ×
-spell_power × faith × element × G_m`, with **Faith resolved as two bounded centered applications**
-(*Faith enters twice*) and the **Zodiac/Shell stacking resolved** (all-multiplicative and commutative,
-modest bounded bands, big swings as designed exceptions, soft-cap in reserve — *Zodiac, Shell, and how
-the bands stack*), the **economy resolved** (a per-battle **MP budget** over an always-on
+spell_power × faith × element_mult × zodiac × G_m`, with **Faith resolved as two bounded centered
+applications** (*Faith enters twice*) and the **affinity/Shell/Zodiac stacking resolved**
+(all-multiplicative and commutative, modest bounded bands, Zodiac the subtle sign matchup `09`, big
+elemental swings as designed exceptions, soft-cap in reserve — *Elemental affinity, Shell, Zodiac…*),
+the **economy resolved** (a per-battle **MP budget** over an always-on
 **weapon-bolt floor** — the caster weapon's range-3 elemental Attack, `14` — *The magic economy* above),
 **healing resolved** (*Healing — same spine, two-sided Faith, no resist*), and **Magic Evade resolved**
 (per-target, AoE included, built from equipment + anti-magic jobs, capped — *Magic Evade* above). Still
 open: the **Magic Evade % values**; **AoE × facing** rules; and all magnitudes (`G_m` —
-`sim_magic_economy` is evidence toward ~3 — spell tiers incl. the weapon bolt's, the Faith/Zodiac/Shell
-band widths, the reserve-cap value, MP pool/trickle, the `base(MA)` curve) — `12-open-questions.md`.
+`sim_magic_economy` is evidence toward ~3 — spell tiers incl. the weapon bolt's, the
+Faith / elemental-affinity / Shell / Zodiac band widths, the reserve-cap value, MP pool/trickle, the
+`base(MA)` curve) — `12-open-questions.md`.

@@ -430,6 +430,92 @@ untouched). Both the screen and memory agree: the displayed forecast hit-% is fu
 time; painting `0x7832C0` changes only the forecast number, not the outcome. This is DCL Layer 1
 (show a custom hit-% from our own formula); the matching *outcome* control is sections 4/9.
 
+## 11. Forecast DAMAGE preview + result — the unified `+0x1C4` lever — ✅ CONFIRMED LIVE 2026-06-28
+
+The single most important forecast fact: **the "forecast object" is not a separate UI object — it
+is `target_unit + 0x1BE`**, and **`obj+0x6 == unit+0x1C4` is the staged HP-damage field**. That one
+16-bit field drives **all three** of:
+
+1. the forecast **damage NUMBER** (the red "500 Damage" in the panel),
+2. the **HP-bar ghost-depletion** (how much of the target bar greys out), and
+3. the **apply path** — it is the *same* staged debit `word[unit+0x1C4]` that APPLY (`0x30A51C`)
+   reads and the pre-clamp hook (`0x30A66F`, §4) rewrites at resolution.
+
+The forecast object is reachable through three aliased globals that all hold the same pointer:
+`0x142FF3CF8` (used by the number formatter and hit-% copy §10), `0x14186AF70`, `0x14186AF60`.
+Companion fields on the same object: `obj+0x2C == unit+0x1EA` = the hit-% source (§10).
+
+**Retained-mode draw (the key timing fact).** The engine computes `obj+0x6` **once** when the
+preview opens and **does not rewrite it per frame** — proven live: 300/300 external writes to
+`obj+0x6` stuck (the engine never overwrote them while the preview was held). The number and bar
+are drawn from `obj+0x6` **at open time only**; a value written *after* that draw shows only on the
+**next** open. (This is why an external poke "only changed things when I reopened the preview.")
+
+### Three levers for the preview damage (number + bar)
+
+| Lever | What it touches | Timing | Coverage | Mod setting |
+| --- | --- | --- | --- | --- |
+| **Poke** (poll-write `obj+0x6`) | source field → number **and** bar | shows on (re)open | **universal** (any action) | `PreviewForecastPoke*` |
+| **Finalizer hooks** (force the `obj+0x6` store) | source field → number **and** bar | **first-open clean** (no reopen) | per-formula (whack-a-mole) | `PreviewForecastSource*` |
+| **Number paint** (force the format dispatch) | display buffer `0x1407832BE` only | first-open clean | number only — **NOT the bar** | `PreviewDamage*` |
+
+1. **Universal poke — the robust catch-all (PROVEN physical + magic).** Each poll, deref
+   `[0x142FF3CF8]`; if it points cleanly into the unit table (base `0x141853CE0`, stride `0x200`,
+   `obj = unit + 0x1BE`), write our value to `obj+0x6`. Works for **every** action type because it
+   overwrites whatever any finalizer computed. Safe: at resolution the producer re-stages `+0x1C4`
+   before APPLY, so a preview poke never leaks into the real result (the pre-clamp owns the result).
+   Caveat: retained-mode means it lands on the **next** open, not while held.
+
+2. **Compute-time finalizer hooks — first-open clean, but per-formula.** Hook the instruction that
+   *writes* `obj+0x6` during the forecast compute (`ExecuteFirst`, force the store register) so the
+   number+bar are correct on the very first open. Different formulas use different writers — this is
+   a whack-a-mole list, so the poke remains the guarantee:
+   - `0x30637E` `66 41 89 50 06` `mov [r8+6],dx` — **MAGIC (Fire) — confirmed firing live**.
+   - `0x308D8F` `66 89 41 06` `mov [rcx+6],ax`, `rcx = [0x14186AF70]` — Q15-scaled store, the
+     **physical-attack candidate** (found via disasm; the 4-byte store is safe to hook — followed by
+     a relocatable 5-byte `call`, no internal jump target).
+   - `0x307DC4` `mov [r10+6],dx`, `0x309664` `mov [r9+6],cx` — other formula paths.
+
+3. **Display-number paint — cosmetic, number ONLY (the bar-mismatch trap).** The forecast number
+   is materialized at display buffer **`0x1407832BE`** (RVA `0x7832BE`, two bytes below the hit-%
+   buffer `0x7832C0`). A format dispatch with ~10 branches loads a field from the object (`obj+0x6`
+   for damage, picked by flags) into `dx` and `jmp`s to the shared store `0x228488`
+   (`mov word [rip+0x55AE2F], dx`). Hook each terminal `jmp 0x228488` (`ExecuteFirst`, set `dx`) —
+   a basic attack/Fire uses branch **`0x22802F`** (`[rbp+6]`), *not* the `0x2280D7` first guessed.
+   **This paints only the on-screen number; the HP-bar reads `obj+0x6` directly, so painting the
+   number leaves the bar natural** — the exact "shows 500 but the bar says 184" symptom. Use it only
+   as a number guarantee layered on top of the poke/finalizer, never alone for coherence.
+
+### The result (actual applied damage)
+
+Force the staged debit at the pre-clamp hook **`0x30A66F`** (§4), bytes `0F BF 45 06`
+(`movsx eax, word[rbp+6]` = `word[unit+0x1C4]`). ⚠️ **Decimal gotcha:** `0x30A66F` = **`3188335`**,
+not `3188847` (which is `0x30A86F`, where the bytes are `8B D5 41 8D` — a wrong RVA silently logs
+`[PRECLAMP-REWRITE-SKIP]` and the result stays natural). **Magic damage rides the same pre-clamp**
+(the dispatcher keys on effect-kind `0x300` = apply-HP, not weapon-vs-spell), so one hook covers
+physical and magic results alike.
+
+### The coherent recipe (PROVEN LIVE 2026-06-28, Agrias→Ramza, value 500)
+
+```
+preview  = poke (or finalizer) writes obj+0x6 = formula     → number + bar both show it
+result   = pre-clamp 0x30A66F forces word[+0x1C4] = formula  → actual HP loss = it
+                       └── same field (+0x1C4), two moments ──┘
+```
+
+Feed both the *same* formula value and the preview (number **and** bar) equals the result. Live:
+both the **physical attack** and the **Fire** previews on Ramza showed `11%` / `500` with the bar
+dropping 567→~67, and the actual attack and the actual Fire each removed exactly 500
+(`[FORECAST-POKE] … wrote unit+0x1C4=500`, `[PRECLAMP-REWRITE-HOOK] … forcedDebit=500`). This closes
+the forecast half of the DCL: damage NUMBER + bar + hit-% display + applied result are all
+code-mod-owned, for physical and magic.
+
+**Still open — magic AVOIDANCE.** Damage, preview, and the hit-% *display* are unified across
+physical/magic, but magic *avoidance* is a separate Faith roll (`0x304E33`, §9); zeroing the
+physical evade bytes does **not** make a spell always-hit. That is the remaining always-hit gap for
+magic; everything in this section is independent of it (it controls the shown/applied **amount**,
+not whether the spell connects).
+
 ## Sources
 
 - PSX decomp: https://github.com/Talcall/FFT-1997-Decomp

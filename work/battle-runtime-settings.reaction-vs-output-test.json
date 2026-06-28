@@ -1,0 +1,60 @@
+{
+  "_note": "T-B: DOES OUTPUT-CONTROL OVERRIDE A NEGATING REACTION (Blade Grasp)? Output-first question. Setup: force-hit (zero ALL evade bytes on everyone, so the accuracy roll always passes and only Blade Grasp can stop the hit), LEAVE Ramza's Brave at 97 (BraveOverride OFF) so Blade Grasp fires ~97%, and FORCE 50 damage at the pre-clamp on Ramza (TargetCharId=1, ForcedDebit=50). RUN: relaunch, attack Ramza from the front with a physical melee 5-6 times. OBSERVE PER ATTACK: (a) did the Blade Grasp 'catch' animation play? (b) did Ramza take 50 damage (HP drop by 50)? INTERPRETATION: if Blade Grasp animation plays AND Ramza still loses 50 -> OUTPUT OVERRIDES the reaction (pre-clamp fires even on a Blade Grasp -> we never need Brave-suppression). If Blade Grasp plays AND Ramza takes 0 (50 only when NO animation) -> output CANNOT override a negating reaction (it stages no apply event, like a miss) -> reactions need the INPUT plan-B (Brave-suppression, already proven). The [PRECLAMP-REWRITE] log shows whether the apply hook fired on a Blade-Grasp'd attack (oldDebit=?), and [SELECTOR-PROBE] shows how Blade Grasp registers. Safe: 50 dmg x6 = 300 < Ramza's 567 HP; struct writes only.",
+
+  "EvadeOverrideEnabled": true,
+  "EvadeOverrideTargetCharId": -1,
+  "EvadeOverride46": 0,
+  "EvadeOverride47": 0,
+  "EvadeOverride48": 0,
+  "EvadeOverride49": 0,
+  "EvadeOverride4A": 0,
+  "EvadeOverride4B": 0,
+  "EvadeOverride4C": 0,
+  "EvadeOverride4D": 0,
+  "EvadeOverride4E": 0,
+  "EvadeOverrideMaxLogs": 64,
+  "EvadeOverrideSweepSlots": 32,
+
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampDamageRewriteTargetCharId": 1,
+  "PreClampDamageRewriteForcedDebit": 50,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 20,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

@@ -1,0 +1,36 @@
+{
+  "_note": "PREVIEW HIT-% DISPLAY CONTROL (DCL Layer 1, purely visual). Proves we can set the on-screen attack hit% deterministically. The differential memory scan located the displayed % at static buffer 0x1407832C0 (RVA 0x7832C0); real code copies the computed % there (load 0x227FFA `movzx eax,word[rbp+0x2C]` -> store 0x228004 `mov word[0x7832C0],ax`). This hooks 0x227FFE (`mov r10d,2`, between load and store, a clean non-RIP site) and forces AX=7 before the game's own store runs, so the engine itself writes 7 at copy time -> the renderer draws 7 on the same redraw, no race. Everything else is observe-only (clean). RUN: close the game (and Reloaded-II) so the new DLL deploys, relaunch via the Reloaded GUI Launch button, enter battle with Agrias (or anyone), open the Attack preview on several DIFFERENT targets. EXPECT: every target shows hit chance = 7% (the forced value), regardless of the real odds. The actual attack roll is UNCHANGED (this only paints the forecast number). Claude verifies without the screen by reading the hook buffer (addr printed in battleprobe_log.txt as [PREVIEW-HITPCT-HOOK] ... buf=0x...): [0]=fire count, [4]=last natural %, [8]=forced(=7), [12]=site rva; and by reading 0x1407832C0 (=7) vs the natural source. To observe WITHOUT painting, set PreviewHitPctLogOnly=true (records natural % only). Safe: visual-only; no gameplay change.",
+
+  "PreviewHitPctControlEnabled": true,
+  "PreviewHitPctRva": 2260990,
+  "PreviewHitPctExpectedBytes": "41 BA 02 00 00 00",
+  "PreviewHitPctForcedValue": 7,
+  "PreviewHitPctLogOnly": false,
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "PreClampDamageRewriteEnabled": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": false,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

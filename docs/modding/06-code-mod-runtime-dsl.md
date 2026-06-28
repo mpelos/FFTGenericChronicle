@@ -30,9 +30,12 @@ The code mod owns the outcome through five timeless stages:
    HP/MP post-apply as a fallback. The exact lethal-delivery path and the engine-owned
    death/KO/clamp model are owned by `04` §6 (`MinHpFloor=1` is the post-damage fallback).
 
-Because the code mod owns the final HP through the engine's own apply step, the on-screen damage
-preview and floating number show the vanilla/neutered value, while the code mod owns the real HP
-that the unit ends the hit with. This UI/HP split is durable behavior of the architecture.
+Because the code mod owns the final HP through the engine's own apply step, the damage preview and
+the resolved hit can diverge. Forecast/preview text can remain vanilla or data-layer placeholder
+unless a preview-specific hook rewrites it. When the runtime rewrites the native pre-clamp staged
+debit, the floating damage number and final HP follow the rewritten staged value; when the runtime
+falls back to late HP correction, the floating number can remain vanilla/placeholder while final HP
+is corrected afterward. This preview/resolution split is durable behavior of the architecture.
 
 ## Data layer: safe vanilla placeholder
 
@@ -94,9 +97,14 @@ raises a damage event on a decrease. It is then hardened to:
 Context is a set of dimensions, not a single piece:
 
 - **target unit / target stats**: the HP/MP-delta unit pointer and its struct fields.
-- **attacker unit**: resolved by CT reset, with a counter-inversion fallback for reaction attacks
-  that do not consume CT (engine details in 04). Formula context exposes `a.present`, `a.ct`,
-  `a.sourceCt`, `a.sourceCounter`, with target equivalents.
+- **attacker unit / action id**: the primary architecture is the native pre-clamp actor context
+  described in `04-engine-memory-model.md`: the pre-clamp stack exposes actor structs, each actor's
+  `+0x148` links to its unit, and the caster actor's `+0x142` carries the resolving action id. The
+  current code has an observe-only resolver for this path (`PreClampResolveActorContext`, logging
+  `[PRECLAMP-ACTOR-CTX]`) and uses CT reset / counter-inversion only as fallback and diagnostic
+  provenance. Formula context exposes `a.present`, `a.ct`, `a.sourceCt`, `a.sourceCounter`, with
+  target equivalents; `sourceCt` means "this attacker came from the CT fallback", not "CT is the
+  primary model".
 - **action family**: bridged through `ActionSignalRules`, which decode controlled vanilla deltas
   into `action.*` variables (`action.swing`, `action.thrust`, `action.cut`, `action.spell`, etc.).
 - **equipment ids**: read from fixed offsets or discovered through catalog scan slots, joined
@@ -331,10 +339,24 @@ byte/word offset is confirmed:
 }
 ```
 
-### Attacker context and CT/counter settings
+### Attacker context and fallback provenance settings
 
-The primary attacker path is CT-based: use `a.present`, `a.sourceCt`, and `a.ct` for normal
-actions, and `a.sourceCounter` for the counter-inversion fallback. Relevant settings:
+The primary RE model for attacker/action context is the pre-clamp actor array (`actor+0x148 -> unit`,
+caster `actor+0x142 -> action id`), owned by `04-engine-memory-model.md`. In the current runtime
+surface, that path is still exposed as an observe-only probe:
+
+```json
+{
+  "PreClampResolveActorContext": true,
+  "PreClampActorActionIdOffset": 322,
+  "PreClampActorContextMaxLogs": 64
+}
+```
+
+It emits `[PRECLAMP-ACTOR-CTX]` for head-to-head validation against the pending tracker and fallback
+resolvers. CT is not the design-primary attacker source anymore; keep it enabled only as a fallback
+and diagnostic signal while the actor-context resolver is promoted into formula context. Relevant
+fallback settings:
 
 ```json
 {
@@ -358,8 +380,8 @@ actions, and `a.sourceCounter` for the counter-inversion fallback. Relevant sett
 Formula examples:
 
 ```text
-if(a.sourceCt, max(1, a.pa * 10 - t.faith), vanillaDamage)
-if(a.sourceCounter, a.pa * 3, if(a.sourceCt, a.pa * 4, vanillaDamage))
+if(a.present, max(1, a.pa * 10 - t.faith), vanillaDamage)
+if(a.sourceCounter, a.pa * 3, if(a.present, a.pa * 4, vanillaDamage))
 
 # weapon attack scaled by base PA and the job's PA multiplier
 max(1, mulDiv(a.weaponAtk + a.rawPa, a.paMult, 100) - equipmentDr)
@@ -1026,10 +1048,10 @@ The same "plant the data the VM reads" mechanism extends past avoidance:
   the staged MP words are `+0x1C8` (debit) / `+0x1CA` (credit), applied as `newMP = clamp(MP + 0x1CA -
   0x1C8)`. Force them exactly like the HP debit/credit.
 
-## Preview display control (forecast hit-%) — ✅ proven live 2026-06-27
+## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
-The sections above author the **outcome**; this one authors the **forecast number** the panel shows
-(DCL Layer 1 — display a custom hit-% without changing the roll). RE in `05-reverse-engineering.md`
+The sections above author the **outcome**; this one authors the **forecast numbers** the panel shows
+(DCL Layer 1 — display custom hit-% and damage without changing the roll). RE in `05-reverse-engineering.md`
 §10: the displayed attack hit-% is copied by real code from a live forecast object (`object+0x2C`,
 the computed %) into the static display buffer `0x1407832C0` that the renderer reads; the UI is
 retained-mode, so an external write is racy (the engine recomputes on every redraw). The mod wins
@@ -1050,6 +1072,39 @@ then writes our value at copy time, on the same redraw the renderer draws, with 
   this only paints the forecast. The shipping form will feed `PreviewHitPctForcedValue` from the DCL
   formula's (attacker, defender) hit result so the preview matches the real authored odds.
 
+### Forecast DAMAGE preview (number + HP-bar) — ✅ proven live 2026-06-28
+
+The forecast **damage** number and the target **HP-bar ghost-depletion** both read one field:
+`obj+0x6 == unit+0x1C4`, the staged HP-damage — the *same* field the pre-clamp (`PreClampDamageRewrite`)
+rewrites to author the real result (RE in §11 of `05`). Control it and preview *and* result agree.
+Three levers, escalating from robust-but-laggy to clean-but-narrow:
+
+- **`PreviewForecastPoke*` — the universal lever (use this).** A poll-write of `obj+0x6`. Settings:
+  `PreviewForecastPokeEnabled`; `PreviewForecastPokeValue` (staged damage to show; `-1` = off). Each
+  poll it derefs the forecast global, validates the pointer lands in the unit table, and writes the
+  value (structural RVAs `PreviewForecastGlobalRva` `0x2FF3CF8`, `PreviewForecastUnitTableRva`
+  `0x1853CE0`, `…UnitStride` `0x200`, `…ObjOffset` `0x1BE`, `…DamageFieldOffset` `0x6` are overridable).
+  Works for **any** action (physical + magic). Because the panel is retained-mode (drawn once per
+  open, §11), the value shows on the **(re)open** of the preview, not while it is held. Logs the first
+  few writes as `[FORECAST-POKE] obj=… unitIdx=… wrote unit+0x1C4=…`.
+- **`PreviewForecastSource*` — compute-time finalizer hooks (first-open clean).** Force the
+  `obj+0x6` store as the engine computes it, so the number+bar are right on the *first* open. Settings:
+  `PreviewForecastSourceControlEnabled`; `PreviewForecastSourceForcedValue` (`-1` = observe);
+  `PreviewForecastSourceLogOnly`. Hooks a fixed site list — `0x30637E` (magic, confirmed), `0x308D8F`
+  (physical candidate), `0x307DC4`, `0x309664` — with per-site fire counters in a buffer
+  (`[PREVIEW-SOURCE-SUMMARY] buf=0x…`). Per-formula coverage, so pair it with the poke as the catch-all.
+- **`PreviewDamage*` — display-number paint (cosmetic, NUMBER only).** Paints display buffer
+  `0x1407832BE` via the forecast-number dispatch (all numeric branches). Settings:
+  `PreviewDamageControlEnabled`; `PreviewDamageForcedValue` (`-1` = observe); `PreviewDamageLogOnly`.
+  ⚠️ **Paints the number only — the HP-bar reads `obj+0x6`, not this buffer**, so used alone it
+  reproduces the "shows 500 but the bar says 184" mismatch. Layer it on the poke as a number guarantee.
+
+**Coherent recipe (proven):** `PreviewForecastPoke` (+ optional `PreviewForecastSource`/`PreviewDamage`)
+authors the preview number+bar, and `PreClampDamageRewrite` at the **correct** RVA `0x30A66F`
+(decimal `3188335` — *not* `3188847`=`0x30A86F`, which silently SKIPs) authors the result; feed both
+the same value and preview == result. Live 2026-06-28: Agrias→Ramza, physical attack AND Fire each
+previewed `11%` / `500` with the bar to ~67 and removed exactly 500 HP.
+
 ## What this architecture provides
 
 - arbitrary math in C#;
@@ -1063,14 +1118,17 @@ then writes our value at copy time, on the same redraw the renderer draws, with 
 - proven hit↔miss / parry / block control by BOTH input-control (write the defender's live evade bytes
   before the VM roll — Denuvo virtualizes code, not data) and output-control (two native hooks);
 - proven status control (`StatusOverride*`, live-confirmed Undead), reaction control (`BraveOverride*`,
-  Brave%-gate), MP control (combined pre-clamp `+0x1C8`/`+0x1CA`), and forecast hit-% display control
-  (`PreviewHitPct*`, proven live) — each a working lever, with per-action formula-driven arming as the
-  remaining engineering step;
+  Brave%-gate), MP control (combined pre-clamp `+0x1C8`/`+0x1CA`), and **full forecast display control —
+  hit-% (`PreviewHitPct*`) and damage number + HP-bar (`PreviewForecastPoke*`), both proven live for
+  physical and magic, coherent with the applied result** — each a working lever, with per-action
+  formula-driven arming as the remaining engineering step;
 - a foundation for AI scoring on the custom formula and richer preview/animation patches.
 
-Follow-up layers not owned by the config/DSL: exact damage preview text, AI scoring based on the
-custom formula, full KO/crystal/reaction-status lifecycle, per-action arming of the control levers,
-perfect ability-id capture, and multi-hit/reaction chains.
+Follow-up layers not owned by the config/DSL: AI scoring based on the custom formula, full
+KO/crystal/reaction-status lifecycle, per-action arming of the control levers (the preview poke and
+pre-clamp currently take a static value; the shipping form feeds them the DCL formula's
+(attacker, target) result), perfect ability-id capture, magic always-hit (the separate Faith
+avoidance roll, §9/§11 of `05`), and multi-hit/reaction chains.
 
 ## Sources
 

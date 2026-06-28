@@ -96,11 +96,16 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   cuts vanilla's ~11.6× buildable double-faith swing to ~3.5×; keeps a real atheist-tank identity
   without immunity; Faith is a bounded spreader, not the stack's explosion source). Exact band width +
   magic-vulnerability slope remain calibration.
-- **Zodiac (`09`):** the magnitude *shape* is RESOLVED (`sim_magic_stack`) — a **modest band**
-  (provisional weak **×1.30** / resist **×0.70**), **smaller than Faith's two-app effect**, combined
-  **multiplicatively & commutatively** with Faith/Shell (no stacking order to tune); big swings
-  (×2/absorb) are **rare designed properties, not the everyday band**. Still calibration: exact band
-  width, whether affinity boosts *dealing*, Lightning neutrality.
+- **Zodiac (`09`) — MODEL CHANGED 2026-06-28:** reverted from "elemental temperament" to **FFT-style
+  sign compatibility** (attacker × target), applied to **damage + hit**, on a **much subtler band**
+  than vanilla and **surfaced** in the preview. Grid = FFT's distance rule (1 best / 2 good / 2 bad /
+  rest neutral; matrix locked in `09`). Band chosen = **"Subtle"**: damage Good ×1.10 / Bad ×0.90 /
+  Best ×1.20 / Worst ×0.80; hit +1/−1 only on the opposite-sign (Best/Worst) matchup; opposite = Best
+  everyday, **Worst reserved for designed content**. Enters as `zodiac_mult` (physical `02` + magic
+  `11`) and `zodiac_hit` (attacker's 3d6 hit roll, `04`). Note: **elemental affinity moved off Zodiac**
+  to equipment/status/job/content (`element_mult`, `11`). Still calibration: final band ("Subtle" vs
+  "Very subtle"/"Medium"); whether `zodiac_hit` also touches the `13` status contest; Serpentarius
+  handling; presentation (item 6).
 - **Weapon skill (`10`):** the **`skill(grade, jobLevel, charLevel)` formula shape is RESOLVED**
   (validation A5, `sim_skill_scaling`): `skill = base[g] + rate[g]·(J·(jobLevel−1) +
   K·(jobLevel÷8)·(charLevel−1))` with provisional `J=2.5`, `K=0.25` (→ **one job level ≈ 10 character
@@ -159,19 +164,20 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   spell-centric** `base(MA) × spell_power × faith × element × G_m`, the conceptual mirror of physical
   (**physical subtracts, magic multiplies**); magic ignores physical DR (anti-armor); base(MA) linear
   (no GURPS table). **#1 magic risk:** no structural damper → band is calibration-held, stacked
-  multipliers compound (keep Faith the one big two-sided multiplier; Zodiac/Shell bounded bands;
-  soft-cap reserve). **Faith count is RESOLVED** (`sim_magic_faith`): **twice** (caster output × target
+  multipliers compound (keep Faith the one big two-sided multiplier; elemental affinity/Shell bounded
+  bands; Zodiac the subtle sign matchup `09`; soft-cap reserve). **Faith count is RESOLVED** (`sim_magic_faith`): **twice** (caster output × target
   vulnerability), each a **bounded band centered at 1.0**, provisional **[0.70, 1.30]** — the only shape
   consistent with the locked two-sided Faith (`08`/A2), and a bounded spreader (≤1.69×), not the
-  explosion source. **Zodiac/Shell stacking is RESOLVED** (`sim_magic_stack`): **all-multiplicative &
-  commutative** (no stacking order), **modest bounded bands** (provisional Zodiac weak ×1.30 / resist
-  ×0.70, Shell ×0.50), big swings (×2/absorb) kept as **rare designed properties**, **soft-cap (~2.5×)
-  in reserve** (dormant under the modest bands). The compounding corner stays ~2.2× and defense mirrors
+  explosion source. **Affinity/Shell/Zodiac stacking is RESOLVED** (`sim_magic_stack`): **all-multiplicative &
+  commutative** (no stacking order), **modest bounded bands** (provisional elemental affinity weak ×1.30 /
+  resist ×0.70, Shell ×0.50; Zodiac sign matchup subtler still — Best ×1.20 / Worst ×0.80, `09`), big
+  elemental swings (×2/absorb) kept as **rare designed properties**, **soft-cap (~2.5×) in reserve**
+  (dormant under the modest bands). The compounding corner stays ~2.2× and defense mirrors
   offense (a hard turtle ~0.24×, never immunity, with attacker outs). **The economy is RESOLVED**
   (`sim_magic_economy`): MP is a **per-battle budget** (small trickle) gating the **big spells**, over a
   free always-on floor that is the **caster weapon's basic Attack** — a **range-3 MA-scaled elemental
   bolt** (magic-gun Formula `0x04`, `14`), **element set by the equipped SKU, not the job**, committed
-  for the battle (no in-combat swap → Zodiac stays a planned choice). Staves carry the bolt too (a healer
+  for the battle (no in-combat swap → the elemental matchup stays a planned choice). Staves carry the bolt too (a healer
   is never useless); **strong healing stays MP-gated** (heal-on-attack is a floor-tier Staff SKU only).
   So the mage acts with magic every turn (heroic), the depleted floor is the anti-armor chipper (≥
   fighter vs plate, ~43% vs soft), and the budget (not just CT) gates bursts. This **revises `14`** (the
@@ -192,7 +198,7 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   Still open: the **Magic Evade % values** (calibration); magnitudes — **`G_m`: `sim_magic_economy` is
   evidence toward ~3** (balances mage~fighter/battle;
   the placeholder 8 one-shots everyone), plus spell tiers (incl. the weapon bolt's + heal tiers),
-  Faith/Zodiac/Shell band widths, reserve-cap value, MP pool/trickle, base(MA) curve.
+  Faith / elemental-affinity / Shell / Zodiac band widths, reserve-cap value, MP pool/trickle, base(MA) curve.
 
 ## 6. Player-facing readability / presentation
 

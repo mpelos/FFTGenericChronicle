@@ -127,6 +127,31 @@ internal static class RuntimeSettingsValidator
             if (!settings.PreviewHitPctLogOnly && settings.PreviewHitPctForcedValue >= 0)
                 report.Warn("PreviewHitPctControlEnabled", "preview hit% control overwrites the displayed forecast %; purely visual, does not change the actual roll.");
         }
+        if (settings.PreviewDamageControlEnabled)
+        {
+            if (settings.PreviewDamageForcedValue is < -1 or > 0xFFFF)
+                report.Error("PreviewDamageForcedValue", "Forced value must be -1 (observe) or 0..65535.");
+            if (!settings.PreviewDamageLogOnly && settings.PreviewDamageForcedValue >= 0)
+                report.Warn("PreviewDamageControlEnabled", "preview damage control overwrites the displayed forecast number; purely visual, does not change the real damage.");
+        }
+        if (settings.PreviewForecastSourceControlEnabled)
+        {
+            if (settings.PreviewForecastSourceForcedValue is < -1 or > 0xFFFF)
+                report.Error("PreviewForecastSourceForcedValue", "Forced value must be -1 (observe) or 0..65535.");
+            if (!settings.PreviewForecastSourceLogOnly && settings.PreviewForecastSourceForcedValue >= 0)
+                report.Warn("PreviewForecastSourceControlEnabled", "forecast source control rewrites the staged-damage field (+0x1C4) at the preview finalizer; number + HP-bar both follow it, but it does not change the actual applied damage (that is the pre-clamp lever).");
+        }
+        if (settings.PreviewForecastPokeEnabled)
+        {
+            if (settings.PreviewForecastPokeValue is < -1 or > 0x7FFF)
+                report.Error("PreviewForecastPokeValue", "Poke value must be -1 (off) or 0..32767.");
+            if (settings.PreviewForecastUnitStride <= 0)
+                report.Error("PreviewForecastUnitStride", "Unit stride must be positive.");
+            if (settings.PreviewForecastGlobalRva <= 0)
+                report.Error("PreviewForecastGlobalRva", "Forecast global RVA must be positive.");
+            if (settings.PreviewForecastPokeValue >= 0)
+                report.Warn("PreviewForecastPokeEnabled", "forecast poke poll-writes obj+0x6 (=unit+0x1C4); drives the preview NUMBER + HP-bar together for any action, but not the real result (that is the pre-clamp lever).");
+        }
         if (settings.PreClampDamageRewriteEnabled)
         {
             report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");

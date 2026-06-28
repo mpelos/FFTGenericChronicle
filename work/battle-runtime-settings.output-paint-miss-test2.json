@@ -1,0 +1,71 @@
+{
+  "_note": "TEST ALPHA-2 - CLEAN PAINTED MISS (selector paints the TYPE, pre-clamp zeroes the DAMAGE). test-alpha proved the split: forcing evade-type +0x1C0=0x06 made the record show a miss, but damage lives in SEPARATE fields (+0x1C4=184 staged, +0x1E5 high-bit=apply) and still applied (Ramza 567 -> 383 each hit). So a clean miss needs BOTH levers: (1) selector forces +0x1C0=0x06 (miss animation/type) - unchanged from test-alpha; (2) pre-clamp 0x30A66F forces the applied debit to 0 on Ramza. Together = miss animation + 0 damage. Floor unchanged: force-hit (evade 0 broadcast) + Brave 10 (Blade Grasp suppressed) so every attack is a natural hit to repaint. RUN: relaunch, attack Ramza from the front, physical melee, 4-5 times. OBSERVE PER ATTACK: (a) does Ramza show a MISS / dodge (not a hit)? (b) does his HP stay the same (0 damage)? PASS = dodge + 0 HP loss on a guaranteed hit = OUTPUT fully controls the result (type via selector + magnitude via pre-clamp); the miss/block/parry question is SOLVED via output + input-floor. The log shows [SELECTOR-PROBE ... CONTROL WROTE evadeType=0x06] AND a [PRECLAMP-REWRITE ...] line forcing debit 0; the ACTION-STATE poller shows Ramza's HP flat. If HP still drops -> the 184 reaches HP via a path the pre-clamp misses; next step is to extend the selector control to zero +0x1C4/+0x1E5 in place. Safe: only Ramza painted + zeroed; struct writes only.",
+
+  "EvadeOverrideEnabled": true,
+  "EvadeOverrideTargetCharId": -1,
+  "EvadeOverride46": 0,
+  "EvadeOverride47": 0,
+  "EvadeOverride48": 0,
+  "EvadeOverride49": 0,
+  "EvadeOverride4A": 0,
+  "EvadeOverride4B": 0,
+  "EvadeOverride4C": 0,
+  "EvadeOverride4D": 0,
+  "EvadeOverride4E": 0,
+  "EvadeOverrideMaxLogs": 64,
+  "EvadeOverrideSweepSlots": 32,
+
+  "BraveOverrideEnabled": true,
+  "BraveOverrideTargetCharId": -1,
+  "BraveOverride2A": -1,
+  "BraveOverride2B": 10,
+  "BraveOverride2C": -1,
+  "BraveOverride2D": -1,
+  "BraveOverrideMaxLogs": 64,
+  "BraveOverrideSweepSlots": 32,
+
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+
+  "ResultSelectorControlEnabled": true,
+  "ResultSelectorControlLogOnly": false,
+  "ResultSelectorControlMaxWrites": 32,
+  "ResultSelectorControlTargetCharId": 1,
+  "ResultSelectorControlMatchEvadeType": -1,
+  "ResultSelectorControlForceEvadeType": 6,
+  "ResultSelectorControlForceResultCode": 0,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampDamageRewriteTargetCharId": 1,
+  "PreClampDamageRewriteForcedDebit": 0,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 20,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": true,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

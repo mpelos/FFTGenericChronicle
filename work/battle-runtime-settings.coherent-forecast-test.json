@@ -1,0 +1,57 @@
+{
+  "_note": "COHERENT FORECAST TEST (needs the NEW DLL with the forecast-source hook). Proves the unified lever: the forecast 'object' is just unit+0x1BE, so obj+0x6 == unit+0x1C4 == the staged-damage field that drives the preview NUMBER, the HP-bar ghost-depletion, AND the apply path. This build forces that ONE field to 500 at the preview finalizers (PreviewForecastSource, hooks 0x30637E/0x307DC4/0x309664) AND at the resolution pre-clamp (0x30A66F, now FORCE not log-only, scoped to Ramza charId 1). The display-number paint (PreviewDamage, 500) stays on as a number safety-net. Hit% forced to 11. EXPECTED, coherent end to end: Agrias opens the ATTACK preview on Ramza -> hit = 11%, damage NUMBER = 500, and the HP-bar GHOST shows Ramza dropping from 567 to ~67 (NOT the old ~1/3 natural depletion). Agrias actually ATTACKS Ramza -> Ramza loses 500 (567 -> 67). Repeat with FIRE: preview 11% / 500 / bar to ~67, and casting Fire -> Ramza loses 500 (magic rides the same +0x1C4 pre-clamp). KEY THING TO REPORT: does the HP-BAR ghost now match the 500 number (bar nearly empty), and does the actual result = 500? RUN: game + Reloaded closed so Claude can deploy; enable ONLY fftivc.utility.modloader + fftivc.generic.chronicle.codemod; keep data mod fftivc.generic.chronicle DISABLED. Unequip Ramza's reaction so no Blade-Grasp/reaction interferes. Claude verifies from battleprobe_log.txt: [PREVIEW-SOURCE-HOOK]/[PREVIEW-SOURCE-SUMMARY] + per-site fire counters (which finalizer the attack/Fire used), [PREVIEW-DAMAGE-*], [PREVIEW-HITPCT-*], and [PRECLAMP] showing the forced 500 debit on Ramza.",
+
+  "PreviewHitPctControlEnabled": true,
+  "PreviewHitPctRva": 2260990,
+  "PreviewHitPctExpectedBytes": "41 BA 02 00 00 00",
+  "PreviewHitPctForcedValue": 11,
+  "PreviewHitPctLogOnly": false,
+
+  "PreviewDamageControlEnabled": true,
+  "PreviewDamageForcedValue": 500,
+  "PreviewDamageLogOnly": false,
+
+  "PreviewForecastSourceControlEnabled": true,
+  "PreviewForecastSourceForcedValue": 500,
+  "PreviewForecastSourceLogOnly": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteRva": 3188847,
+  "PreClampDamageRewriteExpectedBytes": "0F BF 45 06",
+  "PreClampDamageRewriteTargetCharId": 1,
+  "PreClampDamageRewriteTargetTeam": -1,
+  "PreClampDamageRewriteExpectedDebit": -1,
+  "PreClampDamageRewriteExpectedCredit": -1,
+  "PreClampDamageRewriteMinHp": 1,
+  "PreClampDamageRewriteMaxHp": 9999,
+  "PreClampDamageRewriteForcedDebit": 500,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampFormulaPlanEnabled": false,
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "RewriteObservedDamage": false,
+  "DryRunRewrites": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+  "LogActionStateChanges": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

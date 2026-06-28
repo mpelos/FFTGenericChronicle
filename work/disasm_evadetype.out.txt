@@ -1,0 +1,711 @@
+exe=D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe
+image_base=0x140000000
+REAL_MAX=0x610000
+
+======================================================================
+(1) REAL-code WRITES to displacement +0x1C0 (evade-type byte)
+======================================================================
+
+  0x205B38: mov byte ptr [rdi + 0x1c0], r12b   [mov [r+d32],r8]
+    00205B18: 78 25                  js 0x140205b3f
+
+  0x205B39: mov byte ptr [rdi + 0x1c0], ah   [mov [r+d32],r8]
+    00205B19: 25 06 00 8A 4F         and eax, 0x4f8a0006
+    00205B1E: 08 0F                  or byte ptr [rdi], cl
+    00205B20: B6 C9                  mov dh, 0xc9
+    00205B22: E8 E9 AF 05 00         call 0x140260b10
+    00205B27: 48 8B C8               mov rcx, rax
+    00205B2A: E8 25 54 FF FF         call 0x1401faf54
+    00205B2F: F6 87 5C 01 00 00 04   test byte ptr [rdi + 0x15c], 4
+    00205B36: 74 07                  je 0x140205b3f
+    00205B38: 44 88 A7 C0 01 00 00   mov byte ptr [rdi + 0x1c0], r12b  <== +1C0 WRITE
+
+  total +0x1C0 WRITE sites: 2
+
+======================================================================
+(2) REAL-code READS of displacement +0x1C0 (who consumes the type)
+======================================================================
+
+  0x1FAB3F: movzx ecx, byte ptr [rdx + 0x1c0]   [movzx/movsx r32,[r+d32]]
+    001FAB39: 8B 90 48 01 00 00      mov edx, dword ptr [rax + 0x148]
+    001FAB3F: 0F B6 8A C0 01 00 00   movzx ecx, byte ptr [rdx + 0x1c0]  <== +1C0 READ
+    001FAB46: 83 F9 06               cmp ecx, 6  (=6?)
+    001FAB49: 77 21                  ja 0x1401fab6c
+    001FAB4B: 74 5C                  je 0x1401faba9  (je)
+    001FAB4D: 41 2B CA               sub ecx, r10d
+    001FAB50: 74 14                  je 0x1401fab66  (je)
+    001FAB52: 41 2B CA               sub ecx, r10d
+    001FAB55: 74 0F                  je 0x1401fab66  (je)
+    001FAB57: 41 2B CA               sub ecx, r10d
+    001FAB5A: 74 0A                  je 0x1401fab66  (je)
+    001FAB5C: 41 2B CA               sub ecx, r10d
+    001FAB5F: 74 05                  je 0x1401fab66  (je)
+
+  0x2061C3: mov al, byte ptr [rcx + 0x1c0]   [mov r8,[r+d32]]
+    002061BD: 88 6C 94 29            mov byte ptr [rsp + rdx*4 + 0x29], ch
+    002061C1: EB 21                  jmp 0x1402061e4  (jmp)
+    002061C3: 8A 81 C0 01 00 00      mov al, byte ptr [rcx + 0x1c0]  <== +1C0 READ
+    002061C9: 3C 09                  cmp al, 9
+    002061CB: 75 07                  jne 0x1402061d4  (jne)
+    002061CD: C6 44 94 29 02         mov byte ptr [rsp + rdx*4 + 0x29], 2
+    002061D2: EB 10                  jmp 0x1402061e4  (jmp)
+    002061D4: F6 D8                  neg al
+    002061D6: 1A C0                  sbb al, al
+    002061D8: 24 03                  and al, 3
+    002061DA: 88 44 94 29            mov byte ptr [rsp + rdx*4 + 0x29], al
+    002061DE: EB 04                  jmp 0x1402061e4  (jmp)
+    002061E0: 88 5C 94 29            mov byte ptr [rsp + rdx*4 + 0x29], bl
+
+  0x266DE1: mov al, byte ptr [rdx + 0x1c0]   [mov r8,[r+d32]]
+    00266DDB: 0F BA E0 16            bt eax, 0x16
+    00266DDF: 73 24                  jae 0x140266e05
+    00266DE1: 8A 82 C0 01 00 00      mov al, byte ptr [rdx + 0x1c0]  <== +1C0 READ
+    00266DE7: 2C 04                  sub al, 4  (=4?)
+    00266DE9: F6 D8                  neg al
+    00266DEB: 66 1B C0               sbb ax, ax
+    00266DEE: 66 03 C5               add ax, bp
+    00266DF1: 66 89 87 42 03 00 00   mov word ptr [rdi + 0x342], ax
+    00266DF8: 0F BA B7 D8 01 00 00 16 btr dword ptr [rdi + 0x1d8], 0x16
+    00266E00: E9 B6 01 00 00         jmp 0x140266fbb  (jmp)
+
+  0x266E10: mov al, byte ptr [rdx + 0x1c0]   [mov r8,[r+d32]]
+    00266E0A: 0F 83 C4 00 00 00      jae 0x140266ed4
+    00266E10: 8A 82 C0 01 00 00      mov al, byte ptr [rdx + 0x1c0]  <== +1C0 READ
+    00266E16: 3C 01                  cmp al, 1  (=1?)
+    00266E18: 75 0A                  jne 0x140266e24  (jne)
+    00266E1A: B8 21 00 00 00         mov eax, 0x21
+    00266E1F: E9 95 00 00 00         jmp 0x140266eb9  (jmp)
+    00266E24: 2C 02                  sub al, 2
+    00266E26: 3C 01                  cmp al, 1  (=1?)
+    00266E28: 76 0D                  jbe 0x140266e37
+    00266E2A: 66 44 89 97 42 03 00 00 mov word ptr [rdi + 0x342], r10w
+
+  0x26A4E5: movzx edx, byte ptr [rcx + 0x1c0]   [movzx/movsx r32,[r+d32]]
+    0026A4DF: 0F 87 94 00 00 00      ja 0x14026a579
+    0026A4E5: 0F B6 91 C0 01 00 00   movzx edx, byte ptr [rcx + 0x1c0]  <== +1C0 READ
+    0026A4EC: 83 EA 02               sub edx, 2
+    0026A4EF: 74 0A                  je 0x14026a4fb  (je)
+    0026A4F1: 83 EA 01               sub edx, 1  (=1?)
+    0026A4F4: 74 05                  je 0x14026a4fb  (je)
+    0026A4F6: 83 FA 07               cmp edx, 7
+    0026A4F9: 75 7E                  jne 0x14026a579  (jne)
+    0026A4FB: 41 0F B7 88 FC 01 00 00 movzx ecx, word ptr [r8 + 0x1fc]
+    0026A503: D1 E9                  shr ecx, 1  (=1?)
+    0026A505: 83 E9 3D               sub ecx, 0x3d
+
+  0x26A67D: mov cl, byte ptr [rcx + 0x1c0]   [mov r8,[r+d32]]
+    0026A677: D0 66 0F               shl byte ptr [rsi + 0xf], 1  (=1?)
+    0026A67A: 7F 45                  jg 0x14026a6c1
+    0026A67C: C0 8A 89 C0 01 00 00   ror byte ptr [rdx + 0x1c089], 0  <== +1C0 READ
+    0026A683: E8 88 AB F9 FF         call 0x140205210
+    0026A688: 84 C0                  test al, al
+    0026A68A: 74 3A                  je 0x14026a6c6  (je)
+    0026A68C: 48 8B 83 48 01 00 00   mov rax, qword ptr [rbx + 0x148]
+    0026A693: 0F B6 88 BC 01 00 00   movzx ecx, byte ptr [rax + 0x1bc]
+    0026A69A: 48 81 C1 CB 13 00 00   add rcx, 0x13cb
+
+  0x26A7AB: mov cl, byte ptr [rcx + 0x1c0]   [mov r8,[r+d32]]
+    0026A7A5: D0 66 0F               shl byte ptr [rsi + 0xf], 1  (=1?)
+    0026A7A8: 7F 45                  jg 0x14026a7ef
+    0026A7AA: C0 8A 89 C0 01 00 00   ror byte ptr [rdx + 0x1c089], 0  <== +1C0 READ
+    0026A7B1: E8 5A AA F9 FF         call 0x140205210
+    0026A7B6: 84 C0                  test al, al
+    0026A7B8: 74 3A                  je 0x14026a7f4  (je)
+    0026A7BA: 48 8B 83 48 01 00 00   mov rax, qword ptr [rbx + 0x148]
+    0026A7C1: 0F B6 88 BC 01 00 00   movzx ecx, byte ptr [rax + 0x1bc]
+    0026A7C8: 48 81 C1 CB 13 00 00   add rcx, 0x13cb
+
+  0x26A8F1: mov cl, byte ptr [rsi + 0x1c0]   [mov r8,[r+d32]]
+    0026A8EB: 9F                     lahf
+    0026A8EC: 00 4C 8D 4D            add byte ptr [rbp + rcx*4 + 0x4d], cl
+    0026A8F0: A0 8A 8E C0 01 00 00 48 05 movabs al, byte ptr [0x548000001c08e8a]
+    0026A8F9: 68 08 00 00 48         push 0x48000008
+    0026A8FE: 89 45 B0               mov dword ptr [rbp - 0x50], eax
+    0026A901: 0F 57 C0               xorps xmm0, xmm0
+    0026A904: 33 C0                  xor eax, eax
+    0026A906: 48 89 7D A0            mov qword ptr [rbp - 0x60], rdi
+    0026A90A: 4C 8B C3               mov r8, rbx
+    0026A90D: 48 89 45 D8            mov qword ptr [rbp - 0x28], rax
+    0026A911: 49 8B D7               mov rdx, r15
+
+  0x26A98B: movzx ecx, byte ptr [rsi + 0x1c0]   [movzx/movsx r32,[r+d32]]
+    0026A985: 48 8B 01               mov rax, qword ptr [rcx]
+    0026A988: FF 50 18               call qword ptr [rax + 0x18]
+    0026A98B: 0F B6 8E C0 01 00 00   movzx ecx, byte ptr [rsi + 0x1c0]  <== +1C0 READ
+    0026A992: 41 BC 19 00 00 00      mov r12d, 0x19
+    0026A998: 83 F9 07               cmp ecx, 7
+    0026A99B: 0F 87 B7 00 00 00      ja 0x14026aa58
+    0026A9A1: 74 22                  je 0x14026a9c5  (je)
+    0026A9A3: 83 E9 01               sub ecx, 1  (=1?)
+    0026A9A6: 74 1D                  je 0x14026a9c5  (je)
+    0026A9A8: 83 E9 01               sub ecx, 1  (=1?)
+    0026A9AB: 74 3B                  je 0x14026a9e8  (je)
+
+  total +0x1C0 READ sites: 9
+
+======================================================================
+(3) REAL-code READS of accessory-evade candidate disps
+    candidates: ['0x48', '0x49', '0x4c', '0x4d', '0x52', '0x53', '0x54', '0x55', '0x56', '0x57', '0x58', '0x59', '0x5a', '0x5b', '0x5c', '0x5d', '0x5e', '0x5f']  (gaps around 0x46/47/4A/4B/4E)
+======================================================================
+
+  --- disp +0x48: 71 read(s) ---
+    0x6D830: mov al, byte ptr [rbx + 0x48]
+    0x7B9FC: mov r8b, byte ptr [rbx + 0x48]
+    0x7B9FD: mov r8b, byte ptr [rbx + 0x48]
+    0x7BA17: mov r8b, byte ptr [rbx + 0x48]
+    0x7BA18: mov r8b, byte ptr [rbx + 0x48]
+    0x7BA31: mov r8b, byte ptr [rbx + 0x48]
+    0x7BA32: mov r8b, byte ptr [rbx + 0x48]
+    0x129FA2: mov r8b, byte ptr [rax + 0x48]
+    0x129FA3: mov r8b, byte ptr [rax + 0x48]
+    0x162A54: mov al, byte ptr [rax + 0x48]
+    0x1EA7DC: mov al, byte ptr [r8 + 0x48]
+    0x1EA7DD: mov al, byte ptr [r8 + 0x48]
+    ... (+59 more)
+
+  --- disp +0x49: 41 read(s) ---
+    0x1B8E1A: movzx ecx, byte ptr [rcx + 0x49]
+    0x216B73: mov bh, byte ptr [rdi + 0x49]
+    0x226FCC: movzx eax, byte ptr [rbx + 0x49]
+    0x25D309: mov al, byte ptr [rcx + 0x49]
+    0x284BEF: movzx r9d, byte ptr [rsi + 0x49]
+    0x284BF0: movzx r9d, byte ptr [rsi + 0x49]
+    0x28CC86: mov ah, byte ptr [rcx + 0x49]
+    0x2AE53C: mov cl, byte ptr [rdi + 0x49]
+    0x2B4CAE: mov dl, byte ptr [rdx + 0x49]
+    0x2C4EB9: movzx eax, byte ptr [rbx + 0x49]
+    0x2DE708: movzx eax, byte ptr [rbx + 0x49]
+    0x2EBF6D: mov ch, byte ptr [rdx + 0x49]
+    ... (+29 more)
+
+  --- disp +0x4C: 35 read(s) ---
+    0x650F7: mov r13b, byte ptr [r8 + 0x4c]
+    0x650F8: mov r13b, byte ptr [r8 + 0x4c]
+    0x6E3D7: mov al, byte ptr [rdi + 0x4c]
+    0x730DB: mov al, byte ptr [rsi + 0x4c]
+    0x13B11E: mov al, byte ptr [rax + 0x4c]
+    0x13BB8D: movzx ecx, byte ptr [rcx + 0x4c]
+    0x15F6CF: mov ch, byte ptr [rdx + 0x4c]
+    0x1B8E7B: mov al, byte ptr [rdi + 0x4c]
+    0x1B8F42: mov al, byte ptr [rdi + 0x4c]
+    0x22702E: movzx eax, byte ptr [rbx + 0x4c]
+    0x25ABDF: mov al, byte ptr [r11 + 0x4c]
+    0x25ABE0: mov al, byte ptr [r11 + 0x4c]
+    ... (+23 more)
+
+  --- disp +0x4D: 27 read(s) ---
+    0x674B7: mov bh, byte ptr [rbx + 0x4d]
+    0x6E3DF: mov al, byte ptr [rdi + 0x4d]
+    0x730E6: mov al, byte ptr [rsi + 0x4d]
+    0x7B9C0: mov al, byte ptr [rbx + 0x4d]
+    0x172AC1: mov bl, byte ptr [rsi + 0x4d]
+    0x227000: movzx eax, byte ptr [rbx + 0x4d]
+    0x284C17: movzx r9, byte ptr [rsi + 0x4d]
+    0x284C18: movzx r9, byte ptr [rsi + 0x4d]
+    0x2C4EF4: movzx eax, byte ptr [rbx + 0x4d]
+    0x2DE73C: movzx eax, byte ptr [rbx + 0x4d]
+    0x339E96: mov dl, byte ptr [rax + 0x4d]
+    0x33B5F8: movzx eax, byte ptr [rbx + 0x4d]
+    ... (+15 more)
+
+  --- disp +0x52: 12 read(s) ---
+    0xBA43: mov ch, byte ptr [rsi + 0x52]
+    0x630D7: movzx ecx, byte ptr [r9 + 0x52]
+    0x630D8: movzx ecx, byte ptr [r9 + 0x52]
+    0x63860: movzx ecx, byte ptr [r9 + 0x52]
+    0x63861: movzx ecx, byte ptr [r9 + 0x52]
+    0x3D1983: mov dl, byte ptr [rdi + 0x52]
+    0x3D7CF4: mov dh, byte ptr [rbx + 0x52]
+    0x403598: mov bl, byte ptr [rdi + 0x52]
+    0x4FD663: movzx eax, byte ptr [rax + 0x52]
+    0x500474: movzx eax, byte ptr [rax + 0x52]
+    0x594B51: movzx ecx, byte ptr [r9 + 0x52]
+    0x594B52: movzx ecx, byte ptr [r9 + 0x52]
+
+  --- disp +0x53: 8 read(s) ---
+    0x19FC7: mov spl, byte ptr [rcx + 0x53]
+    0x19FC8: mov spl, byte ptr [rcx + 0x53]
+    0x4104A: movzx edi, byte ptr [rcx + 0x53]
+    0x63093: movzx esi, byte ptr [rcx + 0x53]
+    0x63815: movzx esi, byte ptr [rcx + 0x53]
+    0x6C464: mov al, byte ptr [rbx + 0x53]
+    0xF625A: mov bl, byte ptr [rbx + 0x53]
+    0x500483: movzx eax, byte ptr [rax + 0x53]
+
+  --- disp +0x54: 14 read(s) ---
+    0x1523D: mov dl, byte ptr [rax + 0x54]
+    0xDED7D: mov ch, byte ptr [rax + 0x54]
+    0xE68F8: mov cl, byte ptr [rbx + 0x54]
+    0x1BAFEA: mov ch, byte ptr [rbx + 0x54]
+    0x1BD71E: mov ch, byte ptr [rcx + 0x54]
+    0x30F593: mov al, byte ptr [rdi + 0x54]
+    0x38C85E: mov ah, byte ptr [rcx + 0x54]
+    0x3DD5EB: movzx eax, byte ptr [rbx + 0x54]
+    0x3DDBE0: movzx eax, byte ptr [rdi + 0x54]
+    0x3F7CC7: mov al, byte ptr [rdx + 0x54]
+    0x3F7D22: mov al, byte ptr [rdx + 0x54]
+    0x3F831A: mov al, byte ptr [rdx + 0x54]
+    ... (+2 more)
+
+  --- disp +0x55: 12 read(s) ---
+    0x2BC26: mov dl, byte ptr [rdx + 0x55]
+    0x725DA: mov ah, byte ptr [rsi + 0x55]
+    0xD7D9A: mov dh, byte ptr [rdi + 0x55]
+    0x2BC2B2: mov dl, byte ptr [rcx + 0x55]
+    0x31BEF2: mov dh, byte ptr [rcx + 0x55]
+    0x38E1A0: mov bl, byte ptr [rdi + 0x55]
+    0x3AFF8C: mov cl, byte ptr [rdi + 0x55]
+    0x3DE13A: movzx ecx, byte ptr [rsi + 0x55]
+    0x3F1A3B: mov ah, byte ptr [rcx + 0x55]
+    0x3F7CCA: mov cl, byte ptr [rdx + 0x55]
+    0x3F831D: mov cl, byte ptr [rdx + 0x55]
+    0x5AB209: movzx eax, byte ptr [rdx + 0x55]
+
+  --- disp +0x56: 112 read(s) ---
+    0xD792A: mov r8b, byte ptr [r14 + 0x56]
+    0xD792B: mov r8b, byte ptr [r14 + 0x56]
+    0x21D9F2: mov dl, byte ptr [rdx + 0x56]
+    0x284DA1: mov al, byte ptr [rsi + 0x56]
+    0x360564: mov al, byte ptr [rdi + 0x56]
+    0x39652B: mov al, byte ptr [rbx + 0x56]
+    0x39EE4E: movzx r15d, byte ptr [rsi + 0x56]
+    0x39EE4F: movzx r15d, byte ptr [rsi + 0x56]
+    0x39F822: movzx r14d, byte ptr [r8 + 0x56]
+    0x39F823: movzx r14d, byte ptr [r8 + 0x56]
+    0x3A3039: movzx eax, byte ptr [rax + 0x56]
+    0x3A4252: movzx r14d, byte ptr [rax + 0x56]
+    ... (+100 more)
+
+  --- disp +0x57: 52 read(s) ---
+    0x219138: mov cl, byte ptr [rax + 0x57]
+    0x26E8F2: mov bl, byte ptr [rdi + 0x57]
+    0x2D0383: mov al, byte ptr [rdx + 0x57]
+    0x39EE43: movzx eax, byte ptr [rsi + 0x57]
+    0x3A402D: movzx ecx, byte ptr [rax + 0x57]
+    0x3A435A: movzx edx, byte ptr [rcx + 0x57]
+    0x3A7FD1: movzx eax, byte ptr [rbx + 0x57]
+    0x3C27FD: movzx r8d, byte ptr [r14 + 0x57]
+    0x3C27FE: movzx r8d, byte ptr [r14 + 0x57]
+    0x3C2802: movzx ecx, byte ptr [rdx + 0x57]
+    0x3C290F: movzx ecx, byte ptr [r9 + 0x57]
+    0x3C2910: movzx ecx, byte ptr [r9 + 0x57]
+    ... (+40 more)
+
+  --- disp +0x58: 22 read(s) ---
+    0x287B3: mov ah, byte ptr [rsi + 0x58]
+    0x5A44D: mov bpl, byte ptr [rdx + 0x58]
+    0x5A44E: mov bpl, byte ptr [rdx + 0x58]
+    0x5C646: mov r12b, byte ptr [rsi + 0x58]
+    0x5C647: mov r12b, byte ptr [rsi + 0x58]
+    0xE138E: mov cl, byte ptr [rdx + 0x58]
+    0x13357C: mov bh, byte ptr [rdi + 0x58]
+    0x13FB7E: mov al, byte ptr [rcx + 0x58]
+    0x1C2D7B: movzx ecx, byte ptr [rcx + 0x58]
+    0x3A04F5: mov dh, byte ptr [rcx + 0x58]
+    0x3DE33B: mov al, byte ptr [rsi + 0x58]
+    0x3F4028: mov al, byte ptr [rbx + 0x58]
+    ... (+10 more)
+
+  --- disp +0x59: 25 read(s) ---
+    0x3A877: movzx eax, byte ptr [rax + 0x59]
+    0x3A907: movzx r11d, byte ptr [r8 + 0x59]
+    0x3A908: movzx r11d, byte ptr [r8 + 0x59]
+    0x3A975: movzx eax, byte ptr [r8 + 0x59]
+    0x3A976: movzx eax, byte ptr [r8 + 0x59]
+    0x3D7B9: movzx r9d, byte ptr [rbx + 0x59]
+    0x3D7BA: movzx r9d, byte ptr [rbx + 0x59]
+    0x3D7D0: movzx eax, byte ptr [rbx + 0x59]
+    0x3D822: movzx eax, byte ptr [rbx + 0x59]
+    0x3DCAD: movzx eax, byte ptr [r9 + 0x59]
+    0x3DCAE: movzx eax, byte ptr [r9 + 0x59]
+    0x3DDA1: movzx eax, byte ptr [r9 + 0x59]
+    ... (+13 more)
+
+  --- disp +0x5A: 31 read(s) ---
+    0x6F612: mov r8b, byte ptr [rbx + 0x5a]
+    0x6F613: mov r8b, byte ptr [rbx + 0x5a]
+    0x6F65F: mov r8b, byte ptr [rbx + 0x5a]
+    0x6F660: mov r8b, byte ptr [rbx + 0x5a]
+    0x6F75C: mov r8b, byte ptr [rbx + 0x5a]
+    0x6F75D: mov r8b, byte ptr [rbx + 0x5a]
+    0x72BAF: mov r8b, byte ptr [rbx + 0x5a]
+    0x72BB0: mov r8b, byte ptr [rbx + 0x5a]
+    0x72C41: mov r8b, byte ptr [rbx + 0x5a]
+    0x72C42: mov r8b, byte ptr [rbx + 0x5a]
+    0x72C7C: mov r8b, byte ptr [rbx + 0x5a]
+    0x72C7D: mov r8b, byte ptr [rbx + 0x5a]
+    ... (+19 more)
+
+  --- disp +0x5B: 8 read(s) ---
+    0x1590CA: mov ch, byte ptr [rcx + 0x5b]
+    0x1592CA: mov ah, byte ptr [rdi + 0x5b]
+    0x21914F: mov cl, byte ptr [rax + 0x5b]
+    0x2277F8: mov dl, byte ptr [rdi + 0x5b]
+    0x23C140: mov cl, byte ptr [rdx + 0x5b]
+    0x284359: mov cl, byte ptr [rax + 0x5b]
+    0x2D0397: mov al, byte ptr [rdx + 0x5b]
+    0x5AB260: movzx eax, byte ptr [rbx + 0x5b]
+
+  --- disp +0x5C: 14 read(s) ---
+    0x328EC: mov al, byte ptr [rbx + 0x5c]
+    0x4A0BF: mov cl, byte ptr [r14 + 0x5c]
+    0x4A0C0: mov cl, byte ptr [r14 + 0x5c]
+    0x5A74D: mov cl, byte ptr [rdi + 0x5c]
+    0x1CB286: movzx ecx, byte ptr [rbx + 0x5c]
+    0x1CB2AA: movzx ecx, byte ptr [rbx + 0x5c]
+    0x1CB7F3: movzx ecx, byte ptr [rbx + 0x5c]
+    0x2C3833: mov cl, byte ptr [r9 + 0x5c]
+    0x2C3834: mov cl, byte ptr [r9 + 0x5c]
+    0x3F7D28: mov r8b, byte ptr [rdx + 0x5c]
+    0x3F7D29: mov r8b, byte ptr [rdx + 0x5c]
+    0x43C7B3: mov al, byte ptr [rsi + 0x5c]
+    ... (+2 more)
+
+  --- disp +0x5D: 6 read(s) ---
+    0x5A8BA: mov cl, byte ptr [rdi + 0x5d]
+    0x1F1157: mov dl, byte ptr [rsi + 0x5d]
+    0x23CA26: mov cl, byte ptr [rax + 0x5d]
+    0x2E57BA: mov al, byte ptr [rdx + 0x5d]
+    0x4FAB2C: movzx eax, byte ptr [rsi + 0x5d]
+    0x5AB271: movzx eax, byte ptr [rbx + 0x5d]
+
+  --- disp +0x5E: 8 read(s) ---
+    0x34CE: mov cl, byte ptr [rdx + 0x5e]
+    0x4DD3C: mov bl, byte ptr [rbx + 0x5e]
+    0x5A754: movsx edx, byte ptr [rdi + 0x5e]
+    0x1960A2: mov bl, byte ptr [rdi + 0x5e]
+    0x25E68F: movsx eax, byte ptr [rbx + 0x5e]
+    0x2D5952: mov al, byte ptr [rax + 0x5e]
+    0x58EDCE: mov bh, byte ptr [rax + 0x5e]
+    0x5AB27E: movzx eax, byte ptr [rbx + 0x5e]
+
+  --- disp +0x5F: 6 read(s) ---
+    0x5A79D: movsx r14, byte ptr [rdi + 0x5f]
+    0x5A79E: movsx r14, byte ptr [rdi + 0x5f]
+    0xAD4A8: mov dl, byte ptr [rbx + 0x5f]
+    0x146F01: mov bh, byte ptr [rcx + 0x5f]
+    0x2694C8: mov bl, byte ptr [rdi + 0x5f]
+    0x5AB287: movzx eax, byte ptr [rbx + 0x5f]
+
+  total accessory-disp reads: 504
+
+======================================================================
+(4) SELECTOR 0x205210 — wide dump to expose the cl(=+1C0) switch
+======================================================================
+    00205210: 48 89 5C 24 08         mov qword ptr [rsp + 8], rbx
+    00205215: 48 89 6C 24 10         mov qword ptr [rsp + 0x10], rbp
+    0020521A: 48 89 74 24 18         mov qword ptr [rsp + 0x18], rsi
+    0020521F: 57                     push rdi
+    00205220: 48 83 EC 20            sub rsp, 0x20
+    00205224: 0F B6 F1               movzx esi, cl
+    00205227: 49 8B D9               mov rbx, r9
+    0020522A: 41 C6 41 0C FF         mov byte ptr [r9 + 0xc], 0xff
+    0020522F: 48 8B EA               mov rbp, rdx
+    00205232: 4D 85 C0               test r8, r8
+    00205235: 0F 84 44 02 00 00      je 0x14020547f  (branch)
+    0020523B: 49 8B B8 48 01 00 00   mov rdi, qword ptr [r8 + 0x148]
+    00205242: 48 85 FF               test rdi, rdi
+    00205245: 0F 84 34 02 00 00      je 0x14020547f  (branch)
+    0020524B: 49 8B C8               mov rcx, r8
+    0020524E: E8 0D 45 06 00         call 0x140269760
+    00205253: 3C 02                  cmp al, 2  *type-cmp?*
+    00205255: 0F 83 24 02 00 00      jae 0x14020547f  (branch)
+    0020525B: 48 85 ED               test rbp, rbp
+    0020525E: 74 19                  je 0x140205279  (branch)
+    00205260: 48 8B 85 48 01 00 00   mov rax, qword ptr [rbp + 0x148]
+    00205267: 48 85 C0               test rax, rax
+    0020526A: 0F 84 0F 02 00 00      je 0x14020547f  (branch)
+    00205270: 8A 80 BC 01 00 00      mov al, byte ptr [rax + 0x1bc]
+    00205276: 88 43 0C               mov byte ptr [rbx + 0xc], al
+    00205279: 80 BF BE 01 00 00 00   cmp byte ptr [rdi + 0x1be], 0  <== +1BE (dmg/evade switch)
+    00205280: 0F 84 74 01 00 00      je 0x1402053fa  (branch)
+    00205286: 8A 87 E5 01 00 00      mov al, byte ptr [rdi + 0x1e5]  (+1E5)
+    0020528C: 84 C0                  test al, al
+    0020528E: 79 36                  jns 0x1402052c6  (branch)
+    00205290: F6 87 DB 01 00 00 20   test byte ptr [rdi + 0x1db], 0x20
+    00205297: 0F 85 DE 01 00 00      jne 0x14020547b  (branch)
+    0020529D: F6 87 DD 01 00 00 01   test byte ptr [rdi + 0x1dd], 1
+    002052A4: 74 0D                  je 0x1402052b3  (branch)
+    002052A6: C7 03 14 00 00 00      mov dword ptr [rbx], 0x14
+    002052AC: B0 01                  mov al, 1
+    002052AE: E9 CE 01 00 00         jmp 0x140205481
+    002052B3: C7 43 08 02 00 00 00   mov dword ptr [rbx + 8], 2
+    002052BA: 0F BF 87 C4 01 00 00   movsx eax, word ptr [rdi + 0x1c4]  (+1C4 dmg)
+    002052C1: 89 43 30               mov dword ptr [rbx + 0x30], eax
+    002052C4: EB E6                  jmp 0x1402052ac
+    002052C6: A8 20                  test al, 0x20
+    002052C8: 0F 85 21 01 00 00      jne 0x1402053ef  (branch)
+    002052CE: A8 01                  test al, 1
+    002052D0: 0F 84 98 00 00 00      je 0x14020536e  (branch)
+    002052D6: 8A 97 D2 01 00 00      mov dl, byte ptr [rdi + 0x1d2]
+    002052DC: 84 D2                  test dl, dl
+    002052DE: 74 06                  je 0x1402052e6  (branch)
+    002052E0: 0F 89 09 01 00 00      jns 0x1402053ef  (branch)
+    002052E6: 44 8A 87 D3 01 00 00   mov r8b, byte ptr [rdi + 0x1d3]
+    002052ED: 45 84 C0               test r8b, r8b
+    002052F0: 74 06                  je 0x1402052f8  (branch)
+    002052F2: 0F 89 F7 00 00 00      jns 0x1402053ef  (branch)
+    002052F8: 44 8A 8F D4 01 00 00   mov r9b, byte ptr [rdi + 0x1d4]
+    002052FF: 45 84 C9               test r9b, r9b
+    00205302: 74 06                  je 0x14020530a  (branch)
+    00205304: 0F 89 E5 00 00 00      jns 0x1402053ef  (branch)
+    0020530A: 44 8A 97 D5 01 00 00   mov r10b, byte ptr [rdi + 0x1d5]
+    00205311: 45 84 D2               test r10b, r10b
+    00205314: 74 06                  je 0x14020531c  (branch)
+    00205316: 0F 89 D3 00 00 00      jns 0x1402053ef  (branch)
+    0020531C: 44 0F B7 9F D0 01 00 00 movzx r11d, word ptr [rdi + 0x1d0]
+    00205324: 66 41 0F BA E3 08      bt r11w, 8
+    0020532A: 0F 82 BF 00 00 00      jb 0x1402053ef  (branch)
+    00205330: 41 F6 C3 04            test r11b, 4
+    00205334: 0F 85 B5 00 00 00      jne 0x1402053ef  (branch)
+    0020533A: B9 10 00 00 00         mov ecx, 0x10
+    0020533F: 44 84 D9               test cl, r11b
+    00205342: 0F 85 A7 00 00 00      jne 0x1402053ef  (branch)
+    00205348: 84 D2                  test dl, dl
+    0020534A: 74 02                  je 0x14020534e  (branch)
+    0020534C: 78 15                  js 0x140205363  (branch)
+    0020534E: 45 84 C0               test r8b, r8b
+    00205351: 74 02                  je 0x140205355  (branch)
+    00205353: 78 0E                  js 0x140205363  (branch)
+    00205355: 45 84 C9               test r9b, r9b
+    00205358: 74 02                  je 0x14020535c  (branch)
+    0020535A: 78 07                  js 0x140205363  (branch)
+    0020535C: 45 84 D2               test r10b, r10b
+    0020535F: 74 0D                  je 0x14020536e  (branch)
+    00205361: 79 0B                  jns 0x14020536e  (branch)
+    00205363: C7 03 17 00 00 00      mov dword ptr [rbx], 0x17
+    00205369: E9 3E FF FF FF         jmp 0x1402052ac
+    0020536E: A8 50                  test al, 0x50
+    00205370: 75 72                  jne 0x1402053e4  (branch)
+    00205372: A8 08                  test al, 8
+    00205374: 0F 84 01 01 00 00      je 0x14020547b  (branch)
+    0020537A: 32 D2                  xor dl, dl
+    0020537C: 45 33 D2               xor r10d, r10d
+    0020537F: 48 81 C7 DB 01 00 00   add rdi, 0x1db
+    00205386: 45 33 C9               xor r9d, r9d
+    00205389: B8 80 00 00 00         mov eax, 0x80
+    0020538E: 41 8B C9               mov ecx, r9d
+    00205391: D3 F8                  sar eax, cl
+    00205393: 84 07                  test byte ptr [rdi], al
+    00205395: 74 23                  je 0x1402053ba  (branch)
+    00205397: 43 8D 04 0A            lea eax, [r10 + r9]
+    0020539B: BA 01 00 00 00         mov edx, 1
+    002053A0: 48 98                  cdqe
+    002053A2: 48 FF C0               inc rax
+    002053A5: 4C 8B C0               mov r8, rax
+    002053A8: 24 3F                  and al, 0x3f
+    002053AA: 49 C1 E8 06            shr r8, 6
+    002053AE: 8A C8                  mov cl, al
+    002053B0: 48 D3 E2               shl rdx, cl
+    002053B3: 4A 09 54 C3 38         or qword ptr [rbx + r8*8 + 0x38], rdx
+    002053B8: B2 01                  mov dl, 1
+    002053BA: 41 FF C1               inc r9d
+    002053BD: 41 83 F9 08            cmp r9d, 8
+    002053C1: 7C C6                  jl 0x140205389  (branch)
+    002053C3: 41 83 C2 08            add r10d, 8
+    002053C7: 48 FF C7               inc rdi
+    002053CA: 41 83 FA 28            cmp r10d, 0x28
+    002053CE: 7C B6                  jl 0x140205386  (branch)
+    002053D0: 84 D2                  test dl, dl
+    002053D2: 0F 84 A3 00 00 00      je 0x14020547b  (branch)
+    002053D8: C7 43 08 09 00 00 00   mov dword ptr [rbx + 8], 9
+    002053DF: E9 C8 FE FF FF         jmp 0x1402052ac
+    002053E4: C7 03 16 00 00 00      mov dword ptr [rbx], 0x16
+    002053EA: E9 BD FE FF FF         jmp 0x1402052ac
+    002053EF: C7 03 0F 00 00 00      mov dword ptr [rbx], 0xf
+    002053F5: E9 B2 FE FF FF         jmp 0x1402052ac
+    002053FA: 8B CE                  mov ecx, esi
+    002053FC: BA 00 00 80 00         mov edx, 0x800000
+    00205401: 83 FE 06               cmp esi, 6  *type-cmp?*
+    00205404: 77 42                  ja 0x140205448  (branch)
+    00205406: 74 20                  je 0x140205428  (branch)
+    00205408: 40 84 F6               test sil, sil
+    0020540B: 74 21                  je 0x14020542e  (branch)
+    0020540D: 83 E9 01               sub ecx, 1  *type-cmp?*
+    00205410: 74 0A                  je 0x14020541c  (branch)
+    00205412: 83 E9 01               sub ecx, 1  *type-cmp?*
+    00205415: 74 05                  je 0x14020541c  (branch)
+    00205417: 83 E9 01               sub ecx, 1  *type-cmp?*
+    0020541A: 75 0C                  jne 0x140205428  (branch)
+    0020541C: 8A 87 D8 01 00 00      mov al, byte ptr [rdi + 0x1d8]
+    00205422: 24 03                  and al, 3
+    00205424: 3C 01                  cmp al, 1  *type-cmp?*
+    00205426: 75 40                  jne 0x140205468  (branch)
+    00205428: 40 80 FE 04            cmp sil, 4  *type-cmp?*
+    0020542C: 74 42                  je 0x140205470  (branch)
+    0020542E: B9 10 00 00 00         mov ecx, 0x10
+    00205433: 40 80 FE 07            cmp sil, 7  *type-cmp?*
+    00205437: 74 42                  je 0x14020547b  (branch)
+    00205439: 3B CA                  cmp ecx, edx
+    0020543B: 75 3E                  jne 0x14020547b  (branch)
+    0020543D: C7 03 12 00 00 00      mov dword ptr [rbx], 0x12
+    00205443: E9 64 FE FF FF         jmp 0x1402052ac
+    00205448: 83 E9 07               sub ecx, 7  *type-cmp?*
+    0020544B: 74 CF                  je 0x14020541c  (branch)
+    0020544D: 83 E9 01               sub ecx, 1  *type-cmp?*
+    00205450: 74 DC                  je 0x14020542e  (branch)
+    00205452: 83 E9 01               sub ecx, 1  *type-cmp?*
+    00205455: 74 D7                  je 0x14020542e  (branch)
+    00205457: 83 E9 01               sub ecx, 1  *type-cmp?*
+    0020545A: 74 CC                  je 0x140205428  (branch)
+    0020545C: 83 E9 01               sub ecx, 1  *type-cmp?*
+    0020545F: 74 BB                  je 0x14020541c  (branch)
+    00205461: 83 F9 02               cmp ecx, 2  *type-cmp?*
+    00205464: 74 C8                  je 0x14020542e  (branch)
+    00205466: EB C0                  jmp 0x140205428
+    00205468: 8B CA                  mov ecx, edx
+    0020546A: 40 80 FE 01            cmp sil, 1  *type-cmp?*
+    0020546E: 75 C3                  jne 0x140205433  (branch)
+    00205470: C7 03 13 00 00 00      mov dword ptr [rbx], 0x13
+    00205476: E9 31 FE FF FF         jmp 0x1402052ac
+    0020547B: C6 43 0C FF            mov byte ptr [rbx + 0xc], 0xff
+    0020547F: 32 C0                  xor al, al
+    00205481: 48 8B 5C 24 30         mov rbx, qword ptr [rsp + 0x30]
+    00205486: 48 8B 6C 24 38         mov rbp, qword ptr [rsp + 0x38]
+    0020548B: 48 8B 74 24 40         mov rsi, qword ptr [rsp + 0x40]
+    00205490: 48 83 C4 20            add rsp, 0x20
+    00205494: 5F                     pop rdi
+    00205495: C3                     ret
+    00205496: CC                     int3
+    00205497: CC                     int3
+    00205498: 48 89 5C 24 10         mov qword ptr [rsp + 0x10], rbx
+    0020549D: 48 89 74 24 18         mov qword ptr [rsp + 0x18], rsi
+    002054A2: 57                     push rdi
+    002054A3: 48 83 EC 20            sub rsp, 0x20
+    002054A7: 48 8B F9               mov rdi, rcx
+    002054AA: E8 89 B3 05 00         call 0x140260838
+    002054AF: 48 8B F0               mov rsi, rax
+    002054B2: 33 DB                  xor ebx, ebx
+    002054B4: 48 8B 05 1D 4F AD 03   mov rax, qword ptr [rip + 0x3ad4f1d]
+    002054BB: 48 85 C0               test rax, rax
+    002054BE: 75 22                  jne 0x1402054e2  (branch)
+    002054C0: 48 8B 0D 09 48 AD 03   mov rcx, qword ptr [rip + 0x3ad4809]
+    002054C7: 48 85 C9               test rcx, rcx
+    002054CA: 74 27                  je 0x1402054f3  (branch)
+    002054CC: BA 9C 00 00 00         mov edx, 0x9c
+    002054D1: E8 1A DE 1C 00         call 0x1403d32f0
+    002054D6: 48 89 05 FB 4E AD 03   mov qword ptr [rip + 0x3ad4efb], rax
+    002054DD: 48 85 C0               test rax, rax
+    002054E0: 74 11                  je 0x1402054f3  (branch)
+    002054E2: 8B 15 AC D5 57 00      mov edx, dword ptr [rip + 0x57d5ac]
+    002054E8: 48 8B C8               mov rcx, rax
+    002054EB: E8 8C E6 1C 00         call 0x1403d3b7c
+    002054F0: 48 8B D8               mov rbx, rax
+    002054F3: 83 3D D2 5C A6 00 34   cmp dword ptr [rip + 0xa65cd2], 0x34
+    002054FA: 75 35                  jne 0x140205531  (branch)
+    002054FC: 48 85 DB               test rbx, rbx
+    002054FF: 74 30                  je 0x140205531  (branch)
+    00205501: 48 83 3B 00            cmp qword ptr [rbx], 0
+    00205505: 7C 1D                  jl 0x140205524  (branch)
+    00205507: 48 8B CB               mov rcx, rbx
+    0020550A: E8 5D DB 1C 00         call 0x1403d306c
+    0020550F: 48 85 C0               test rax, rax
+    00205512: 74 1D                  je 0x140205531  (branch)
+    00205514: 48 83 3B 00            cmp qword ptr [rbx], 0
+    00205518: 7C 0A                  jl 0x140205524  (branch)
+    0020551A: 48 8B CB               mov rcx, rbx
+    0020551D: E8 4A DB 1C 00         call 0x1403d306c
+    00205522: EB 07                  jmp 0x14020552b
+    00205524: 48 8D 05 A5 09 4F 00   lea rax, [rip + 0x4f09a5]
+    0020552B: 80 78 2B 01            cmp byte ptr [rax + 0x2b], 1  *type-cmp?*
+    0020552F: 74 48                  je 0x140205579  (branch)
+    00205531: 48 8B 86 48 01 00 00   mov rax, qword ptr [rsi + 0x148]
+    00205538: F6 40 61 08            test byte ptr [rax + 0x61], 8
+    0020553C: 75 3B                  jne 0x140205579  (branch)
+    0020553E: F6 40 61 04            test byte ptr [rax + 0x61], 4
+    00205542: 75 35                  jne 0x140205579  (branch)
+    00205544: F6 40 63 01            test byte ptr [rax + 0x63], 1
+    00205548: 74 08                  je 0x140205552  (branch)
+    0020554A: C7 07 1B 00 00 00      mov dword ptr [rdi], 0x1b
+    00205550: EB 23                  jmp 0x140205575
+    00205552: 81 3D 0C 53 B3 00 00 02 00 00 cmp dword ptr [rip + 0xb3530c], 0x200
+    0020555C: 75 11                  jne 0x14020556f  (branch)
+    0020555E: 83 3D DF 5A 66 01 0E   cmp dword ptr [rip + 0x1665adf], 0xe
+    00205565: 75 08                  jne 0x14020556f  (branch)
+    00205567: C7 07 24 00 00 00      mov dword ptr [rdi], 0x24
+    0020556D: EB 06                  jmp 0x140205575
+    0020556F: C7 07 1A 00 00 00      mov dword ptr [rdi], 0x1a
+    00205575: B0 01                  mov al, 1
+    00205577: EB 02                  jmp 0x14020557b
+    00205579: 32 C0                  xor al, al
+    0020557B: 48 8B 5C 24 38         mov rbx, qword ptr [rsp + 0x38]
+    00205580: 48 8B 74 24 40         mov rsi, qword ptr [rsp + 0x40]
+    00205585: 48 83 C4 20            add rsp, 0x20
+    00205589: 5F                     pop rdi
+    0020558A: C3                     ret
+    0020558B: CC                     int3
+    0020558C: E9 38 A2 9D 0D         jmp 0x14dbdf7c9
+
+======================================================================
+(5) PRODUCER 0x30F0C4 around roll 0x30FA34 (miss vs hit branch)
+======================================================================
+    0030F0F7: 0F 85 A4 00 00 00      jne 0x14030f1a1
+    0030F192: E8 75 71 D1 FF         call 0x14002630c
+    0030F1D8: 0F 84 7E 03 00 00      je 0x14030f55c
+    0030F1DE: 85 C9                  test ecx, ecx
+    0030F1E0: 0F 84 1A 03 00 00      je 0x14030f500
+    0030F1E9: 0F 84 EE 01 00 00      je 0x14030f3dd
+    0030F1F2: 0F 84 9E 01 00 00      je 0x14030f396
+    0030F1FB: 0F 84 5D 01 00 00      je 0x14030f35e
+    0030F204: 0F 84 8E 00 00 00      je 0x14030f298
+    0030F20D: 74 33                  je 0x14030f242
+    0030F212: 0F 85 41 06 00 00      jne 0x14030f859
+    0030F225: 0F 85 7A 06 00 00      jne 0x14030f8a5
+    0030F262: 74 13                  je 0x14030f277
+    0030F264: F6 01 04               test byte ptr [rcx], 4
+    0030F267: 75 0E                  jne 0x14030f277
+    0030F2A6: 0F 84 90 00 00 00      je 0x14030f33c
+    0030F2AC: F6 83 A3 FE FF FF 04   test byte ptr [rbx - 0x15d], 4
+    0030F2B3: 0F 85 83 00 00 00      jne 0x14030f33c
+    0030F2DA: E8 C5 B1 FF FF         call 0x14030a4a4
+    0030F307: 46 84 8C 11 F2 01 00 00 test byte ptr [rcx + r10 + 0x1f2], r9b
+    0030F30F: 74 12                  je 0x14030f323
+    0030F311: 46 84 4C 11 5A         test byte ptr [rcx + r10 + 0x5a], r9b
+    0030F316: 75 0B                  jne 0x14030f323
+    0030F31C: 75 05                  jne 0x14030f323
+    0030F32F: E8 3C 60 FF FF         call 0x140305370
+    0030F334: 85 C0                  test eax, eax
+    0030F336: 74 04                  je 0x14030f33c
+    0030F366: E8 C5 08 00 00         call 0x14030fc30
+    0030F36B: A8 0F                  test al, 0xf
+    0030F36D: 75 0D                  jne 0x14030f37c
+    0030F376: 0F 84 45 05 00 00      je 0x14030f8c1
+    0030F3A4: E8 87 08 00 00         call 0x14030fc30
+    0030F3A9: A8 0F                  test al, 0xf
+    0030F3AB: 75 12                  jne 0x14030f3bf
+    0030F3F6: E8 35 08 00 00         call 0x14030fc30
+    0030F3FB: A8 01                  test al, 1
+    0030F3FD: 75 20                  jne 0x14030f41f
+    0030F3FF: 41 F7 83 B7 01 00 00 00 04 00 00 test dword ptr [r11 + 0x1b7], 0x400
+    0030F42E: 0F 84 B7 00 00 00      je 0x14030f4eb
+    0030F43D: 85 FF                  test edi, edi
+    0030F45C: 40 88 6B 41            mov byte ptr [rbx + 0x41], bpl  (+0x41 rand scratch)
+    0030F466: F6 43 61 04            test byte ptr [rbx + 0x61], 4
+    0030F46A: 74 13                  je 0x14030f47f
+    0030F472: 44 88 43 41            mov byte ptr [rbx + 0x41], r8b  (+0x41 rand scratch)
+    0030F483: 75 05                  jne 0x14030f48a
+    0030F49F: 88 4B 41               mov byte ptr [rbx + 0x41], cl  (+0x41 rand scratch)
+    0030F4A2: E8 8D 05 00 00         call 0x14030fa34
+    0030F4AF: 85 C0                  test eax, eax
+    0030F4B1: 74 13                  je 0x14030f4c6
+    0030F4B6: 41 81 CC 00 03 00 00   or r12d, 0x300  <== or 0x300 (stage hit)
+    0030F4BD: 44 84 D5               test bpl, r10b
+    0030F4C0: 0F 85 3A 04 00 00      jne 0x14030f900
+    0030F4C9: E8 62 07 00 00         call 0x14030fc30
+    0030F4CE: A8 07                  test al, 7
+    0030F4D0: 0F 84 92 04 00 00      je 0x14030f968
+    0030F4DA: 0F 84 88 04 00 00      je 0x14030f968
+    0030F50B: E8 20 07 00 00         call 0x14030fc30
+    0030F510: 41 84 C3               test r11b, al
+    0030F513: 75 2C                  jne 0x14030f541
+    0030F51A: A8 20                  test al, 0x20
+    0030F51C: 74 05                  je 0x14030f523
+    0030F523: A8 10                  test al, 0x10
+    0030F525: 74 09                  je 0x14030f530
+    0030F565: 74 21                  je 0x14030f588
+    0030F574: E8 5B CD FF FF         call 0x14030c2d4
+    0030F579: 85 C0                  test eax, eax
+    0030F57B: 0F 85 26 04 00 00      jne 0x14030f9a7
+    0030F5A4: E8 87 06 00 00         call 0x14030fc30
+    0030F5A9: A8 05                  test al, 5
+    0030F5AB: 75 0E                  jne 0x14030f5bb

@@ -1,0 +1,66 @@
+{
+  "_note": "TEST ALPHA - DOES OUTPUT PAINT A MISS ON A GUARANTEED HIT? This is THE decisive miss/block/parry test, and it tests the CONTROLLABLE output direction (hit -> miss), not the impossible one (miss -> hit). Discovery from the T-B log: the result SELECTOR at 0x205210 sees a per-attack result RECORD (record+0x1C0=evade/animation type, +0x1BE=result-present flag, +0x1C4=staged damage, +0x1E5=apply flag) at staging time, BEFORE the apply gate. A Blade Grasp stages that record with type=0x0B, dmg=0, apply=0 -> which is why the pre-clamp (0x30A66F, post-apply-gate) never fired on it. So the SELECTOR, not the pre-clamp, is the output hook for the RESULT TYPE itself. SETUP (input floor so a paintable connecting hit ALWAYS exists): (1) force-hit = zero ALL evade bytes on everyone; (2) suppress Blade Grasp = broadcast Brave +0x2B=10 (>=10 avoids the chicken floor; 10%% residual BG, ~90%% of attacks connect cleanly). PAINT (output): at the selector, for Ramza (record charId==1, MatchEvadeType=any), force evade-type +0x1C0=0x06 (plain-miss animation) and result-code +0x1BE=0 (no-damage). NO pre-clamp, so the result is unmasked. RUN: relaunch, attack Ramza from the front with a physical melee 5-6 times. OBSERVE PER ATTACK: (a) does Ramza show a MISS / dodge (NOT the Blade-Grasp hand-raise; a normal evade) even though the hit was guaranteed? (b) does Ramza take 0 damage? INTERPRETATION: dodge + 0 damage on a guaranteed hit -> OUTPUT FULLY CONTROLS the result type (we can paint hit<->miss/block/parry at will; the /loop question is SOLVED via output + input-floor). dodge animation BUT damage still applied -> evade-type drives animation only; damage is gated elsewhere (+0x1C4/+0x1E5) and we extend the selector control to zero them. hit + damage (no dodge) -> the +0x1C0 force did not take; revisit offsets. The [SELECTOR-PROBE ... ctrl=2 ...] log shows the natural evade-type (likely 0x00 for a clean hit) and confirms the force; the ACTION-STATE poller shows Ramza's HP so the damage truth is in the log regardless of what is on screen. Safe: only Ramza is painted (TargetCharId=1), struct writes only; Brave returns to normal when the profile is removed.",
+
+  "EvadeOverrideEnabled": true,
+  "EvadeOverrideTargetCharId": -1,
+  "EvadeOverride46": 0,
+  "EvadeOverride47": 0,
+  "EvadeOverride48": 0,
+  "EvadeOverride49": 0,
+  "EvadeOverride4A": 0,
+  "EvadeOverride4B": 0,
+  "EvadeOverride4C": 0,
+  "EvadeOverride4D": 0,
+  "EvadeOverride4E": 0,
+  "EvadeOverrideMaxLogs": 64,
+  "EvadeOverrideSweepSlots": 32,
+
+  "BraveOverrideEnabled": true,
+  "BraveOverrideTargetCharId": -1,
+  "BraveOverride2A": -1,
+  "BraveOverride2B": 10,
+  "BraveOverride2C": -1,
+  "BraveOverride2D": -1,
+  "BraveOverrideMaxLogs": 64,
+  "BraveOverrideSweepSlots": 32,
+
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+
+  "ResultSelectorControlEnabled": true,
+  "ResultSelectorControlLogOnly": false,
+  "ResultSelectorControlMaxWrites": 32,
+  "ResultSelectorControlTargetCharId": 1,
+  "ResultSelectorControlMatchEvadeType": -1,
+  "ResultSelectorControlForceEvadeType": 6,
+  "ResultSelectorControlForceResultCode": 0,
+
+  "PreClampDamageRewriteEnabled": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": true,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

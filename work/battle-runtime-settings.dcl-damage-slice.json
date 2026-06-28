@@ -1,0 +1,123 @@
+{
+  "_note": "DCL DAMAGE MODEL - vertical slice (observe-only / DryRun). First implementation of the Deep Combat Layer deterministic subtractive-DR pipeline (docs/deep-combat-layer/02,03): injury = max(pen_floor, max(0, base(basePA)+wmod - DR_type)) * wound_mult * trait(Brave). base(PA) from a GURPS-shaped table re-ranged ST=basePA+4, type-split (thr for thrust, sw otherwise); wmod=weapon Power; DR_type=subtractive matrix[armorClass][damageType]; wound cut 3/2, thrust 2/1, crush 1/1, missile 1/1; trait=Brave permille 760..1350 (physical). Branches on attacker basePA+Brave+weapon type/power AND target armor class - both sides' attributes + equipment, the core project goal. NUMBERS ARE PROVISIONAL placeholders (calibration deferred per Marcelo): GURPS table is linear sw=ST/thr=floor(0.7*ST), DR Plate 9/8/3/8 Mail 5 Leather 2 Robe 0, pen_floor 20%, G folded to 1. DryRunRewrites=true => computes + logs [RUNTIME] trace but does NOT change HP (safe first live test, same pattern as the equipment proof). Crossbow/gun deferred (need weapon-skill). Reconciler delivery (post-hit); pre-clamp same-hit delivery is a follow-up.",
+  "ItemCatalogPath": "item_catalog.csv",
+
+  "RewriteObservedDamage": true,
+  "DryRunRewrites": true,
+  "AffectAllies": true,
+  "AffectFoes": true,
+  "MinHpFloor": 1,
+  "LogResolvedRuntimeContext": true,
+  "LogAttackerCandidates": true,
+
+  "InferAttackerFromRecentUnits": true,
+  "RecentAttackerWindowMs": 7000,
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "PendingActionMaxBatchEvents": 16,
+  "PendingActionStaleMs": 30000,
+
+  "AttackerEquipmentSlots": [
+    { "Name": "Weapon", "Offset": 32, "Width": "UInt16" },
+    { "Name": "Shield", "Offset": 38, "Width": "UInt16" }
+  ],
+  "EquipmentSlots": [
+    { "Name": "Head", "Offset": 26, "Width": "UInt16" },
+    { "Name": "Body", "Offset": 28, "Width": "UInt16" },
+    { "Name": "Accessory", "Offset": 30, "Width": "UInt16" },
+    { "Name": "Weapon", "Offset": 32, "Width": "UInt16" },
+    { "Name": "Shield", "Offset": 38, "Width": "UInt16" }
+  ],
+
+  "FormulaTables": {
+    "gurpsSw": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39],
+    "gurpsThr": [0,0,1,2,2,3,4,4,5,6,7,7,8,9,9,10,11,11,12,13,14,14,15,16,16,17,18,18,19,20,21,21,22,23,23,24,25,25,26,27]
+  },
+
+  "FormulaMatrices": {
+    "drMatrix": [
+      [9, 8, 3, 8],
+      [5, 5, 5, 5],
+      [2, 2, 2, 2],
+      [0, 0, 0, 0]
+    ]
+  },
+
+  "ActionSignalRules": [
+    {
+      "Name": "DCL cut (sword/ninjablade/katana/knightsword/cloth)",
+      "ConditionFormula": "a.present && (aslot.weapon.category_sword || aslot.weapon.category_knightsword || aslot.weapon.category_katana || aslot.weapon.category_ninjablade || aslot.weapon.category_cloth)",
+      "Signal": 201,
+      "Variables": { "dclType": 1, "physical": 1, "typeIndex": 0, "woundNum": 3, "woundDen": 2, "thrustBase": 0 }
+    },
+    {
+      "Name": "DCL thrust (knife/polearm)",
+      "ConditionFormula": "a.present && (aslot.weapon.category_knife || aslot.weapon.category_polearm)",
+      "Signal": 202,
+      "Variables": { "dclType": 1, "physical": 1, "typeIndex": 1, "woundNum": 2, "woundDen": 1, "thrustBase": 1 }
+    },
+    {
+      "Name": "DCL crush (axe/flail/bag/staff/rod/pole/instrument/book/fists)",
+      "ConditionFormula": "a.present && (aslot.weapon.category_axe || aslot.weapon.category_flail || aslot.weapon.category_bag || aslot.weapon.category_staff || aslot.weapon.category_rod || aslot.weapon.category_pole || aslot.weapon.category_instrument || aslot.weapon.category_book || aslot.weapon.category_none)",
+      "Signal": 203,
+      "Variables": { "dclType": 1, "physical": 1, "typeIndex": 2, "woundNum": 1, "woundDen": 1, "thrustBase": 0 }
+    },
+    {
+      "Name": "DCL missile (bow/crossbow/gun) - PA-based for slice; skill-scaling deferred",
+      "ConditionFormula": "a.present && (aslot.weapon.category_bow || aslot.weapon.category_crossbow || aslot.weapon.category_gun)",
+      "Signal": 204,
+      "Variables": { "dclType": 1, "physical": 1, "typeIndex": 3, "woundNum": 1, "woundDen": 1, "thrustBase": 0 }
+    }
+  ],
+
+  "FormulaPreResponseVariables": [
+    { "Name": "armor.plate", "Formula": "tslot.body.category_armor && tslot.body.armorHpBonus >= 60" },
+    { "Name": "armor.mail", "Formula": "tslot.body.category_armor && tslot.body.armorHpBonus >= 40 && tslot.body.armorHpBonus < 60" },
+    { "Name": "armor.robe", "Formula": "tslot.body.category_robe" },
+    { "Name": "armor.leather", "Formula": "!armor.plate && !armor.mail && !armor.robe" },
+    { "Name": "armor.classIndex", "Formula": "if(armor.plate, 0, if(armor.mail, 1, if(armor.robe, 3, 2)))" }
+  ],
+
+  "FormulaDerivedVariables": [
+    { "Name": "dcl.st", "Formula": "a.rawPa + 4" },
+    { "Name": "dcl.base", "Formula": "if(action.thrustBase, tableClamp(gurpsThr, dcl.st), tableClamp(gurpsSw, dcl.st))" },
+    { "Name": "dcl.wmod", "Formula": "aslot.weapon.weaponPower" },
+    { "Name": "dcl.gross", "Formula": "dcl.base + dcl.wmod" },
+    { "Name": "dcl.dr", "Formula": "matrixClamp(drMatrix, armor.classIndex, action.typeIndex)" },
+    { "Name": "dcl.penFloor", "Formula": "mulDiv(dcl.gross, 200, 1000)" },
+    { "Name": "dcl.penetrating", "Formula": "max(dcl.penFloor, dcl.gross - dcl.dr)" },
+    { "Name": "dcl.wounded", "Formula": "mulDiv(dcl.penetrating, action.woundNum, max(1, action.woundDen))" },
+    { "Name": "dcl.traitPermille", "Formula": "if(action.physical, 760 + mulDiv(a.brave, 590, 100), 1000)" },
+    { "Name": "dcl.physical", "Formula": "mulDiv(dcl.wounded, dcl.traitPermille, 1000)" },
+    { "Name": "dcl.final", "Formula": "if(action.dclType && a.present, max(1, dcl.physical), vanillaDamage)" }
+  ],
+
+  "RewriteConditionFormula": "event.isDamage && a.present && action.dclType",
+  "FinalDamageFormula": "dcl.final",
+
+  "FormulaTraceVariables": [
+    { "Name": "trace.atkWeaponId", "Formula": "aslot.weapon.id" },
+    { "Name": "trace.atkBasePa", "Formula": "a.rawPa" },
+    { "Name": "trace.atkBrave", "Formula": "a.brave" },
+    { "Name": "trace.typeIndex", "Formula": "action.typeIndex" },
+    { "Name": "trace.tgtBodyId", "Formula": "tslot.body.id" },
+    { "Name": "trace.tgtArmorHp", "Formula": "tslot.body.armorHpBonus" },
+    { "Name": "trace.armorClassIndex", "Formula": "armor.classIndex" },
+    { "Name": "trace.base", "Formula": "dcl.base" },
+    { "Name": "trace.wmod", "Formula": "dcl.wmod" },
+    { "Name": "trace.dr", "Formula": "dcl.dr" },
+    { "Name": "trace.penetrating", "Formula": "dcl.penetrating" },
+    { "Name": "trace.wounded", "Formula": "dcl.wounded" },
+    { "Name": "trace.traitPermille", "Formula": "dcl.traitPermille" },
+    { "Name": "trace.final", "Formula": "dcl.final" }
+  ],
+
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64
+}

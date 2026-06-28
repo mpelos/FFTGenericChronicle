@@ -35,21 +35,24 @@ audit below is the proof that the constraint is satisfied: every line has a home
 | **Faith** | **Magic/spiritual temperament** — permanent two-sided trait; scales magic output *and* magic vulnerability, floor 0.60. | `08-trait-faith.md` |
 | **Magic Evade** | **Per-target magic resist** — every target (incl. each unit caught in an AoE) rolls to evade an offensive spell. Built from **equipment + anti-magic jobs**, no universal floor; capped below 100%. | `11` |
 | **Brave** | **Physical-aggression temperament** + the **GURPS Will analogue** — permanent two-sided trait: physical offense / courage reactions / **mental resilience** (Will: resists fear, taunt, charm, confuse, berserk) vs active-defense penalty. Does **not** touch magic. | `07-trait-brave.md` |
-| **Zodiac sign** | **Elemental temperament** — repurposed from the hidden compatibility multiplier into a transparent innate elemental affinity/weakness. | `09-trait-zodiac.md` |
+| **Zodiac sign** | **Sign compatibility** — FFT's attacker × target matchup, **kept** but **surfaced** and on a **much subtler band** (a relational tilt to damage + hit, not a personal slider; not an elemental affinity). | `09-trait-zodiac.md` |
 
-## The three permanent traits
+## The three permanent traits — two sliders and a matchup web
 
-Brave, Faith, and Zodiac form a deliberate trio of **permanent, transparent, two-sided personal
-axes**:
+Brave, Faith, and Zodiac form a deliberate trio of **permanent, transparent, two-sided** axes — but
+they are **not** all the same *kind* of axis:
 
-- **Brave = physical temperament** (the body / aggression).
-- **Faith = magic temperament** (the spirit / the arcane).
-- **Zodiac = elemental temperament** (the innate elemental leaning).
+- **Brave = physical temperament** (the body / aggression) — a personal **slider** (`07`).
+- **Faith = magic temperament** (the spirit / the arcane) — a personal **slider** (`08`).
+- **Zodiac = sign compatibility** (the elemental/astral matchup) — a **relational** axis (attacker ×
+  target), not a personal slider (`09`).
 
-Each has a clean upside and a clean downside; none has a universally-correct value. This symmetry
-is a design goal, not a coincidence — it is what lets the same "should I push this slider?" question
-recur across three different combat dimensions. The hidden vanilla Zodiac multiplier is gone; all
-three are surfaced to the player.
+Brave and Faith each have a clean upside and downside with **no universally-correct value**. Zodiac
+keeps the same "two-sided, none-dominant" spirit by a different route: by the grid's symmetry every
+sign has the identical distribution of good/bad matchups, so **no sign is stronger than another** —
+each just wins and loses different pairings. The same "should I lean into this?" question recurs
+across three dimensions; for Zodiac the question is *relational* ("who am I good against?"). All
+three are **surfaced to the player** — including Zodiac, whose vanilla version was hidden (`09`).
 
 ## Note on Speed (amended — validation B1, 2026-06-26)
 

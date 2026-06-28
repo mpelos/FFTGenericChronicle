@@ -1,0 +1,30 @@
+{
+  "_note": "CLEAN/OBSERVE profile for the PREVIEW HIT% memory scan. ALL overrides and probes OFF so the on-screen hit% reflects the game's natural computation and stays stable per target (no EvadeOverride poll moving it). The mod still loads (writes its init log) but does not touch battle memory. Use this while running work/mem_scan.py to locate the displayed hit% via a differential scan (hover targets with different % values between scan passes). Nothing here changes gameplay.",
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "PreClampDamageRewriteEnabled": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": false,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

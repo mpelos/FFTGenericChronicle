@@ -1,0 +1,47 @@
+{
+  "_note": "PREVIEW-LEVER VALIDATION + MAGIC-PATH PROBE (needs the NEW DLL with the preview-damage hook). Purely visual + log-only: changes NOTHING in gameplay. It validates the two preview display levers and probes the magic path in ONE or two battles. The hit% lever forces the on-screen forecast hit chance to 11 (buffer 0x1407832C0, hook 0x227FFE). The NEW damage lever forces the on-screen forecast DAMAGE number to 777 (display buffer 0x1407832BE; the first attempt at single branch 0x2280D7 never fired -> a basic-attack/Fire forecast uses a DIFFERENT branch, so this build hooks ALL numeric branches of the forecast-number dispatch, each setting dx before the shared store at 0x228488; per-branch fire counters in the hook buffer reveal which branch each action used). The pre-clamp is LOG-ONLY (logs every HP/MP apply at 0x30A66F, changes nothing). RUN (game+Reloaded closed so Claude can deploy; enable ONLY fftivc.utility.modloader + fftivc.generic.chronicle.codemod; keep the data mod fftivc.generic.chronicle DISABLED): enter a battle with Agrias and Ramza. STEP 1 (physical lever): Agrias opens the ATTACK preview on Ramza -> EXPECT hit = 11% and damage = 777. STEP 2 (magic identity, % AND damage): Agrias opens the FIRE preview on Ramza -> if it ALSO shows 11% and 777, magic uses the same forecast buffers as physical (confirms G3 for both numbers, and that the damage hook covers Fire). If Fire shows 11% but its NATURAL damage (not 777), Fire's damage uses a DIFFERENT dispatch branch and Claude will hook that branch too. STEP 3 (magic damage path): Agrias actually CASTS Fire at Ramza and it resolves -> Claude reads battleprobe_log.txt [PRECLAMP ...] to confirm Fire's HP damage routed through the same pre-clamp (confirms G4). REPORT: what hit% and damage the ATTACK preview showed, and what the FIRE preview showed. The real attack/spell is UNCHANGED (these are forecast-display paints + a log-only apply hook). Claude verifies from the log: [PREVIEW-HITPCT-HOOK]/[PREVIEW-DAMAGE-HOOK] buffers (fireCount/natural/forced/siteRva) + 0x1407832C0=11 + 0x1407832BE=777.",
+
+  "PreviewHitPctControlEnabled": true,
+  "PreviewHitPctRva": 2260990,
+  "PreviewHitPctExpectedBytes": "41 BA 02 00 00 00",
+  "PreviewHitPctForcedValue": 11,
+  "PreviewHitPctLogOnly": false,
+
+  "PreviewDamageControlEnabled": true,
+  "PreviewDamageForcedValue": 777,
+  "PreviewDamageLogOnly": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteRva": 3188847,
+  "PreClampDamageRewriteExpectedBytes": "0F BF 45 06",
+  "PreClampDamageRewriteLogOnly": true,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampFormulaPlanEnabled": false,
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+  "StatusOverrideEnabled": false,
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "RewriteObservedDamage": false,
+  "DryRunRewrites": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+  "LogActionStateChanges": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

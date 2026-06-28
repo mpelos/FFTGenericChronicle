@@ -1,0 +1,82 @@
+{
+  "_note": "Offline proof of the DCL Damage Model slice (battle-runtime-settings.dcl-damage-slice.json). Each scenario injects attacker base PA via raw 0x38, weapon via raw 0x20w, Brave by name; target body armor via raw 0x1Cw. Expected finalDamage hand-computed from the provisional constants. Demonstrates branching on ALL of: attacker basePA (A vs B), Brave (A vs C), weapon power (A vs K), damage type x armor matchup (cut weak vs plate D, crush/thrust strong vs plate E/G; cut strong vs light A/F), and armor class (leather/mail/plate/robe).",
+  "scenarios": [
+    {
+      "name": "A longsword(cut,wp5) basePA10 brave70 vs leather",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 1, "eventSeed": 1,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 20 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 172 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 29, "desiredHp": 271 }
+    },
+    {
+      "name": "B longsword(cut,wp5) basePA20 brave70 vs leather (PA up)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 2, "eventSeed": 2,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 24, "brave": 70, "raw": { "0x38": 20, "0x20w": 20 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 172 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 46, "desiredHp": 254 }
+    },
+    {
+      "name": "C longsword(cut,wp5) basePA10 brave10 vs leather (Brave down)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 3, "eventSeed": 3,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 10, "raw": { "0x38": 10, "0x20w": 20 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 172 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 20, "desiredHp": 280 }
+    },
+    {
+      "name": "D longsword(cut,wp5) basePA10 brave70 vs PLATE (cut weak vs plate)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 4, "eventSeed": 4,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 20 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 177 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 17, "desiredHp": 283 }
+    },
+    {
+      "name": "E battle-axe(crush,wp9) basePA10 brave70 vs PLATE (crush answers plate)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 5, "eventSeed": 5,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 48 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 177 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 23, "desiredHp": 277 }
+    },
+    {
+      "name": "F battle-axe(crush,wp9) basePA10 brave70 vs leather (crush weak vs light)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 6, "eventSeed": 6,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 48 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 172 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 24, "desiredHp": 276 }
+    },
+    {
+      "name": "G spear(thrust,wp9) basePA10 brave70 vs PLATE (thrust penetrates)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 7, "eventSeed": 7,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 100 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 177 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 23, "desiredHp": 277 }
+    },
+    {
+      "name": "H dagger(thrust,wp3) basePA10 brave70 vs ROBE (x2, no DR)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 8, "eventSeed": 8,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 1 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 200 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 28, "desiredHp": 272 }
+    },
+    {
+      "name": "I artemis-bow(missile,wp10) basePA15 brave70 vs PLATE",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 9, "eventSeed": 9,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 19, "brave": 70, "raw": { "0x38": 15, "0x20w": 89 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 177 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 24, "desiredHp": 276 }
+    },
+    {
+      "name": "J longsword(cut,wp5) basePA10 brave70 vs MAIL",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 10, "eventSeed": 10,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 20 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 176 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 24, "desiredHp": 276 }
+    },
+    {
+      "name": "K runeblade(cut,wp14) basePA10 brave70 vs leather (weapon power up)",
+      "previousHp": 300, "currentHp": 290, "vanillaDamage": 10, "eventIndex": 11, "eventSeed": 11,
+      "attacker": { "ptr": "0x1000", "charId": 1, "pa": 14, "brave": 70, "raw": { "0x38": 10, "0x20w": 30 } },
+      "target": { "ptr": "0x2000", "charId": 128, "hp": 290, "maxHp": 300, "isFoe": true, "raw": { "0x1Cw": 172 } },
+      "expect": { "shouldRewrite": true, "finalDamage": 45, "desiredHp": 255 }
+    }
+  ]
+}

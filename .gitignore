@@ -77,7 +77,7 @@ work/nxd_proof/
 # === .NET build output (Reloaded-II code mod) ===
 codemod/**/bin/
 codemod/**/obj/
-codemod/_build/
+codemod/**/_build/
 
 # === Regenerable reviewer outputs (re-created by running work/*_check.py) ===
 work/claude-*.json

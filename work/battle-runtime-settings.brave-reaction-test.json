@@ -1,0 +1,66 @@
+{
+  "_note": "REACTION INPUT-CONTROL TEST v2 (Brave=10, chicken-safe). v1 used Brave=0 and turned every unit into a CHICKEN on its turn (FFT panic state) - which itself PROVED the engine honors our live Brave write. RE found the chicken threshold at 0x30A9BD: 'cmp [unit+0x2B],10; jae normal' => Brave<10 chickens, Brave>=10 is safe. So we now force Brave=10 (the safe floor): no chicken, and the Brave%-gated reaction roll (trigger%=Brave at the 0x30BExx cluster) drops to ~10%, i.e. the reaction almost never fires. Same live-write mechanism as the proven evade test: the poller writes Brave on every unit's LIVE struct every ~20ms (TargetCharId=-1 all units; sweep=32 covers untracked defenders), BEFORE the reaction roll reads it. SETUP: a DEFENDER that owns a Brave%-gated reaction (Counter, BLADE GRASP, Hamedo, Arrow Guard...). RUN: relaunch the game. ATTACK that defender with a physical melee SEVERAL times (5-6). OBSERVE: at Brave=10 the reaction should fire almost NEVER (vs normally often). PASS (suppress confirmed) = reaction nearly stops + damage applies; log shows [BRAVE-OVERRIDE ... set(2B=0A)] and NO chicken. For a crisp second confirmation, tell me and I will flip to Brave=100 (force) where the reaction should fire on EVERY hit. Safe: struct writes only, no result forging. Evade override OFF to isolate reactions.",
+
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+
+  "EvadeOverrideEnabled": false,
+
+  "BraveOverrideEnabled": true,
+  "BraveOverrideTargetCharId": -1,
+  "BraveOverride2A": -1,
+  "BraveOverride2B": 10,
+  "BraveOverride2C": -1,
+  "BraveOverride2D": -1,
+  "BraveOverrideMaxLogs": 64,
+  "BraveOverrideSweepSlots": 32,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+  "ResultSelectorControlEnabled": false,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": true,
+  "PreClampDamageRewriteTargetCharId": -1,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 1,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "CtDropWindowMs": 7000,
+  "CtLowFallbackMaxCt": 25,
+  "CtLowFallbackWindowMs": 7000,
+  "LogCtResolutionDiagnostics": true,
+  "LogAttackerCandidates": true,
+  "LogResolvedRuntimeContext": false,
+
+  "ActorProbeOnEvent": false,
+  "LogHpEventProbe": false,
+  "LogActionBoundaryProbe": true,
+  "ActionBoundaryProbeMaxLogs": 240,
+  "ActionBoundaryProbeDiffMax": 64,
+  "LogActionStateChanges": true,
+  "TrackPendingActions": true,
+  "PendingActionResolveWindowMs": 5000,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

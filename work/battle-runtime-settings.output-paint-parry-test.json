@@ -1,0 +1,71 @@
+{
+  "_note": "TEST ALPHA-3 - CLEAN PAINTED PARRY (completes the miss/block/parry trifecta via OUTPUT). Same architecture as the clean-miss test, but paints a WEAPON PARRY instead of a miss: selector forces evade-type +0x1C0=0x02 (weapon parry) and the pre-clamp forces 0 damage on Ramza. Proves we choose HOW the hit is avoided (miss vs parry vs block) purely in memory, with 0 damage. Floor: force-hit (evade 0 broadcast) + Brave 10 (Blade Grasp suppressed) so every attack is a natural hit to repaint. RUN: relaunch via the Reloaded GUI Launch button (CLI --launch does NOT work here), enter battle with Ramza, attack him from the front, physical melee, 3-4 times. OBSERVE PER ATTACK: (a) does Ramza PARRY (weapon-parry animation, distinct from the plain MISS we saw before and from the Blade-Grasp hand-raise)? (b) does his HP stay the SAME (0 damage)? PASS = parry animation + 0 HP loss on a guaranteed hit = OUTPUT fully controls the avoidance TYPE + damage; miss/block/parry are all paintable. To see BLOCK instead, change ForceEvadeType to 3; for plain MISS, 6. Evade-type enum (live): 0x00 hit, 0x01 cloak, 0x02 weapon parry, 0x03 shield block, 0x04 class evade, 0x06 plain miss. Safe: only Ramza painted + zeroed; struct writes only.",
+
+  "EvadeOverrideEnabled": true,
+  "EvadeOverrideTargetCharId": -1,
+  "EvadeOverride46": 0,
+  "EvadeOverride47": 0,
+  "EvadeOverride48": 0,
+  "EvadeOverride49": 0,
+  "EvadeOverride4A": 0,
+  "EvadeOverride4B": 0,
+  "EvadeOverride4C": 0,
+  "EvadeOverride4D": 0,
+  "EvadeOverride4E": 0,
+  "EvadeOverrideMaxLogs": 64,
+  "EvadeOverrideSweepSlots": 32,
+
+  "BraveOverrideEnabled": true,
+  "BraveOverrideTargetCharId": -1,
+  "BraveOverride2A": -1,
+  "BraveOverride2B": 10,
+  "BraveOverride2C": -1,
+  "BraveOverride2D": -1,
+  "BraveOverrideMaxLogs": 64,
+  "BraveOverrideSweepSlots": 32,
+
+  "StatusOverrideEnabled": false,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+
+  "ResultSelectorProbeEnabled": true,
+  "ResultSelectorProbeRva": 2118160,
+  "ResultSelectorProbeExpectedBytes": "48 89 5C 24 08 48 89 6C 24 10",
+  "ResultSelectorProbeActorRegister": "r8",
+  "ResultSelectorProbeRecordUnitOffset": 328,
+  "ResultSelectorProbeMaxLogs": 256,
+  "ResultSelectorProbeRecordDumpBytes": 64,
+
+  "ResultSelectorControlEnabled": true,
+  "ResultSelectorControlLogOnly": false,
+  "ResultSelectorControlMaxWrites": 32,
+  "ResultSelectorControlTargetCharId": 1,
+  "ResultSelectorControlMatchEvadeType": -1,
+  "ResultSelectorControlForceEvadeType": 2,
+  "ResultSelectorControlForceResultCode": 0,
+
+  "PreClampDamageRewriteEnabled": true,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampDamageRewriteTargetCharId": 1,
+  "PreClampDamageRewriteForcedDebit": 0,
+  "PreClampDamageRewriteForcedCredit": -1,
+  "PreClampDamageRewriteMaxWrites": 20,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": true,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

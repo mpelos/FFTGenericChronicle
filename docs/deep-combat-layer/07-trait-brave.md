@@ -8,7 +8,7 @@ Review: Pending.
 ## Role
 
 Brave is the **physical** member of the permanent-trait trio (Brave = body, Faith = spirit,
-Zodiac = element; see `01-attribute-map.md`). It is a **permanent two-sided régua (slider)** like
+Zodiac = sign compatibility; see `01-attribute-map.md`). It is a **permanent two-sided régua (slider)** like
 Faith: every value buys something and pays something, and **there is no universally-best Brave.**
 
 The litmus Marcelo set for the design: *the slider must be clean on both ends, and it must answer —

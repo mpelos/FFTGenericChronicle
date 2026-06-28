@@ -1,0 +1,37 @@
+{
+  "_note": "STATUS-CONTROL TEST (G2, T-C, OUTPUT-control: write the status RESULT onto the target). Offline RE: effective status byte +0x61 = (+0x1EF & 0xF2) | +0x57, recomputed in REAL code at 0x30D42A; engine tests +0x61 everywhere. The infliction roll is VM but the status BYTES are data the VM reads, so OR-ing a mask onto +0x1EF (master) AND +0x61 (mirror) should force the status. This profile forces CONTROL-FLIP (0x10) on RAMZA ONLY (TargetCharId=1). Chose 0x10 because it SURVIVES the per-turn recompute (0xF2 keeps bit 0x10), so the test is reliable (0x08 can't-act gets cleared each turn-tick and would rely on poll timing). The status sweep runs with a charId filter so ONLY Ramza is affected even if untracked - the rest of the party is untouched. RUN: relaunch the game, enter a battle with Ramza. OBSERVE: on Ramza's turn, does he act under ENEMY AI - i.e. turn hostile / attack his own party / move on his own (Charm/Confusion-style)? And/or a status icon on him? PASS = Ramza is clearly no longer under your control = writing +0x1EF/+0x61 forces a status (closes the biggest DCL gap; status is OUTPUT-controllable). Log shows [STATUS-OVERRIDE id=0x01 ... or(61=10 1EF=10)]. SAFE: only Ramza, struct writes only; just observe one of his turns, then flee/reset the battle. If you'd rather a calmer signal, tell me and I switch to 0x08 (turn skipped / can't act).",
+
+  "EvadeOverrideEnabled": false,
+  "BraveOverrideEnabled": false,
+
+  "StatusOverrideEnabled": true,
+  "StatusOverrideTargetCharId": 1,
+  "StatusOverride1EF": 16,
+  "StatusOverride61": 16,
+  "StatusOverride57": -1,
+  "StatusOverrideMaxLogs": 64,
+  "StatusOverrideSweepSlots": 32,
+
+  "RollVerdictProbeEnabled": false,
+  "RollVerdictControlEnabled": false,
+  "EvadeInputProbeEnabled": false,
+  "EvadeInputControlEnabled": false,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorControlEnabled": false,
+  "PreClampDamageRewriteEnabled": false,
+
+  "ResolveAttackerByCt": true,
+  "ResolveAttackerByLowCtFallback": true,
+  "LogCtResolutionDiagnostics": false,
+  "LogAttackerCandidates": false,
+
+  "LogActionStateChanges": false,
+  "TrackPendingActions": false,
+  "LogUnknownFieldDiffs": false,
+
+  "CaptureStructOnDeath": false,
+  "CauseDeathOnZeroHp": false,
+  "MinHpFloor": 0,
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64
+}

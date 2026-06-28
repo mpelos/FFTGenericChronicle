@@ -1,0 +1,2264 @@
+exe=D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe
+image_base=0x140000000  hit%@0x7832C0  window 0x782000..0x784000
+
+== 2121 real-code RIP-relative refs into window ==
+
+  0x006A9D -> 0x782338  [read ]  cmp qword ptr [rip + 0x77b894], r12
+  0x006A9E -> 0x782338  [read ]  cmp dword ptr [rip + 0x77b894], esp
+  0x006AAF -> 0x782338  [read ]  lea rbp, [rip + 0x77b882]
+  0x006E15 -> 0x782328  [read ]  lea r14, [rip + 0x77b50c]
+  0x007332 -> 0x782330  [WRITE]  mov dword ptr [rip + 0x77aff8], edi
+  0x0074CE -> 0x782330  [WRITE]  mov dword ptr [rip + 0x77ae58], 1
+  0x007542 -> 0x782330  [read ]  mov eax, dword ptr [rip + 0x77ade8]
+  0x007883 -> 0x782334  [WRITE]  mov dword ptr [rip + 0x77aaab], ecx
+  0x00788B -> 0x782334  [read ]  mov ecx, dword ptr [rip + 0x77aaa3]
+  0x020700 -> 0x7828F8  [read ]  lea rcx, [rip + 0x7621f1]
+  0x020713 -> 0x7828F8  [read ]  lea rcx, [rip + 0x7621de]
+  0x025236 -> 0x7828F8  [read ]  lea rcx, [rip + 0x75d6bb]
+  0x02525A -> 0x7828F8  [read ]  lea rcx, [rip + 0x75d697]
+  0x0285C4 -> 0x782910  [read ]  lea rcx, [rip + 0x75a345]
+  0x0285E7 -> 0x782910  [read ]  lea rcx, [rip + 0x75a322]
+  0x02F530 -> 0x782928  [read ]  cmp dword ptr [rip + 0x7533f2], ebx
+  0x02F557 -> 0x782928  [WRITE]  mov dword ptr [rip + 0x7533cb], ebx
+  0x031B7F -> 0x7828F8  [read ]  lea rcx, [rip + 0x750d72]
+  0x031B9C -> 0x7828F8  [read ]  lea rcx, [rip + 0x750d55]
+  0x06B2C5 -> 0x782948  [read ]  lea rcx, [rip + 0x71767c]
+  0x09FD34 -> 0x782948  [read ]  lea rcx, [rip + 0x6e2c0d]
+  0x09FD47 -> 0x7828F8  [read ]  lea rcx, [rip + 0x6e2baa]
+  0x0A0228 -> 0x782948  [read ]  lea rcx, [rip + 0x6e2719]
+  0x0A023B -> 0x7828F8  [read ]  lea rcx, [rip + 0x6e26b6]
+  0x0A0941 -> 0x782930  [read ]  lea rcx, [rip + 0x6e1fe8]
+  0x0A095E -> 0x782930  [read ]  lea rcx, [rip + 0x6e1fcb]
+  0x0A0985 -> 0x7828F8  [read ]  lea rcx, [rip + 0x6e1f6c]
+  0x0A09E9 -> 0x782948  [read ]  lea rcx, [rip + 0x6e1f58]
+  0x0A0B2C -> 0x782930  [read ]  lea rcx, [rip + 0x6e1dfd]
+  0x0A0B4D -> 0x7828F8  [read ]  lea rcx, [rip + 0x6e1da4]
+  0x0A0B93 -> 0x7828F8  [read ]  lea rcx, [rip + 0x6e1d5e]
+  0x0ABB20 -> 0x782948  [read ]  lea rcx, [rip + 0x6d6e21]
+  0x0ABB33 -> 0x7828F8  [read ]  lea rcx, [rip + 0x6d6dbe]
+  0x0B5C5F -> 0x7829EC  [read ]  movd xmm0, dword ptr [rip + 0x6ccd85]
+  0x0B5C60 -> 0x7829EC  [read ]  movd mm0, dword ptr [rip + 0x6ccd85]
+  0x0B5C6C -> 0x7829F0  [read ]  movd xmm1, dword ptr [rip + 0x6ccd7c]
+  0x0B5C6D -> 0x7829F0  [read ]  movd mm1, dword ptr [rip + 0x6ccd7c]
+  0x0B67C7 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x6cc257]
+  0x0B67E0 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x6cc23e], ecx
+  0x0B71DE -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x6cb840]
+  0x0B71ED -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x6cb831], eax
+  0x0B7224 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x6cb7fa]
+  0x0B725F -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x6cb7bf], edx
+  0x0CB9FC -> 0x783038  [read ]  lea rax, [rip + 0x6b7635]
+  0x0CEEF8 -> 0x7829EC  [read ]  mov eax, dword ptr [rip + 0x6b3aee]
+  0x0CEF0C -> 0x7829F0  [read ]  mov eax, dword ptr [rip + 0x6b3ade]
+  0x0D32F6 -> 0x7829EC  [read ]  movd xmm1, dword ptr [rip + 0x6af6ee]
+  0x0D32F7 -> 0x7829EC  [read ]  movd mm1, dword ptr [rip + 0x6af6ee]
+  0x0D3357 -> 0x7829F0  [read ]  movd xmm0, dword ptr [rip + 0x6af691]
+  0x0D3358 -> 0x7829F0  [read ]  movd mm0, dword ptr [rip + 0x6af691]
+  0x0D3582 -> 0x7829EC  [read ]  movd xmm3, dword ptr [rip + 0x6af462]
+  0x0D3583 -> 0x7829EC  [read ]  movd mm3, dword ptr [rip + 0x6af462]
+  0x0D35E1 -> 0x7829F0  [read ]  movd xmm1, dword ptr [rip + 0x6af407]
+  0x0D35E2 -> 0x7829F0  [read ]  movd mm1, dword ptr [rip + 0x6af407]
+  0x0D3D85 -> 0x7829EC  [read ]  movd xmm0, dword ptr [rip + 0x6aec5f]
+  0x0D3D86 -> 0x7829EC  [read ]  movd mm0, dword ptr [rip + 0x6aec5f]
+  0x0D3DA7 -> 0x7829F0  [read ]  movd xmm0, dword ptr [rip + 0x6aec41]
+  0x0D3DA8 -> 0x7829F0  [read ]  movd mm0, dword ptr [rip + 0x6aec41]
+  0x0D4D5B -> 0x782A94  [read ]  mov edx, dword ptr [rip + 0x6add33]
+  0x0D4E0D -> 0x782A94  [read ]  mov edi, dword ptr [rip + 0x6adc81]
+  0x0D951F -> 0x7829D0  [read ]  cmp dword ptr [rip + 0x6a94aa], r15d
+  0x0D9520 -> 0x7829D0  [read ]  cmp dword ptr [rip + 0x6a94aa], edi
+  0x0D980A -> 0x7829D0  [read ]  cmp dword ptr [rip + 0x6a91c0], edx
+  0x10037F -> 0x782910  [read ]  lea rcx, [rip + 0x68258a]
+  0x1003D0 -> 0x782910  [read ]  lea rcx, [rip + 0x682539]
+  0x13052A -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x6524f4]
+  0x14E2EF -> 0x783208  [read ]  mov eax, dword ptr [rip + 0x634f13]
+  0x14E2F7 -> 0x7831FC  [WRITE]  mov dword ptr [rip + 0x634eff], eax
+  0x14E301 -> 0x78320C  [read ]  mov eax, dword ptr [rip + 0x634f05]
+  0x14E30A -> 0x783200  [WRITE]  mov dword ptr [rip + 0x634ef0], eax
+  0x14E319 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x634ed8], 1
+  0x1B4775 -> 0x7828F8  [read ]  lea rcx, [rip + 0x5ce17c]
+  0x1B4788 -> 0x7828F8  [read ]  lea rcx, [rip + 0x5ce169]
+  0x1D4951 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x5ae089], eax
+  0x1D495A -> 0x7829DC  [WRITE]  mov dword ptr [rip + 0x5ae07c], eax
+  0x1D4975 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x5ae05d], eax
+  0x1D4A05 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x5adfc9], eax
+  0x1D4A20 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x5adfaa], eax
+  0x1D4A7E -> 0x7829E0  [read ]  mov eax, dword ptr [rip + 0x5adf5c]
+  0x1D4A87 -> 0x7829DC  [read ]  mov eax, dword ptr [rip + 0x5adf4f]
+  0x1D4AA2 -> 0x7829D8  [read ]  mov eax, dword ptr [rip + 0x5adf30]
+  0x1D4B32 -> 0x7829D4  [read ]  mov eax, dword ptr [rip + 0x5ade9c]
+  0x1D4B4D -> 0x7829D0  [read ]  mov eax, dword ptr [rip + 0x5ade7d]
+  0x1D52A5 -> 0x7829CC  [WRITE]  mov dword ptr [rip + 0x5ad721], eax
+  0x1D5389 -> 0x7829CC  [read ]  mov eax, dword ptr [rip + 0x5ad63d]
+  0x1D5434 -> 0x7829A8  [read ]  movups xmm0, xmmword ptr [rip + 0x5ad56d]
+  0x1D5442 -> 0x7829B8  [read ]  movups xmm1, xmmword ptr [rip + 0x5ad56f]
+  0x1D546C -> 0x782988  [read ]  movups xmm0, xmmword ptr [rip + 0x5ad515]
+  0x1D547A -> 0x782998  [read ]  movups xmm1, xmmword ptr [rip + 0x5ad517]
+  0x1D54A4 -> 0x7829C8  [read ]  mov eax, dword ptr [rip + 0x5ad51e]
+  0x1D55D8 -> 0x782984  [read ]  mov eax, dword ptr [rip + 0x5ad3a6]
+  0x1D55E4 -> 0x782980  [read ]  mov eax, dword ptr [rip + 0x5ad396]
+  0x1D55F0 -> 0x78297C  [read ]  mov eax, dword ptr [rip + 0x5ad386]
+  0x1D56D4 -> 0x782978  [read ]  mov eax, dword ptr [rip + 0x5ad29e]
+  0x1D5B25 -> 0x7829A8  [WRITE]  movups xmmword ptr [rip + 0x5ace7c], xmm0
+  0x1D5B33 -> 0x7829B8  [WRITE]  movups xmmword ptr [rip + 0x5ace7e], xmm1
+  0x1D5B5D -> 0x782988  [WRITE]  movups xmmword ptr [rip + 0x5ace24], xmm0
+  0x1D5B6B -> 0x782998  [WRITE]  movups xmmword ptr [rip + 0x5ace26], xmm1
+  0x1D5B94 -> 0x7829C8  [WRITE]  mov dword ptr [rip + 0x5ace2e], eax
+  0x1D5CCE -> 0x782984  [WRITE]  mov dword ptr [rip + 0x5accb0], eax
+  0x1D5CDA -> 0x782980  [WRITE]  mov dword ptr [rip + 0x5acca0], eax
+  0x1D5CE6 -> 0x78297C  [WRITE]  mov dword ptr [rip + 0x5acc90], eax
+  0x1D5DCA -> 0x782978  [WRITE]  mov dword ptr [rip + 0x5acba8], eax
+  0x1D6A50 -> 0x782A94  [read ]  mov eax, dword ptr [rip + 0x5ac03e]
+  0x1D6A75 -> 0x782A94  [read ]  mov eax, dword ptr [rip + 0x5ac019]
+  0x1DBA06 -> 0x782A94  [read ]  mov ebx, dword ptr [rip + 0x5a7088]
+  0x1E70B8 -> 0x7829EC  [WRITE]  mov dword ptr [rip + 0x59b92e], esi
+  0x1E70C2 -> 0x7829F0  [WRITE]  mov dword ptr [rip + 0x59b924], 0x438
+  0x1EE087 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x594ffa]
+  0x1EE088 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x594ffa]
+  0x1EE109 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x594f78]
+  0x1EE10A -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x594f78]
+  0x1EE15B -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x594f26]
+  0x1EE15C -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x594f26]
+  0x1EE182 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x594eff]
+  0x1EE183 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x594eff]
+  0x1EEEB2 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x593b17], r12d
+  0x1EEEB3 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x593b17], esp
+  0x1F1FF0 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x5909d9], r12d
+  0x1F1FF1 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x5909d9], esp
+  0x1F2062 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x590967], r12d
+  0x1F2063 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x590967], esp
+  0x1F4FF8 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x58e089]
+  0x1F4FF9 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x58e089]
+  0x1F5032 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x58e04f]
+  0x1F5033 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x58e04f]
+  0x1FBF00 -> 0x7829CC  [read ]  imul edx, dword ptr [rip + 0x586ac5]
+  0x1FC0ED -> 0x7829CC  [read ]  imul eax, dword ptr [rip + 0x5868d8]
+  0x1FC108 -> 0x7829CC  [read ]  mov ebx, dword ptr [rip + 0x5868be]
+  0x1FC47C -> 0x7829CC  [read ]  imul eax, dword ptr [rip + 0x586549]
+  0x1FC497 -> 0x7829CC  [read ]  mov ebx, dword ptr [rip + 0x58652f]
+  0x1FC93B -> 0x7829CC  [read ]  add ecx, dword ptr [rip + 0x58608b]
+  0x1FC9D8 -> 0x7829CC  [read ]  mov ecx, dword ptr [rip + 0x585fee]
+  0x1FCA34 -> 0x7829CC  [read ]  mov ecx, dword ptr [rip + 0x585f92]
+  0x1FCADC -> 0x7829CC  [read ]  add ecx, dword ptr [rip + 0x585eea]
+  0x1FCB74 -> 0x7829CC  [read ]  add ecx, dword ptr [rip + 0x585e52]
+  0x1FCE5C -> 0x7829CC  [read ]  mov ecx, dword ptr [rip + 0x585b6a]
+  0x1FEEE5 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x583b39]
+  0x1FEF43 -> 0x782A24  [read ]  mov r8, qword ptr [rip + 0x583ada]
+  0x1FEF44 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x583ada]
+  0x200AD8 -> 0x7829DC  [read ]  mov eax, dword ptr [rip + 0x581efe]
+  0x200AF4 -> 0x7829E0  [read ]  mov edx, dword ptr [rip + 0x581ee6]
+  0x200B2B -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581eaf], edx
+  0x200B47 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581e92], r8d
+  0x200B48 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581e92], eax
+  0x200B79 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581e60], r9d
+  0x200B7A -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581e60], ecx
+  0x200BCA -> 0x7829E0  [read ]  mov edx, dword ptr [rip + 0x581e10]
+  0x200BE7 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581df2], r8d
+  0x200BE8 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581df2], eax
+  0x200C1F -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581dbb], edx
+  0x200CC4 -> 0x7829E0  [read ]  mov edx, dword ptr [rip + 0x581d16]
+  0x200F3C -> 0x7829D8  [read ]  mov eax, dword ptr [rip + 0x581a96]
+  0x200FD9 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x5819f8], r8d
+  0x200FDA -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x5819f8], eax
+  0x201042 -> 0x7829D8  [read ]  mov eax, dword ptr [rip + 0x581990]
+  0x2010D6 -> 0x7829D8  [read ]  mov eax, dword ptr [rip + 0x5818fc]
+  0x2011C3 -> 0x7829D8  [read ]  cmp dword ptr [rip + 0x58180e], r14d
+  0x2011C4 -> 0x7829D8  [read ]  cmp dword ptr [rip + 0x58180e], esi
+  0x2011E9 -> 0x7829E0  [read ]  cmp dword ptr [rip + 0x5817f0], r14d
+  0x2011EA -> 0x7829E0  [read ]  cmp dword ptr [rip + 0x5817f0], esi
+  0x20121B -> 0x7829E0  [read ]  cmp dword ptr [rip + 0x5817be], r14d
+  0x20121C -> 0x7829E0  [read ]  cmp dword ptr [rip + 0x5817be], esi
+  0x2012AA -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x581730], edi
+  0x2012D2 -> 0x7829E0  [read ]  mov ecx, dword ptr [rip + 0x581708]
+  0x201309 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x5816d0], r14d
+  0x20130A -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x5816d0], esi
+  0x2013C4 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x58160d], r14d
+  0x2013C5 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x58160d], esi
+  0x201413 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x5815be], r15d
+  0x201414 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x5815be], edi
+  0x20319B -> 0x782A88  [WRITE]  mov qword ptr [rip + 0x57f8e6], rax
+  0x20319C -> 0x782A88  [WRITE]  mov dword ptr [rip + 0x57f8e6], eax
+  0x2031A8 -> 0x782A90  [WRITE]  mov dword ptr [rip + 0x57f8e2], eax
+  0x2031B5 -> 0x782A98  [WRITE]  mov qword ptr [rip + 0x57f8dc], rax
+  0x2031B6 -> 0x782A98  [WRITE]  mov dword ptr [rip + 0x57f8dc], eax
+  0x2031C2 -> 0x782AA0  [WRITE]  mov dword ptr [rip + 0x57f8d8], eax
+  0x20324D -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x57fe34]
+  0x20324E -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x57fe34]
+  0x203469 -> 0x782AA0  [WRITE]  mov dword ptr [rip + 0x57f631], eax
+  0x203472 -> 0x782A9C  [WRITE]  mov dword ptr [rip + 0x57f624], eax
+  0x203478 -> 0x782A98  [WRITE]  mov dword ptr [rip + 0x57f61a], eax
+  0x20347E -> 0x782A90  [WRITE]  mov dword ptr [rip + 0x57f60c], eax
+  0x203484 -> 0x782A8C  [WRITE]  mov dword ptr [rip + 0x57f602], eax
+  0x20348A -> 0x782A88  [WRITE]  mov dword ptr [rip + 0x57f5f8], eax
+  0x2038DF -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x57f7a2]
+  0x2038E0 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x57f7a2]
+  0x203964 -> 0x782CCC  [WRITE]  mov dword ptr [rip + 0x57f35e], 0xa
+  0x203973 -> 0x782CCC  [read ]  movsxd rax, dword ptr [rip + 0x57f352]
+  0x20444B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x57ec36]
+  0x20444C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x57ec36]
+  0x2054E2 -> 0x782A94  [read ]  mov edx, dword ptr [rip + 0x57d5ac]
+  0x206C7F -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x57bd4a], r9d
+  0x206C80 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x57bd4a], ecx
+  0x2077CC -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x57b1fe], 8
+  0x207809 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x57b1c1], 1
+  0x207820 -> 0x7829D0  [read ]  mov edx, dword ptr [rip + 0x57b1aa]
+  0x2086E1 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x57a2e9], 8
+  0x208747 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x57a283], 8
+  0x20A977 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x57870a]
+  0x20A978 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x57870a]
+  0x20A993 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5786ee]
+  0x20A994 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5786ee]
+  0x20AA2E -> 0x782A90  [read ]  cmp dword ptr [rip + 0x57805c], ebp
+  0x20AFBD -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x577a61]
+  0x20AFC6 -> 0x782A5C  [read ]  movsx ecx, word ptr [rip + 0x577a8f]
+  0x20DB2F -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x574e9b], 8
+  0x20DB57 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x574e73], 8
+  0x20DBA4 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x574e26], 8
+  0x20DC31 -> 0x782A94  [read ]  mov eax, dword ptr [rip + 0x574e5d]
+  0x20DF6C -> 0x7829D4  [read ]  add cx, word ptr [rip + 0x574a61]
+  0x20DF6D -> 0x7829D4  [read ]  add ecx, dword ptr [rip + 0x574a61]
+  0x20DFAE -> 0x782A94  [read ]  mov r9d, dword ptr [rip + 0x574adf]
+  0x20DFAF -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x574adf]
+  0x20E0A0 -> 0x7829D4  [read ]  add cx, word ptr [rip + 0x57492d]
+  0x20E0A1 -> 0x7829D4  [read ]  add ecx, dword ptr [rip + 0x57492d]
+  0x20E3F6 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x5745d4], 8
+  0x20E6DF -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x574314], r14b
+  0x20E6E0 -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x574314], dh
+  0x20E79F -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x57427f]
+  0x20E7B5 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x574269], eax
+  0x20EBCD -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5744b4]
+  0x20EBCE -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5744b4]
+  0x20F1FE -> 0x782A50  [WRITE]  movd dword ptr [rip + 0x57384a], xmm1
+  0x20F1FF -> 0x782A50  [WRITE]  movd dword ptr [rip + 0x57384a], mm1
+  0x20F20C -> 0x782A60  [WRITE]  movups xmmword ptr [rip + 0x57384d], xmm0
+  0x20F213 -> 0x782A70  [WRITE]  movups xmmword ptr [rip + 0x573856], xmm0
+  0x20F21A -> 0x782A80  [WRITE]  movd dword ptr [rip + 0x57385e], xmm0
+  0x20F21B -> 0x782A80  [WRITE]  movd dword ptr [rip + 0x57385e], mm0
+  0x20F222 -> 0x782A30  [WRITE]  movups xmmword ptr [rip + 0x573807], xmm0
+  0x20F229 -> 0x782A40  [WRITE]  movups xmmword ptr [rip + 0x573810], xmm0
+  0x20FF02 -> 0x782A28  [read ]  mov eax, dword ptr [rip + 0x572b20]
+  0x20FF08 -> 0x782A2C  [WRITE]  mov dword ptr [rip + 0x572b1e], eax
+  0x20FF91 -> 0x782A28  [WRITE]  mov dword ptr [rip + 0x572a8d], 0xfffffffe
+  0x21006C -> 0x782A54  [read ]  cmp ecx, dword ptr [rip + 0x5729e2]
+  0x2100DE -> 0x782A58  [WRITE]  mov dword ptr [rip + 0x572970], 0xfffffffe
+  0x210870 -> 0x782A98  [read ]  cmp dword ptr [rip + 0x572220], 0
+  0x210914 -> 0x782A9C  [read ]  cmp dword ptr [rip + 0x572180], 0
+  0x210964 -> 0x782A9C  [read ]  cmp dword ptr [rip + 0x572130], 1
+  0x210CC3 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x571d5b]
+  0x2119B5 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x57101d], eax
+  0x2119E5 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x570ff5], eax
+  0x211BB3 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x570ea2], bx
+  0x211BB4 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x570ea2], ebx
+  0x212D42 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x56fc87], r13d
+  0x212D43 -> 0x7829D0  [WRITE]  mov dword ptr [rip + 0x56fc87], ebp
+  0x212EEC -> 0x7829D4  [read ]  sub r8w, word ptr [rip + 0x56fae0]
+  0x212EED -> 0x7829D4  [read ]  sub r8d, dword ptr [rip + 0x56fae0]
+  0x212EEE -> 0x7829D4  [read ]  sub eax, dword ptr [rip + 0x56fae0]
+  0x212FD7 -> 0x7829D4  [read ]  movzx eax, word ptr [rip + 0x56f9f6]
+  0x21313C -> 0x7829D4  [read ]  add r9w, word ptr [rip + 0x56f890]
+  0x21313D -> 0x7829D4  [read ]  add r9d, dword ptr [rip + 0x56f890]
+  0x21313E -> 0x7829D4  [read ]  add ecx, dword ptr [rip + 0x56f890]
+  0x2132D4 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x56f74a]
+  0x213327 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x56fd5a]
+  0x213328 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x56fd5a]
+  0x21391B -> 0x783290  [WRITE]  mov word ptr [rip + 0x56f96e], ax
+  0x21391C -> 0x783290  [WRITE]  mov dword ptr [rip + 0x56f96e], eax
+  0x213A8D -> 0x7829D4  [read ]  add r8w, word ptr [rip + 0x56ef3f]
+  0x213A8E -> 0x7829D4  [read ]  add r8d, dword ptr [rip + 0x56ef3f]
+  0x213A8F -> 0x7829D4  [read ]  add eax, dword ptr [rip + 0x56ef3f]
+  0x213B8A -> 0x7829D0  [read ]  cmp dword ptr [rip + 0x56ee3f], r13d
+  0x213B8B -> 0x7829D0  [read ]  cmp dword ptr [rip + 0x56ee3f], ebp
+  0x213E30 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x56ebc3], r14b
+  0x213E31 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x56ebc3], dh
+  0x2161DB -> 0x782A80  [WRITE]  mov dword ptr [rip + 0x56c89e], r9d
+  0x2161DC -> 0x782A80  [WRITE]  mov dword ptr [rip + 0x56c89e], ecx
+  0x2161E6 -> 0x782A50  [WRITE]  mov dword ptr [rip + 0x56c864], eax
+  0x2161F8 -> 0x782A60  [WRITE]  movups xmmword ptr [rip + 0x56c861], xmm0
+  0x2161FF -> 0x782A70  [WRITE]  movups xmmword ptr [rip + 0x56c86a], xmm3
+  0x216206 -> 0x782A30  [WRITE]  movups xmmword ptr [rip + 0x56c823], xmm1
+  0x21620D -> 0x782A40  [WRITE]  movups xmmword ptr [rip + 0x56c82c], xmm2
+  0x2193A9 -> 0x782A5E  [read ]  mov al, byte ptr [rip + 0x5696af]
+  0x219407 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x569617]
+  0x219A85 -> 0x7831FC  [read ]  mov eax, dword ptr [rip + 0x569771]
+  0x219A91 -> 0x783200  [read ]  mov eax, dword ptr [rip + 0x569769]
+  0x219A9D -> 0x783204  [read ]  mov eax, dword ptr [rip + 0x569761]
+  0x219AA9 -> 0x783208  [read ]  mov eax, dword ptr [rip + 0x569759]
+  0x219AB5 -> 0x78320C  [read ]  mov eax, dword ptr [rip + 0x569751]
+  0x219AC1 -> 0x7831F8  [read ]  mov al, byte ptr [rip + 0x569731]
+  0x219D8C -> 0x7829FB  [read ]  movzx r14d, byte ptr [rip + 0x568c67]
+  0x219D8D -> 0x7829FB  [read ]  movzx esi, byte ptr [rip + 0x568c67]
+  0x219D94 -> 0x7829FE  [read ]  movzx r15d, byte ptr [rip + 0x568c62]
+  0x219D95 -> 0x7829FE  [read ]  movzx edi, byte ptr [rip + 0x568c62]
+  0x219D9C -> 0x7829FF  [read ]  movzx r12d, byte ptr [rip + 0x568c5b]
+  0x219D9D -> 0x7829FF  [read ]  movzx esp, byte ptr [rip + 0x568c5b]
+  0x21AB89 -> 0x782BCB  [WRITE]  mov byte ptr [rip + 0x56803c], bl
+  0x21B055 -> 0x782BCB  [WRITE]  mov byte ptr [rip + 0x567b70], bl
+  0x21B317 -> 0x782A5E  [WRITE]  mov byte ptr [rip + 0x567741], al
+  0x21B381 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x56769d], eax
+  0x21BC21 -> 0x7831FC  [WRITE]  mov dword ptr [rip + 0x5675d5], eax
+  0x21BC2D -> 0x783200  [WRITE]  mov dword ptr [rip + 0x5675cd], eax
+  0x21BC39 -> 0x783204  [WRITE]  mov dword ptr [rip + 0x5675c5], eax
+  0x21BC45 -> 0x783208  [WRITE]  mov dword ptr [rip + 0x5675bd], eax
+  0x21BC51 -> 0x78320C  [WRITE]  mov dword ptr [rip + 0x5675b5], eax
+  0x21BC5D -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x567595], al
+  0x21C4ED -> 0x782BCB  [read ]  movzx esi, byte ptr [rip + 0x5666d7]
+  0x21CEE4 -> 0x782D1A  [read ]  lea r9, [rip + 0x565e2f]
+  0x21CEEB -> 0x782BAA  [read ]  lea rax, [rip + 0x565cb8]
+  0x21CF05 -> 0x782B92  [read ]  lea rcx, [rip + 0x565c86]
+  0x21CF0C -> 0x782D02  [read ]  lea r8, [rip + 0x565def]
+  0x21CF26 -> 0x782C12  [read ]  lea rdx, [rip + 0x565ce5]
+  0x21CF2D -> 0x782BE2  [read ]  lea rax, [rip + 0x565cae]
+  0x21CF47 -> 0x782C5A  [read ]  lea rax, [rip + 0x565d0c]
+  0x21CF4E -> 0x782B7A  [read ]  lea rcx, [rip + 0x565c25]
+  0x21CF84 -> 0x782C5A  [read ]  lea rax, [rip + 0x565ccf]
+  0x21CF8B -> 0x782B7A  [read ]  lea rcx, [rip + 0x565be8]
+  0x21CFA9 -> 0x782C12  [read ]  lea rax, [rip + 0x565c62]
+  0x21CFB0 -> 0x782BE2  [read ]  lea rcx, [rip + 0x565c2b]
+  0x21CFCE -> 0x782D1A  [read ]  lea rax, [rip + 0x565d45]
+  0x21CFD5 -> 0x782BAA  [read ]  lea rcx, [rip + 0x565bce]
+  0x21CFE4 -> 0x782DB2  [read ]  movzx r9d, word ptr [rip + 0x565dc6]
+  0x21CFE5 -> 0x782DB2  [read ]  movzx ecx, word ptr [rip + 0x565dc6]
+  0x21CFEC -> 0x782AC2  [read ]  movzx r10d, word ptr [rip + 0x565ace]
+  0x21CFED -> 0x782AC2  [read ]  movzx edx, word ptr [rip + 0x565ace]
+  0x21CFF4 -> 0x782D02  [read ]  movzx edx, word ptr [rip + 0x565d07]
+  0x21CFFB -> 0x782B92  [read ]  movzx r11d, word ptr [rip + 0x565b8f]
+  0x21CFFC -> 0x782B92  [read ]  movzx ebx, word ptr [rip + 0x565b8f]
+  0x21D012 -> 0x782BFA  [read ]  lea r8, [rip + 0x565be1]
+  0x21D019 -> 0x782C2A  [read ]  lea rax, [rip + 0x565c0a]
+  0x21D04E -> 0x782DCA  [read ]  lea r9, [rip + 0x565d75]
+  0x21D061 -> 0x782DB2  [read ]  lea r8, [rip + 0x565d49]
+  0x21D062 -> 0x782DB2  [read ]  lea r8, [rip + 0x565d49]
+  0x21D06F -> 0x782CD2  [read ]  lea rdx, [rip + 0x565c5b]
+  0x21D070 -> 0x782CD2  [read ]  lea rdx, [rip + 0x565c5b]
+  0x21D07E -> 0x782D9A  [read ]  lea rax, [rip + 0x565d15]
+  0x21D099 -> 0x782AAA  [read ]  lea r9, [rip + 0x565a0a]
+  0x21D0AE -> 0x782AC2  [read ]  lea r8, [rip + 0x565a0d]
+  0x21D0C3 -> 0x782AFA  [read ]  lea rdx, [rip + 0x565a30]
+  0x21D0D8 -> 0x782B4A  [read ]  lea rax, [rip + 0x565a6b]
+  0x21D0EB -> 0x782D9A  [read ]  lea rax, [rip + 0x565ca8]
+  0x21D100 -> 0x782B4A  [read ]  lea rax, [rip + 0x565a43]
+  0x21D113 -> 0x782CD2  [read ]  lea rax, [rip + 0x565bb8]
+  0x21D128 -> 0x782AFA  [read ]  lea rax, [rip + 0x5659cb]
+  0x21D13B -> 0x782DCA  [read ]  lea rax, [rip + 0x565c88]
+  0x21D150 -> 0x782AAA  [read ]  lea rax, [rip + 0x565953]
+  0x21D163 -> 0x782CEA  [WRITE]  mov word ptr [rip + 0x565b80], bx
+  0x21D164 -> 0x782CEA  [WRITE]  mov dword ptr [rip + 0x565b80], ebx
+  0x21D17C -> 0x782B12  [read ]  lea rax, [rip + 0x56598f]
+  0x21D20B -> 0x782BF8  [read ]  lea rdx, [rip + 0x5659e6]
+  0x21D212 -> 0x782C28  [read ]  lea rcx, [rip + 0x565a0f]
+  0x21D253 -> 0x782C58  [read ]  lea rcx, [rip + 0x5659fe]
+  0x21D25A -> 0x782B78  [read ]  lea rax, [rip + 0x565917]
+  0x21D296 -> 0x782C10  [read ]  lea rcx, [rip + 0x565973]
+  0x21D29D -> 0x782BE0  [read ]  lea rax, [rip + 0x56593c]
+  0x21D2CA -> 0x782DB2  [read ]  movzx r9d, word ptr [rip + 0x565ae0]
+  0x21D2CB -> 0x782DB2  [read ]  movzx ecx, word ptr [rip + 0x565ae0]
+  0x21D2D2 -> 0x782AC2  [read ]  movzx r10d, word ptr [rip + 0x5657e8]
+  0x21D2D3 -> 0x782AC2  [read ]  movzx edx, word ptr [rip + 0x5657e8]
+  0x21D2DA -> 0x782B92  [read ]  movzx r11d, word ptr [rip + 0x5658b0]
+  0x21D2DB -> 0x782B92  [read ]  movzx ebx, word ptr [rip + 0x5658b0]
+  0x21D2E2 -> 0x782D02  [read ]  movzx edx, word ptr [rip + 0x565a19]
+  0x21D2F7 -> 0x782CE8  [read ]  lea rcx, [rip + 0x5659ea]
+  0x21D310 -> 0x782B10  [read ]  lea rcx, [rip + 0x5657f9]
+  0x21D323 -> 0x782D98  [read ]  lea rcx, [rip + 0x565a6e]
+  0x21D33C -> 0x782B48  [read ]  lea rcx, [rip + 0x565805]
+  0x21D34F -> 0x782CD0  [read ]  lea rcx, [rip + 0x56597a]
+  0x21D368 -> 0x782AF8  [read ]  lea rcx, [rip + 0x565789]
+  0x21D385 -> 0x782B90  [read ]  lea rdx, [rip + 0x565804]
+  0x21D38E -> 0x782D00  [read ]  lea rcx, [rip + 0x56596b]
+  0x21D3CD -> 0x782BA8  [read ]  lea rdx, [rip + 0x5657d4]
+  0x21D3D4 -> 0x782D18  [read ]  lea rcx, [rip + 0x56593d]
+  0x21D413 -> 0x782C58  [read ]  lea rcx, [rip + 0x56583e]
+  0x21D41A -> 0x782B78  [read ]  lea rax, [rip + 0x565757]
+  0x21D459 -> 0x782C10  [read ]  lea rcx, [rip + 0x5657b0]
+  0x21D460 -> 0x782BE0  [read ]  lea rax, [rip + 0x565779]
+  0x21D4B2 -> 0x782DB2  [read ]  movzx edx, word ptr [rip + 0x5658f9]
+  0x21D4CB -> 0x782DE8  [read ]  lea rax, [rip + 0x565916]
+  0x21D4E0 -> 0x782DB0  [read ]  lea rcx, [rip + 0x5658c9]
+  0x21D4F6 -> 0x782AC0  [read ]  lea rcx, [rip + 0x5655c3]
+  0x21D50E -> 0x782DC8  [read ]  lea rcx, [rip + 0x5658b3]
+  0x21D527 -> 0x782AA8  [read ]  lea rcx, [rip + 0x56557a]
+  0x21D53A -> 0x782D98  [read ]  lea rcx, [rip + 0x565857]
+  0x21D553 -> 0x782B48  [read ]  lea rcx, [rip + 0x5655ee]
+  0x21D566 -> 0x782CD0  [read ]  lea rcx, [rip + 0x565763]
+  0x21D57F -> 0x782AF8  [read ]  lea rcx, [rip + 0x565572]
+  0x21D596 -> 0x782AC2  [read ]  movzx edx, word ptr [rip + 0x565525]
+  0x21D5A6 -> 0x782B92  [read ]  movzx edx, word ptr [rip + 0x5655e5]
+  0x21D5B8 -> 0x782D02  [read ]  movzx edx, word ptr [rip + 0x565743]
+  0x21D5CD -> 0x782C98  [read ]  lea r9, [rip + 0x5656c4]
+  0x21D5D4 -> 0x782CB8  [read ]  lea rax, [rip + 0x5656dd]
+  0x21D5EB -> 0x782C99  [read ]  lea rdx, [rip + 0x5656a7]
+  0x21D5F2 -> 0x782CB9  [read ]  lea rcx, [rip + 0x5656c0]
+  0x21D615 -> 0x782C90  [read ]  lea rdx, [rip + 0x565674]
+  0x21D61C -> 0x782CB0  [read ]  lea rcx, [rip + 0x56568d]
+  0x21D636 -> 0x782BC8  [read ]  lea rax, [rip + 0x56558b]
+  0x21D647 -> 0x782DE9  [read ]  lea rcx, [rip + 0x56579b]
+  0x21D655 -> 0x782BC9  [read ]  lea rcx, [rip + 0x56556d]
+  0x21D666 -> 0x782DE0  [read ]  lea rcx, [rip + 0x565773]
+  0x21D674 -> 0x782BC0  [read ]  lea rcx, [rip + 0x565545]
+  0x21D6A4 -> 0x782D82  [WRITE]  mov word ptr [rip + 0x5656d7], dx
+  0x21D6A5 -> 0x782D82  [WRITE]  mov dword ptr [rip + 0x5656d7], edx
+  0x21D6E3 -> 0x782B62  [read ]  lea rdx, [rip + 0x565478]
+  0x21D6EA -> 0x782C42  [read ]  lea rax, [rip + 0x565551]
+  0x21D6F9 -> 0x782D82  [read ]  movzx edx, word ptr [rip + 0x565682]
+  0x21D716 -> 0x782B32  [read ]  lea rax, [rip + 0x565415]
+  0x21D723 -> 0x782B32  [read ]  movzx eax, word ptr [rip + 0x565408]
+  0x21D72F -> 0x782B62  [read ]  movzx eax, word ptr [rip + 0x56542c]
+  0x21D738 -> 0x782C42  [read ]  movzx eax, word ptr [rip + 0x565503]
+  0x21D759 -> 0x782B32  [read ]  movzx edx, word ptr [rip + 0x5653d2]
+  0x21D762 -> 0x782B62  [read ]  movzx edx, word ptr [rip + 0x5653f9]
+  0x21D76E -> 0x782C42  [read ]  movzx edx, word ptr [rip + 0x5654cd]
+  0x21D794 -> 0x782B60  [read ]  lea rdx, [rip + 0x5653c5]
+  0x21D79D -> 0x782C40  [read ]  lea rcx, [rip + 0x56549c]
+  0x21D7E0 -> 0x782DB2  [read ]  movzx r9d, word ptr [rip + 0x5655ca]
+  0x21D7E1 -> 0x782DB2  [read ]  movzx ecx, word ptr [rip + 0x5655ca]
+  0x21D7FA -> 0x782D78  [read ]  lea r8, [rip + 0x565577]
+  0x21D80D -> 0x782D58  [read ]  lea rdx, [rip + 0x565544]
+  0x21D820 -> 0x782D68  [read ]  lea rax, [rip + 0x565541]
+  0x21D834 -> 0x782D80  [read ]  lea rcx, [rip + 0x565545]
+  0x21D845 -> 0x782B30  [read ]  lea rcx, [rip + 0x5652e4]
+  0x21D861 -> 0x782AC2  [read ]  movzx r9d, word ptr [rip + 0x565259]
+  0x21D862 -> 0x782AC2  [read ]  movzx ecx, word ptr [rip + 0x565259]
+  0x21D872 -> 0x782B92  [read ]  movzx r9d, word ptr [rip + 0x565318]
+  0x21D873 -> 0x782B92  [read ]  movzx ecx, word ptr [rip + 0x565318]
+  0x21D885 -> 0x782D02  [read ]  movzx r9d, word ptr [rip + 0x565475]
+  0x21D886 -> 0x782D02  [read ]  movzx ecx, word ptr [rip + 0x565475]
+  0x21D89B -> 0x782CA8  [read ]  lea rcx, [rip + 0x565406]
+  0x21D8A2 -> 0x782CC8  [read ]  lea r8, [rip + 0x56541f]
+  0x21D8BB -> 0x782C78  [read ]  lea rcx, [rip + 0x5653b6]
+  0x21D8C2 -> 0x782D38  [read ]  lea rdx, [rip + 0x56546f]
+  0x21D8D9 -> 0x782C88  [read ]  lea r11, [rip + 0x5653a8]
+  0x21D8E2 -> 0x782D48  [read ]  lea rax, [rip + 0x56545f]
+  0x21D90A -> 0x782C89  [read ]  lea rdx, [rip + 0x565378]
+  0x21D911 -> 0x782D49  [read ]  lea rcx, [rip + 0x565431]
+  0x21D938 -> 0x782C79  [read ]  lea r8, [rip + 0x56533a]
+  0x21D93F -> 0x782D39  [read ]  lea rcx, [rip + 0x5653f3]
+  0x21D975 -> 0x782CA9  [read ]  lea r8, [rip + 0x56532d]
+  0x21D97C -> 0x782CC9  [read ]  lea rax, [rip + 0x565346]
+  0x21D997 -> 0x782CA0  [read ]  lea rdx, [rip + 0x565302]
+  0x21D99E -> 0x782CC0  [read ]  lea rcx, [rip + 0x56531b]
+  0x21D9C3 -> 0x782C70  [read ]  lea rdx, [rip + 0x5652a6]
+  0x21D9CA -> 0x782D30  [read ]  lea rcx, [rip + 0x56535f]
+  0x21D9EF -> 0x782C80  [read ]  lea rdx, [rip + 0x56528a]
+  0x21D9F6 -> 0x782D40  [read ]  lea rcx, [rip + 0x565343]
+  0x21DA42 -> 0x782BD8  [read ]  lea r8, [rip + 0x56518f]
+  0x21DA57 -> 0x782AE0  [read ]  lea rdx, [rip + 0x565082]
+  0x21DA6C -> 0x782AF0  [read ]  lea rax, [rip + 0x56507d]
+  0x21DA80 -> 0x782D69  [read ]  lea rcx, [rip + 0x5652e2]
+  0x21DA95 -> 0x782AF1  [read ]  lea rcx, [rip + 0x565055]
+  0x21DAA9 -> 0x782D59  [read ]  lea rcx, [rip + 0x5652a9]
+  0x21DABE -> 0x782AE1  [read ]  lea rcx, [rip + 0x56501c]
+  0x21DAD2 -> 0x782D79  [WRITE]  mov byte ptr [rip + 0x5652a1], dl
+  0x21DAE0 -> 0x782D70  [read ]  lea rcx, [rip + 0x565289]
+  0x21DAF5 -> 0x782BD9  [read ]  lea rax, [rip + 0x5650dd]
+  0x21DB0A -> 0x782BD0  [read ]  lea rcx, [rip + 0x5650bf]
+  0x21DB1D -> 0x782D50  [read ]  lea rcx, [rip + 0x56522c]
+  0x21DB36 -> 0x782AD8  [read ]  lea rcx, [rip + 0x564f9b]
+  0x21DB49 -> 0x782D60  [read ]  lea rcx, [rip + 0x565210]
+  0x21DB62 -> 0x782AE8  [read ]  lea rcx, [rip + 0x564f7f]
+  0x21EF8E -> 0x782A94  [read ]  mov edx, dword ptr [rip + 0x563b00]
+  0x21F095 -> 0x782A94  [read ]  mov edx, dword ptr [rip + 0x5639f9]
+  0x21F182 -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x56390c]
+  0x21F1FA -> 0x782A94  [read ]  mov ecx, dword ptr ss:[rip + 0x563892]
+  0x21F1FC -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x563892]
+  0x21F42A -> 0x782A94  [read ]  cmp dword ptr [rip + 0x56365f], 0xd5
+  0x21F767 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x56328d]
+  0x21F79A -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x56325d]
+  0x21F7CF -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x563229]
+  0x220D0F -> 0x782D14  [read ]  sub eax, dword ptr [rip + 0x561fff]
+  0x220D4F -> 0x782D14  [read ]  sub eax, dword ptr [rip + 0x561fbf]
+  0x220DB4 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x561c6a]
+  0x220DEE -> 0x782D14  [read ]  sub eax, dword ptr [rip + 0x561f20]
+  0x220E1F -> 0x782D14  [read ]  sub eax, dword ptr [rip + 0x561eef]
+  0x220E51 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x561e55]
+  0x220E64 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x561e42], eax
+  0x220F3F -> 0x783210  [read ]  lea rax, [rip + 0x5622ca]
+  0x221112 -> 0x783210  [read ]  lea rcx, [rip + 0x5620f7]
+  0x2213BC -> 0x782C6C  [WRITE]  mov dword ptr [rip + 0x5618aa], eax
+  0x22152B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x561b56]
+  0x22152C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x561b56]
+  0x221615 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x561a6c]
+  0x221616 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x561a6c]
+  0x221CB6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5613cb]
+  0x221CB7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5613cb]
+  0x221D8F -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x561342]
+  0x221D90 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x561342]
+  0x2227FB -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x560886]
+  0x2227FC -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x560886]
+  0x222939 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x560748]
+  0x22293A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x560748]
+  0x222A99 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5605e8]
+  0x222A9A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5605e8]
+  0x22302E -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x560053]
+  0x22302F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x560053]
+  0x2234B4 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x55fc1d]
+  0x2234B5 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x55fc1d]
+  0x22354A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55fb37]
+  0x22354B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55fb37]
+  0x223840 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55f841]
+  0x223841 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55f841]
+  0x2239EC -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x55f695]
+  0x2239ED -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x55f695]
+  0x223A3E -> 0x7830D8  [read ]  mov rcx, qword ptr [rip + 0x55f693]
+  0x223A3F -> 0x7830D8  [read ]  mov ecx, dword ptr [rip + 0x55f693]
+  0x223A5B -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x55f626]
+  0x223A5C -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x55f626]
+  0x223B2D -> 0x783088  [read ]  mov r15, qword ptr [rip + 0x55f554]
+  0x223B2E -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x55f554]
+  0x223B83 -> 0x783088  [read ]  mov r15, qword ptr [rip + 0x55f4fe]
+  0x223B84 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x55f4fe]
+  0x223EAC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55f1d5]
+  0x223EAD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55f1d5]
+  0x224254 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x55ee2d]
+  0x224255 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55ee2d]
+  0x22430C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55ed75]
+  0x22430D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55ed75]
+  0x224C3C -> 0x782CAC  [read ]  mov ebx, dword ptr [rip + 0x55e06a]
+  0x224C59 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55e04d], ebx
+  0x224C6A -> 0x782CAC  [read ]  mov ebx, dword ptr [rip + 0x55e03c]
+  0x224CAA -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55dffc], ebx
+  0x224CCB -> 0x782D14  [read ]  add r13d, dword ptr [rip + 0x55e042]
+  0x224CCC -> 0x782D14  [read ]  add ebp, dword ptr [rip + 0x55e042]
+  0x224D02 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55dfa4], ebx
+  0x224D73 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x55e35e]
+  0x224D74 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x55e35e]
+  0x224E18 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55e269]
+  0x224E19 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55e269]
+  0x224EF9 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x55e188]
+  0x224EFA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55e188]
+  0x2255B9 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55dac8]
+  0x2255BA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55dac8]
+  0x225A4D -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x55d259]
+  0x225A60 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55d246], eax
+  0x225AD9 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x55d1cd]
+  0x225AEC -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55d1ba], eax
+  0x225C2F -> 0x782D14  [read ]  add r15d, dword ptr [rip + 0x55d0de]
+  0x225C30 -> 0x782D14  [read ]  add edi, dword ptr [rip + 0x55d0de]
+  0x225E6E -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55d213]
+  0x225E6F -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55d213]
+  0x225FE8 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x55ccbe]
+  0x225FFF -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x55cca7], eax
+  0x22650F -> 0x782D14  [read ]  add r14d, dword ptr [rip + 0x55c7fe]
+  0x226510 -> 0x782D14  [read ]  add esi, dword ptr [rip + 0x55c7fe]
+  0x226772 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x55c59c]
+  0x226856 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x55c4b8]
+  0x226DFA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55c287]
+  0x226DFB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55c287]
+  0x226EFD -> 0x783320  [read ]  lea rdx, [rip + 0x55c41c]
+  0x226F2A -> 0x7832A0  [read ]  lea rdx, [rip + 0x55c36f]
+  0x226F6B -> 0x7832E0  [WRITE]  mov word ptr [rip + 0x55c36c], ax
+  0x226F6C -> 0x7832E0  [WRITE]  mov word ptr [rip + 0x55c36c], ax
+  0x226F6D -> 0x7832E0  [WRITE]  mov word ptr [rip + 0x55c36c], ax
+  0x226F6E -> 0x7832E0  [WRITE]  mov dword ptr [rip + 0x55c36c], eax
+  0x226F76 -> 0x7832E2  [WRITE]  mov word ptr [rip + 0x55c363], ax
+  0x226F77 -> 0x7832E2  [WRITE]  mov word ptr [rip + 0x55c363], ax
+  0x226F78 -> 0x7832E2  [WRITE]  mov word ptr [rip + 0x55c363], ax
+  0x226F79 -> 0x7832E2  [WRITE]  mov dword ptr [rip + 0x55c363], eax
+  0x226F81 -> 0x7832E4  [WRITE]  mov word ptr [rip + 0x55c35a], ax
+  0x226F82 -> 0x7832E4  [WRITE]  mov word ptr [rip + 0x55c35a], ax
+  0x226F83 -> 0x7832E4  [WRITE]  mov word ptr [rip + 0x55c35a], ax
+  0x226F84 -> 0x7832E4  [WRITE]  mov dword ptr [rip + 0x55c35a], eax
+  0x226F8C -> 0x7832EA  [WRITE]  mov word ptr [rip + 0x55c355], ax
+  0x226F8D -> 0x7832EA  [WRITE]  mov word ptr [rip + 0x55c355], ax
+  0x226F8E -> 0x7832EA  [WRITE]  mov word ptr [rip + 0x55c355], ax
+  0x226F8F -> 0x7832EA  [WRITE]  mov dword ptr [rip + 0x55c355], eax
+  0x226F97 -> 0x7832EC  [WRITE]  mov word ptr [rip + 0x55c34c], ax
+  0x226F98 -> 0x7832EC  [WRITE]  mov word ptr [rip + 0x55c34c], ax
+  0x226F99 -> 0x7832EC  [WRITE]  mov word ptr [rip + 0x55c34c], ax
+  0x226F9A -> 0x7832EC  [WRITE]  mov dword ptr [rip + 0x55c34c], eax
+  0x226FA2 -> 0x7832E6  [WRITE]  mov word ptr [rip + 0x55c33b], ax
+  0x226FA3 -> 0x7832E6  [WRITE]  mov word ptr [rip + 0x55c33b], ax
+  0x226FA4 -> 0x7832E6  [WRITE]  mov word ptr [rip + 0x55c33b], ax
+  0x226FA5 -> 0x7832E6  [WRITE]  mov dword ptr [rip + 0x55c33b], eax
+  0x226FAD -> 0x7832E8  [WRITE]  mov word ptr [rip + 0x55c332], ax
+  0x226FAE -> 0x7832E8  [WRITE]  mov word ptr [rip + 0x55c332], ax
+  0x226FAF -> 0x7832E8  [WRITE]  mov word ptr [rip + 0x55c332], ax
+  0x226FB0 -> 0x7832E8  [WRITE]  mov dword ptr [rip + 0x55c332], eax
+  0x226FB8 -> 0x7832F2  [WRITE]  mov word ptr ds:[rip + 0x55c331], ax
+  0x226FBA -> 0x7832F2  [WRITE]  mov word ptr [rip + 0x55c331], ax
+  0x226FBB -> 0x7832F2  [WRITE]  mov dword ptr [rip + 0x55c331], eax
+  0x226FC3 -> 0x7832F4  [WRITE]  mov word ptr [rip + 0x55c328], ax
+  0x226FC4 -> 0x7832F4  [WRITE]  mov word ptr [rip + 0x55c328], ax
+  0x226FC5 -> 0x7832F4  [WRITE]  mov word ptr [rip + 0x55c328], ax
+  0x226FC6 -> 0x7832F4  [WRITE]  mov dword ptr [rip + 0x55c328], eax
+  0x226FCE -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c31f], ax
+  0x226FCF -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c31f], ax
+  0x226FD0 -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c31f], ax
+  0x226FD1 -> 0x7832F6  [WRITE]  mov dword ptr [rip + 0x55c31f], eax
+  0x226FDE -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c30f], ax
+  0x226FDF -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c30f], ax
+  0x226FE0 -> 0x7832F6  [WRITE]  mov word ptr [rip + 0x55c30f], ax
+  0x226FE1 -> 0x7832F6  [WRITE]  mov dword ptr [rip + 0x55c30f], eax
+  0x226FEE -> 0x7832F8  [WRITE]  mov word ptr [rip + 0x55c303], ax
+  0x226FEF -> 0x7832F8  [WRITE]  mov dword ptr [rip + 0x55c303], eax
+  0x226FF9 -> 0x7832FC  [WRITE]  mov word ptr [rip + 0x55c2fc], ax
+  0x226FFA -> 0x7832FC  [WRITE]  mov dword ptr [rip + 0x55c2fc], eax
+  0x227002 -> 0x7832FE  [WRITE]  mov word ptr [rip + 0x55c2f2], r14w
+  0x227003 -> 0x7832FE  [WRITE]  mov word ptr [rip + 0x55c2f2], r14w
+  0x227004 -> 0x7832FE  [WRITE]  mov word ptr [rip + 0x55c2f2], r14w
+  0x227005 -> 0x7832FE  [WRITE]  mov dword ptr [rip + 0x55c2f2], r14d
+  0x227006 -> 0x7832FE  [WRITE]  mov dword ptr [rip + 0x55c2f2], esi
+  0x22700C -> 0x783300  [WRITE]  mov word ptr [rip + 0x55c2ed], ax
+  0x22700D -> 0x783300  [WRITE]  mov dword ptr [rip + 0x55c2ed], eax
+  0x22701A -> 0x783300  [WRITE]  mov word ptr [rip + 0x55c2dd], ax
+  0x22701B -> 0x783300  [WRITE]  mov word ptr [rip + 0x55c2dd], ax
+  0x22701C -> 0x783300  [WRITE]  mov word ptr [rip + 0x55c2dd], ax
+  0x22701D -> 0x783300  [WRITE]  mov dword ptr [rip + 0x55c2dd], eax
+  0x227027 -> 0x783304  [read ]  lea r9, [rip + 0x55c2d6]
+  0x227037 -> 0x783302  [WRITE]  mov word ptr [rip + 0x55c2c4], ax
+  0x227038 -> 0x783302  [WRITE]  mov dword ptr [rip + 0x55c2c4], eax
+  0x227066 -> 0x783304  [WRITE]  mov word ptr [rip + 0x55c297], ax
+  0x227067 -> 0x783304  [WRITE]  mov dword ptr [rip + 0x55c297], eax
+  0x22707D -> 0x783306  [WRITE]  mov word ptr es:[rip + 0x55c280], ax
+  0x22707F -> 0x783306  [WRITE]  mov word ptr [rip + 0x55c280], ax
+  0x227080 -> 0x783306  [WRITE]  mov dword ptr [rip + 0x55c280], eax
+  0x22708A -> 0x783308  [WRITE]  mov word ptr [rip + 0x55c277], ax
+  0x22708B -> 0x783308  [WRITE]  mov dword ptr [rip + 0x55c277], eax
+  0x227095 -> 0x78330A  [WRITE]  mov word ptr [rip + 0x55c26e], ax
+  0x227096 -> 0x78330A  [WRITE]  mov dword ptr [rip + 0x55c26e], eax
+  0x2270A0 -> 0x78330C  [WRITE]  mov word ptr [rip + 0x55c265], ax
+  0x2270A1 -> 0x78330C  [WRITE]  mov dword ptr [rip + 0x55c265], eax
+  0x2270AB -> 0x78330E  [read ]  lea rsi, [rip + 0x55c25c]
+  0x2270D7 -> 0x7832EE  [WRITE]  mov word ptr [rip + 0x55c20f], r14w
+  0x2270D8 -> 0x7832EE  [WRITE]  mov dword ptr [rip + 0x55c20f], r14d
+  0x2270D9 -> 0x7832EE  [WRITE]  mov dword ptr [rip + 0x55c20f], esi
+  0x2270EE -> 0x7832EE  [WRITE]  mov word ptr [rip + 0x55c1f8], r15w
+  0x2270EF -> 0x7832EE  [WRITE]  mov dword ptr [rip + 0x55c1f8], r15d
+  0x2270F0 -> 0x7832EE  [WRITE]  mov dword ptr [rip + 0x55c1f8], edi
+  0x22710C -> 0x783318  [read ]  lea rcx, [rip + 0x55c205]
+  0x227139 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55bf48]
+  0x22713A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55bf48]
+  0x227153 -> 0x783314  [WRITE]  mov word ptr [rip + 0x55c1b9], r14w
+  0x227154 -> 0x783314  [WRITE]  mov dword ptr [rip + 0x55c1b9], r14d
+  0x227155 -> 0x783314  [WRITE]  mov dword ptr [rip + 0x55c1b9], esi
+  0x2271A1 -> 0x78330E  [WRITE]  mov word ptr [rip + 0x55c166], ax
+  0x2271A2 -> 0x78330E  [WRITE]  mov dword ptr [rip + 0x55c166], eax
+  0x2271AC -> 0x783310  [WRITE]  mov word ptr [rip + 0x55c15d], ax
+  0x2271AD -> 0x783310  [WRITE]  mov dword ptr [rip + 0x55c15d], eax
+  0x2271B7 -> 0x783312  [WRITE]  mov word ptr [rip + 0x55c154], ax
+  0x2271B8 -> 0x783312  [WRITE]  mov dword ptr [rip + 0x55c154], eax
+  0x2271C2 -> 0x783314  [WRITE]  mov word ptr [rip + 0x55c14b], ax
+  0x2271C3 -> 0x783314  [WRITE]  mov dword ptr [rip + 0x55c14b], eax
+  0x2271CD -> 0x783316  [WRITE]  mov word ptr [rip + 0x55c142], ax
+  0x2271CE -> 0x783316  [WRITE]  mov dword ptr [rip + 0x55c142], eax
+  0x2271E7 -> 0x783304  [read ]  movsx eax, word ptr [rip + 0x55c116]
+  0x2271EE -> 0x7832F0  [WRITE]  mov word ptr [rip + 0x55c0fa], r14w
+  0x2271EF -> 0x7832F0  [WRITE]  mov dword ptr [rip + 0x55c0fa], r14d
+  0x2271F0 -> 0x7832F0  [WRITE]  mov dword ptr [rip + 0x55c0fa], esi
+  0x2271FC -> 0x783306  [read ]  cmp word ptr [rip + 0x55c102], r12w
+  0x2271FD -> 0x783306  [read ]  cmp dword ptr [rip + 0x55c102], r12d
+  0x2271FE -> 0x783306  [read ]  cmp dword ptr [rip + 0x55c102], esp
+  0x227208 -> 0x783306  [read ]  movsx eax, word ptr [rip + 0x55c0f7]
+  0x22724E -> 0x7832F0  [WRITE]  mov word ptr [rip + 0x55c09a], r15w
+  0x22724F -> 0x7832F0  [WRITE]  mov dword ptr [rip + 0x55c09a], r15d
+  0x227250 -> 0x7832F0  [WRITE]  mov dword ptr [rip + 0x55c09a], edi
+  0x22729D -> 0x7832EE  [read ]  movzx r9d, word ptr [rip + 0x55c049]
+  0x22729E -> 0x7832EE  [read ]  movzx ecx, word ptr [rip + 0x55c049]
+  0x2272A5 -> 0x782FE0  [read ]  lea rax, [rip + 0x55bd34]
+  0x2272AC -> 0x7832A2  [read ]  movzx r10d, word ptr [rip + 0x55bfee]
+  0x2272AD -> 0x7832A2  [read ]  movzx edx, word ptr [rip + 0x55bfee]
+  0x2273D7 -> 0x783090  [read ]  lea r8, [rip + 0x55bcb2]
+  0x2273E5 -> 0x782FF0  [read ]  lea r8, [rip + 0x55bc04]
+  0x2273F3 -> 0x783040  [read ]  lea rax, [rip + 0x55bc46]
+  0x2273FA -> 0x7830E0  [read ]  lea r8, [rip + 0x55bcdf]
+  0x227846 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55b83b]
+  0x227847 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55b83b]
+  0x228004 -> 0x7832C0  [WRITE]  mov word ptr [rip + 0x55b2b5], ax  <<< HIT% (0x7832C0)
+  0x228005 -> 0x7832C0  [WRITE]  mov dword ptr [rip + 0x55b2b5], eax  <<< HIT% (0x7832C0)
+  0x228217 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55ae6a]
+  0x228218 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55ae6a]
+  0x228488 -> 0x7832BE  [WRITE]  mov word ptr [rip + 0x55ae2f], dx
+  0x228489 -> 0x7832BE  [WRITE]  mov dword ptr [rip + 0x55ae2f], edx
+  0x228646 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55aa3b]
+  0x228647 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55aa3b]
+  0x22903F -> 0x782D14  [read ]  mov r8d, dword ptr [rip + 0x559cce]
+  0x229040 -> 0x782D14  [read ]  mov eax, dword ptr [rip + 0x559cce]
+  0x229049 -> 0x783088  [read ]  mov r10, qword ptr [rip + 0x55a038]
+  0x22904A -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x55a038]
+  0x22945C -> 0x782A00  [read ]  lea rbx, [rip + 0x55959d]
+  0x22A06A -> 0x7832A0  [read ]  lea r9, [rip + 0x55922f]
+  0x22A0DA -> 0x7832EE  [read ]  movzx eax, word ptr [rip + 0x55920d]
+  0x22A0E8 -> 0x783312  [read ]  movzx eax, word ptr [rip + 0x559223]
+  0x22A1F0 -> 0x783320  [read ]  lea r9, [rip + 0x559129]
+  0x22A773 -> 0x782D14  [read ]  mov r9d, dword ptr [rip + 0x55859a]
+  0x22A774 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x55859a]
+  0x22A77D -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x558904]
+  0x22A77E -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x558904]
+  0x22AF3A -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x558147]
+  0x22AF3B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x558147]
+  0x22AFFC -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x558085]
+  0x22AFFD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x558085]
+  0x22B0D6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x557fab]
+  0x22B0D7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x557fab]
+  0x22B332 -> 0x7832F0  [read ]  cmp word ptr [rip + 0x557fb7], si
+  0x22B333 -> 0x7832F0  [read ]  cmp dword ptr [rip + 0x557fb7], esi
+  0x22B3B3 -> 0x7832EE  [read ]  cmp word ptr [rip + 0x557f34], si
+  0x22B3B4 -> 0x7832EE  [read ]  cmp dword ptr [rip + 0x557f34], esi
+  0x22B462 -> 0x783304  [read ]  lea rdi, [rip + 0x557e9b]
+  0x22B55E -> 0x78330E  [read ]  lea rdi, [rip + 0x557da9]
+  0x22B57C -> 0x7832EE  [read ]  movzx eax, word ptr [rip + 0x557d6b]
+  0x22B5D6 -> 0x783312  [read ]  lea rdi, [rip + 0x557d35]
+  0x22B622 -> 0x7832EE  [read ]  cmp word ptr [rip + 0x557cc4], r15w
+  0x22B623 -> 0x7832EE  [read ]  cmp dword ptr [rip + 0x557cc4], r15d
+  0x22B624 -> 0x7832EE  [read ]  cmp dword ptr [rip + 0x557cc4], edi
+  0x22B62A -> 0x78330E  [read ]  lea rsi, [rip + 0x557cdd]
+  0x22B6E4 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x55799d]
+  0x22B6E5 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x55799d]
+  0x22B77B -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x557906]
+  0x22B77C -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x557906]
+  0x22B8A4 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x5577dd]
+  0x22B8A5 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x5577dd]
+  0x22B905 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55777c]
+  0x22B906 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55777c]
+  0x22B946 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x557360]
+  0x22B955 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x557351], eax
+  0x22B9CC -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x5576b5]
+  0x22B9CD -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x5576b5]
+  0x22B9ED -> 0x782CCC  [read ]  mov ecx, dword ptr [rip + 0x5572d9]
+  0x22BAA3 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x5575de]
+  0x22BAA4 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5575de]
+  0x22C00A -> 0x783088  [read ]  mov r10, qword ptr [rip + 0x557077]
+  0x22C00B -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x557077]
+  0x22C33A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x556d47]
+  0x22C33B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x556d47]
+  0x22C372 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x556d0f]
+  0x22C373 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x556d0f]
+  0x22C698 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5569e9]
+  0x22C699 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5569e9]
+  0x22C8B8 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x5567c9]
+  0x22C8B9 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x5567c9]
+  0x22C90F -> 0x783290  [WRITE]  mov word ptr [rip + 0x55697a], ax
+  0x22C910 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x55697a], eax
+  0x22C9E1 -> 0x78312A  [WRITE]  mov dword ptr [rip + 0x55673f], 0x270027
+  0x22C9EE -> 0x78312E  [WRITE]  mov dword ptr [rip + 0x556736], 0x270027
+  0x22CBEF -> 0x783290  [WRITE]  mov word ptr [rip + 0x556699], r10w
+  0x22CBF0 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x556699], r10d
+  0x22CBF1 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x556699], edx
+  0x22CBF7 -> 0x783292  [WRITE]  mov word ptr [rip + 0x556693], r10w
+  0x22CBF8 -> 0x783292  [WRITE]  mov dword ptr [rip + 0x556693], r10d
+  0x22CBF9 -> 0x783292  [WRITE]  mov dword ptr [rip + 0x556693], edx
+  0x22CBFF -> 0x783294  [WRITE]  mov word ptr [rip + 0x55668d], r10w
+  0x22CC00 -> 0x783294  [WRITE]  mov dword ptr [rip + 0x55668d], r10d
+  0x22CC01 -> 0x783294  [WRITE]  mov dword ptr [rip + 0x55668d], edx
+  0x22CC07 -> 0x783296  [WRITE]  mov word ptr [rip + 0x556687], r10w
+  0x22CC08 -> 0x783296  [WRITE]  mov dword ptr [rip + 0x556687], r10d
+  0x22CC09 -> 0x783296  [WRITE]  mov dword ptr [rip + 0x556687], edx
+  0x22CCA6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5563db]
+  0x22CCA7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5563db]
+  0x22CE05 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x555c50], si
+  0x22CE06 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x555c50], esi
+  0x22E4D5 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x554580], ax
+  0x22E4D6 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x554580], eax
+  0x22E92D -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x554128], ax
+  0x22E92E -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x554128], eax
+  0x22EF8E -> 0x782A5C  [read ]  movzx eax, word ptr [rip + 0x553ac7]
+  0x22F026 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55405b]
+  0x22F027 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55405b]
+  0x22F09E -> 0x783150  [read ]  lea rax, [rip + 0x5540ab]
+  0x22F18F -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x553ef2]
+  0x22F190 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x553ef2]
+  0x22F38D -> 0x78315E  [WRITE]  mov word ptr [rip + 0x553dca], di
+  0x22F38E -> 0x78315E  [WRITE]  mov dword ptr [rip + 0x553dca], edi
+  0x22F3A5 -> 0x78315A  [WRITE]  mov dword ptr [rip + 0x553dae], r11d
+  0x22F3A6 -> 0x78315A  [WRITE]  mov dword ptr [rip + 0x553dae], ebx
+  0x22F426 -> 0x78315E  [WRITE]  mov word ptr [rip + 0x553d31], ax
+  0x22F427 -> 0x78315E  [WRITE]  mov dword ptr [rip + 0x553d31], eax
+  0x22F4AA -> 0x783160  [WRITE]  mov qword ptr [rip + 0x553caf], rax
+  0x22F4AB -> 0x783160  [WRITE]  mov dword ptr [rip + 0x553caf], eax
+  0x22F4B8 -> 0x783168  [WRITE]  mov qword ptr [rip + 0x553ca9], rax
+  0x22F4B9 -> 0x783168  [WRITE]  mov dword ptr [rip + 0x553ca9], eax
+  0x22F4C6 -> 0x783170  [WRITE]  mov qword ptr [rip + 0x553ca3], rax
+  0x22F4C7 -> 0x783170  [WRITE]  mov dword ptr [rip + 0x553ca3], eax
+  0x22F4D4 -> 0x783178  [WRITE]  mov qword ptr [rip + 0x553c9d], rax
+  0x22F4D5 -> 0x783178  [WRITE]  mov dword ptr [rip + 0x553c9d], eax
+  0x22F4E2 -> 0x783180  [WRITE]  mov qword ptr [rip + 0x553c97], rax
+  0x22F4E3 -> 0x783180  [WRITE]  mov dword ptr [rip + 0x553c97], eax
+  0x22F4E9 -> 0x783188  [WRITE]  mov qword ptr [rip + 0x553c98], rax
+  0x22F4EA -> 0x783188  [WRITE]  mov dword ptr [rip + 0x553c98], eax
+  0x22F604 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x553a7d]
+  0x22F605 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x553a7d]
+  0x22F940 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x553741]
+  0x22F941 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x553741]
+  0x230A49 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x552638]
+  0x230A4A -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x552638]
+  0x230C22 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x5520ec]
+  0x230C4A -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x551dab]
+  0x230C62 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x551d94]
+  0x230E0C -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x552275]
+  0x230E0D -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x552275]
+  0x230E95 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5521ec]
+  0x230E96 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5521ec]
+  0x231399 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x551658]
+  0x2313CB -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x551629]
+  0x231A53 -> 0x782D14  [read ]  imul eax, dword ptr [rip + 0x5512ba]
+  0x231CCC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5513b5]
+  0x231CCD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5513b5]
+  0x231E56 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55122a]
+  0x231E57 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55122a]
+  0x231E58 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55122a]
+  0x232386 -> 0x782D14  [read ]  imul ecx, dword ptr [rip + 0x550987]
+  0x232466 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x550c1b]
+  0x232467 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x550c1b]
+  0x2324EB -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x550b96]
+  0x2324EC -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x550b96]
+  0x23261C -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x550a65]
+  0x23261D -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x550a65]
+  0x232897 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5507ea]
+  0x232898 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5507ea]
+  0x232926 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x55075b]
+  0x232927 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x55075b]
+  0x232A4D -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x550634]
+  0x232A4E -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x550634]
+  0x233286 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54fdfb]
+  0x233287 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54fdfb]
+  0x2332E0 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54fda1]
+  0x2332E1 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54fda1]
+  0x23332C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54fd55]
+  0x23332D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54fd55]
+  0x23335F -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x54fd72]
+  0x233360 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54fd72]
+  0x2333C2 -> 0x7830D8  [read ]  mov rcx, qword ptr [rip + 0x54fd0f]
+  0x2333C3 -> 0x7830D8  [read ]  mov ecx, dword ptr [rip + 0x54fd0f]
+  0x2333F4 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x54fcdd]
+  0x2333F5 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54fcdd]
+  0x233441 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x54fc90]
+  0x233442 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54fc90]
+  0x233662 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54fa1f]
+  0x233663 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54fa1f]
+  0x23369B -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x54f9e6]
+  0x23369C -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54f9e6]
+  0x2336A9 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54fb61], edx
+  0x2336AF -> 0x783214  [WRITE]  mov dword ptr [rip + 0x54fb5f], edx
+  0x2336B5 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54fb5d], edx
+  0x233754 -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x54f92d]
+  0x233755 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54f92d]
+  0x2337CB -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x54f8b6]
+  0x2337CC -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54f8b6]
+  0x233950 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x54f731]
+  0x233951 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x54f731]
+  0x23398F -> 0x783290  [WRITE]  mov word ptr [rip + 0x54f8fa], ax
+  0x233990 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x54f8fa], eax
+  0x233AB9 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54f5c8]
+  0x233ABA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54f5c8]
+  0x233AD0 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54f5b1]
+  0x233AD1 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54f5b1]
+  0x233CCA -> 0x782FA8  [WRITE]  mov word ptr [rip + 0x54f2d7], ax
+  0x233CCB -> 0x782FA8  [WRITE]  mov dword ptr [rip + 0x54f2d7], eax
+  0x233CF2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54f38f]
+  0x233CF3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54f38f]
+  0x233D1A -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x54f367]
+  0x233D1B -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x54f367]
+  0x233D53 -> 0x783290  [read ]  lea r8, [rip + 0x54f536]
+  0x233E52 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54f22f]
+  0x233E53 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54f22f]
+  0x2344B0 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54ebd1]
+  0x2344B1 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54ebd1]
+  0x234ABE -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x54e5c2]
+  0x234ABF -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x54e5c2]
+  0x234AC0 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x54e5c2]
+  0x234BD7 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x54e4aa]
+  0x234BD8 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x54e4aa]
+  0x234DB8 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x54e2c9]
+  0x234DB9 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x54e2c9]
+  0x234EE2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54e19f]
+  0x234EE3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54e19f]
+  0x234F23 -> 0x7830D8  [read ]  mov rdi, qword ptr [rip + 0x54e1ae]
+  0x234F24 -> 0x7830D8  [read ]  mov edi, dword ptr [rip + 0x54e1ae]
+  0x2350F4 -> 0x7830D8  [read ]  mov rdi, qword ptr [rip + 0x54dfdd]
+  0x2350F5 -> 0x7830D8  [read ]  mov edi, dword ptr [rip + 0x54dfdd]
+  0x2351A8 -> 0x7830D8  [read ]  mov rdi, qword ptr [rip + 0x54df29]
+  0x2351A9 -> 0x7830D8  [read ]  mov edi, dword ptr [rip + 0x54df29]
+  0x23589F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d7e2]
+  0x2358A0 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d7e2]
+  0x2358DA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d7a7]
+  0x2358DB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d7a7]
+  0x23598B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d6f6]
+  0x23598C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d6f6]
+  0x235A20 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54d286], eax
+  0x235A8B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d5f6]
+  0x235A8C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d5f6]
+  0x235D02 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d37f]
+  0x235D03 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d37f]
+  0x235DEE -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d293]
+  0x235DEF -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d293]
+  0x235F23 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54d15e]
+  0x235F24 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54d15e]
+  0x2365F7 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x54cc8f], 0xfffefffe
+  0x236601 -> 0x783294  [WRITE]  mov dword ptr [rip + 0x54cc89], 0xfffefffe
+  0x23667E -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x54ca03]
+  0x23667F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54ca03]
+  0x236726 -> 0x783290  [WRITE]  mov word ptr [rip + 0x54cb63], ax
+  0x236727 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x54cb63], eax
+  0x23682E -> 0x7831C0  [WRITE]  mov qword ptr [rip + 0x54c98b], r8
+  0x23682F -> 0x7831C0  [WRITE]  mov dword ptr [rip + 0x54c98b], eax
+  0x23683C -> 0x7831C8  [WRITE]  mov qword ptr [rip + 0x54c985], rax
+  0x23683D -> 0x7831C8  [WRITE]  mov dword ptr [rip + 0x54c985], eax
+  0x23684A -> 0x7831D0  [WRITE]  mov qword ptr [rip + 0x54c97f], rdx
+  0x23684B -> 0x7831D0  [WRITE]  mov dword ptr [rip + 0x54c97f], edx
+  0x236B4D -> 0x7831BE  [WRITE]  mov word ptr [rip + 0x54c669], r15w
+  0x236B4E -> 0x7831BE  [WRITE]  mov dword ptr [rip + 0x54c669], r15d
+  0x236B4F -> 0x7831BE  [WRITE]  mov dword ptr [rip + 0x54c669], edi
+  0x236B57 -> 0x7831BA  [WRITE]  mov dword ptr [rip + 0x54c659], 0x30000
+  0x236B65 -> 0x7831B6  [WRITE]  mov dword ptr [rip + 0x54c647], 0x7e006a
+  0x236C6A -> 0x7831BE  [WRITE]  mov word ptr [rip + 0x54c54d], di
+  0x236C6B -> 0x7831BE  [WRITE]  mov dword ptr [rip + 0x54c54d], edi
+  0x236C99 -> 0x7831B6  [WRITE]  add word ptr [rip + 0x54c515], -4
+  0x236CA6 -> 0x7831B8  [WRITE]  add word ptr [rip + 0x54c50a], -4
+  0x236D48 -> 0x7831B6  [WRITE]  add word ptr [rip + 0x54c466], -4
+  0x236D55 -> 0x7831B8  [WRITE]  add word ptr [rip + 0x54c45b], -4
+  0x236D60 -> 0x7831BE  [WRITE]  mov word ptr [rip + 0x54c457], di
+  0x236D61 -> 0x7831BE  [WRITE]  mov dword ptr [rip + 0x54c457], edi
+  0x236E53 -> 0x7831B6  [WRITE]  add word ptr [rip + 0x54c35b], -8
+  0x236E60 -> 0x7831B8  [WRITE]  add word ptr [rip + 0x54c350], -8
+  0x236E87 -> 0x7831BC  [WRITE]  mov dword ptr [rip + 0x54c32b], 0x20002
+  0x236F15 -> 0x7831B0  [WRITE]  mov word ptr [rip + 0x54c294], bp
+  0x236F16 -> 0x7831B0  [WRITE]  mov dword ptr [rip + 0x54c294], ebp
+  0x236F1C -> 0x7831B2  [WRITE]  mov word ptr [rip + 0x54c28f], dx
+  0x236F1D -> 0x7831B2  [WRITE]  mov dword ptr [rip + 0x54c28f], edx
+  0x236F28 -> 0x7831B2  [WRITE]  mov word ptr [rip + 0x54c283], bx
+  0x236F29 -> 0x7831B2  [WRITE]  mov dword ptr [rip + 0x54c283], ebx
+  0x236F33 -> 0x7831B0  [WRITE]  mov word ptr [rip + 0x54c276], dx
+  0x236F34 -> 0x7831B0  [WRITE]  mov dword ptr [rip + 0x54c276], edx
+  0x23705C -> 0x7831F0  [WRITE]  mov word ptr [rip + 0x54c18d], ax
+  0x23705D -> 0x7831F0  [WRITE]  mov dword ptr [rip + 0x54c18d], eax
+  0x237063 -> 0x782FA8  [read ]  lea rax, [rip + 0x54bf3e]
+  0x2370EC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54bf95]
+  0x2370ED -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54bf95]
+  0x237170 -> 0x7831F0  [read ]  mov al, byte ptr [rip + 0x54c07a]
+  0x23754C -> 0x782CCC  [read ]  mov edx, dword ptr [rip + 0x54b77a]
+  0x237594 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54bc76], ecx
+  0x2375BA -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54bc50], edx
+  0x237615 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x54b409]
+  0x23766E -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x54ba13]
+  0x23766F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54ba13]
+  0x2376CA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b9b7]
+  0x2376CB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b9b7]
+  0x2377B9 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x54b8c8]
+  0x2377BA -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54b8c8]
+  0x2377FE -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b883]
+  0x2377FF -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b883]
+  0x237958 -> 0x782CCC  [read ]  cmp dword ptr [rip + 0x54b36e], eax
+  0x237996 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b6eb]
+  0x237997 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b6eb]
+  0x237A36 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b64b]
+  0x237A37 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b64b]
+  0x237AD6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b5ab]
+  0x237AD7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b5ab]
+  0x237AE4 -> 0x782BF4  [WRITE]  mov dword ptr [rip + 0x54b106], 0xfffefffe
+  0x237B02 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54b57f]
+  0x237B03 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54b57f]
+  0x237B1B -> 0x782B8C  [WRITE]  mov word ptr [rip + 0x54b06a], ax
+  0x237B1C -> 0x782B8C  [WRITE]  mov dword ptr [rip + 0x54b06a], eax
+  0x237B4C -> 0x782B8C  [WRITE]  mov word ptr [rip + 0x54b039], ax
+  0x237B4D -> 0x782B8C  [WRITE]  mov dword ptr [rip + 0x54b039], eax
+  0x237B5D -> 0x782CCC  [read ]  movsxd rax, dword ptr [rip + 0x54b168]
+  0x237D74 -> 0x783088  [read ]  mov r14, qword ptr [rip + 0x54b30d]
+  0x237D75 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x54b30d]
+  0x237D91 -> 0x7831D8  [read ]  mov rax, qword ptr [rip + 0x54b440]
+  0x237D92 -> 0x7831D8  [read ]  mov eax, dword ptr [rip + 0x54b440]
+  0x237EC6 -> 0x782B74  [WRITE]  mov word ptr [rip + 0x54aca7], ax
+  0x237EC7 -> 0x782B74  [WRITE]  mov dword ptr [rip + 0x54aca7], eax
+  0x237ED4 -> 0x782B74  [WRITE]  mov word ptr [rip + 0x54ac99], ax
+  0x237ED5 -> 0x782B74  [WRITE]  mov dword ptr [rip + 0x54ac99], eax
+  0x237EE3 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x54ab3b]
+  0x237F51 -> 0x783088  [read ]  mov r14, qword ptr [rip + 0x54b130]
+  0x237F52 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x54b130]
+  0x237FD0 -> 0x782B74  [WRITE]  mov word ptr [rip + 0x54ab9d], di
+  0x237FD1 -> 0x782B74  [WRITE]  mov dword ptr [rip + 0x54ab9d], edi
+  0x23802F -> 0x783290  [read ]  movzx edx, byte ptr [rip + 0x54b25a]
+  0x238036 -> 0x783292  [read ]  movsx eax, word ptr [rip + 0x54b255]
+  0x23803D -> 0x783294  [read ]  movzx r8d, word ptr [rip + 0x54b24f]
+  0x23803E -> 0x783294  [read ]  movzx eax, word ptr [rip + 0x54b24f]
+  0x238069 -> 0x782CCC  [read ]  mov ecx, dword ptr [rip + 0x54ac5d]
+  0x23844A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54ac37]
+  0x23844B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54ac37]
+  0x2384A7 -> 0x782AE4  [WRITE]  mov word ptr [rip + 0x54a636], ax
+  0x2384A8 -> 0x782AE4  [WRITE]  mov dword ptr [rip + 0x54a636], eax
+  0x2386DD -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x54a341]
+  0x238757 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x54a2c7]
+  0x238952 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54a72f]
+  0x238953 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54a72f]
+  0x238C6E -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x54a413]
+  0x238C6F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54a413]
+  0x238CC5 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a545], eax
+  0x238CD3 -> 0x783214  [WRITE]  mov dword ptr [rip + 0x54a53b], edx
+  0x238CDC -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a536], eax
+  0x238CE7 -> 0x783210  [read ]  mov edx, dword ptr [rip + 0x54a523]
+  0x238CF4 -> 0x783218  [read ]  mov edx, dword ptr [rip + 0x54a51e]
+  0x238D36 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a4d4], eax
+  0x238D79 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a491], edx
+  0x238D98 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a472], edx
+  0x238E2D -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a3dd], edx
+  0x238E58 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a3b2], edx
+  0x238EBA -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a350], edi
+  0x238EC0 -> 0x783214  [WRITE]  mov dword ptr [rip + 0x54a34e], edi
+  0x238EE7 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a32b], ecx
+  0x238EF4 -> 0x783214  [read ]  mov edx, dword ptr [rip + 0x54a31a]
+  0x238F02 -> 0x783218  [read ]  mov edx, dword ptr [rip + 0x54a310]
+  0x238F4F -> 0x783214  [read ]  mov edx, dword ptr [rip + 0x54a2bf]
+  0x238F92 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a277], r14d
+  0x238F93 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a277], esi
+  0x238F99 -> 0x783214  [WRITE]  mov dword ptr [rip + 0x54a275], eax
+  0x238FB4 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a25d], r13d
+  0x238FB5 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a25d], ebp
+  0x238FD8 -> 0x783214  [read ]  mov edx, dword ptr [rip + 0x54a236]
+  0x238FEF -> 0x783218  [read ]  mov edx, dword ptr [rip + 0x54a223]
+  0x23901E -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a1f3], r9d
+  0x23901F -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a1f3], ecx
+  0x239030 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x54a1e2], eax
+  0x239066 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a1a4], eax
+  0x239094 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a175], r9d
+  0x239095 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a175], ecx
+  0x23913C -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a0ce], edx
+  0x23915B -> 0x783210  [WRITE]  mov dword ptr [rip + 0x54a0af], edx
+  0x239A05 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x54967c]
+  0x239A06 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x54967c]
+  0x239C4E -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x549058], esi
+  0x239C54 -> 0x782CBC  [WRITE]  mov word ptr [rip + 0x549061], si
+  0x239C55 -> 0x782CBC  [WRITE]  mov dword ptr [rip + 0x549061], esi
+  0x239C5B -> 0x782C7C  [WRITE]  mov word ptr [rip + 0x54901a], si
+  0x239C5C -> 0x782C7C  [WRITE]  mov dword ptr [rip + 0x54901a], esi
+  0x239C62 -> 0x782C9C  [WRITE]  mov word ptr [rip + 0x549033], si
+  0x239C63 -> 0x782C9C  [WRITE]  mov dword ptr [rip + 0x549033], esi
+  0x239C69 -> 0x782C8C  [WRITE]  mov dword ptr [rip + 0x54901d], esi
+  0x239E43 -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x54923e]
+  0x239E44 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x54923e]
+  0x239E72 -> 0x7830D8  [read ]  mov r8, qword ptr [rip + 0x54925f]
+  0x239E73 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54925f]
+  0x23A0B6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x548fcb]
+  0x23A0B7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x548fcb]
+  0x23A0F9 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x548f88]
+  0x23A0FA -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x548f88]
+  0x23A2D5 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x5486f9], edx
+  0x23A306 -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x5486c8], edx
+  0x23A33E -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x548690], eax
+  0x23A6F1 -> 0x782CAC  [read ]  mov r8d, dword ptr [rip + 0x5485b4]
+  0x23A6F2 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x5485b4]
+  0x23A71A -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54858c], esi
+  0x23A720 -> 0x782C7C  [read ]  cmp word ptr [rip + 0x548555], bp
+  0x23A721 -> 0x782C7C  [read ]  cmp dword ptr [rip + 0x548555], ebp
+  0x23A79D -> 0x782C9C  [read ]  cmp word ptr [rip + 0x5484f8], bp
+  0x23A79E -> 0x782C9C  [read ]  cmp dword ptr [rip + 0x5484f8], ebp
+  0x23A7AB -> 0x782C9C  [read ]  movsx ecx, word ptr [rip + 0x5484ea]
+  0x23A7B7 -> 0x782CBC  [read ]  cmp word ptr [rip + 0x5484fe], si
+  0x23A7B8 -> 0x782CBC  [read ]  cmp dword ptr [rip + 0x5484fe], esi
+  0x23A7D0 -> 0x782CBC  [read ]  movsx ecx, word ptr [rip + 0x5484e5]
+  0x23A7DC -> 0x782C8C  [read ]  mov eax, dword ptr [rip + 0x5484aa]
+  0x23A7E6 -> 0x782C8E  [read ]  movsx edx, word ptr [rip + 0x5484a1]
+  0x23A824 -> 0x7830D8  [read ]  mov r8, qword ptr [rip + 0x5488ad]
+  0x23A825 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x5488ad]
+  0x23AAF4 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x54858d]
+  0x23AAF5 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54858d]
+  0x23AB81 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x548550]
+  0x23AB82 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x548550]
+  0x23ABC3 -> 0x782A94  [read ]  mov r14d, dword ptr [rip + 0x547eca]
+  0x23ABC4 -> 0x782A94  [read ]  mov esi, dword ptr [rip + 0x547eca]
+  0x23ABCA -> 0x783038  [WRITE]  mov dword ptr [rip + 0x548464], 0x3e803e8
+  0x23ABD4 -> 0x78303C  [WRITE]  mov dword ptr [rip + 0x54845e], 0x3e803e8
+  0x23AC13 -> 0x782A94  [read ]  mov r14d, dword ptr [rip + 0x547e7a]
+  0x23AC14 -> 0x782A94  [read ]  mov esi, dword ptr [rip + 0x547e7a]
+  0x23AC5F -> 0x782A94  [read ]  mov r14d, dword ptr [rip + 0x547e2e]
+  0x23AC60 -> 0x782A94  [read ]  mov esi, dword ptr [rip + 0x547e2e]
+  0x23AD91 -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x547cfd]
+  0x23AE4C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x548235]
+  0x23AE4D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x548235]
+  0x23AF05 -> 0x782A94  [read ]  cmp qword ptr [rip + 0x547b84], 0x190
+  0x23AFC9 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x5480b8]
+  0x23AFCA -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x5480b8]
+  0x23AFFF -> 0x782C8C  [WRITE]  mov dword ptr [rip + 0x547c87], ebx
+  0x23B0D0 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x547fb1]
+  0x23B0D1 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x547fb1]
+  0x23BAFE -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x5475d3]
+  0x23BAFF -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x5475d3]
+  0x23BC0A -> 0x782C7C  [WRITE]  mov word ptr [rip + 0x54706a], r15w
+  0x23BC0B -> 0x782C7C  [WRITE]  mov dword ptr [rip + 0x54706a], r15d
+  0x23BC0C -> 0x782C7C  [WRITE]  mov dword ptr [rip + 0x54706a], edi
+  0x23BC5A -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54704b], r13d
+  0x23BC5B -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54704b], ebp
+  0x23BC7B -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54702b], eax
+  0x23BC8F -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x547442]
+  0x23BC90 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x547442]
+  0x23BF39 -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x547198]
+  0x23BF3A -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x547198]
+  0x23C16F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x546f12]
+  0x23C170 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x546f12]
+  0x23C22A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x546e57]
+  0x23C22B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x546e57]
+  0x23C6A8 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5469d9]
+  0x23C6A9 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5469d9]
+  0x23CDCC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5462b5]
+  0x23CDCD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5462b5]
+  0x23CFA5 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x5460dc]
+  0x23CFA6 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x5460dc]
+  0x23D03F -> 0x782C9C  [WRITE]  mov word ptr [rip + 0x545c55], r15w
+  0x23D040 -> 0x782C9C  [WRITE]  mov dword ptr [rip + 0x545c55], r15d
+  0x23D041 -> 0x782C9C  [WRITE]  mov dword ptr [rip + 0x545c55], edi
+  0x23D0F9 -> 0x782C8C  [WRITE]  mov dword ptr [rip + 0x545b8d], edi
+  0x23D1AC -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x545ed5]
+  0x23D1AD -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x545ed5]
+  0x23D3E7 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x545c9a]
+  0x23D3E8 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x545c9a]
+  0x23D407 -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x545cca]
+  0x23D408 -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x545cca]
+  0x23D453 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x545c2e]
+  0x23D454 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x545c2e]
+  0x23D4C4 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x545bbd]
+  0x23D4C5 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x545bbd]
+  0x23DB0C -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x545575]
+  0x23DB0D -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x545575]
+  0x23DE0C -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x5452c5]
+  0x23DE0D -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x5452c5]
+  0x23DE35 -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x54529c]
+  0x23DE36 -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x54529c]
+  0x23DEEC -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x5451e5]
+  0x23DEED -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x5451e5]
+  0x23DF0C -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x5451c5]
+  0x23DF0D -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x5451c5]
+  0x23DF2C -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x5451a5]
+  0x23DF2D -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x5451a5]
+  0x23DF5E -> 0x7830D8  [read ]  mov rdx, qword ptr [rip + 0x545173]
+  0x23DF5F -> 0x7830D8  [read ]  mov edx, dword ptr [rip + 0x545173]
+  0x23E82C -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x5448a5]
+  0x23E82D -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x5448a5]
+  0x23EC0D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x543e11], eax
+  0x23EC2D -> 0x7829D4  [WRITE]  mov dword ptr [rip + 0x543da1], ebx
+  0x23ED62 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x54436f]
+  0x23ED63 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54436f]
+  0x23ED9A -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x544337]
+  0x23ED9B -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x544337]
+  0x23EDB9 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x544318]
+  0x23EDBA -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x544318]
+  0x23EDDB -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x543bf7], esi
+  0x23EDE1 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x543bf8], r14d
+  0x23EDE2 -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x543bf8], esi
+  0x23EF88 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5440f9]
+  0x23EF89 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5440f9]
+  0x23F5FC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x543a85]
+  0x23F5FD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x543a85]
+  0x23F69E -> 0x7830D8  [read ]  mov rdi, qword ptr [rip + 0x543a33]
+  0x23F69F -> 0x7830D8  [read ]  mov edi, dword ptr [rip + 0x543a33]
+  0x23F920 -> 0x7830D8  [read ]  mov rdi, qword ptr [rip + 0x5437b1]
+  0x23F921 -> 0x7830D8  [read ]  mov edi, dword ptr [rip + 0x5437b1]
+  0x23FAB8 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5435c9]
+  0x23FAB9 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5435c9]
+  0x23FB43 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54353e]
+  0x23FB44 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54353e]
+  0x24015E -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x542f23]
+  0x24015F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x542f23]
+  0x2401A1 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x542ee0]
+  0x2401A2 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x542ee0]
+  0x2401D1 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x542eaf]
+  0x2401D2 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x542eaf]
+  0x2401D3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x542eaf]
+  0x240267 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x542e1a]
+  0x240268 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x542e1a]
+  0x240B13 -> 0x782CAC  [read ]  mov ecx, dword ptr [rip + 0x542193]
+  0x240B35 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x542171], ecx
+  0x240B4E -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x542533]
+  0x240B4F -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x542533]
+  0x241716 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54196b]
+  0x241717 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54196b]
+  0x241953 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54172e]
+  0x241954 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54172e]
+  0x241A38 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x54126e]
+  0x241A4B -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x54125b], eax
+  0x241AE4 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x54159d]
+  0x241AE5 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x54159d]
+  0x241BA8 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x5414d9]
+  0x241BA9 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x5414d9]
+  0x241BCE -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x5410d8], ecx
+  0x241BFB -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x541486]
+  0x241BFC -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x541486]
+  0x2422F3 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x540d8e]
+  0x2422F4 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x540d8e]
+  0x2429CF -> 0x783210  [read ]  mov eax, dword ptr [rip + 0x54083b]
+  0x2429D8 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x540832], eax
+  0x242A0C -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x5406c5]
+  0x242A0D -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x5406c5]
+  0x242A33 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x54069e]
+  0x242A34 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x54069e]
+  0x242A5C -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x540675]
+  0x242A5D -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x540675]
+  0x243451 -> 0x783210  [read ]  lea r9, [rip + 0x53fdb8]
+  0x2434BB -> 0x782CE4  [WRITE]  mov dword ptr [rip + 0x53f823], ecx
+  0x2435B5 -> 0x782C6C  [read ]  cmp r11d, dword ptr [rip + 0x53f6b0]
+  0x2435B6 -> 0x782C6C  [read ]  cmp ebx, dword ptr [rip + 0x53f6b0]
+  0x2435BC -> 0x782CE4  [WRITE]  mov dword ptr [rip + 0x53f722], edx
+  0x2438AA -> 0x782C6C  [read ]  cmp r11d, dword ptr [rip + 0x53f3bb]
+  0x2438AB -> 0x782C6C  [read ]  cmp ebx, dword ptr [rip + 0x53f3bb]
+  0x243992 -> 0x783210  [read ]  lea r9, [rip + 0x53f877]
+  0x243A27 -> 0x782C6C  [WRITE]  mov dword ptr [rip + 0x53f23b], 0xff
+  0x243DB8 -> 0x783290  [WRITE]  movdqu xmmword ptr [rip + 0x53f4d0], xmm0
+  0x243DB9 -> 0x783290  [WRITE]  movq qword ptr [rip + 0x53f4d0], mm0
+  0x243DC4 -> 0x783210  [WRITE]  movaps xmmword ptr [rip + 0x53f445], xmm0
+  0x243DCF -> 0x783220  [WRITE]  movaps xmmword ptr [rip + 0x53f44a], xmm1
+  0x243DDD -> 0x783230  [WRITE]  movaps xmmword ptr [rip + 0x53f44c], xmm0
+  0x243DEB -> 0x783240  [WRITE]  movaps xmmword ptr [rip + 0x53f44e], xmm1
+  0x243DF9 -> 0x783250  [WRITE]  movaps xmmword ptr [rip + 0x53f450], xmm0
+  0x243E07 -> 0x783260  [WRITE]  movaps xmmword ptr [rip + 0x53f452], xmm1
+  0x243E15 -> 0x783270  [WRITE]  movaps xmmword ptr [rip + 0x53f454], xmm0
+  0x243E2A -> 0x783280  [WRITE]  movaps xmmword ptr [rip + 0x53f44f], xmm1
+  0x243EBE -> 0x782CCC  [WRITE]  mov dword ptr [rip + 0x53ee08], eax
+  0x243ECA -> 0x782D14  [WRITE]  mov dword ptr [rip + 0x53ee44], eax
+  0x243EEE -> 0x782CE4  [WRITE]  mov dword ptr [rip + 0x53edf0], eax
+  0x243F83 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x53ed23], eax
+  0x243F90 -> 0x782CBC  [WRITE]  mov word ptr [rip + 0x53ed25], ax
+  0x243F91 -> 0x782CBC  [WRITE]  mov dword ptr [rip + 0x53ed25], eax
+  0x243FA9 -> 0x782C8C  [WRITE]  mov dword ptr [rip + 0x53ecdd], eax
+  0x243FC2 -> 0x782C7C  [WRITE]  mov word ptr [rip + 0x53ecb3], ax
+  0x243FC3 -> 0x782C7C  [WRITE]  mov dword ptr [rip + 0x53ecb3], eax
+  0x243FD0 -> 0x782C9C  [WRITE]  mov word ptr [rip + 0x53ecc5], ax
+  0x243FD1 -> 0x782C9C  [WRITE]  mov dword ptr [rip + 0x53ecc5], eax
+  0x243FE0 -> 0x783138  [WRITE]  movups xmmword ptr [rip + 0x53f151], xmm0
+  0x24429B -> 0x783038  [WRITE]  mov qword ptr [rip + 0x53ed96], rax
+  0x24429C -> 0x783038  [WRITE]  mov dword ptr [rip + 0x53ed96], eax
+  0x2444E1 -> 0x782C6C  [WRITE]  mov dword ptr [rip + 0x53e785], eax
+  0x244E26 -> 0x782A94  [WRITE]  mov dword ptr [rip + 0x53dc68], eax
+  0x244F78 -> 0x783290  [read ]  movaps xmm8, xmmword ptr [rip + 0x53e30f]
+  0x244F79 -> 0x783290  [read ]  movaps xmm8, xmmword ptr [rip + 0x53e30f]
+  0x244F7A -> 0x783290  [read ]  movaps xmm0, xmmword ptr [rip + 0x53e30f]
+  0x244F86 -> 0x783210  [read ]  movaps xmm0, xmmword ptr [rip + 0x53e283]
+  0x244F91 -> 0x783220  [read ]  movaps xmm1, xmmword ptr [rip + 0x53e288]
+  0x244F9C -> 0x783230  [read ]  movaps xmm0, xmmword ptr [rip + 0x53e28d]
+  0x244FAA -> 0x783240  [read ]  movaps xmm1, xmmword ptr [rip + 0x53e28f]
+  0x244FB8 -> 0x783250  [read ]  movaps xmm0, xmmword ptr [rip + 0x53e291]
+  0x244FC6 -> 0x783260  [read ]  movaps xmm1, xmmword ptr [rip + 0x53e293]
+  0x244FD4 -> 0x783270  [read ]  movaps xmm0, xmmword ptr [rip + 0x53e295]
+  0x244FE2 -> 0x783280  [read ]  movaps xmm1, xmmword ptr [rip + 0x53e297]
+  0x24507E -> 0x782CCC  [read ]  mov eax, dword ptr [rip + 0x53dc48]
+  0x24508A -> 0x782D14  [read ]  mov eax, dword ptr [rip + 0x53dc84]
+  0x2450AE -> 0x782CE4  [read ]  mov eax, dword ptr [rip + 0x53dc30]
+  0x245143 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x53db63]
+  0x24514F -> 0x782CBC  [read ]  movzx eax, word ptr [rip + 0x53db66]
+  0x245169 -> 0x782C8C  [read ]  mov eax, dword ptr [rip + 0x53db1d]
+  0x245181 -> 0x782C7C  [read ]  movzx eax, word ptr [rip + 0x53daf4]
+  0x24518F -> 0x782C9C  [read ]  movzx eax, word ptr [rip + 0x53db06]
+  0x24524D -> 0x783038  [read ]  mov rax, qword ptr [rip + 0x53dde4]
+  0x24524E -> 0x783038  [read ]  mov eax, dword ptr [rip + 0x53dde4]
+  0x245366 -> 0x782C6C  [read ]  mov eax, dword ptr [rip + 0x53d900]
+  0x245827 -> 0x782A94  [read ]  mov eax, dword ptr [rip + 0x53d267]
+  0x2468EC -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x53c132]
+  0x24692E -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x53c0c7], al
+  0x24693C -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x53c0bc], al
+  0x24694A -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x53c0af], al
+  0x246958 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x53c09e], al
+  0x246966 -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x53c091], al
+  0x246974 -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x53c07e], al
+  0x247804 -> 0x783204  [read ]  cmp dword ptr [rip + 0x53b9f9], r14d
+  0x247805 -> 0x783204  [read ]  cmp dword ptr [rip + 0x53b9f9], esi
+  0x247896 -> 0x7831FC  [read ]  cmp dword ptr [rip + 0x53b960], eax
+  0x2479E0 -> 0x783204  [WRITE]  mov dword ptr [rip + 0x53b81e], eax
+  0x2479EC -> 0x783204  [WRITE]  mov dword ptr [rip + 0x53b812], ecx
+  0x247DF7 -> 0x7831FC  [read ]  cmp edx, dword ptr [rip + 0x53b3ff]
+  0x247DFF -> 0x783200  [read ]  mov r8d, dword ptr [rip + 0x53b3fa]
+  0x247E00 -> 0x783200  [read ]  mov eax, dword ptr [rip + 0x53b3fa]
+  0x2484C7 -> 0x783208  [WRITE]  mov dword ptr [rip + 0x53ad3b], eax
+  0x2484E0 -> 0x78320C  [WRITE]  mov dword ptr [rip + 0x53ad26], eax
+  0x248505 -> 0x783208  [read ]  mov eax, dword ptr [rip + 0x53acfd]
+  0x24850D -> 0x7831FC  [WRITE]  mov dword ptr [rip + 0x53ace9], eax
+  0x248513 -> 0x78320C  [read ]  mov eax, dword ptr [rip + 0x53acf3]
+  0x248519 -> 0x783200  [WRITE]  mov dword ptr [rip + 0x53ace1], eax
+  0x24851F -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x53acd2], r14b
+  0x248520 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x53acd2], dh
+  0x24D263 -> 0x78383A  [WRITE]  mov word ptr [rip + 0x5365cf], r8w
+  0x24D264 -> 0x78383A  [WRITE]  mov dword ptr [rip + 0x5365cf], r8d
+  0x24D265 -> 0x78383A  [WRITE]  mov dword ptr [rip + 0x5365cf], eax
+  0x24D2AC -> 0x783838  [read ]  lea rcx, [rip + 0x536585]
+  0x24D2B6 -> 0x78383C  [WRITE]  mov word ptr [rip + 0x53657f], ax
+  0x24D2B7 -> 0x78383C  [WRITE]  mov dword ptr [rip + 0x53657f], eax
+  0x25160B -> 0x783840  [read ]  lea rcx, [rip + 0x53222e]
+  0x2577B9 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x52b8c8]
+  0x2577BA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x52b8c8]
+  0x26D126 -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x515968]
+  0x26DD0E -> 0x782A94  [read ]  mov eax, dword ptr [rip + 0x514d80]
+  0x273F7B -> 0x7829EC  [read ]  movd xmm8, dword ptr [rip + 0x50ea68]
+  0x273F7C -> 0x7829EC  [read ]  movd mm0, dword ptr [rip + 0x50ea68]
+  0x273F7D -> 0x7829EC  [read ]  movd mm0, dword ptr [rip + 0x50ea68]
+  0x273FA4 -> 0x7829F0  [read ]  movd xmm0, dword ptr [rip + 0x50ea44]
+  0x273FA5 -> 0x7829F0  [read ]  movd mm0, dword ptr [rip + 0x50ea44]
+  0x279E55 -> 0x782A5E  [WRITE]  mov byte ptr [rip + 0x508c03], al
+  0x27A042 -> 0x782A5E  [read ]  mov al, byte ptr [rip + 0x508a16]
+  0x2B479D -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x4ce281]
+  0x2B47BD -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x4ce237], al
+  0x2B47BE -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x4ce237], al
+  0x2B47C9 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x4ce22f], al
+  0x2B47D4 -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x4ce225], al
+  0x2B47DF -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x4ce217], al
+  0x2B47EA -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x4ce20d], al
+  0x2B47FA -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x4ce1f8], al
+  0x2B48D6 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x4ce11e]
+  0x2B490C -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x4ce0eb]
+  0x2B4942 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x4ce0b6]
+  0x2B72BD -> 0x7829FB  [read ]  movzx r8, byte ptr [rip + 0x4cb736]
+  0x2B72BE -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x4cb736]
+  0x2B730F -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x4cb6e6]
+  0x2B731E -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x4cb6d8]
+  0x2B7335 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x4cb6bc]
+  0x2B9BCF -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c8fb9], 1
+  0x2B9C4C -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c8f3c], 2
+  0x2BB2CD -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c78bb], r15b
+  0x2BB2CE -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c78bb], bh
+  0x2BC28B -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c68fd], r14b
+  0x2BC28C -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c68fd], dh
+  0x2BC647 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c6541], 1
+  0x2BC64E -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4c6552], 1
+  0x2BC655 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c656e], 1
+  0x2BC81A -> 0x782BA6  [read ]  mov al, byte ptr [rip + 0x4c6386]
+  0x2BC822 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4c637f], al
+  0x2BC885 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c6303], bpl
+  0x2BC886 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4c6303], ch
+  0x2BCB7B -> 0x782BA7  [read ]  mov al, byte ptr [rip + 0x4c6026]
+  0x2BCB81 -> 0x782BA6  [WRITE]  mov byte ptr [rip + 0x4c601f], al
+  0x2BCC29 -> 0x782BA7  [read ]  cmp byte ptr [rip + 0x4c5f77], bpl
+  0x2BCC2A -> 0x782BA7  [read ]  cmp byte ptr [rip + 0x4c5f77], ch
+  0x2BCF07 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c5cbc], r8b
+  0x2BCF08 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c5cbc], al
+  0x2BCF1B -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c5ca8], r8b
+  0x2BCF1C -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c5ca8], al
+  0x2BCF93 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c5c31], al
+  0x2BD008 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c5bbc], al
+  0x2BD01A -> 0x782BA7  [read ]  cmp byte ptr [rip + 0x4c5b87], dl
+  0x2BD020 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c5ba4], al
+  0x2BD803 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c53c0], r8b
+  0x2BD804 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c53c0], al
+  0x2BD817 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c53ac], r8b
+  0x2BD818 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c53ac], al
+  0x2BD883 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c5341], al
+  0x2BD8C7 -> 0x782BCA  [read ]  cmp byte ptr [rip + 0x4c52fd], al
+  0x2BD8DF -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c52e5], al
+  0x2BDF00 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4c4ca0], 1
+  0x2BE739 -> 0x782BCA  [WRITE]  mov byte ptr [rip + 0x4c448b], al
+  0x2BE74A -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4c4456], 1
+  0x2BE756 -> 0x782BA6  [WRITE]  mov byte ptr [rip + 0x4c4449], 1
+  0x2BEF91 -> 0x782BA7  [read ]  cmp byte ptr [rip + 0x4c3c0f], bpl
+  0x2BEF92 -> 0x782BA7  [read ]  cmp byte ptr [rip + 0x4c3c0f], ch
+  0x2BFC81 -> 0x782A00  [read ]  lea rsi, [rip + 0x4c2d78]
+  0x2BFCDB -> 0x782A0C  [read ]  lea rsi, [rip + 0x4c2d2a]
+  0x2BFCE9 -> 0x782A18  [read ]  lea rsi, [rip + 0x4c2d28]
+  0x2C3CCC -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4beed3], dil
+  0x2C3CCD -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4beed3], dil
+  0x2C3CCE -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4beed3], bh
+  0x2C3E8A -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4becfe], dil
+  0x2C3E8B -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4becfe], bh
+  0x2C4B68 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4be519]
+  0x2C4B69 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4be519]
+  0x2C502D -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4be054]
+  0x2C502E -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4be054]
+  0x2C66A3 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4bc9de]
+  0x2C66A4 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4bc9de]
+  0x2C6AFE -> 0x783210  [WRITE]  mov dword ptr [rip + 0x4bc70c], edx
+  0x2C6D00 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4bc381]
+  0x2C6D01 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4bc381]
+  0x2C6FA0 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bc0e1]
+  0x2C6FA1 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bc0e1]
+  0x2C7244 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bbe3d]
+  0x2C7245 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bbe3d]
+  0x2C7439 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4bbc48]
+  0x2C743A -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4bbc48]
+  0x2C76BC -> 0x783210  [WRITE]  mov dword ptr [rip + 0x4bbb4e], edx
+  0x2C78CA -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4bb7b7]
+  0x2C78CB -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4bb7b7]
+  0x2C7923 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb75e]
+  0x2C7924 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb75e]
+  0x2C7AEE -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb593]
+  0x2C7AEF -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb593]
+  0x2C7C8A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb3f7]
+  0x2C7C8B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb3f7]
+  0x2C7DA6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb2db]
+  0x2C7DA7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb2db]
+  0x2C7E64 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4bb21d]
+  0x2C7E65 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4bb21d]
+  0x2C7E8F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb1f2]
+  0x2C7E90 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb1f2]
+  0x2C7EE1 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb1a0]
+  0x2C7EE2 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb1a0]
+  0x2C7EF7 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4bb18a]
+  0x2C7EF8 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4bb18a]
+  0x2C7F6C -> 0x7832A0  [WRITE]  movaps xmmword ptr [rip + 0x4bb32d], xmm0
+  0x2C7F8A -> 0x7832B0  [WRITE]  movaps xmmword ptr [rip + 0x4bb31f], xmm1
+  0x2C7F98 -> 0x7832C0  [WRITE]  mov word ptr [rip + 0x4bb321], ax  <<< HIT% (0x7832C0)
+  0x2C7F99 -> 0x7832C0  [WRITE]  mov dword ptr [rip + 0x4bb321], eax  <<< HIT% (0x7832C0)
+  0x2C7FA5 -> 0x7832E0  [WRITE]  movaps xmmword ptr [rip + 0x4bb334], xmm0
+  0x2C7FC0 -> 0x7832F0  [WRITE]  movaps xmmword ptr [rip + 0x4bb329], xmm1
+  0x2C7FCE -> 0x783300  [WRITE]  movaps xmmword ptr [rip + 0x4bb32b], xmm0
+  0x2C7FDC -> 0x783310  [WRITE]  movaps xmmword ptr [rip + 0x4bb32d], xmm1
+  0x2C8912 -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x4ba76f]
+  0x2C8913 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4ba76f]
+  0x2C8BEA -> 0x7832A0  [WRITE]  movaps xmmword ptr [rip + 0x4ba6af], xmm0
+  0x2C8C08 -> 0x7832B0  [WRITE]  movaps xmmword ptr [rip + 0x4ba6a1], xmm1
+  0x2C8C16 -> 0x7832C0  [WRITE]  mov word ptr [rip + 0x4ba6a3], ax  <<< HIT% (0x7832C0)
+  0x2C8C17 -> 0x7832C0  [WRITE]  mov dword ptr [rip + 0x4ba6a3], eax  <<< HIT% (0x7832C0)
+  0x2C8C23 -> 0x7832E0  [WRITE]  movaps xmmword ptr [rip + 0x4ba6b6], xmm0
+  0x2C8C3E -> 0x7832F0  [WRITE]  movaps xmmword ptr [rip + 0x4ba6ab], xmm1
+  0x2C8C4C -> 0x783300  [WRITE]  movaps xmmword ptr [rip + 0x4ba6ad], xmm0
+  0x2C8C8A -> 0x783310  [WRITE]  movaps xmmword ptr [rip + 0x4ba67f], xmm1
+  0x2C8E70 -> 0x7832C0  [WRITE]  mov word ptr [rip + 0x4ba449], ax  <<< HIT% (0x7832C0)
+  0x2C8E71 -> 0x7832C0  [WRITE]  mov dword ptr [rip + 0x4ba449], eax  <<< HIT% (0x7832C0)
+  0x2C8E7D -> 0x7832A0  [WRITE]  movaps xmmword ptr [rip + 0x4ba41c], xmm0
+  0x2C8E99 -> 0x7832B0  [WRITE]  movaps xmmword ptr [rip + 0x4ba410], xmm1
+  0x2C8EC8 -> 0x7832E0  [WRITE]  movaps xmmword ptr [rip + 0x4ba411], xmm0
+  0x2C8ED6 -> 0x7832F0  [WRITE]  movaps xmmword ptr [rip + 0x4ba413], xmm1
+  0x2C8EEB -> 0x783300  [WRITE]  movaps xmmword ptr [rip + 0x4ba40e], xmm0
+  0x2C8EF2 -> 0x783310  [WRITE]  movaps xmmword ptr [rip + 0x4ba417], xmm1
+  0x2C9036 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x4ba1d4], edx
+  0x2C97F7 -> 0x7832A0  [WRITE]  movaps xmmword ptr [rip + 0x4b9aa2], xmm0
+  0x2C9806 -> 0x7832C0  [WRITE]  mov word ptr [rip + 0x4b9ab3], ax  <<< HIT% (0x7832C0)
+  0x2C9807 -> 0x7832C0  [WRITE]  mov dword ptr [rip + 0x4b9ab3], eax  <<< HIT% (0x7832C0)
+  0x2C9822 -> 0x7832B0  [WRITE]  movaps xmmword ptr [rip + 0x4b9a87], xmm1
+  0x2C983D -> 0x7832E0  [WRITE]  movaps xmmword ptr [rip + 0x4b9a9c], xmm0
+  0x2C9857 -> 0x7832F0  [WRITE]  movaps xmmword ptr [rip + 0x4b9a92], xmm1
+  0x2C9865 -> 0x783300  [WRITE]  movaps xmmword ptr [rip + 0x4b9a94], xmm0
+  0x2C986C -> 0x783310  [WRITE]  movaps xmmword ptr [rip + 0x4b9a9d], xmm1
+  0x2C9B54 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x4b952d]
+  0x2C9B55 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x4b952d]
+  0x2C9B7C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b9505]
+  0x2C9B7D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b9505]
+  0x2C9F34 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x4b914d]
+  0x2C9F35 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4b914d]
+  0x2CA460 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b8c21]
+  0x2CA461 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b8c21]
+  0x2CB105 -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x4b7f7c]
+  0x2CB106 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x4b7f7c]
+  0x2CB58E -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x4b7af3]
+  0x2CB58F -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x4b7af3]
+  0x2CB6D6 -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x4b79ab]
+  0x2CB6D7 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x4b79ab]
+  0x2CB80B -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x4b7876]
+  0x2CB80C -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x4b7876]
+  0x2CB9F3 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b768e]
+  0x2CB9F4 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b768e]
+  0x2CBABE -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b75c3]
+  0x2CBABF -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b75c3]
+  0x2CBB94 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b74ed]
+  0x2CBB95 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b74ed]
+  0x2CBBB9 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b74c8]
+  0x2CBBBA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b74c8]
+  0x2CBC09 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b7478]
+  0x2CBC0A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b7478]
+  0x2CBC6C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4b7415]
+  0x2CBC6D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4b7415]
+  0x2CDD81 -> 0x7829FA  [read ]  mov al, byte ptr [rip + 0x4b4c73]
+  0x2CDD9B -> 0x7829FB  [read ]  mov al, byte ptr [rip + 0x4b4c5a]
+  0x2CDDAD -> 0x7829FE  [read ]  mov al, byte ptr [rip + 0x4b4c4b]
+  0x2CDDB9 -> 0x7829FF  [read ]  mov al, byte ptr [rip + 0x4b4c40]
+  0x2CDDC5 -> 0x7829FC  [read ]  mov al, byte ptr [rip + 0x4b4c31]
+  0x2CDDD1 -> 0x7829FD  [read ]  mov al, byte ptr [rip + 0x4b4c26]
+  0x2CDDDD -> 0x7829F8  [read ]  mov al, byte ptr [rip + 0x4b4c15]
+  0x2CDDE9 -> 0x7829F9  [read ]  mov al, byte ptr [rip + 0x4b4c0a]
+  0x2CDE40 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x4b4bde]
+  0x2CDF9B -> 0x782A5C  [read ]  movzx eax, word ptr [rip + 0x4b4aba]
+  0x2CE8F0 -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x4b4105], al
+  0x2CE909 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x4b40ef], al
+  0x2CE915 -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x4b40e4], al
+  0x2CE921 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x4b40d5], al
+  0x2CE92D -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x4b40ca], al
+  0x2CE939 -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x4b40b9], al
+  0x2CE945 -> 0x7829F9  [WRITE]  mov byte ptr [rip + 0x4b40ae], al
+  0x2CE99C -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x4b4082], eax
+  0x2CEA2E -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x4b4027], ax
+  0x2CEA2F -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x4b4027], eax
+  0x2CF391 -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x4b3d40]
+  0x2CF392 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x4b3d40]
+  0x2CF444 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x4b35da]
+  0x2CF466 -> 0x782A5E  [read ]  mov al, byte ptr [rip + 0x4b35f2]
+  0x2CF86E -> 0x7831FC  [WRITE]  mov dword ptr [rip + 0x4b3988], eax
+  0x2CF886 -> 0x783200  [WRITE]  mov dword ptr [rip + 0x4b3974], eax
+  0x2CF892 -> 0x783204  [WRITE]  mov dword ptr [rip + 0x4b396c], eax
+  0x2CF8A1 -> 0x783208  [WRITE]  mov dword ptr [rip + 0x4b3961], eax
+  0x2CF8AF -> 0x78320C  [WRITE]  mov dword ptr [rip + 0x4b3957], eax
+  0x2CF8BB -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x4b3937], al
+  0x2CFC7F -> 0x7830D8  [read ]  mov rax, qword ptr [rip + 0x4b3452]
+  0x2CFC80 -> 0x7830D8  [read ]  mov eax, dword ptr [rip + 0x4b3452]
+  0x2CFD4E -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x4b2cd0], eax
+  0x2CFD5A -> 0x782A5E  [WRITE]  mov byte ptr [rip + 0x4b2cfe], al
+  0x2D108D -> 0x783204  [read ]  mov edx, dword ptr [rip + 0x4b2171]
+  0x2D3F31 -> 0x782A28  [WRITE]  mov dword ptr [rip + 0x4aeaf1], edi
+  0x2D3F37 -> 0x782A2C  [WRITE]  mov dword ptr [rip + 0x4aeaef], edi
+  0x2D3F51 -> 0x782A54  [WRITE]  mov dword ptr [rip + 0x4aeafd], edi
+  0x2D3F57 -> 0x782A58  [WRITE]  mov dword ptr [rip + 0x4aeafb], edi
+  0x2D3F97 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x4af25a], sil
+  0x2D3F98 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x4af25a], dh
+  0x2D3F9E -> 0x78320C  [WRITE]  mov dword ptr [rip + 0x4af268], edi
+  0x2D3FA4 -> 0x7831FC  [WRITE]  movdqu xmmword ptr [rip + 0x4af250], xmm0
+  0x2D3FA5 -> 0x7831FC  [WRITE]  movq qword ptr [rip + 0x4af250], mm0
+  0x2D43F2 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x4ae628], 0x201648
+  0x2D43FC -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x4ae5f8], 0xe
+  0x2D4403 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x4ae5f4], 4
+  0x2D440A -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x4ae5ee], 0xa
+  0x2D4411 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x4ae5e4], 0x20
+  0x2D4418 -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x4ae5de], 4
+  0x2D441F -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x4ae5d2], 4
+  0x2D4426 -> 0x7829F9  [WRITE]  mov byte ptr [rip + 0x4ae5cc], bpl
+  0x2D4427 -> 0x7829F9  [WRITE]  mov byte ptr [rip + 0x4ae5cc], ch
+  0x2D4507 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x4ae513], 0x201648
+  0x2D4511 -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x4ae4e3], 0xe
+  0x2D4518 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x4ae4df], 4
+  0x2D451F -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x4ae4d9], 0xa
+  0x2D4526 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x4ae4cf], 0x20
+  0x2D452D -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x4ae4c9], 4
+  0x2D4534 -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x4ae4bd], 4
+  0x2D453B -> 0x7829F9  [WRITE]  mov byte ptr [rip + 0x4ae4b7], bpl
+  0x2D453C -> 0x7829F9  [WRITE]  mov byte ptr [rip + 0x4ae4b7], ch
+  0x2D466E -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae385], sil
+  0x2D466F -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae385], dh
+  0x2D468F -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae364], sil
+  0x2D4690 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae364], dh
+  0x2D46A0 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae353], sil
+  0x2D46A1 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae353], dh
+  0x2D46A9 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae34a], bpl
+  0x2D46AA -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae34a], ch
+  0x2D470C -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x4ae2e7], sil
+  0x2D470D -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x4ae2e7], dh
+  0x2D47A2 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae251], sil
+  0x2D47A3 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x4ae251], dh
+  0x2D5EA5 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4acce3], r12b
+  0x2D5EA6 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4acce3], ah
+  0x2D5F3F -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4acc49], 2
+  0x2D60F2 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4aca97], bl
+  0x2D6251 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4ac937], 2
+  0x2D63DC -> 0x782BA7  [read ]  movzx eax, byte ptr [rip + 0x4ac7c4]
+  0x2D63EF -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4ac7b2], bl
+  0x2D63FC -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4ac78d], bl
+  0x2D64B4 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x4ac6ed], al
+  0x2D64BA -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x4ac6ce], 2
+  0x2D86D0 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x4aa324]
+  0x2D8702 -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x4aa2f5]
+  0x2D8735 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x4aa2c3]
+  0x2D8DC5 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x4a9c59]
+  0x2E005E -> 0x782A00  [read ]  lea rbx, [rip + 0x4a299b]
+  0x2E3B21 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x49ef34], si
+  0x2E3B22 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x49ef34], esi
+  0x2E51FA -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x49d85b], ax
+  0x2E51FB -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x49d85b], eax
+  0x2E5644 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x49d411], di
+  0x2E5645 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x49d411], edi
+  0x2E5660 -> 0x782A5C  [WRITE]  mov word ptr [rip + 0x49d3f5], ax
+  0x2E5661 -> 0x782A5C  [WRITE]  mov dword ptr [rip + 0x49d3f5], eax
+  0x2E5CCB -> 0x782A5C  [read ]  movzx eax, word ptr [rip + 0x49cd8a]
+  0x2E7313 -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x49b6e2]
+  0x2E732A -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x49b6cc]
+  0x2E79D1 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x49b020]
+  0x2E7A00 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x49aff4]
+  0x2EAEE5 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x497b39]
+  0x2EB5AD -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x497471]
+  0x2EBC99 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x496d85]
+  0x2EBF69 -> 0x7829FB  [read ]  movzx r8d, byte ptr [rip + 0x496a8a]
+  0x2EBF6A -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x496a8a]
+  0x2EBF8E -> 0x7829FB  [read ]  mov r8b, byte ptr [rip + 0x496a66]
+  0x2EBF8F -> 0x7829FB  [read ]  mov al, byte ptr [rip + 0x496a66]
+  0x2EBFD3 -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x496a24]
+  0x2EC011 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x4969e7]
+  0x2F32C1 -> 0x7829E8  [read ]  mov ecx, dword ptr [rip + 0x48f720]
+  0x2F32C2 -> 0x7829E8  [read ]  mov ecx, dword ptr [rip + 0x48f720]
+  0x2F336E -> 0x7829EC  [read ]  movd xmm0, dword ptr [rip + 0x48f676]
+  0x2F336F -> 0x7829EC  [read ]  movd mm0, dword ptr [rip + 0x48f676]
+  0x2F3376 -> 0x7829F0  [read ]  movd xmm1, dword ptr [rip + 0x48f672]
+  0x2F3377 -> 0x7829F0  [read ]  movd mm1, dword ptr [rip + 0x48f672]
+  0x2F33BB -> 0x7829EC  [read ]  mov esi, dword ptr [rip + 0x48f62b]
+  0x2F33C1 -> 0x7829F0  [read ]  mov edi, dword ptr [rip + 0x48f629]
+  0x2F483F -> 0x782980  [WRITE]  mov byte ptr [rip + 0x48e13a], r8b
+  0x2F4840 -> 0x782980  [WRITE]  mov byte ptr [rip + 0x48e13a], al
+  0x2F484E -> 0x782981  [WRITE]  mov byte ptr [rip + 0x48e12d], dl
+  0x2F4854 -> 0x782982  [WRITE]  mov byte ptr [rip + 0x48e128], cl
+  0x2F485C -> 0x782984  [read ]  mov al, byte ptr [rip + 0x48e122]
+  0x2F4862 -> 0x782980  [WRITE]  mov byte ptr [rip + 0x48e118], al
+  0x2F4868 -> 0x782985  [read ]  mov al, byte ptr [rip + 0x48e117]
+  0x2F486E -> 0x782981  [WRITE]  mov byte ptr [rip + 0x48e10d], al
+  0x2F4874 -> 0x782986  [read ]  mov al, byte ptr [rip + 0x48e10c]
+  0x2F487A -> 0x782982  [WRITE]  mov byte ptr [rip + 0x48e102], al
+  0x2F4884 -> 0x782982  [read ]  mov r8b, byte ptr [rip + 0x48e0f7]
+  0x2F4885 -> 0x782982  [read ]  mov al, byte ptr [rip + 0x48e0f7]
+  0x2F488B -> 0x782981  [read ]  mov r9b, byte ptr [rip + 0x48e0ef]
+  0x2F488C -> 0x782981  [read ]  mov cl, byte ptr [rip + 0x48e0ef]
+  0x2F4895 -> 0x782980  [read ]  mov eax, dword ptr [rip + 0x48e0e5]
+  0x2F7F2C -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x48b155]
+  0x2F7F2D -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x48b155]
+  0x2F7FF1 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x48b090]
+  0x2F7FF2 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x48b090]
+  0x2F86F8 -> 0x782D14  [read ]  mov eax, dword ptr [rip + 0x48a616]
+  0x2F876B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x48a916]
+  0x2F876C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x48a916]
+  0x2F945F -> 0x782A00  [read ]  lea rbx, [rip + 0x48959a]
+  0x2F9B9D -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4894e4]
+  0x2F9B9E -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4894e4]
+  0x2F9FEA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x489097]
+  0x2F9FEB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x489097]
+  0x2FA788 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4888f9]
+  0x2FA789 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4888f9]
+  0x2FAAEA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x488597]
+  0x2FAAEB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x488597]
+  0x2FB028 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x488059]
+  0x2FB029 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x488059]
+  0x2FB8C2 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x487131], r12b
+  0x2FB8C3 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x487131], ah
+  0x2FBA2B -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x486fc8], r12b
+  0x2FBA2C -> 0x7829FA  [read ]  cmp byte ptr [rip + 0x486fc8], ah
+  0x2FBA98 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x486f5b], r12b
+  0x2FBA99 -> 0x7829FA  [WRITE]  mov byte ptr [rip + 0x486f5b], ah
+  0x2FCB91 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x4864f0]
+  0x2FCB92 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x4864f0]
+  0x2FCC0C -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x486475]
+  0x2FCC0D -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x486475]
+  0x2FCC5D -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x486424]
+  0x2FCC5E -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x486424]
+  0x2FCE7F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x486202]
+  0x2FCE80 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x486202]
+  0x2FCEE2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x48619f]
+  0x2FCEE3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x48619f]
+  0x2FCF87 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x4860fa]
+  0x2FCF88 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x4860fa]
+  0x2FCFF3 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x48608e]
+  0x2FCFF4 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x48608e]
+  0x2FD039 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x486048]
+  0x2FD03A -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x486048]
+  0x2FD08B -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x485ff6]
+  0x2FD08C -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x485ff6]
+  0x2FD147 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485b5f], ebp
+  0x2FD186 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485b20], ebp
+  0x2FD1C6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485ae0], ebp
+  0x2FD206 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485aa0], ebp
+  0x2FD2DA -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4859c8], 5
+  0x2FD339 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x485d48]
+  0x2FD33A -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x485d48]
+  0x2FD402 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4858a0], 1
+  0x2FD4BC -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4857e6], 0x85
+  0x2FD572 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485730], 5
+  0x2FD5BD -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x485ac4]
+  0x2FD5BE -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x485ac4]
+  0x2FD5D5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4856d0], r12d
+  0x2FD5D6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4856d0], esp
+  0x2FD5F6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4856ac], 0x3c
+  0x2FD618 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x48568a], 5
+  0x2FD6E5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4855bd], 5
+  0x2FD700 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x485981]
+  0x2FD701 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x485981]
+  0x2FD738 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x485949]
+  0x2FD739 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x485949]
+  0x2FD773 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x48590e]
+  0x2FD774 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x48590e]
+  0x2FD7A6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4854fc], 0x11
+  0x2FD804 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4854a1], r12d
+  0x2FD805 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4854a1], esp
+  0x2FD838 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x48546d], r14d
+  0x2FD839 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x48546d], esi
+  0x2FD88C -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485419], r12d
+  0x2FD88D -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485419], esp
+  0x2FD89E -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485404], 5
+  0x2FD8F5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4853b0], r12d
+  0x2FD8F6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4853b0], esp
+  0x2FD9E2 -> 0x783088  [read ]  mov rdx, qword ptr [rip + 0x48569f]
+  0x2FD9E3 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x48569f]
+  0x2FDA20 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x485661]
+  0x2FDA21 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x485661]
+  0x2FDA2A -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485278], 2
+  0x2FDA6B -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x485616]
+  0x2FDA6C -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x485616]
+  0x2FDAD5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4851d0], r12d
+  0x2FDAD6 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4851d0], esp
+  0x2FDB60 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x485142], 2
+  0x2FDCB2 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x484ff3], r13d
+  0x2FDCB3 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x484ff3], ebp
+  0x2FDDB6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4852cb]
+  0x2FDDB7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4852cb]
+  0x2FDDDC -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4852a5]
+  0x2FDDDD -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4852a5]
+  0x2FE12F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x484f52]
+  0x2FE130 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x484f52]
+  0x2FE1D4 -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x484ead]
+  0x2FE1D5 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x484ead]
+  0x2FE1FC -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x484aa6], 6
+  0x2FE242 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x484a60], 6
+  0x2FEFB5 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4840cc]
+  0x2FEFB6 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4840cc]
+  0x2FF6C2 -> 0x783088  [read ]  mov r9, qword ptr [rip + 0x4839bf]
+  0x2FF6C3 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x4839bf]
+  0x2FF6D7 -> 0x782D14  [read ]  movsxd r8, dword ptr [rip + 0x483636]
+  0x2FFB63 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x48351e]
+  0x2FFB64 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x48351e]
+  0x2FFDA7 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x4832da]
+  0x2FFDA8 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x4832da]
+  0x2FFE63 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x48321e]
+  0x2FFE64 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x48321e]
+  0x300090 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x482ff1]
+  0x300091 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x482ff1]
+  0x30015F -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x482f22]
+  0x300160 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x482f22]
+  0x30039B -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x482ce6]
+  0x30039C -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x482ce6]
+  0x300467 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x482c1a]
+  0x300468 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x482c1a]
+  0x3006A3 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x4829de]
+  0x3006A4 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x4829de]
+  0x3007C2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4828bf]
+  0x3007C3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4828bf]
+  0x3016BA -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4815eb], r12d
+  0x3016BB -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4815eb], esp
+  0x301760 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x481921]
+  0x301761 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x481921]
+  0x301965 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x48133d], 0x12
+  0x3019DD -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4812c5], 0x12
+  0x301AB4 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4811ee], 0x12
+  0x301AC6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x4815bb]
+  0x301AC7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x4815bb]
+  0x301B69 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x481139], 3
+  0x301BD1 -> 0x782D14  [read ]  movsxd rcx, dword ptr [rip + 0x48113c]
+  0x301EF3 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x48118e]
+  0x301EF4 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x48118e]
+  0x301F20 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x480d86], eax
+  0x3023D4 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x480cad]
+  0x3023D5 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x480cad]
+  0x302A51 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x480630]
+  0x302A52 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x480630]
+  0x303BC0 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x47ee38]
+  0x303BC7 -> 0x7829FB  [read ]  movzx r12d, byte ptr [rip + 0x47ee2c]
+  0x303BC8 -> 0x7829FB  [read ]  movzx esp, byte ptr [rip + 0x47ee2c]
+  0x303BCF -> 0x7829FE  [read ]  movzx r13d, byte ptr [rip + 0x47ee27]
+  0x303BD0 -> 0x7829FE  [read ]  movzx ebp, byte ptr [rip + 0x47ee27]
+  0x303DB9 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x47ec3f]
+  0x3041EF -> 0x7829E0  [WRITE]  mov dword ptr [rip + 0x47e7eb], eax
+  0x3041F5 -> 0x7829D8  [WRITE]  mov dword ptr [rip + 0x47e7dd], eax
+  0x317A1F -> 0x7829CC  [read ]  mov edi, dword ptr [rip + 0x46afa7]
+  0x317B9A -> 0x7829CC  [read ]  add edx, dword ptr [rip + 0x46ae2c]
+  0x317C4A -> 0x7829CC  [read ]  add eax, dword ptr [rip + 0x46ad7c]
+  0x317D06 -> 0x7829CC  [read ]  add ecx, dword ptr [rip + 0x46acc0]
+  0x317DB9 -> 0x7829CC  [read ]  imul ecx, dword ptr [rip + 0x46ac0c]
+  0x317DF9 -> 0x7829CC  [read ]  add r11d, dword ptr [rip + 0x46abcc]
+  0x317DFA -> 0x7829CC  [read ]  add ebx, dword ptr [rip + 0x46abcc]
+  0x317EAC -> 0x7829CC  [read ]  mov edi, dword ptr [rip + 0x46ab1a]
+  0x317FE3 -> 0x7829CC  [read ]  add edi, dword ptr [rip + 0x46a9e3]
+  0x318655 -> 0x7829CC  [read ]  add eax, dword ptr [rip + 0x46a371]
+  0x31876F -> 0x7829CC  [read ]  add ecx, dword ptr [rip + 0x46a257]
+  0x318854 -> 0x7829CC  [read ]  imul edx, dword ptr [rip + 0x46a171]
+  0x31889C -> 0x7829CC  [read ]  add esi, dword ptr [rip + 0x46a12a]
+  0x321E8C -> 0x783088  [read ]  mov r12, qword ptr [rip + 0x4611f5]
+  0x321E8D -> 0x783088  [read ]  mov esp, dword ptr [rip + 0x4611f5]
+  0x3221D7 -> 0x783088  [read ]  mov r12, qword ptr [rip + 0x460ea9]
+  0x3221D8 -> 0x783088  [read ]  mov r12, qword ptr [rip + 0x460ea9]
+  0x3221D9 -> 0x783088  [read ]  mov esp, dword ptr [rip + 0x460ea9]
+  0x3226FA -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x460986]
+  0x3226FB -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x460986]
+  0x3226FC -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x460986]
+  0x322A69 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x46023d], eax
+  0x322ADC -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4601ca], ecx
+  0x323087 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45fc1f], eax
+  0x3230A5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45fc01], eax
+  0x32319E -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x45fb08]
+  0x3231B4 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45faf2], eax
+  0x323288 -> 0x782CAC  [WRITE]  mov qword ptr [rip + 0x45fa1d], r8
+  0x323289 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45fa1d], eax
+  0x3232A3 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45fa03], eax
+  0x323488 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45f81d], r12d
+  0x323489 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45f81d], esp
+  0x3234B9 -> 0x782CAC  [read ]  mov eax, dword ptr [rip + 0x45f7ed]
+  0x3234C9 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45f7dd], eax
+  0x3234FB -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x45f813]
+  0x323529 -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x45f4cc]
+  0x323534 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x45f4c2]
+  0x32353D -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x45f4b4]
+  0x323577 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x45f47d]
+  0x3235C1 -> 0x783088  [read ]  mov rsi, qword ptr [rip + 0x45fac0]
+  0x3235C2 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x45fac0]
+  0x323819 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45f868]
+  0x32381A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45f868]
+  0x323965 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45f71c]
+  0x323966 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45f71c]
+  0x323D05 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45f37c]
+  0x323D06 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45f37c]
+  0x323D6F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45f312]
+  0x323D70 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45f312]
+  0x323F8C -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x45f0f5]
+  0x323F8D -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x45f0f5]
+  0x323FDE -> 0x783290  [WRITE]  mov word ptr [rip + 0x45f2aa], r13w
+  0x323FDF -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45f2aa], r13d
+  0x323FE0 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45f2aa], ebp
+  0x324019 -> 0x783210  [WRITE]  mov dword ptr [rip + 0x45f1f1], esi
+  0x324028 -> 0x783214  [WRITE]  mov dword ptr [rip + 0x45f1e6], eax
+  0x324048 -> 0x783218  [WRITE]  mov dword ptr [rip + 0x45f1ca], ecx
+  0x324055 -> 0x783214  [read ]  mov edx, dword ptr [rip + 0x45f1b9]
+  0x324062 -> 0x783218  [read ]  mov edx, dword ptr [rip + 0x45f1b0]
+  0x3240B8 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x45efc9]
+  0x3240B9 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x45efc9]
+  0x324103 -> 0x783290  [WRITE]  mov word ptr [rip + 0x45f185], r13w
+  0x324104 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45f185], r13d
+  0x324105 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45f185], ebp
+  0x324110 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45ef71]
+  0x324111 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45ef71]
+  0x3241A7 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x45eeda]
+  0x3241A8 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x45eeda]
+  0x324210 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x45ee71]
+  0x324211 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x45ee71]
+  0x3242A9 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x45edd8]
+  0x3242AA -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x45edd8]
+  0x3242F0 -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x45ed91]
+  0x3242F1 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x45ed91]
+  0x3243CF -> 0x783290  [WRITE]  mov word ptr [rip + 0x45eeb9], r13w
+  0x3243D0 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45eeb9], r13d
+  0x3243D1 -> 0x783290  [WRITE]  mov dword ptr [rip + 0x45eeb9], ebp
+  0x324708 -> 0x783088  [read ]  mov r10, qword ptr [rip + 0x45e979]
+  0x324709 -> 0x783088  [read ]  mov edx, dword ptr [rip + 0x45e979]
+  0x324725 -> 0x782A24  [read ]  mov r9d, dword ptr [rip + 0x45e2f8]
+  0x324726 -> 0x782A24  [read ]  mov ecx, dword ptr [rip + 0x45e2f8]
+  0x3248DD -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45e7a4]
+  0x3248DE -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45e7a4]
+  0x324985 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45e6fc]
+  0x324986 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45e6fc]
+  0x3249AF -> 0x783088  [read ]  mov r8, qword ptr [rip + 0x45e6d2]
+  0x3249B0 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45e6d2]
+  0x324A2E -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x45e653]
+  0x324A2F -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x45e653]
+  0x324EC8 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45e1b9]
+  0x324EC9 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45e1b9]
+  0x325068 -> 0x783088  [read ]  mov r14, qword ptr [rip + 0x45e019]
+  0x325069 -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x45e019]
+  0x3250FE -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45dba4], 3
+  0x3251D5 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45dacd], 3
+  0x3252BD -> 0x783088  [read ]  mov r14, qword ptr [rip + 0x45ddc4]
+  0x3252BE -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x45ddc4]
+  0x325308 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45d99e], eax
+  0x325495 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x45d879]
+  0x3254AD -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x45d548]
+  0x3254B7 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x45d53f]
+  0x3254C0 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x45d531]
+  0x3254F2 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x45d502]
+  0x3256CE -> 0x783088  [read ]  mov r14, qword ptr [rip + 0x45d9b3]
+  0x3256CF -> 0x783088  [read ]  mov esi, dword ptr [rip + 0x45d9b3]
+  0x325882 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x45d19c]
+  0x32589D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45d181], eax
+  0x3258B6 -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x45d13f], al
+  0x3258C4 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x45d134], al
+  0x3258D2 -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x45d127], al
+  0x3258E0 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x45d116], al
+  0x3258EE -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x45d109], al
+  0x3258FC -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x45d0f6], al
+  0x32593A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45d747]
+  0x32593B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45d747]
+  0x3259C1 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x45d6c0]
+  0x3259C2 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x45d6c0]
+  0x325C87 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45d01b], 1
+  0x325CEA -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45cfb8], 3
+  0x325D3C -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45cf66], 3
+  0x325DF4 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x45ceae], 2
+  0x325E9F -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x45cb7f]
+  0x325EAC -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45cb72], eax
+  0x325EC4 -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x45cb31], al
+  0x325ED1 -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x45cb27], al
+  0x325EDE -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x45cb1b], al
+  0x325EEB -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x45cb0b], al
+  0x325EF8 -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x45caff], al
+  0x325F05 -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x45caed], al
+  0x325F2C -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x45caf2]
+  0x325F51 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45cacd], eax
+  0x325F77 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45caa7], eax
+  0x325F9F -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45ca7f], eax
+  0x325FC7 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45ca57], eax
+  0x325FEF -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45ca2f], eax
+  0x32601D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45ca01], eax
+  0x326045 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c9d9], eax
+  0x32606D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c9b1], eax
+  0x326095 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c989], eax
+  0x3260BD -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c961], eax
+  0x3260E5 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c939], eax
+  0x32610D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x45c911], eax
+  0x327550 -> 0x782BCB  [WRITE]  mov byte ptr [rip + 0x45b675], al
+  0x3278BC -> 0x782BCB  [read ]  mov al, byte ptr [rip + 0x45b309]
+  0x32971A -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x4592db]
+  0x32972E -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x4592c3]
+  0x3299D3 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x459023]
+  0x329B01 -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x458ef4]
+  0x329B11 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x458ee0]
+  0x329B21 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x458ed5]
+  0x32A243 -> 0x7829FB  [read ]  movzx r10d, byte ptr [rip + 0x4587b0]
+  0x32A244 -> 0x7829FB  [read ]  movzx edx, byte ptr [rip + 0x4587b0]
+  0x32A262 -> 0x7829FF  [read ]  movzx ecx, byte ptr [rip + 0x458796]
+  0x32BDD3 -> 0x782A00  [read ]  lea r15, [rip + 0x456c26]
+  0x32CCB1 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x455d6d]
+  0x330FE8 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x451a0c]
+  0x331019 -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x4519de]
+  0x33104F -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x4519a9]
+  0x33219A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x450ee7]
+  0x33219B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x450ee7]
+  0x33301A -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44fb86], dil
+  0x33301B -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44fb86], bh
+  0x3330F1 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44fa97], 2
+  0x33320F -> 0x782BA6  [read ]  mov al, byte ptr [rip + 0x44f991]
+  0x333215 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44f98c], al
+  0x333A46 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44f142], 2
+  0x333B98 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44eff0], r13b
+  0x333B99 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44eff0], ch
+  0x333EC0 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44ecc8], 2
+  0x3343E1 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e7a7], dil
+  0x3343E2 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e7a7], bh
+  0x334437 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e751], 2
+  0x3344DE -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e6aa], 2
+  0x334A5E -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44e143], bl
+  0x334A64 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e124], r8b
+  0x334A65 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44e124], al
+  0x335A21 -> 0x782BA6  [read ]  mov al, byte ptr [rip + 0x44d17f]
+  0x335A27 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44d17a], al
+  0x336370 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44c830], sil
+  0x336371 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x44c830], dh
+  0x3363DD -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x44c7ab], 2
+  0x33876C -> 0x782D14  [read ]  mov eax, dword ptr [rip + 0x44a5a2]
+  0x338AA0 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x44a26e]
+  0x338B0F -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x44a572]
+  0x338B10 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x44a572]
+  0x339854 -> 0x782A00  [read ]  lea rdi, [rip + 0x4491a5]
+  0x339FF9 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x449088]
+  0x339FFA -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x449088]
+  0x33A446 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x448c3b]
+  0x33A447 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x448c3b]
+  0x33ABF2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x44848f]
+  0x33ABF3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x44848f]
+  0x33AF52 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x44812f]
+  0x33AF53 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x44812f]
+  0x33B47E -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x447c03]
+  0x33B47F -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x447c03]
+  0x33B731 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x447950]
+  0x33B732 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x447950]
+  0x33C0F1 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x446f90]
+  0x33C0F2 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x446f90]
+  0x33C7EE -> 0x782D14  [read ]  imul eax, dword ptr [rip + 0x44651f]
+  0x33CC2A -> 0x782D14  [read ]  imul eax, dword ptr [rip + 0x4460e3]
+  0x33CD21 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x446360]
+  0x33CD22 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x446360]
+  0x33D21B -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445e66]
+  0x33D21C -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445e66]
+  0x33D302 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445d7f]
+  0x33D303 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445d7f]
+  0x33D450 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445c31]
+  0x33D451 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445c31]
+  0x33D581 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445b00]
+  0x33D582 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445b00]
+  0x33D5BB -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445ac6]
+  0x33D5BC -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445ac6]
+  0x33D5F6 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445a8b]
+  0x33D5F7 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445a8b]
+  0x33D668 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x445a19]
+  0x33D669 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x445a19]
+  0x33DC72 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x44540f]
+  0x33DC73 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x44540f]
+  0x33E2BC -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x444dc5]
+  0x33E2BD -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x444dc5]
+  0x33E308 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x444d79]
+  0x33E309 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x444d79]
+  0x33E358 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x444d29]
+  0x33E359 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x444d29]
+  0x33E3AC -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x444cd4]
+  0x33E3AD -> 0x783088  [read ]  mov rbx, qword ptr [rip + 0x444cd4]
+  0x33E3AE -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x444cd4]
+  0x33E3EF -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x444c92]
+  0x33E3F0 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x444c92]
+  0x33E62D -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x444a54]
+  0x33E62E -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x444a54]
+  0x33E7B4 -> 0x782CAC  [WRITE]  mov dword ptr [rip + 0x4444f2], eax
+  0x33EE29 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x443bcb]
+  0x33EE3C -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x443bbb]
+  0x33EE49 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x443baf]
+  0x33F4B9 -> 0x7831F8  [read ]  cmp byte ptr [rip + 0x443d38], r12b
+  0x33F4BA -> 0x7831F8  [read ]  cmp byte ptr [rip + 0x443d38], ah
+  0x33F4C2 -> 0x7831FC  [read ]  cmp dword ptr [rip + 0x443d34], eax
+  0x33F4D9 -> 0x7831FC  [WRITE]  movdqu xmmword ptr [rip + 0x443d1b], xmm0
+  0x33F4DA -> 0x7831FC  [WRITE]  movq qword ptr [rip + 0x443d1b], mm0
+  0x33F4E1 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x443d10], r12b
+  0x33F4E2 -> 0x7831F8  [WRITE]  mov byte ptr [rip + 0x443d10], ah
+  0x33FD76 -> 0x7831FC  [read ]  mov eax, dword ptr [rip + 0x443480]
+  0x33FD8E -> 0x783200  [read ]  mov eax, dword ptr [rip + 0x44346c]
+  0x33FD9A -> 0x783204  [read ]  mov eax, dword ptr [rip + 0x443464]
+  0x33FDA6 -> 0x783208  [read ]  mov eax, dword ptr [rip + 0x44345c]
+  0x33FDB2 -> 0x78320C  [read ]  mov eax, dword ptr [rip + 0x443454]
+  0x33FDBE -> 0x7831F8  [read ]  mov al, byte ptr [rip + 0x443434]
+  0x346CAD -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x43bde1]
+  0x3474B3 -> 0x782A94  [read ]  mov ecx, dword ptr [rip + 0x43b5db]
+  0x363C1C -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x41edd9]
+  0x363C27 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x41edcf]
+  0x363C30 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x41edc1]
+  0x363C6E -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x41ed86]
+  0x364E01 -> 0x782A24  [read ]  mov r9d, dword ptr [rip + 0x41dc1c]
+  0x364E02 -> 0x782A24  [read ]  mov ecx, dword ptr [rip + 0x41dc1c]
+  0x365AEB -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x41cf0a]
+  0x365AFB -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x41cefb]
+  0x365B11 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x41cee0]
+  0x365B29 -> 0x7829FB  [read ]  movzx rax, byte ptr [rip + 0x41ceca]
+  0x365B2A -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x41ceca]
+  0x365EC9 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x41cb55]
+  0x365EE4 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41cb3a], eax
+  0x365EFD -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x41caf8], al
+  0x365F0B -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x41caed], al
+  0x365F19 -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x41cae0], al
+  0x365F27 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x41cacf], al
+  0x365F35 -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x41cac2], al
+  0x365F4A -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x41caa8], al
+  0x3664EB -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x41c533]
+  0x3664F8 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c526], eax
+  0x366510 -> 0x7829FB  [WRITE]  mov byte ptr [rip + 0x41c4e5], al
+  0x36651D -> 0x7829FE  [WRITE]  mov byte ptr [rip + 0x41c4db], al
+  0x36652A -> 0x7829FF  [WRITE]  mov byte ptr [rip + 0x41c4cf], al
+  0x366537 -> 0x7829FC  [WRITE]  mov byte ptr [rip + 0x41c4bf], al
+  0x366544 -> 0x7829FD  [WRITE]  mov byte ptr [rip + 0x41c4b3], al
+  0x366551 -> 0x7829F8  [WRITE]  mov byte ptr [rip + 0x41c4a1], al
+  0x366578 -> 0x782A24  [read ]  mov eax, dword ptr [rip + 0x41c4a6]
+  0x36659D -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c481], eax
+  0x3665C3 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c45b], eax
+  0x3665EB -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c433], eax
+  0x366613 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c40b], eax
+  0x36663B -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c3e3], eax
+  0x366669 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c3b5], eax
+  0x366691 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c38d], eax
+  0x3666B9 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c365], eax
+  0x3666E1 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c33d], eax
+  0x366709 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c315], eax
+  0x366731 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c2ed], eax
+  0x366759 -> 0x782A24  [WRITE]  mov dword ptr [rip + 0x41c2c5], eax
+  0x3668CE -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41c2ba], r14b
+  0x3668CF -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41c2ba], dh
+  0x3668EC -> 0x782BA6  [read ]  mov al, byte ptr [rip + 0x41c2b4]
+  0x3668F2 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x41c2af], al
+  0x366BBE -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41bfca], 2
+  0x3670FF -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41ba89], 2
+  0x367211 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b977], 2
+  0x3672D6 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b8b2], r13b
+  0x3672D7 -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b8b2], ch
+  0x3675FE -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b589], 2
+  0x3675FF -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b589], 2
+  0x3676F7 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x41b4aa], bl
+  0x3676FD -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x41b48c], bl
+  0x367788 -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x41b418], 1
+  0x3677B5 -> 0x782A24  [read ]  test dword ptr [rip + 0x41b264], 0x60000000
+  0x368F37 -> 0x782A24  [read ]  mov ebx, dword ptr [rip + 0x419ae7]
+  0x36923C -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x419964], sil
+  0x36923D -> 0x782BA7  [WRITE]  mov byte ptr [rip + 0x419964], dh
+  0x369DC9 -> 0x782B8F  [read ]  movzx eax, byte ptr [rip + 0x418dbf]
+  0x369DDA -> 0x782B8F  [WRITE]  mov byte ptr [rip + 0x418daf], al
+  0x36D4A4 -> 0x7829FB  [read ]  movzx eax, byte ptr [rip + 0x415550]
+  0x36D4C8 -> 0x7829FE  [read ]  movzx eax, byte ptr [rip + 0x41552f]
+  0x36D4D5 -> 0x7829FF  [read ]  movzx eax, byte ptr [rip + 0x415523]
+  0x3807C8 -> 0x782CE4  [read ]  mov r15d, dword ptr [rip + 0x402515]
+  0x3807C9 -> 0x782CE4  [read ]  mov edi, dword ptr [rip + 0x402515]
+  0x38F77B -> 0x7829FB  [read ]  movzx r14d, byte ptr [rip + 0x3f3278]
+  0x38F77C -> 0x7829FB  [read ]  movzx esi, byte ptr [rip + 0x3f3278]
+  0x38F783 -> 0x7829FE  [read ]  movzx ebp, byte ptr [rip + 0x3f3274]
+  0x38F793 -> 0x7829FF  [read ]  movzx r15d, byte ptr [rip + 0x3f3264]
+  0x38F794 -> 0x7829FF  [read ]  movzx edi, byte ptr [rip + 0x3f3264]
+  0x38FF87 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x3f30fa]
+  0x38FF88 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x3f30fa]
+  0x39137F -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x3f1676]
+  0x391393 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x3f165e]
+  0x391613 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x3f13e3]
+  0x3916DD -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x3f1318]
+  0x3916ED -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x3f1304]
+  0x3916FD -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x3f12f9]
+  0x391DF2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3f128f]
+  0x391DF3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3f128f]
+  0x391E10 -> 0x7829FB  [read ]  movzx r10d, byte ptr [rip + 0x3f0be3]
+  0x391E11 -> 0x7829FB  [read ]  movzx edx, byte ptr [rip + 0x3f0be3]
+  0x391E21 -> 0x7829FF  [read ]  movzx ecx, byte ptr [rip + 0x3f0bd7]
+  0x3933EF -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x3efc92]
+  0x3933F0 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x3efc92]
+  0x393791 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x3ef8ef]
+  0x393792 -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x3ef8ef]
+  0x393793 -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x3ef8ef]
+  0x39395A -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3ef727]
+  0x39395B -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3ef727]
+  0x393B06 -> 0x783088  [read ]  mov rcx, qword ptr [rip + 0x3ef57b]
+  0x393B07 -> 0x783088  [read ]  mov ecx, dword ptr [rip + 0x3ef57b]
+  0x393B22 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3ef55f]
+  0x393B23 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3ef55f]
+  0x393F40 -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x3ef141]
+  0x393F41 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x3ef141]
+  0x394091 -> 0x783088  [read ]  mov rdi, qword ptr [rip + 0x3eeff0]
+  0x394092 -> 0x783088  [read ]  mov edi, dword ptr [rip + 0x3eeff0]
+  0x394981 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3ee700]
+  0x394982 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3ee700]
+  0x3958A2 -> 0x7829FB  [read ]  movzx r14d, byte ptr [rip + 0x3ed151]
+  0x3958A3 -> 0x7829FB  [read ]  movzx esi, byte ptr [rip + 0x3ed151]
+  0x3958AA -> 0x7829FE  [read ]  movzx ebp, byte ptr [rip + 0x3ed14d]
+  0x3958B1 -> 0x7829FF  [read ]  movzx r15d, byte ptr [rip + 0x3ed146]
+  0x3958B2 -> 0x7829FF  [read ]  movzx edi, byte ptr [rip + 0x3ed146]
+  0x39619D -> 0x783088  [read ]  mov r11, qword ptr [rip + 0x3ecee4]
+  0x39619E -> 0x783088  [read ]  mov ebx, dword ptr [rip + 0x3ecee4]
+  0x3961ED -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3ece94]
+  0x3961EE -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3ece94]
+  0x397DF0 -> 0x782D14  [read ]  mov eax, dword ptr [rip + 0x3eaf1e]
+  0x398124 -> 0x782D14  [read ]  mov ecx, dword ptr [rip + 0x3eabea]
+  0x398193 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3eaeee]
+  0x398194 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3eaeee]
+  0x398EC5 -> 0x782A00  [read ]  lea rdi, [rip + 0x3e9b34]
+  0x3996E2 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e999f]
+  0x3996E3 -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e999f]
+  0x399B29 -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e9558]
+  0x399B2A -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e9558]
+  0x39A10E -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e8f73]
+  0x39A10F -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e8f73]
+  0x39A5DA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e8aa7]
+  0x39A5DB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e8aa7]
+  0x39AB0E -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e8573]
+  0x39AB0F -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e8573]
+  0x39ABAA -> 0x783088  [read ]  mov rax, qword ptr [rip + 0x3e84d7]
+  0x39ABAB -> 0x783088  [read ]  mov eax, dword ptr [rip + 0x3e84d7]
+  0x39C988 -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x3e606d]
+  0x39C99C -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x3e6055]
+  0x39CB98 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x3e5e5e]
+  0x39CC82 -> 0x7829FC  [read ]  movzx eax, byte ptr [rip + 0x3e5d73]
+  0x39CC92 -> 0x7829F8  [read ]  movzx eax, byte ptr [rip + 0x3e5d5f]
+  0x39CCA3 -> 0x7829FD  [read ]  movzx eax, byte ptr [rip + 0x3e5d53]
+  0x39D453 -> 0x7829FB  [read ]  movzx r10d, byte ptr [rip + 0x3e55a0]
+  0x39D454 -> 0x7829FB  [read ]  movzx edx, byte ptr [rip + 0x3e55a0]
+  0x39D472 -> 0x7829FF  [read ]  movzx ecx, byte ptr [rip + 0x3e5586]
+  0x5F937D -> 0x7822F0  [read ]  mov rax, qword ptr [rip + 0x188f6b]
+  0x5F937E -> 0x7822F0  [read ]  mov rax, qword ptr [rip + 0x188f6b]
+  0x5F937F -> 0x7822F0  [read ]  mov eax, dword ptr [rip + 0x188f6b]
+  0x5F93B4 -> 0x7822F0  [WRITE]  mov qword ptr [rip + 0x188f35], rax
+  0x5F93B5 -> 0x7822F0  [WRITE]  mov dword ptr [rip + 0x188f35], eax
+  0x5F9412 -> 0x7822F0  [read ]  mov rcx, qword ptr [rip + 0x188ed7]
+  0x5F9413 -> 0x7822F0  [read ]  mov ecx, dword ptr [rip + 0x188ed7]
+  0x5F9430 -> 0x7822F0  [read ]  mov rcx, qword ptr [rip + 0x188eb9]
+  0x5F9431 -> 0x7822F0  [read ]  mov ecx, dword ptr [rip + 0x188eb9]
+  0x5F947A -> 0x7822F0  [WRITE]  mov qword ptr [rip + 0x188e6f], rax
+  0x5F947B -> 0x7822F0  [WRITE]  mov dword ptr [rip + 0x188e6f], eax
+  0x5FB826 -> 0x782350  [read ]  mulss xmm0, dword ptr [rip + 0x186b22]
+  0x5FB827 -> 0x782350  [read ]  mulps xmm0, xmmword ptr [rip + 0x186b22]
+  0x5FF262 -> 0x7823B0  [read ]  lea rax, [rip + 0x183146]
+  0x5FF263 -> 0x7823B0  [read ]  lea rax, [rip + 0x183146]
+  0x600928 -> 0x782480  [read ]  lea rax, [rip + 0x181b51]
+  0x603008 -> 0x782518  [read ]  lea r12, [rip + 0x17f509]
+  0x6064CA -> 0x782720  [read ]  mov eax, dword ptr [rip + 0x17c250]
+  0x60651A -> 0x782720  [read ]  mov eax, dword ptr [rip + 0x17c200]
+  0x606918 -> 0x782720  [read ]  mov r8d, dword ptr [rip + 0x17be01]
+  0x606919 -> 0x782720  [read ]  mov eax, dword ptr [rip + 0x17be01]
+  0x6083C5 -> 0x782800  [read ]  lea rcx, [rip + 0x17a434]
+  0x60CBF1 -> 0x782890  [read ]  lea rax, [rip + 0x175c98]
+
+======================================================================
+CONTEXT around refs to the exact hit% address 0x7832C0
+======================================================================
+
+### 0x228004  [WRITE] -> 0x7832C0 :: mov word ptr [rip + 0x55b2b5], ax ###
+    227FDC: DB 80 3D C6 4F 5B          fild dword ptr [rax + 0x5b4fc63d]
+    227FE2: 00 FF                      add bh, bh
+    227FE4: 0F 84 D1 07 00 00          je 0x1402287bb
+    227FEA: 48 8B 2D 07 BD DC 02       mov rbp, qword ptr [rip + 0x2dcbd07]
+    227FF1: 48 85 ED                   test rbp, rbp
+    227FF4: 0F 84 BC 07 00 00          je 0x1402287b6
+    227FFA: 0F B7 45 2C                movzx eax, word ptr [rbp + 0x2c]
+    227FFE: 41 BA 02 00 00 00          mov r10d, 2
+    228004: 66 89 05 B5 B2 55 00       mov word ptr [rip + 0x55b2b5], ax <==
+    22800B: 8A 45 27                   mov al, byte ptr [rbp + 0x27]
+    22800E: 84 C0                      test al, al
+    228010: 75 0B                      jne 0x14022801d
+    228012: 66 44 89 15 38 05 5E 00    mov word ptr [rip + 0x5e0538], r10w
+    22801A: 8A 45 27                   mov al, byte ptr [rbp + 0x27]
+
+### 0x228005  [WRITE] -> 0x7832C0 :: mov dword ptr [rip + 0x55b2b5], eax ###
+    227FDD: 80 3D C6 4F 5B 00 FF       cmp byte ptr [rip + 0x5b4fc6], 0xff
+    227FE4: 0F 84 D1 07 00 00          je 0x1402287bb
+    227FEA: 48 8B 2D 07 BD DC 02       mov rbp, qword ptr [rip + 0x2dcbd07]
+    227FF1: 48 85 ED                   test rbp, rbp
+    227FF4: 0F 84 BC 07 00 00          je 0x1402287b6
+    227FFA: 0F B7 45 2C                movzx eax, word ptr [rbp + 0x2c]
+    227FFE: 41 BA 02 00 00 00          mov r10d, 2
+    228004: 66 89 05 B5 B2 55 00       mov word ptr [rip + 0x55b2b5], ax
+    22800B: 8A 45 27                   mov al, byte ptr [rbp + 0x27]
+    22800E: 84 C0                      test al, al
+    228010: 75 0B                      jne 0x14022801d
+    228012: 66 44 89 15 38 05 5E 00    mov word ptr [rip + 0x5e0538], r10w
+    22801A: 8A 45 27                   mov al, byte ptr [rbp + 0x27]
+    22801D: 41 BB 08 00 00 00          mov r11d, 8
+
+### 0x2C7F98  [WRITE] -> 0x7832C0 :: mov word ptr [rip + 0x4bb321], ax ###
+    2C7F70: B3 4B                      mov bl, 0x4b
+    2C7F72: 00 F2                      add dl, dh
+    2C7F74: 0F 10 05 0D 59 4C 00       movups xmm0, xmmword ptr [rip + 0x4c590d]
+    2C7F7B: F2 0F 11 05 0D 50 51 00    movsd qword ptr [rip + 0x51500d], xmm0
+    2C7F83: 0F 28 05 06 1E 58 01       movaps xmm0, xmmword ptr [rip + 0x1581e06]
+    2C7F8A: 0F 29 0D 1F B3 4B 00       movaps xmmword ptr [rip + 0x4bb31f], xmm1
+    2C7F91: 0F 28 0D 08 1E 58 01       movaps xmm1, xmmword ptr [rip + 0x1581e08]
+    2C7F98: 66 89 05 21 B3 4B 00       mov word ptr [rip + 0x4bb321], ax <==
+    2C7F9F: 8B 05 EB 58 4C 00          mov eax, dword ptr [rip + 0x4c58eb]
+    2C7FA5: 0F 29 05 34 B3 4B 00       movaps xmmword ptr [rip + 0x4bb334], xmm0
+    2C7FAC: 0F 28 05 FD 1D 58 01       movaps xmm0, xmmword ptr [rip + 0x1581dfd]
+
+### 0x2C7F99  [WRITE] -> 0x7832C0 :: mov dword ptr [rip + 0x4bb321], eax ###
+    2C7F71: 4B 00 F2                   add r10b, sil
+    2C7F74: 0F 10 05 0D 59 4C 00       movups xmm0, xmmword ptr [rip + 0x4c590d]
+    2C7F7B: F2 0F 11 05 0D 50 51 00    movsd qword ptr [rip + 0x51500d], xmm0
+    2C7F83: 0F 28 05 06 1E 58 01       movaps xmm0, xmmword ptr [rip + 0x1581e06]
+    2C7F8A: 0F 29 0D 1F B3 4B 00       movaps xmmword ptr [rip + 0x4bb31f], xmm1
+    2C7F91: 0F 28 0D 08 1E 58 01       movaps xmm1, xmmword ptr [rip + 0x1581e08]
+    2C7F98: 66 89 05 21 B3 4B 00       mov word ptr [rip + 0x4bb321], ax
+    2C7F9F: 8B 05 EB 58 4C 00          mov eax, dword ptr [rip + 0x4c58eb]
+    2C7FA5: 0F 29 05 34 B3 4B 00       movaps xmmword ptr [rip + 0x4bb334], xmm0
+    2C7FAC: 0F 28 05 FD 1D 58 01       movaps xmm0, xmmword ptr [rip + 0x1581dfd]
+
+### 0x2C8C16  [WRITE] -> 0x7832C0 :: mov word ptr [rip + 0x4ba6a3], ax ###
+    2C8BEE: A6                         cmpsb byte ptr [rsi], byte ptr [rdi]
+    2C8BEF: 4B 00 F2                   add r10b, sil
+    2C8BF2: 0F 10 05 8F 4C 4C 00       movups xmm0, xmmword ptr [rip + 0x4c4c8f]
+    2C8BF9: F2 0F 11 05 8F 43 51 00    movsd qword ptr [rip + 0x51438f], xmm0
+    2C8C01: 0F 28 05 88 11 58 01       movaps xmm0, xmmword ptr [rip + 0x1581188]
+    2C8C08: 0F 29 0D A1 A6 4B 00       movaps xmmword ptr [rip + 0x4ba6a1], xmm1
+    2C8C0F: 0F 28 0D 8A 11 58 01       movaps xmm1, xmmword ptr [rip + 0x158118a]
+    2C8C16: 66 89 05 A3 A6 4B 00       mov word ptr [rip + 0x4ba6a3], ax <==
+    2C8C1D: 8B 05 6D 4C 4C 00          mov eax, dword ptr [rip + 0x4c4c6d]
+    2C8C23: 0F 29 05 B6 A6 4B 00       movaps xmmword ptr [rip + 0x4ba6b6], xmm0
+    2C8C2A: 0F 28 05 7F 11 58 01       movaps xmm0, xmmword ptr [rip + 0x158117f]
+
+### 0x2C8C17  [WRITE] -> 0x7832C0 :: mov dword ptr [rip + 0x4ba6a3], eax ###
+    2C8BEF: 4B 00 F2                   add r10b, sil
+    2C8BF2: 0F 10 05 8F 4C 4C 00       movups xmm0, xmmword ptr [rip + 0x4c4c8f]
+    2C8BF9: F2 0F 11 05 8F 43 51 00    movsd qword ptr [rip + 0x51438f], xmm0
+    2C8C01: 0F 28 05 88 11 58 01       movaps xmm0, xmmword ptr [rip + 0x1581188]
+    2C8C08: 0F 29 0D A1 A6 4B 00       movaps xmmword ptr [rip + 0x4ba6a1], xmm1
+    2C8C0F: 0F 28 0D 8A 11 58 01       movaps xmm1, xmmword ptr [rip + 0x158118a]
+    2C8C16: 66 89 05 A3 A6 4B 00       mov word ptr [rip + 0x4ba6a3], ax
+    2C8C1D: 8B 05 6D 4C 4C 00          mov eax, dword ptr [rip + 0x4c4c6d]
+    2C8C23: 0F 29 05 B6 A6 4B 00       movaps xmmword ptr [rip + 0x4ba6b6], xmm0
+    2C8C2A: 0F 28 05 7F 11 58 01       movaps xmm0, xmmword ptr [rip + 0x158117f]
+
+### 0x2C8E70  [WRITE] -> 0x7832C0 :: mov word ptr [rip + 0x4ba449], ax ###
+    2C8E48: 4C 00 66 89                add byte ptr [rsi - 0x77], r12b
+    2C8E4C: 05 37 4A 4C 00             add eax, 0x4c4a37
+    2C8E51: 4C 89 6C 24 40             mov qword ptr [rsp + 0x40], r13
+    2C8E56: E8 55 BF FF FF             call 0x1402c4db0  -> 0x2C4DB0 [real]
+    2C8E5B: 0F B7 05 AE 4A 4C 00       movzx eax, word ptr [rip + 0x4c4aae]
+    2C8E62: 0F 28 05 87 4A 4C 00       movaps xmm0, xmmword ptr [rip + 0x4c4a87]
+    2C8E69: 0F 28 0D 90 4A 4C 00       movaps xmm1, xmmword ptr [rip + 0x4c4a90]
+    2C8E70: 66 89 05 49 A4 4B 00       mov word ptr [rip + 0x4ba449], ax <==
+    2C8E77: 8B 05 13 4A 4C 00          mov eax, dword ptr [rip + 0x4c4a13]
+    2C8E7D: 0F 29 05 1C A4 4B 00       movaps xmmword ptr [rip + 0x4ba41c], xmm0
+    2C8E84: F2 0F 10 05 FC 49 4C 00    movsd xmm0, qword ptr [rip + 0x4c49fc]
+
+### 0x2C8E71  [WRITE] -> 0x7832C0 :: mov dword ptr [rip + 0x4ba449], eax ###
+    2C8E49: 00 66 89                   add byte ptr [rsi - 0x77], ah
+    2C8E4C: 05 37 4A 4C 00             add eax, 0x4c4a37
+    2C8E51: 4C 89 6C 24 40             mov qword ptr [rsp + 0x40], r13
+    2C8E56: E8 55 BF FF FF             call 0x1402c4db0  -> 0x2C4DB0 [real]
+    2C8E5B: 0F B7 05 AE 4A 4C 00       movzx eax, word ptr [rip + 0x4c4aae]
+    2C8E62: 0F 28 05 87 4A 4C 00       movaps xmm0, xmmword ptr [rip + 0x4c4a87]
+    2C8E69: 0F 28 0D 90 4A 4C 00       movaps xmm1, xmmword ptr [rip + 0x4c4a90]
+    2C8E70: 66 89 05 49 A4 4B 00       mov word ptr [rip + 0x4ba449], ax
+    2C8E77: 8B 05 13 4A 4C 00          mov eax, dword ptr [rip + 0x4c4a13]
+    2C8E7D: 0F 29 05 1C A4 4B 00       movaps xmmword ptr [rip + 0x4ba41c], xmm0
+    2C8E84: F2 0F 10 05 FC 49 4C 00    movsd xmm0, qword ptr [rip + 0x4c49fc]
+
+### 0x2C9806  [WRITE] -> 0x7832C0 :: mov word ptr [rip + 0x4b9ab3], ax ###
+    2C97DE: 49 03 01                   add rax, qword ptr [r9]
+    2C97E1: 01 0F                      add dword ptr [rdi], ecx
+    2C97E3: 28 05 07 41 4C 00          sub byte ptr [rip + 0x4c4107], al
+    2C97E9: 0F B7 05 20 41 4C 00       movzx eax, word ptr [rip + 0x4c4120]
+    2C97F0: 0F 28 0D 09 41 4C 00       movaps xmm1, xmmword ptr [rip + 0x4c4109]
+    2C97F7: 0F 29 05 A2 9A 4B 00       movaps xmmword ptr [rip + 0x4b9aa2], xmm0
+    2C97FE: F2 0F 10 05 82 40 4C 00    movsd xmm0, qword ptr [rip + 0x4c4082]
+    2C9806: 66 89 05 B3 9A 4B 00       mov word ptr [rip + 0x4b9ab3], ax <==
+    2C980D: 8B 05 7D 40 4C 00          mov eax, dword ptr [rip + 0x4c407d]
+    2C9813: F2 0F 11 05 75 37 51 00    movsd qword ptr [rip + 0x513775], xmm0
+    2C981B: 0F 28 05 6E 05 58 01       movaps xmm0, xmmword ptr [rip + 0x158056e]
+
+### 0x2C9807  [WRITE] -> 0x7832C0 :: mov dword ptr [rip + 0x4b9ab3], eax ###
+    2C97DF: 03 01                      add eax, dword ptr [rcx]
+    2C97E1: 01 0F                      add dword ptr [rdi], ecx
+    2C97E3: 28 05 07 41 4C 00          sub byte ptr [rip + 0x4c4107], al
+    2C97E9: 0F B7 05 20 41 4C 00       movzx eax, word ptr [rip + 0x4c4120]
+    2C97F0: 0F 28 0D 09 41 4C 00       movaps xmm1, xmmword ptr [rip + 0x4c4109]
+    2C97F7: 0F 29 05 A2 9A 4B 00       movaps xmmword ptr [rip + 0x4b9aa2], xmm0
+    2C97FE: F2 0F 10 05 82 40 4C 00    movsd xmm0, qword ptr [rip + 0x4c4082]
+    2C9806: 66 89 05 B3 9A 4B 00       mov word ptr [rip + 0x4b9ab3], ax
+    2C980D: 8B 05 7D 40 4C 00          mov eax, dword ptr [rip + 0x4c407d]
+    2C9813: F2 0F 11 05 75 37 51 00    movsd qword ptr [rip + 0x513775], xmm0
+    2C981B: 0F 28 05 6E 05 58 01       movaps xmm0, xmmword ptr [rip + 0x158056e]

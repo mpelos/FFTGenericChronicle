@@ -164,6 +164,8 @@ public class Mod : ModBase
     private const int PLAN_EXPECTED_MAX_HP = 68;
     private const int PRECLAMP_BUFFER_SIZE = PRECLAMP_EVENT_BUFFER_SIZE + (PRECLAMP_PLAN_MAX_SLOTS * PRECLAMP_PLAN_SLOT_SIZE);
     private const int PREVIEW_HITPCT_BUFFER_SIZE = 64;
+    private const int PREVIEW_DAMAGE_BUFFER_SIZE = 320;
+    private const int PREVIEW_SOURCE_BUFFER_SIZE = 320;
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -182,6 +184,10 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
     private nint _previewHitPctBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _previewHitPctHook;
+    private nint _previewDamageBuf;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _previewDamageHooks = new();
+    private nint _previewSourceBuf;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _previewSourceHooks = new();
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -307,6 +313,8 @@ public class Mod : ModBase
             InstallEvadeInputProbeIfEnabled(baseAddr);
             InstallRollVerdictProbeIfEnabled(baseAddr);
             InstallPreviewHitPctControlIfEnabled(baseAddr);
+            InstallPreviewDamageControlIfEnabled(baseAddr);
+            InstallPreviewForecastSourceControlIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -476,6 +484,201 @@ public class Mod : ModBase
         };
         if (force)
             asm.Add($"mov ax, {forced}");   // game's own store at 0x228004 now writes OUR value
+        return asm.ToArray();
+    }
+
+    // PREVIEW DAMAGE display control. The on-screen forecast DAMAGE number lives at static buffer
+    // 0x1407832BE (RVA 0x7832BE), written by a single real-code store at 0x228488 (`mov word
+    // [0x7832BE], dx`). That store is a JUMP TARGET (a format-dispatch's branches all jmp onto it) AND
+    // RIP-relative, so we do NOT hook it directly. Instead we hook the terminal `jmp 0x228488` of each
+    // numeric branch (clean 5-byte E9 where the value is already in dx) with ExecuteFirst: set dx, then
+    // the stolen jmp falls into the unmodified store, which writes OUR dx -> the displayed number is
+    // ours, no race. Confirmed every branch parks the value in dx. WHICH branch an action uses varies
+    // (a basic attack/Fire forecast does NOT use 0x2280D7), so we hook ALL numeric branches; the buffer
+    // records per-branch fire count + last natural so we can see which branch a given preview used.
+    // ValidateExpectedBytes skips any branch whose bytes don't match (safe). Buffer: [0]=total fires;
+    // per site i at 16+i*16: [+0]=fires [+4]=last natural [+8]=site RVA.
+    private static readonly (int Rva, string Bytes)[] PreviewDamageBranchSites =
+    {
+        (0x22802F, "E9 54 04 00 00"),
+        (0x228050, "E9 33 04 00 00"),
+        (0x22806E, "E9 15 04 00 00"),
+        (0x2280D7, "E9 AC 03 00 00"),
+        (0x228125, "E9 5E 03 00 00"),
+        (0x228195, "E9 EE 02 00 00"),
+        (0x2281E9, "E9 9A 02 00 00"),
+        (0x228316, "E9 6D 01 00 00"),
+    };
+
+    private void InstallPreviewDamageControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.PreviewDamageControlEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[PREVIEW-DAMAGE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _previewDamageBuf = Marshal.AllocHGlobal(PREVIEW_DAMAGE_BUFFER_SIZE);
+        for (int i = 0; i < PREVIEW_DAMAGE_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_previewDamageBuf, i, 0);
+
+        int installed = 0;
+        for (int slot = 0; slot < PreviewDamageBranchSites.Length; slot++)
+        {
+            var (rva, bytes) = PreviewDamageBranchSites[slot];
+            nint address = moduleBase + rva;
+            if (!ValidateExpectedBytes(address, bytes, out string byteError))
+            {
+                Line($"[PREVIEW-DAMAGE-SKIP] rva=0x{rva:X} slot={slot} {byteError}");
+                continue;
+            }
+            try
+            {
+                var asm = BuildPreviewDamageHookAsm(rva, slot);
+                var hook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+                _previewDamageHooks.Add(hook);
+                installed++;
+                Line($"[PREVIEW-DAMAGE-HOOK] rva=0x{rva:X} addr=0x{address:X} slot={slot}");
+            }
+            catch (Exception ex)
+            {
+                Line($"[PREVIEW-DAMAGE-FAILED] rva=0x{rva:X} slot={slot} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+        Line($"[PREVIEW-DAMAGE-SUMMARY] buf=0x{_previewDamageBuf:X} installed={installed}/{PreviewDamageBranchSites.Length} " +
+            $"forced={FormatMaybeInt(_settings.PreviewDamageForcedValue)} logOnly={(_settings.PreviewDamageLogOnly ? 1 : 0)}");
+        Flush();
+    }
+
+    private string[] BuildPreviewDamageHookAsm(int siteRva, int slot)
+    {
+        bool force = _settings.PreviewDamageForcedValue >= 0 && !_settings.PreviewDamageLogOnly;
+        int forced = Math.Clamp(_settings.PreviewDamageForcedValue, 0, 0xFFFF);
+        string total = $"0{_previewDamageBuf:X}h";
+        string slotAddr = $"0{(_previewDamageBuf + 16 + (slot * 16)):X}h";
+        string siteId = $"0{siteRva:X}h";
+
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rcx",
+            "pushfq",
+            $"mov rax, {total}",
+            "test rax, rax",
+            "jz .skip",
+            "add dword [rax], 1",         // [buf+0] total fire count
+            $"mov rax, {slotAddr}",        // this branch's slot record
+            "add dword [rax], 1",         // slot fire count
+            "movzx ecx, dx",              // natural forecast number (dx = value about to be stored)
+            "mov [rax+4], ecx",           // slot last natural
+            $"mov dword [rax+8], {siteId}",// slot site RVA
+            ".skip:",
+            "popfq",
+            "pop rcx",
+            "pop rax",
+        };
+        if (force)
+            asm.Add($"mov dx, {forced}");   // stolen `jmp 0x228488` falls into the store, which writes OUR dx
+        return asm.ToArray();
+    }
+
+    // FORECAST DAMAGE SOURCE control — the COHERENT lever (number + HP-bar + apply all agree).
+    // The forecast "object" (global 0x142FF3CF8) is just unit_table[idx]+0x1BE, so obj+0x6 == unit+0x1C4 ==
+    // the staged HP-damage field. The preview NUMBER (formatter at 0x2284xx), the HP-bar ghost-depletion
+    // block, AND the apply path all read this one field; the pre-clamp hook (0x30A66F) rewrites it at
+    // RESOLUTION. Painting the display number (0x7832BE) was cosmetic because it never touched +0x1C4 —
+    // so the bar stayed natural. Controlling obj+0x6 at the finalizers that COMPUTE it makes number + bar
+    // coherent (race-free: we write at the engine's own store, before any downstream read). The engine has
+    // a few formula finalizers that write obj+0x6; we hook each (ExecuteFirst, force the store's register)
+    // so whichever an action uses, +0x1C4 = our value. Per-site counters reveal which finalizer fired.
+    // Buffer: [0]=total fires; per site i at 16+i*16: [+0]=fires [+4]=last natural [+8]=site RVA.
+    private static readonly (int Rva, string Bytes, string Reg)[] PreviewForecastSourceSites =
+    {
+        (0x30637E, "66 41 89 50 06", "dx"),   // mov [r8+6],dx  — confirmed live: MAGIC (Fire) finalizer
+        (0x307DC4, "66 41 89 52 06", "dx"),   // mov [r10+6],dx — (100-p1)(100-p2)*base/10000 path
+        (0x309664, "66 41 89 51 06", "cx"),   // mov [r9+6],cx  — product-clamped path
+        (0x308D8F, "66 89 41 06",    "ax"),   // mov [rcx+6],ax — Q15-scaled store (physical-attack candidate)
+    };
+
+    private void InstallPreviewForecastSourceControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.PreviewForecastSourceControlEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[PREVIEW-SOURCE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _previewSourceBuf = Marshal.AllocHGlobal(PREVIEW_SOURCE_BUFFER_SIZE);
+        for (int i = 0; i < PREVIEW_SOURCE_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_previewSourceBuf, i, 0);
+
+        int installed = 0;
+        for (int slot = 0; slot < PreviewForecastSourceSites.Length; slot++)
+        {
+            var (rva, bytes, reg) = PreviewForecastSourceSites[slot];
+            nint address = moduleBase + rva;
+            if (!ValidateExpectedBytes(address, bytes, out string byteError))
+            {
+                Line($"[PREVIEW-SOURCE-SKIP] rva=0x{rva:X} slot={slot} {byteError}");
+                continue;
+            }
+            try
+            {
+                var asm = BuildPreviewForecastSourceHookAsm(rva, slot, reg);
+                var hook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+                _previewSourceHooks.Add(hook);
+                installed++;
+                Line($"[PREVIEW-SOURCE-HOOK] rva=0x{rva:X} addr=0x{address:X} slot={slot} reg={reg}");
+            }
+            catch (Exception ex)
+            {
+                Line($"[PREVIEW-SOURCE-FAILED] rva=0x{rva:X} slot={slot} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+        Line($"[PREVIEW-SOURCE-SUMMARY] buf=0x{_previewSourceBuf:X} installed={installed}/{PreviewForecastSourceSites.Length} " +
+            $"forced={FormatMaybeInt(_settings.PreviewForecastSourceForcedValue)} logOnly={(_settings.PreviewForecastSourceLogOnly ? 1 : 0)}");
+        Flush();
+    }
+
+    private string[] BuildPreviewForecastSourceHookAsm(int siteRva, int slot, string reg)
+    {
+        bool force = _settings.PreviewForecastSourceForcedValue >= 0 && !_settings.PreviewForecastSourceLogOnly;
+        int forced = Math.Clamp(_settings.PreviewForecastSourceForcedValue, 0, 0xFFFF);
+        string total = $"0{_previewSourceBuf:X}h";
+        string slotAddr = $"0{(_previewSourceBuf + 16 + (slot * 16)):X}h";
+        string siteId = $"0{siteRva:X}h";
+
+        // rbx is the scratch (NOT a store register — sites use dx/cx — so the natural value in {reg}
+        // survives our bookkeeping and we read it cleanly).
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rbx",
+            "pushfq",
+            $"movzx ebx, {reg}",            // capture natural value FIRST (before rax is used as scratch — matters when reg is ax)
+            $"mov rax, {total}",
+            "test rax, rax",
+            "jz .skip",
+            "add dword [rax], 1",          // [buf+0] total fire count
+            $"mov rax, {slotAddr}",         // this finalizer's slot record
+            "add dword [rax], 1",          // slot fire count
+            "mov [rax+4], ebx",            // slot last natural (captured above)
+            $"mov dword [rax+8], {siteId}", // slot site RVA
+            ".skip:",
+            "popfq",
+            "pop rbx",
+            "pop rax",
+        };
+        if (force)
+            asm.Add($"mov {reg}, {forced}");   // the engine's own store then writes OUR value to obj+0x6 (= +0x1C4)
         return asm.ToArray();
     }
 
@@ -1712,6 +1915,7 @@ public class Mod : ModBase
                 CaptureEvadeInputProbeEvents(nowTick);
                 CaptureRollVerdictProbeEvents(nowTick);
                 PollRegisteredUnits(nowTick);
+                PokeForecastPreviewIfEnabled();
             }
             catch (Exception ex)
             {
@@ -1726,6 +1930,38 @@ public class Mod : ModBase
     }
 
     private int PollIntervalMs => Math.Clamp(_settings.UnitPollIntervalMs, 1, 1000);
+
+    // FORECAST PREVIEW POKE — the UNIVERSAL preview-damage lever (proven live 2026-06-28 for physical AND
+    // magic). The forecast "object" pointed to by global 0x142FF3CF8 is just target_unit+0x1BE, so obj+0x6
+    // == unit+0x1C4 == the staged-damage field that drives BOTH the on-screen number and the HP-bar ghost.
+    // The engine computes obj+6 ONCE per preview (does NOT rewrite per-frame — proven 300/300 writes stuck),
+    // so a 20ms poll-write holds our value; number + bar both follow it. This supersedes the finalizer hooks
+    // (which only covered some action types) and the cosmetic display-number paint. Safe: we only write when
+    // the global points cleanly into the unit table; at action resolution the producer re-stages +0x1C4
+    // before apply, so a preview poke never leaks into the real result (the pre-clamp hook owns the result).
+    private int _forecastPokeCount;
+    private void PokeForecastPreviewIfEnabled()
+    {
+        if (!_settings.PreviewForecastPokeEnabled || _settings.PreviewForecastPokeValue < 0 || _moduleBase == 0)
+            return;
+        nint globalAddr = _moduleBase + _settings.PreviewForecastGlobalRva;
+        nint obj = Marshal.ReadIntPtr(globalAddr);          // forecast object = target_unit + ObjOffset
+        if (obj == 0) return;                               // null when no preview is displayed
+        long stride = _settings.PreviewForecastUnitStride;
+        if (stride <= 0) return;
+        long unitTable = _moduleBase.ToInt64() + _settings.PreviewForecastUnitTableRva;
+        long rel = obj.ToInt64() - _settings.PreviewForecastObjOffset - unitTable;
+        long maxUnits = Math.Max(1, _settings.MaxTrackedBattleUnits);
+        if (rel < 0 || rel > stride * maxUnits || (rel % stride) != 0)
+            return;                                         // not aligned into the unit table -> skip (no corruption)
+        short value = (short)Math.Clamp(_settings.PreviewForecastPokeValue, 0, 0x7FFF);
+        Marshal.WriteInt16(obj + _settings.PreviewForecastDamageFieldOffset, value);
+        if (_forecastPokeCount++ < 3)
+        {
+            Line($"[FORECAST-POKE] obj=0x{obj.ToInt64():X} unitIdx={rel / stride} wrote unit+0x{_settings.PreviewForecastObjOffset + _settings.PreviewForecastDamageFieldOffset:X}={value}");
+            Flush();
+        }
+    }
 
     private void CaptureHookObservation(ref int lastHookCount, long nowTick)
     {
@@ -7147,6 +7383,34 @@ internal sealed class RuntimeSettings
     public string PreviewHitPctExpectedBytes { get; set; } = "41 BA 02 00 00 00";
     public int PreviewHitPctForcedValue { get; set; } = -1;                     // 0..65535 to force; -1 = observe only
     public bool PreviewHitPctLogOnly { get; set; } = false;                     // record natural % without overwriting
+
+    // PREVIEW DAMAGE display control (twin of the hit% hook). Hooks the terminal `jmp 0x228488` of the
+    // forecast-number dispatch and sets dx before the store at 0x228488 writes the on-screen number to
+    // 0x1407832BE. Default RVA 0x2280D7 = primary attack/damage branch. Purely visual; does not change
+    // the real damage (that is the pre-clamp lever).
+    public bool PreviewDamageControlEnabled { get; set; } = false;
+    public int PreviewDamageForcedValue { get; set; } = -1;                     // 0..65535 to force; -1 = observe only
+    public bool PreviewDamageLogOnly { get; set; } = false;                     // record natural number without overwriting (hooks all numeric branches)
+
+    // FORECAST DAMAGE SOURCE control — the COHERENT lever. Hooks the finalizers that write obj+0x6
+    // (== unit+0x1C4, the staged-damage field that drives the preview NUMBER + HP-bar + apply). Forcing
+    // this makes the on-screen number AND the ghost HP-bar both reflect our value, unlike the cosmetic
+    // display-number paint. Pair with the pre-clamp force (same +0x1C4) so preview == result.
+    public bool PreviewForecastSourceControlEnabled { get; set; } = false;
+    public int PreviewForecastSourceForcedValue { get; set; } = -1;             // 0..65535 to force; -1 = observe only
+    public bool PreviewForecastSourceLogOnly { get; set; } = false;             // record natural staged-damage without overwriting
+
+    // FORECAST PREVIEW POKE — the universal preview-damage lever (poll-write of obj+0x6 == unit+0x1C4).
+    // Drives the on-screen forecast NUMBER and the HP-bar ghost together, for physical AND magic, any action.
+    // Proven live 2026-06-28. Set Enabled + PokeValue (the staged damage to display); structural RVAs default
+    // to the known stable addresses (no ASLR) but stay overridable in case of a game update.
+    public bool PreviewForecastPokeEnabled { get; set; } = false;
+    public int PreviewForecastPokeValue { get; set; } = -1;                     // staged-damage value to show; -1 = off
+    public int PreviewForecastGlobalRva { get; set; } = 0x2FF3CF8;              // global holding the forecast object ptr (0x142FF3CF8)
+    public int PreviewForecastUnitTableRva { get; set; } = 0x1853CE0;          // unit table base (0x141853CE0)
+    public int PreviewForecastUnitStride { get; set; } = 0x200;                // per-unit stride
+    public int PreviewForecastObjOffset { get; set; } = 0x1BE;                 // forecast object = unit + 0x1BE
+    public int PreviewForecastDamageFieldOffset { get; set; } = 0x6;           // obj+0x6 == unit+0x1C4 staged damage
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;
