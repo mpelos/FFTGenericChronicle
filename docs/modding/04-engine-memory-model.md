@@ -82,18 +82,22 @@ Offsets are relative to the unit pointer. The struct spans at least `0x200` byte
 | `+0x45` | Weapon attack L | byte | Effective, equipment-derived |
 | `+0x46` | Weapon parry R % | byte | Equipment-derived |
 | `+0x47` | Weapon parry L % | byte | Equipment-derived |
+| `+0x49` | Accessory/cloak physical evade % | byte | **Strong (inferred)** — drives evade-type `0x01` (cloak) |
 | `+0x4A` | Shield physical parry % | byte | Equipment-derived |
 | `+0x4B` | Physical evasion % | byte | = the job's `CharacterEvasion` |
 | `+0x4E` | Shield magick parry % | byte | Equipment-derived |
 
-These five evade bytes are **live inputs to the avoidance roll** — ✅ **PROVEN 2026-06-27**: the Denuvo
+These evade bytes are **live inputs to the avoidance roll** — ✅ **PROVEN 2026-06-27**: the Denuvo
 VM reads them from the unit's live struct at roll time, so **writing them before the roll controls
 hit / miss / block / parry**. Denuvo virtualizes *code*, not *data* — the struct is normal writable
 memory. Set on the **defender**: `+0x4B` high ⇒ class evade ("Miss", type `0x04`); `+0x46/+0x47` high ⇒
-weapon parry (`0x02`); `+0x4A/+0x4E` high ⇒ shield block (`0x03`); all five `= 0` ⇒ guaranteed hit
-(neutralizes avoidance in memory, no data edit). Values 0–100. This is the *input-control* path — the
-cleaner primary, vs. the *output-control* hooks (pre-clamp `0x30A66F` debit §4.2 + selector `0x205210`).
-Full proof: `work/input-control-evade-PROVEN.md`; mechanism + dead ends in `05-reverse-engineering.md` §4.
+weapon parry (`0x02`); `+0x4A/+0x4E` high ⇒ shield block (`0x03`); `+0x49` high ⇒ cloak (`0x01`,
+inferred); the five **physical** bytes `+0x46/+0x47/+0x4A/+0x4B/+0x4E` all `= 0` ⇒ guaranteed hit
+(neutralizes avoidance in memory, no data edit). Values 0–100. The mod's `EvadeOverride*` knob exposes
+nine bytes (`+0x46/47/48/49/4A/4B/4C/4D/4E`; `+0x48/4C/4D` are inferred magic-evade partners). This is
+the *input-control* path — the cleaner primary, vs. the *output-control* hooks (pre-clamp `0x30A66F`
+debit §4.2 + selector `0x205210`). Full proof: `work/input-control-evade-PROVEN.md`; mechanism + dead
+ends in `05-reverse-engineering.md` §4.
 
 Raw → effective relationship (**Proven**): for PA/MA/Speed, `raw (+0x38/39/3A) + sum(equipment
 stat bonuses) == effective (+0x3E/3F/40)`.
@@ -119,10 +123,11 @@ Sanity validation rejects impossible candidates (a stride scan once accepted a f
 - Move/Jump greater than `32`;
 - Brave/Faith greater than `100`.
 
-Still unmapped from the struct: R/S/M / secondary ability ids (somewhere in `0x52..0x8F`), the full
-status bitfield (only the KO bit is mapped), elemental affinity (likely derived), and geometry
-(position/facing/height). `0x70..0x8F` look like object pointers. Stats drift with level, so only
-map level-matched dumps.
+Still unmapped from the struct: R/S/M / secondary ability ids (somewhere in `0x52..0x8F`), elemental
+affinity (likely derived), and geometry (position/facing/height). `0x70..0x8F` look like object
+pointers. The status bitfield is **partly mapped and DATA-controllable** (see §2.3): `0x20`=KO and
+`0x10`=Undead are both live-confirmed (the earlier offline `0x10`="control-flip" guess was WRONG);
+remaining bits to map empirically. Stats drift with level, so only map level-matched dumps.
 
 Width limits: stats are bytes; HP/MP are 16-bit words; damage is a 16-bit word; engine math is
 integer (the remaster applies some multipliers as AVX floats, then truncates to int).
@@ -172,7 +177,8 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 
 | Offset | Meaning | Confidence | Notes |
 | --- | --- | --- | --- |
-| `+0x61` | status / pending flag byte | **Proven** for KO bit; **Strong** for pending bit | |
+| `+0x57` | innate / equipment status source | **Strong** | OR-source for the effective byte; clear here to cure equip-sourced status |
+| `+0x61` | effective status byte (mirror) | **Proven** KO bit; **Strong** | recomputed in real code at `0x30D42A` as `(+0x1EF & 0xF2) \| +0x57` |
 | `+0x18D` | pending timer / charge phase | **Strong** | |
 | `+0x1A0` | action-boundary byte | **Hypothesis** | |
 | `+0x1A1` | action-boundary byte | **Hypothesis** | |
@@ -182,21 +188,32 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 | `+0x1BB` | hit/phase marker (`bb`) | **Proven** | `0x02` on damage-apply (hit), `0x01` on an evade |
 | `+0x1BE` | staged-result-present | **Proven** | `0x01` = damage result staged, `0x00` = evade / no-damage |
 | `+0x1C0` | EVADE-TYPE (animation lever) | **Proven** | see enum below |
-| `+0x1C4` | forecast damage / staged debit / target cache | **Proven**, context-dependent | also "staged DAMAGE (word)" at apply |
-| `+0x1C6` | staged HEAL | **Proven** | apply: `newHP = clamp(HP + heal - dmg)` |
+| `+0x1C4` | forecast damage / staged HP-debit / target cache | **Proven**, context-dependent | also "staged DAMAGE (word)" at apply |
+| `+0x1C6` | staged HP-HEAL | **Proven** | apply: `newHP = clamp(HP + heal - dmg)` |
+| `+0x1C8` | staged MP-debit (word) | **Strong** (static-proven) | MP analogue of `+0x1C4` |
+| `+0x1CA` | staged MP-credit (word) | **Strong** | apply: `newMP = clamp(MP + 0x1CA - 0x1C8)` |
 | `+0x1D8` | forecast / charge / target metadata | **Strong** | charge/forecast value (word) |
 | `+0x1E5` | forecast / target metadata; resultKind bits | **Strong** | see resultKind bits below |
-| `+0x1EF` | status / pending / KO mirror | **Strong** | |
+| `+0x1EF` | status master / KO mirror (durable) | **Strong** | the durable status master; `+0x61` is recomputed from it |
 | `+0x1F5` | death / lifecycle byte | **Hypothesis** | |
 
 Known bit / value meanings:
 
 ```text
-unit+0x61  bit 0x20  = KO/dead state
-unit+0x1EF bit 0x20  = KO/dead mirror/state
-unit+0x61  value 0x08 = pending/charging action-ish
-unit+0x1EF value 0x08 = pending/charging mirror/state
+unit+0x1EF bit 0x20  = KO/dead state (durable master)
+unit+0x61  bit 0x20  = KO/dead state (effective mirror)
+unit+0x1EF bit 0x10  = Undead (live-confirmed 2026-06-27; offline "control-flip" guess was WRONG)
+unit+0x1EF value 0x08 = pending/charging action-ish (per-turn-cleared on +0x61 via the 0xF2 mask)
+unit+0x61  value 0x08 = pending/charging mirror/state
 ```
+
+**Status is DATA-controllable** (✅ live-confirmed: `+0x1EF/+0x61 |= 0x10` made Ramza Undead). The
+effective byte `+0x61` is recomputed in real code at `0x30D42A` as `(+0x1EF & 0xF2) | +0x57`, so:
+- **Force** a status → OR the bit onto `+0x1EF` (durable master) AND `+0x61` (mirror, so it shows this
+  frame); the `0x08`-class bits are masked out each turn (`& 0xF2`), so re-write them every poll.
+- **Cure** → clear the bit on `+0x1EF`, `+0x61`, and `+0x57` (the innate/equipment source).
+Remaining bit→ailment meanings are mapped empirically (offline guesses proved partly wrong). Mod knob:
+`StatusOverride1EF/61/57` (see `06-code-mod-runtime-dsl.md`).
 
 Per-action RESULT / OUTCOME fields (**Proven**, the hit/miss/block/parry control surface; same
 `0x200` unit struct, written by the engine at action resolution and read by the result/animation
@@ -209,8 +226,10 @@ so writing them drives the result and the native animation):
 +0x1C0  EVADE-TYPE (byte)  ** the animation lever ** (also passed in cl to the selector):
         0x00 hit | 0x01 cloak/accessory evade | 0x02 weapon parry | 0x03 shield parry/block
         0x04 class evade ("Miss") | 0x06 plain miss (failed accuracy roll, e.g. Steal)
-        (0x05 is an unobserved gap, likely unused)
-+0x1C4  staged DAMAGE (word)    +0x1C6  staged HEAL (word)   apply: newHP = clamp(HP + heal - dmg)
+        0x0B Blade Grasp (reaction; live-observed)
+        (0x05 / 0x07–0x0A are unobserved gaps, likely unused)
++0x1C4  staged HP-DMG (word)   +0x1C6  staged HP-HEAL (word)   apply: newHP = clamp(HP + heal - dmg)
++0x1C8  staged MP-DEBIT (word) +0x1CA  staged MP-CREDIT (word)  apply: newMP = clamp(MP + 0x1CA - 0x1C8)
 +0x1D8  charge/forecast value (word)
 +0x1E5  resultKind bits: 0x80 damage | 0x40 heal | 0x10 heal/MP | 0x08 status | 0x01 stat-change | 0x20 special
 ```
@@ -237,6 +256,23 @@ different phases:
   rewrite;
 - for AoE, secondary targets may not show forecast damage there, but do get staged damage at final
   HP application.
+
+### 2.4 Preview Hit-% UI Buffer — **Proven** (DCL Layer 1, visual)
+
+The displayed attack-forecast hit-% does **not** live in the unit struct — it sits in a UI buffer at
+the static address `0x1407832C0` (RVA `0x7832C0`), plus three transient heap mirrors. Located via a
+differential memory scan (`work/mem_scan.py`). The value the renderer draws is `0x7832C0`.
+
+Data flow (real code, not VM): a global pointer at `0x142FF3CF8` holds a **forecast object**; that
+object's field `+0x2C` is the computed hit-%; real code copies it to the display buffer at `0x228004`
+(`mov word [0x7832C0], ax`, source loaded at `0x227FFA movzx eax,[rbp+0x2C]`). ⚠️ **The forecast
+object's `+0x2C` (hit-%) is unrelated to the unit struct's `+0x2C` = Faith (§2.1) — different objects.**
+
+Control: hook `0x227FFE` (a non-RIP instruction between the load and the store) and set `AX` before the
+store → the engine writes our value at copy time, on the same redraw the renderer reads. ✅ proven live
+2026-06-27 (forced 7 shown for every target while the engine's true value was 3). **Purely visual** —
+the real hit roll is computed independently in the VM and is unaffected. Full RE: `05` §10; mod knob
+`PreviewHitPct*` in `06`.
 
 ## 3. Battle Actor Array — **Proven** (one battle/save; cross-battle stability unverified)
 
@@ -318,7 +354,7 @@ Register lessons:
 ```text
 Approx RVA: 0x30A66F
 Expected bytes: 0F BF 45 06
-Observed purpose: reads staged debit before vanilla HP application
+Observed purpose: COMBINED HP+MP apply — reads staged debit/credit before vanilla applies HP and MP
 ```
 
 Register/state model:
@@ -327,9 +363,14 @@ Register/state model:
 rdi = authoritative target unit pointer
 rcx/r8 often also target in successful captures, but do not rely on them over rdi/event target
 rbp = target + 0x1BE
-[rbp+6] = target + 0x1C4 = staged debit / raw damage
-[rbp+8] = staged credit / heal-like value
+[rbp+6]  = target + 0x1C4 = staged HP-debit / raw damage
+[rbp+8]  = target + 0x1C6 = staged HP-credit / heal-like value
+[rbp+10] = target + 0x1C8 = staged MP-debit ; [rbp+12] = +0x1CA = staged MP-credit
 ```
+
+The same apply routine (`0x30A51C`) also writes MP: `newMP = clamp(MP + word[+0x1CA] - word[+0x1C8],
+0, MaxMP)`, stored `mov [rdi+0x34], ax` at `0x30A6CC`. So this one hook can rewrite **MP** cost/damage/
+restore as well as HP — the MP control mechanism is identical to HP (force the staged MP words).
 
 What it gives: pre-apply target HP; raw staged damage (`oldDebit`) before clamp; raw staged credit
 (`oldCredit`) for heal/credit-like cases; a place to rewrite damage before vanilla applies HP and

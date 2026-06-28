@@ -176,10 +176,14 @@ code mod computes the result in C# over the in-memory battle-stats struct (all e
 Br/Fa, HP/MP cur+max, Level, Move/Jump, Zodiac, status, element, height, distance, turn/CT, RNG).
 Limits: integer arithmetic, result clamped to the engine's damage width (16-bit), stat bytes. No
 modding API exposes a damage hook — neither the loader managers nor Faith Framework — and the
-damage routine itself is Denuvo-virtualized, so the code mod owns the final result through a
-post-damage reconciler rather than by hooking the routine directly. The reverse-engineering picture
-is in `05-reverse-engineering.md`; the code-mod runtime and formula DSL are in
-`06-code-mod-runtime-dsl.md`.
+damage routine itself is Denuvo-virtualized, so the code mod owns the final result by rewriting the
+engine's staged debit at the pre-clamp hook (`0x30A66F`) before vanilla applies HP — delivering even
+lethal damage in the same hit — with a post-damage reconciler as fallback, rather than by hooking the
+virtualized routine directly. **Accuracy/avoidance is also Tier-2-controllable** (not a data field):
+hit/miss/block/parry by writing the defender's live evade bytes (input-control) or repainting the
+result selector (output-control); status, reactions (Brave), MP, and the forecast hit-% display are
+likewise code-mod levers. The reverse-engineering picture is in `05-reverse-engineering.md`; the
+code-mod runtime, formula DSL, and control levers are in `06-code-mod-runtime-dsl.md`.
 
 **Plan for Generic Chronicle:** ~90% via Tier 1 (repoint formulas, retune X/Y/element/status,
 rebuild jobs + weapons), plus a small set of Tier 2 custom formulas for signature mechanics the

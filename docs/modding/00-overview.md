@@ -22,15 +22,23 @@ you cannot invent new math - you choose from the fixed catalog and feed only two
 (no new variable combinations, no >2 params, no custom scaling curve).
 
 **Level 2 - Arbitrary new math (any combination of attributes/equipment, any number of terms, any
-scaling).** Requires a code mod. The direct formula-routine hook is not available: that routine is
-Denuvo-virtualized and cannot be located by static AOB scan. The viable route is a post-damage
-runtime reconciler - safe data-layer placeholder actions produce stable HP/MP deltas, the code mod
-reads CT/action/equipment context, computes the formula in C#, and reconciles the final HP/MP.
-Reloaded-II hooks at stable code touchpoints make this possible. Even lethal damage lands in the
-same hit: the code mod rewrites the engine's staged debit just before HP application, and the engine
-still owns the HP clamp and KO/death (a memory write cannot force death). Attacker/action context is
-resolved at the damage frame, with CT as a fallback signal. Live struct offsets and the runtime DSL
-are documented in `04` and `06`.
+scaling).** Requires a code mod. The direct formula routine is Denuvo-virtualized and cannot be
+located by static AOB scan — **but Denuvo virtualizes *code*, not *data*:** the unit struct and UI
+buffers the VM reads/writes are ordinary, externally read/write-able memory. So the code mod controls
+combat by hooking stable `.text` touchpoints and reading/writing that memory, never by hooking the
+virtualized math. Proven control (2026-06-27):
+
+- **Damage / MP magnitude** — rewrite the engine's staged debit at the pre-clamp hook (`0x30A66F`)
+  just before HP/MP application; even lethal damage lands in the SAME hit through vanilla's own HP
+  clamp and KO/death (a memory write cannot force death — the engine still owns it). This supersedes
+  the older late post-damage reconciler (now a fallback).
+- **Hit / miss / block / parry** — write the defender's live evade bytes before the roll
+  (input-control, the proven primary), or repaint the result selector `0x205210` (output-control).
+- **Status** (live-confirmed Undead via `+0x1EF/+0x61`), **reactions** (Brave-gate via `+0x2B`), and
+  the **forecast hit-% display** (visual, hook `0x227FFE`) are likewise controllable.
+
+Attacker/action context is resolved at the damage frame, with CT as a fallback signal. Live struct
+offsets, the hook map, and the runtime DSL/control levers are documented in `04`, `05`, and `06`.
 
 ## The four editing layers
 
@@ -38,7 +46,9 @@ The mod has four distinct editing surfaces:
 
 - **Layer A - Runtime code mod (Reloaded-II, `FFT_enhanced.exe`).** Hooks stable `.text`
   touchpoints to read the live battle-unit struct (HP/MP/PA/MA/Speed/Brave/Faith/Level/etc.) and
-  rewrite computed damage/HP/MP. This is how arbitrary Level-2 math is done. The hardcoded formula
+  rewrite computed damage/HP/MP. It also authors combat OUTCOMES (hit/miss/block/parry), status,
+  reactions, and the forecast hit-% display via additional stable hooks and live-struct writes. This
+  is how arbitrary Level-2 math is done. The hardcoded formula
   routines (the math each "Formula id" computes, classic WotL catalog ids 0x00-0x64) also live in
   the exe; changing the math directly is a code mod, but abilities are normally just re-pointed to
   existing formulas instead. Struct offsets: see `04`.
@@ -57,7 +67,13 @@ The mod has four distinct editing surfaces:
   rework weapons/armor/status/skillsets via TableData XML, rebuild encounters via ENTD.
 - **Arbitrary math is not possible in data.** Data picks from the fixed catalog of ~100 hardcoded
   routines and feeds two byte parameters (X, Y) + element/status. Free math requires the Layer-A
-  code mod, via the post-damage reconciler in `06` (not a direct damage-routine hook).
+  code mod, via the same-hit pre-clamp staged-debit hook in `06` (not a direct damage-routine hook).
+- **Denuvo virtualizes code, not data — combat is PROVEN controllable (2026-06-27).** The damage
+  routine can't be hooked, but the memory it reads/writes can: damage/MP via the pre-clamp hook
+  (`0x30A66F`, same-hit), hit/miss/block/parry via the defender's live evade bytes (input-control) or
+  the result selector (`0x205210`, output-control), status via `+0x1EF/+0x61`, reactions via Brave
+  `+0x2B`, and the forecast hit-% display via hook `0x227FFE`. The committed build target is the Deep
+  Combat Layer (DCL): "output-control first, input only where output can't." Details in `04`/`05`/`06`.
 - **No modding API exposes a battle-formula callback.** Loader managers only patch data tables;
   Faith Framework is a live Nex editor. The direct formula routine is Denuvo-virtualized; the code
   mod instead hooks stable `.text` touchpoints to read battle units, detect HP/MP deltas, resolve
@@ -80,7 +96,7 @@ The mod has four distinct editing surfaces:
 | `03-battle-data-map.md` | master variable map: every accessible field by domain, full enum vocabularies, hard limits, and how to access each |
 | `04-engine-memory-model.md` | live battle-unit struct offsets; equipment block; battle actor array; hooks; damage→clamp→KO path |
 | `05-reverse-engineering.md` | using classic knowledge for RE: PSX decomp, cheat-table struct offsets + AOBs, formula fingerprint sheet, attack path, Denuvo notes |
-| `06-code-mod-runtime-dsl.md` | post-damage runtime reconciler: data placeholders, unit registry, event detector, context resolver, C# formula engine, HP/MP reconciler |
+| `06-code-mod-runtime-dsl.md` | runtime code-mod: data placeholders, unit registry, event detector, context resolver, C# formula engine, HP/MP reconciler, and the proven control levers (pre-clamp damage/MP, evade input-control, result selector, status/Brave, preview hit-%) |
 | `07-sprite-asset-pipeline.md` | sprite/asset extraction and replacement pipeline |
 
 ## Stable reference artifacts (this repo)

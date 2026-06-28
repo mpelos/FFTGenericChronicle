@@ -992,20 +992,63 @@ the VM honors them (Ramza forced to a 0%-hit preview and an evade, 0 damage, eng
 needs no data-gutting and no result-forging — the engine does everything from our planted values.
 
 - **Persistent evade write** (the unit poller). Settings: `EvadeOverrideEnabled`;
-  `EvadeOverrideTargetCharId` (`-1` = all units); `EvadeOverride46`/`47`/`4A`/`4B`/`4E` (the five evade
-  bytes, `0`–`100`, `-1` = leave); `EvadeOverrideMaxLogs`; `EvadeOverrideSweepSlots` (when broadcasting,
-  also sweep ±N×`0x200` of the tracked span so **untracked** units — e.g. the actual defender — are
-  boosted too; `0` = tracked only).
+  `EvadeOverrideTargetCharId` (`-1` = all units); `EvadeOverride46/47/48/49/4A/4B/4C/4D/4E` (nine evade
+  bytes, `0`–`100`, `-1` = leave; `48/4C/4D` are inferred magic-evade partners); `EvadeOverrideMaxLogs`;
+  `EvadeOverrideSweepSlots` (when broadcasting, also sweep ±N×`0x200` of the tracked span so **untracked**
+  units — e.g. the actual defender — are boosted too; `0` = tracked only).
 - Byte → outcome (on the defender): `+0x4B`→class evade (`0x04` "Miss"); `+0x46`/`+0x47`→weapon parry
-  (`0x02`); `+0x4A`/`+0x4E`→shield block (`0x03`); **all five = `0`** → guaranteed hit (neutralizes
-  avoidance in memory). Evade applies front/side only.
+  (`0x02`); `+0x4A`/`+0x4E`→shield block (`0x03`); `+0x49`→cloak (`0x01`, inferred); the five **physical**
+  bytes `+0x46/+0x47/+0x4A/+0x4B/+0x4E` **all = `0`** → guaranteed hit (neutralizes avoidance in memory).
+  Evade applies front/side only.
 
 **Status.** The current knob writes a *static* value to every (or one) unit — a proof lever, not the
 shipping API. The shipping form will write **per-action** from the DCL formula: identify the defender
 via the pending-action tracker, compute the (attacker, defender) hit result, and write that defender's
-evade bytes just before the roll. Damage value continues to come from the pre-clamp. Reactions
-(Blade Grasp/Hamedo) are a separate, untested layer (likely the same live-read mechanism via Brave
-`+0x2B`).
+evade bytes just before the roll. Damage value continues to come from the pre-clamp.
+
+## Input-control of status, reactions, and MP — ✅ proven (status + reactions live)
+
+The same "plant the data the VM reads" mechanism extends past avoidance:
+
+- **Status** (`StatusOverride*`). ✅ live-confirmed 2026-06-27 (`+0x1EF/+0x61 |= 0x10` made Ramza
+  Undead). The effective byte `+0x61` is recomputed in real code (`0x30D42A`) as `(+0x1EF & 0xF2) | +0x57`.
+  Settings: `StatusOverrideEnabled`; `StatusOverrideTargetCharId`; `StatusOverride1EF` (durable master,
+  OR-mask), `StatusOverride61` (effective mirror, OR-mask), `StatusOverride57` (innate/equipment source);
+  `StatusOverrideMaxLogs`; `StatusOverrideSweepSlots`. **Force** = OR onto `+0x1EF` AND `+0x61` (re-write
+  the `0x08`-class bits each poll — they're masked off per turn); **cure** = clear `+0x1EF`/`+0x61`/`+0x57`.
+  Remaining bit→ailment meanings are still being mapped empirically.
+- **Reactions** (`BraveOverride*`). ✅ proven (Blade Grasp/Hamedo/Counter trigger on a `roll(100, Brave)`;
+  cluster `0x30BExx`). Write the defender's Brave `+0x2B` before the roll to suppress. Settings:
+  `BraveOverrideEnabled`; `BraveOverrideTargetCharId`; `BraveOverride2A` (MaxBrave) / `2B` (Brave — the
+  reaction-roll input) / `2C` (MaxFaith) / `2D` (Faith); `BraveOverrideMaxLogs`; `BraveOverrideSweepSlots`.
+  ⚠️ **Never write Brave < 10** — the engine flips the unit to chicken/panic at `0x30A9BD`.
+- **MP** — same mechanism as HP via the combined pre-clamp hook (`0x30A66F`, §"Outcome control hooks"):
+  the staged MP words are `+0x1C8` (debit) / `+0x1CA` (credit), applied as `newMP = clamp(MP + 0x1CA -
+  0x1C8)`. Force them exactly like the HP debit/credit.
+
+## Preview display control (forecast hit-%) — ✅ proven live 2026-06-27
+
+The sections above author the **outcome**; this one authors the **forecast number** the panel shows
+(DCL Layer 1 — display a custom hit-% without changing the roll). RE in `05-reverse-engineering.md`
+§10: the displayed attack hit-% is copied by real code from a live forecast object (`object+0x2C`,
+the computed %) into the static display buffer `0x1407832C0` that the renderer reads; the UI is
+retained-mode, so an external write is racy (the engine recomputes on every redraw). The mod wins
+deterministically by hooking `0x227FFE` (a clean non-RIP instruction between the load and the store)
+`ExecuteFirst` and setting `AX` to the forced value **before** the engine's own store runs — the game
+then writes our value at copy time, on the same redraw the renderer draws, with no race.
+
+- **Forecast hit-% paint** (asm hook). Settings: `PreviewHitPctControlEnabled`;
+  `PreviewHitPctForcedValue` (`0`–`65535` to force; `-1` = observe only); `PreviewHitPctLogOnly`
+  (record the natural % without overwriting); `PreviewHitPctRva` (default `0x227FFE`);
+  `PreviewHitPctExpectedBytes` (default `41 BA 02 00 00 00`, validated before activation). The hook
+  writes a 16-byte record (`[0]` fire count, `[4]` last natural %, `[8]` forced (`-1`=logOnly),
+  `[12]` site RVA) whose address is printed at install as `[PREVIEW-HITPCT-HOOK] … buf=0x…`, so the
+  result is verifiable from outside the process (`work/read_hitpct_hook.py`).
+- **Proven live:** forcing `7` made an Agrias→Ramza preview (true odds 3%) render `7%` on every
+  target; memory cross-check showed `fireCount=1`, `lastNatural=3`, `0x7832C0=7`, source `+0x2C=3`.
+- **Purely visual.** The actual hit roll is computed independently in the VM at execution time;
+  this only paints the forecast. The shipping form will feed `PreviewHitPctForcedValue` from the DCL
+  formula's (attacker, defender) hit result so the preview matches the real authored odds.
 
 ## What this architecture provides
 
@@ -1019,11 +1062,15 @@ evade bytes just before the roll. Damage value continues to come from the pre-cl
 - custom global damage scaling and ally/enemy rules;
 - proven hit↔miss / parry / block control by BOTH input-control (write the defender's live evade bytes
   before the VM roll — Denuvo virtualizes code, not data) and output-control (two native hooks);
-- a foundation for custom MP, status, reaction, and AI/preview patches.
+- proven status control (`StatusOverride*`, live-confirmed Undead), reaction control (`BraveOverride*`,
+  Brave%-gate), MP control (combined pre-clamp `+0x1C8`/`+0x1CA`), and forecast hit-% display control
+  (`PreviewHitPct*`, proven live) — each a working lever, with per-action formula-driven arming as the
+  remaining engineering step;
+- a foundation for AI scoring on the custom formula and richer preview/animation patches.
 
 Follow-up layers not owned by the config/DSL: exact damage preview text, AI scoring based on the
-custom formula, full KO/crystal/reaction-status lifecycle, perfect ability-id capture, and
-multi-hit/reaction chains.
+custom formula, full KO/crystal/reaction-status lifecycle, per-action arming of the control levers,
+perfect ability-id capture, and multi-hit/reaction chains.
 
 ## Sources
 

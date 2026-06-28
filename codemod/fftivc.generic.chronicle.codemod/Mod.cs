@@ -163,6 +163,7 @@ public class Mod : ModBase
     private const int PLAN_EXPECTED_HP = 64;
     private const int PLAN_EXPECTED_MAX_HP = 68;
     private const int PRECLAMP_BUFFER_SIZE = PRECLAMP_EVENT_BUFFER_SIZE + (PRECLAMP_PLAN_MAX_SLOTS * PRECLAMP_PLAN_SLOT_SIZE);
+    private const int PREVIEW_HITPCT_BUFFER_SIZE = 64;
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -179,6 +180,8 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
     private nint _rollVerdictProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
+    private nint _previewHitPctBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _previewHitPctHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -233,6 +236,8 @@ public class Mod : ModBase
     private int _rollVerdictProbeLogs;
     private int _lastRollVerdictProbeSequence;
     private int _evadeOverrideLogs;
+    private int _braveOverrideLogs;
+    private int _statusOverrideLogs;
     private long _probeEventIndex;
     private nint _moduleBase;
     private int _moduleSize;
@@ -301,6 +306,7 @@ public class Mod : ModBase
             InstallResultSelectorProbeIfEnabled(baseAddr);
             InstallEvadeInputProbeIfEnabled(baseAddr);
             InstallRollVerdictProbeIfEnabled(baseAddr);
+            InstallPreviewHitPctControlIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -386,6 +392,91 @@ public class Mod : ModBase
         }
 
         Flush();
+    }
+
+    // PREVIEW HIT-% display control. The differential memory scan located the on-screen
+    // attack hit% at static buffer 0x1407832C0 (RVA 0x7832C0). Real code copies it there
+    // from a live forecast object: at RVA 0x227FFA `movzx eax, word [rbp+0x2C]` loads the
+    // computed %, and 0x228004 `mov word [0x7832C0], ax` stores it for the renderer. We hook
+    // 0x227FFE (`mov r10d, 2`, a clean non-RIP instruction between the load and the store):
+    // ExecuteFirst runs our asm, then the stolen `mov r10d,2`, then falls into the store. By
+    // setting AX to a forced value first, the game's own store writes OUR value at copy time,
+    // BEFORE the renderer reads the buffer -> the displayed % is deterministically ours, no
+    // race. Buffer records: [0]=fire count, [4]=last natural %, [8]=forced value (-1=logOnly),
+    // [12]=site RVA. Read it externally (addr printed at install) to verify without the screen.
+    private void InstallPreviewHitPctControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.PreviewHitPctControlEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[PREVIEW-HITPCT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _previewHitPctBuf = Marshal.AllocHGlobal(PREVIEW_HITPCT_BUFFER_SIZE);
+        for (int i = 0; i < PREVIEW_HITPCT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_previewHitPctBuf, i, 0);
+
+        nint address = moduleBase + _settings.PreviewHitPctRva;
+        if (!ValidateExpectedBytes(address, _settings.PreviewHitPctExpectedBytes, out string byteError))
+        {
+            Line($"[PREVIEW-HITPCT-SKIP] rva=0x{_settings.PreviewHitPctRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            var asm = BuildPreviewHitPctHookAsm();
+            _previewHitPctHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[PREVIEW-HITPCT-HOOK] rva=0x{_settings.PreviewHitPctRva:X} addr=0x{address:X} " +
+                $"buf=0x{_previewHitPctBuf:X} forced={FormatMaybeInt(_settings.PreviewHitPctForcedValue)} " +
+                $"logOnly={(_settings.PreviewHitPctLogOnly ? 1 : 0)}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[PREVIEW-HITPCT-FAILED] rva=0x{_settings.PreviewHitPctRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+
+        Flush();
+    }
+
+    private string[] BuildPreviewHitPctHookAsm()
+    {
+        string buf = $"0{_previewHitPctBuf:X}h";
+        bool force = _settings.PreviewHitPctForcedValue >= 0 && !_settings.PreviewHitPctLogOnly;
+        int forced = Math.Clamp(_settings.PreviewHitPctForcedValue, 0, 0xFFFF);
+        string forcedRecord = force ? forced.ToString() : "0FFFFFFFFh";
+        string siteId = $"0{_settings.PreviewHitPctRva:X}h";
+
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rcx",
+            "pushfq",
+            $"mov rax, {buf}",
+            "test rax, rax",
+            "jz .skip",
+            "mov ecx, [rax]",            // fire count
+            "add ecx, 1",
+            "mov [rax], ecx",
+            "mov ecx, [rsp+16]",         // original rax (flags=8 + rcx=8 below it)
+            "and ecx, 0FFFFh",           // low word = natural hit%
+            "mov [rax+4], ecx",
+            $"mov dword [rax+8], {forcedRecord}",
+            $"mov dword [rax+12], {siteId}",
+            ".skip:",
+            "popfq",
+            "pop rcx",
+            "pop rax",
+        };
+        if (force)
+            asm.Add($"mov ax, {forced}");   // game's own store at 0x228004 now writes OUR value
+        return asm.ToArray();
     }
 
     private void InstallPreClampDamageRewriteIfEnabled(nint moduleBase)
@@ -2117,6 +2208,8 @@ public class Mod : ModBase
         }
 
         ApplyEvadeOverrideSweep();
+        ApplyBraveOverrideSweep();
+        ApplyStatusOverrideSweep();
     }
 
     // Boost evade on EVERY unit in the battle, not just registry-tracked ones. The poller only tracks
@@ -2176,8 +2269,12 @@ public class Mod : ModBase
         }
         W(0x46, _settings.EvadeOverride46);
         W(0x47, _settings.EvadeOverride47);
+        W(0x48, _settings.EvadeOverride48);
+        W(0x49, _settings.EvadeOverride49);
         W(0x4A, _settings.EvadeOverride4A);
         W(0x4B, _settings.EvadeOverride4B);
+        W(0x4C, _settings.EvadeOverride4C);
+        W(0x4D, _settings.EvadeOverride4D);
         W(0x4E, _settings.EvadeOverride4E);
 
         // Log only when we actually changed a value (first set, or the engine reset it between polls),
@@ -2188,10 +2285,149 @@ public class Mod : ModBase
             static string F(int v) => v < 0 ? "--" : $"{v & 0xFF:X2}";
             Line(
                 $"[EVADE-OVERRIDE ptr=0x{p:X} id=0x{target.CharId:X2}] " +
-                $"was(46={target.ReadByte(0x46):X2} 47={target.ReadByte(0x47):X2} 4A={target.ReadByte(0x4A):X2} " +
+                $"was(46={target.ReadByte(0x46):X2} 47={target.ReadByte(0x47):X2} 49={target.ReadByte(0x49):X2} 4A={target.ReadByte(0x4A):X2} " +
                 $"4B={target.ReadByte(0x4B):X2} 4E={target.ReadByte(0x4E):X2}) " +
-                $"set(46={F(_settings.EvadeOverride46)} 47={F(_settings.EvadeOverride47)} 4A={F(_settings.EvadeOverride4A)} " +
+                $"set(46={F(_settings.EvadeOverride46)} 47={F(_settings.EvadeOverride47)} 49={F(_settings.EvadeOverride49)} 4A={F(_settings.EvadeOverride4A)} " +
                 $"4B={F(_settings.EvadeOverride4B)} 4E={F(_settings.EvadeOverride4E)})");
+            Flush();
+        }
+    }
+
+    // Same array-span sweep as evade, for the Brave/Faith bytes (reaction-control test). Independent
+    // gating so we can run a Brave-only test (evade off, brave on) or vice-versa.
+    private void ApplyBraveOverrideSweep()
+    {
+        if (!_settings.BraveOverrideEnabled || _settings.BraveOverrideTargetCharId >= 0)
+            return;
+        int slots = Math.Clamp(_settings.BraveOverrideSweepSlots, 0, 256);
+        if (slots == 0 || _unitRegistry.Count == 0)
+            return;
+
+        const int STRIDE = 0x200;
+        nint min = nint.MaxValue, max = 0;
+        foreach (var p in _unitRegistry)
+        {
+            if (p < min) min = p;
+            if (p > max) max = p;
+        }
+        nint margin = (nint)slots * STRIDE;
+        for (nint addr = min - margin; addr <= max + margin; addr += STRIDE)
+        {
+            if (_unitRegistry.Contains(addr))
+                continue; // tracked units are already handled by the poll loop
+            if (TryReadLiveUnitSnapshot(addr, out var snap, out _))
+                ApplyBraveOverrideIfEnabled(snap);
+        }
+    }
+
+    // INPUT-control test for REACTIONS (Blade Grasp, Hamedo, Arrow Guard...). These trigger on a
+    // Brave%-gated roll; the offline RE found the defender's Brave (+0x2B) is read by the engine and the
+    // success/fail branch is REAL code (only the roll arithmetic is VM). Since evade input-control proved
+    // the VM honors LIVE struct memory, writing the defender's Brave on its live struct before the roll
+    // should control whether a reaction fires: Brave 0 => reaction never triggers (a forced hit lands);
+    // Brave 100 => it always triggers. Bytes: +0x2A MaxBrave, +0x2B Brave, +0x2C MaxFaith, +0x2D Faith.
+    private void ApplyBraveOverrideIfEnabled(UnitSnapshot target)
+    {
+        if (!_settings.BraveOverrideEnabled)
+            return;
+        int want = _settings.BraveOverrideTargetCharId;
+        if (want >= 0 && target.CharId != (want & 0xFF))
+            return;
+
+        nint p = target.Ptr;
+        bool changed = false;
+        void W(int off, int val)
+        {
+            if (val < 0)
+                return;
+            if (target.ReadByte(off) != (val & 0xFF))
+                changed = true;
+            Marshal.WriteByte(p, off, (byte)(val & 0xFF));
+        }
+        W(0x2A, _settings.BraveOverride2A);
+        W(0x2B, _settings.BraveOverride2B);
+        W(0x2C, _settings.BraveOverride2C);
+        W(0x2D, _settings.BraveOverride2D);
+
+        if (changed && _braveOverrideLogs < Math.Clamp(_settings.BraveOverrideMaxLogs, 0, 100_000))
+        {
+            _braveOverrideLogs++;
+            static string F(int v) => v < 0 ? "--" : $"{v & 0xFF:X2}";
+            Line(
+                $"[BRAVE-OVERRIDE ptr=0x{p:X} id=0x{target.CharId:X2}] " +
+                $"was(2A={target.ReadByte(0x2A):X2} 2B={target.ReadByte(0x2B):X2} 2C={target.ReadByte(0x2C):X2} 2D={target.ReadByte(0x2D):X2}) " +
+                $"set(2A={F(_settings.BraveOverride2A)} 2B={F(_settings.BraveOverride2B)} 2C={F(_settings.BraveOverride2C)} 2D={F(_settings.BraveOverride2D)})");
+            Flush();
+        }
+    }
+
+    // Same array-span sweep as evade/brave, for the STATUS bytes (status-control test). Unlike those, this
+    // sweep ALSO runs for a specific TargetCharId so we can reliably reach ONE unit (e.g. Ramza) even if it
+    // is untracked, WITHOUT broadcasting a turn-disabling status to every unit; the per-unit charId filter
+    // in ApplyStatusOverrideIfEnabled restricts the write to the chosen unit.
+    private void ApplyStatusOverrideSweep()
+    {
+        if (!_settings.StatusOverrideEnabled)
+            return;
+        int slots = Math.Clamp(_settings.StatusOverrideSweepSlots, 0, 256);
+        if (slots == 0 || _unitRegistry.Count == 0)
+            return;
+
+        const int STRIDE = 0x200;
+        nint min = nint.MaxValue, max = 0;
+        foreach (var p in _unitRegistry)
+        {
+            if (p < min) min = p;
+            if (p > max) max = p;
+        }
+        nint margin = (nint)slots * STRIDE;
+        for (nint addr = min - margin; addr <= max + margin; addr += STRIDE)
+        {
+            if (_unitRegistry.Contains(addr))
+                continue;
+            if (TryReadLiveUnitSnapshot(addr, out var snap, out _))
+                ApplyStatusOverrideIfEnabled(snap);
+        }
+    }
+
+    // INPUT-control test for STATUS effects. Offline RE: the effective status byte +0x61 is recomputed in
+    // real code as +0x61 = (+0x1EF & 0xF2) | +0x57, and the engine tests +0x61 everywhere (KO 0x20,
+    // control-flip 0x10, petrify 0x40, can't-act 0x08). The infliction roll is VM but the status BYTES are
+    // data the VM reads, so OR-ing a mask onto +0x1EF (master, survives recompute) AND +0x61 (effective)
+    // forces a status; the 20ms poll re-applies per-turn-cleared bits. Each setting is an OR MASK (>=0) or
+    // -1 to skip. +0x57 is the innate/equipment source (OR it too if the status is equip-sourced).
+    private void ApplyStatusOverrideIfEnabled(UnitSnapshot target)
+    {
+        if (!_settings.StatusOverrideEnabled)
+            return;
+        int want = _settings.StatusOverrideTargetCharId;
+        if (want >= 0 && target.CharId != (want & 0xFF))
+            return;
+
+        nint p = target.Ptr;
+        bool changed = false;
+        void Or(int off, int mask)
+        {
+            if (mask < 0)
+                return;
+            int cur = target.ReadByte(off);
+            int next = cur | (mask & 0xFF);
+            if (next != cur)
+                changed = true;
+            Marshal.WriteByte(p, off, (byte)next);
+        }
+        Or(0x1EF, _settings.StatusOverride1EF);
+        Or(0x61, _settings.StatusOverride61);
+        Or(0x57, _settings.StatusOverride57);
+
+        if (changed && _statusOverrideLogs < Math.Clamp(_settings.StatusOverrideMaxLogs, 0, 100_000))
+        {
+            _statusOverrideLogs++;
+            static string F(int v) => v < 0 ? "--" : $"{v & 0xFF:X2}";
+            Line(
+                $"[STATUS-OVERRIDE ptr=0x{p:X} id=0x{target.CharId:X2}] " +
+                $"was(57={target.ReadByte(0x57):X2} 61={target.ReadByte(0x61):X2} 1EF={target.ReadByte(0x1EF):X2}) " +
+                $"or(57={F(_settings.StatusOverride57)} 61={F(_settings.StatusOverride61)} 1EF={F(_settings.StatusOverride1EF)})");
             Flush();
         }
     }
@@ -2217,6 +2453,8 @@ public class Mod : ModBase
 
         _unitRegistry.Add(unitPtr);
         ApplyEvadeOverrideIfEnabled(target);
+        ApplyBraveOverrideIfEnabled(target);
+        ApplyStatusOverrideIfEnabled(target);
         if (touchForContext)
             DiscoverNearbyBattleUnits(unitPtr);
         UnitSnapshot? actionProbeUnit = null;
@@ -6857,17 +7095,58 @@ internal sealed class RuntimeSettings
     // hit% forecast drops, the VM reads live memory => input-control viable. -1 leaves a byte untouched.
     public bool EvadeOverrideEnabled { get; set; } = false;
     public int EvadeOverrideTargetCharId { get; set; } = -1;   // -1=all tracked units; else only this charId (+0x00)
-    public int EvadeOverride46 { get; set; } = -1;             // weapon evade 1
-    public int EvadeOverride47 { get; set; } = -1;             // weapon evade 2
-    public int EvadeOverride4A { get; set; } = -1;             // shield evade 1
-    public int EvadeOverride4B { get; set; } = -1;             // class evade
-    public int EvadeOverride4E { get; set; } = -1;             // shield evade 2
+    public int EvadeOverride46 { get; set; } = -1;             // weapon parry R %
+    public int EvadeOverride47 { get; set; } = -1;             // weapon parry L %
+    public int EvadeOverride48 { get; set; } = -1;             // accessory magic-evade partner (inferred)
+    public int EvadeOverride49 { get; set; } = -1;             // accessory/cloak physical evade (inferred -> evadeType 0x01)
+    public int EvadeOverride4A { get; set; } = -1;             // shield physical parry %
+    public int EvadeOverride4B { get; set; } = -1;             // class/physical evasion %
+    public int EvadeOverride4C { get; set; } = -1;             // magic-evasion partner (inferred)
+    public int EvadeOverride4D { get; set; } = -1;             // accessory magick partner (inferred)
+    public int EvadeOverride4E { get; set; } = -1;             // shield magick parry %
     public int EvadeOverrideMaxLogs { get; set; } = 64;
     // When broadcasting (TargetCharId<0), also sweep this many 0x200-slots beyond the tracked-unit span
     // and boost any valid unit found there. Catches units the poller never registered (e.g. the defender
     // of an attack that hasn't been near a hook). 0 = only tracked units. ReadProcessMemory is safe on
     // unmapped addresses (returns false), so a generous margin is harmless.
     public int EvadeOverrideSweepSlots { get; set; } = 0;
+
+    // Persistent Brave/Faith INPUT override (the reaction input-control test). Same live-write mechanism
+    // as EvadeOverride, for the bytes that gate Brave%-rolled reactions (Blade Grasp, Hamedo, Arrow
+    // Guard...). Set 2B (Brave) to 0 on a unit that has a reaction + normally-high Brave, then attack it:
+    // if the reaction stops firing, the VM read the live Brave => reaction input-control viable. Set 2B
+    // to 100 to force a reaction. -1 leaves a byte untouched. +0x2A MaxBrave, +0x2B Brave, +0x2C MaxFaith,
+    // +0x2D Faith.
+    public bool BraveOverrideEnabled { get; set; } = false;
+    public int BraveOverrideTargetCharId { get; set; } = -1;    // -1=all tracked units; else only this charId (+0x00)
+    public int BraveOverride2A { get; set; } = -1;             // MaxBrave
+    public int BraveOverride2B { get; set; } = -1;             // Brave (the reaction-roll input)
+    public int BraveOverride2C { get; set; } = -1;             // MaxFaith
+    public int BraveOverride2D { get; set; } = -1;             // Faith
+    public int BraveOverrideMaxLogs { get; set; } = 64;
+    public int BraveOverrideSweepSlots { get; set; } = 0;      // same broadcast sweep as EvadeOverrideSweepSlots
+
+    // Persistent STATUS INPUT override (status-control test). OR a bit MASK onto the status bytes every
+    // poll. Offline RE: +0x61 effective = (+0x1EF & 0xF2) | +0x57; engine tests +0x61 (KO 0x20, control-
+    // flip 0x10, petrify 0x40, can't-act 0x08, charging 0x04). Force a status by OR-ing the master +0x1EF
+    // AND the mirror +0x61 (e.g. 0x10 = control-flip = the most visual: unit switches to AI/ally). -1 =
+    // skip. +0x57 = innate/equip source (OR it for equip-sourced statuses).
+    public bool StatusOverrideEnabled { get; set; } = false;
+    public int StatusOverrideTargetCharId { get; set; } = -1;  // -1=all tracked units; else only this charId (+0x00)
+    public int StatusOverride1EF { get; set; } = -1;           // master/volatile status bitmask to OR
+    public int StatusOverride61 { get; set; } = -1;            // effective status bitmask to OR (mirror)
+    public int StatusOverride57 { get; set; } = -1;            // innate/equipment status bitmask to OR
+    public int StatusOverrideMaxLogs { get; set; } = 64;
+    public int StatusOverrideSweepSlots { get; set; } = 0;     // same broadcast sweep as EvadeOverrideSweepSlots
+
+    // Preview hit-% display control (DCL Layer 1). Hooks the real-code copy of the computed
+    // hit% into the on-screen forecast buffer (RVA 0x7832C0) and forces a chosen value at copy
+    // time, so the displayed % is deterministically ours (no race with the engine's recompute).
+    public bool PreviewHitPctControlEnabled { get; set; } = false;
+    public int PreviewHitPctRva { get; set; } = 0x227FFE;                       // `mov r10d,2`, between the load and the store
+    public string PreviewHitPctExpectedBytes { get; set; } = "41 BA 02 00 00 00";
+    public int PreviewHitPctForcedValue { get; set; } = -1;                     // 0..65535 to force; -1 = observe only
+    public bool PreviewHitPctLogOnly { get; set; } = false;                     // record natural % without overwriting
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
     public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;

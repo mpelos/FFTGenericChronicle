@@ -116,6 +116,17 @@ internal static class RuntimeSettingsValidator
                 report.Error($"LandmarkProbes.{probe.TraceName}", error);
         }
         ValidateResultSelectorProbe(settings, report);
+        if (settings.PreviewHitPctControlEnabled)
+        {
+            if (settings.PreviewHitPctRva <= 0)
+                report.Error("PreviewHitPctRva", "PreviewHitPctRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.PreviewHitPctExpectedBytes))
+                report.Error("PreviewHitPctExpectedBytes", "Expected bytes are required for the preview hit% hook.");
+            if (settings.PreviewHitPctForcedValue is < -1 or > 0xFFFF)
+                report.Error("PreviewHitPctForcedValue", "Forced value must be -1 (observe) or 0..65535.");
+            if (!settings.PreviewHitPctLogOnly && settings.PreviewHitPctForcedValue >= 0)
+                report.Warn("PreviewHitPctControlEnabled", "preview hit% control overwrites the displayed forecast %; purely visual, does not change the actual roll.");
+        }
         if (settings.PreClampDamageRewriteEnabled)
         {
             report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");

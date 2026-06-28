@@ -22,12 +22,15 @@ Each domain below names the data surface, the editable fields, and the caps that
 ## A. Per-action RESULT / OUTCOME fields (the hit/miss/block/parry surface)
 
 The per-action result/outcome control surface — the hit/phase marker (`+0x1BB`), the staged-result
-flag (`+0x1BE`), the **evade-type enum** (`+0x1C0`: hit / cloak / weapon-parry / shield /
-class-evade / miss), the staged damage/heal words (`+0x1C4`/`+0x1C6`), and the `resultKind` bits
-(`+0x1E5`) — lives in the live unit struct and is owned by `04-engine-memory-model.md` §2.3. It is
-the writable lever that drives hit-vs-evade and the on-screen animation: the accuracy roll is
-virtualized, but its outcome lands in these bytes. See `04` §2.3 for the byte table and enum values,
-and `05-reverse-engineering.md` for the hook anchors and the force-hit / force-evade control recipe.
+flag (`+0x1BE`), the **evade-type enum** (`+0x1C0`: `0x00` hit / `0x01` cloak / `0x02` weapon-parry /
+`0x03` shield / `0x04` class-evade / `0x06` miss / `0x0B` Blade Grasp), the staged HP/MP words
+(`+0x1C4`/`+0x1C6` HP, `+0x1C8`/`+0x1CA` MP), and the `resultKind` bits (`+0x1E5`) — lives in the
+live unit struct and is owned by `04-engine-memory-model.md` §2.3. It is a writable lever that drives
+hit-vs-evade and the on-screen animation: the accuracy roll is virtualized, but its outcome lands in
+these bytes (output-control). It is now ALSO controllable from the **input** side — writing the
+defender's evade bytes before the roll is the ✅ proven primary path; this output surface is the
+fallback (see `04` §2.1). See `04` §2.3 for the byte table and enum values, and
+`05-reverse-engineering.md` for the hook anchors and the force-hit / force-evade control recipe.
 
 ---
 
@@ -133,6 +136,10 @@ Confuse Blind Silence Berserk Reflect Defending Performing Stone Traitor Chicken
 
 Limits: status id <= 39 (fixed 40-slot table). `Counter` sets duration; `CheckFlags`/`CancelFlags`
 control interactions (e.g. FreezeCT, PoisonRegen, mutually-cancelling sets).
+
+Runtime side (not data): the live status bytes — master `+0x1EF`, effective mirror `+0x61`
+(`= (+0x1EF & 0xF2) | +0x57`), innate `+0x57` — are DATA-controllable at runtime and owned by
+`04-engine-memory-model.md` §2.3 (live-confirmed bits: `0x20`=KO, `0x10`=Undead).
 
 ---
 

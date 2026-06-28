@@ -107,7 +107,8 @@ pre-clamp staged-dmg HOOK    0x30A66F    0F BF 45 06 = movsx eax, word[rbp+6] (=
                              the damage-rewrite hook — controls hit-vs-zero damage
 result/animation SELECTOR    0x205210    prologue 48 89 5C 24 08 48 89 6C 24 10;
                              r8 = actor, record = [r8+0x148], cl (arg) = evade-type; reads +0x1E5, +0x1C4
-evade-type STAGING write      0x205B39   mov byte [rdi+0x1C0], ah   (engine writes evade-type here)
+evade-type teardown copy      0x205B38   mov byte [rdi+0x1C0], r12b (real-code copy; the authoring
+                             value is produced inside the VM roll 0x30FA34, not here)
 combat-popup digit RENDER    0x266AE0    int->digit->glyph; value [rdi+0x344]; 3-digit split 0x2671BE;
                              glyph map 0x267350; popup value mirror 0x3740200
 ```
@@ -139,10 +140,11 @@ lever that selects hit vs. which evade animation. The full enum (**Proven**):
 0x03 = shield parry / block (LH)   (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
 0x04 = class evade ("Miss")        (+1BB=01 +1BE=00 +1C4=0   +1E5=00 ; +1C2=FF observed)
 0x06 = plain miss (failed accuracy roll, e.g. Steal/Charm) (+1BB=01 +1BE=00 +1C4=0 +1E5=00)
+0x0B = Blade Grasp (Brave%-reaction)  (+1BB=01 +1BE=00 +1C4=0 +1E5=00 ; live-observed via SELECTOR-PROBE)
 ```
 
-0x05 is an unobserved gap, likely unused. Hit = 0x00
-(damage applies); 0x01–0x06 are all no-damage outcomes (`+1C4 = 0`) that differ ONLY in
+0x05 / 0x07–0x0A are unobserved gaps, likely unused. Hit = 0x00
+(damage applies); 0x01–0x06 and 0x0B are all no-damage outcomes (`+1C4 = 0`) that differ ONLY in
 `+0x1C0`, the byte that selects the on-screen animation. Every evade shares `+1BE=00` and `+1C4=0`;
 `+0x1E5` carries the action's effect-kind (`0x00` for a basic-attack evade, nonzero when an evaded
 ability still carries an effect). Evadable physical abilities route through 0x01–0x04 like a basic
@@ -191,8 +193,10 @@ reaction layers A/B, or as a static fallback.)
   `+0x46`/`+0x47`).
 
 Levers: strip the reaction slot / blank the reaction table (kills A+B); `Evadeable` flag off and/or
-zero the evade bytes / Concentrate (kills C). That a data-disable fully kills A+B is the one remaining
-LIVE validation (predicted yes — Hamedo/Blade Grasp survive zeroed evade bytes by canon).
+zero the evade bytes / Concentrate (kills C). Layer B is now ALSO controllable in MEMORY via the
+defender's **Brave** (`+0x2B`) — ✅ proven live (see below) — so data-disable of A+B is a static
+fallback, not the only path. (Hamedo/Blade Grasp survive zeroed *evade* bytes by canon, which is why
+they need the Brave lever or a data-disable, not evade-zeroing.)
 
 ### Input-control — ✅ PROVEN LIVE 2026-06-27 (the cleaner primary path)
 
@@ -230,10 +234,14 @@ stays on the proven pre-clamp.
   the accuracy verdict. The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the
   one VM call `0x30FA34`; there is no real-code verdict to flip.
 
-**Reactions (Layers A/B)** are a separate, still-untested layer: no reaction-slot byte exists in the
-struct (reactions resolve via VM `0x2BB0D4` from the skillset object), so neutralize in DATA
-(ENTD / JobCommand R/S/M) — or, by analogy to evade, the live-memory lever is **Brave** (`+0x2B`); write
-the defender's Brave before the Brave%-roll to suppress the trigger. Test next.
+**Reactions (Layers A/B)** are controllable by the SAME live-data mechanism — ✅ **proven offline +
+confirmed live 2026-06-27**. The reaction trigger is a `roll(100, Brave)` (canonical FFT Brave%-gate),
+in the real-code cluster `0x30BE86 / 0x30BEDC / 0x30BF32 / 0x30BF72`; write the defender's **Brave**
+(`+0x2B`) before the roll to suppress the trigger. Live: Brave 10 → Blade Grasp suppressed, 3/3 hits.
+⚠️ **Chicken floor — never write Brave < 10** (`0x30A9BD cmp [+0x2B],0x0A` flips the unit to panic/
+chicken). No reaction-slot byte exists in the struct (reactions resolve via VM `0x2BB0D4` from the
+skillset object), so DATA-disable (ENTD / JobCommand R/S/M) remains the static alternative. Shipping
+knob: `BraveOverride*` (offline notes `work/reaction-input-control-offline.md`).
 
 The forecast hit% display now follows the live evade bytes too (Ramza showed 0%), so writing evade is
 also the lever for an honest custom-% preview.
@@ -365,6 +373,62 @@ and delayed actions can land long after the caster's CT reset; Wait changes CT w
 producing a damage action; reactions/counters need a separate inversion path; status/poison/
 trap/reflect effects need separate handling. The full CT / action-context model and the layered
 attacker-resolution architecture are owned by `04-engine-memory-model.md`.
+
+## 10. Forecast hit-% display buffer (Layer 1 — visual control) — ✅ CONFIRMED LIVE 2026-06-27
+
+The **displayed attack hit-%** (the number in the action forecast panel) is materialized in
+ordinary memory and is fully read/write-able from outside the process — Denuvo virtualizes
+*code*, not *data*. A Cheat-Engine-style differential scan (`work/mem_scan.py`: `find 3` →
+`filter 77` → `filter 82`) collapsed 462,950 candidates → 15 → **4 addresses** that track the
+on-screen %:
+
+- `0x1407832C0` — **canonical static display buffer** (RVA `0x7832C0`), in the panel-exporter
+  region; this is the value the renderer draws.
+- three heap mirrors (`0x12DBAF3E0`, `0x12DCAF98A`, `0x436AC1C540`) — UI copies.
+
+External `WriteProcessMemory` to all four **succeeds** (write sticks). But writing while the
+panel is already drawn does **not** refresh the text: the UI is **retained-mode** — it draws
+the number once and only redraws when the panel is *dirtied* (cursor moves on/off a target),
+and dirtying **recomputes** the value, overwriting an external poke. So a naive external write
+is racy (the engine wins on the next redraw). Confirmed live: one-shot write stuck in memory
+while the cursor was static; the on-screen text stayed at the old value until a redraw.
+
+**Data flow (real code, not VM):**
+
+```
+0x227FEA  mov   rbp, [rip+0x2DCBD07]   ; rbp = *(global forecast-object ptr)  @ VA 0x142FF3CF8
+0x227FF1  test  rbp, rbp / je …        ; null-check
+0x227FFA  movzx eax, word [rbp+0x2C]   ; AX = computed hit%  (source = object+0x2C)
+0x227FFE  mov   r10d, 2
+0x228004  mov   word [0x7832C0], ax    ; copy → display buffer  (renderer reads here)
+```
+
+Additional real-code writers of `0x7832C0` (a second copy path, from static mirrors):
+`0x2C7F98`, `0x2C8C16`, `0x2C8E70`, `0x2C9806` (each `mov word [0x7832C0], ax`, inside a SIMD store
+block around `0x7832B0`). All are RVA < `0x610000` → **hookable** (`work/disasm_hitpct.py`
+enumerates them; the previous scan windowed `0x7832E6..` and missed `0x7832C0` just below it).
+
+**Deterministic control (no race):** hook `0x227FFE` (`mov r10d, 2`, a clean non-RIP site
+*between* the load and the store) with `AsmHookBehaviour.ExecuteFirst` and set `AX` to the
+forced value before the engine's own store at `0x228004` runs. The game then writes **our**
+value at copy time, *before* the renderer reads the buffer on the same redraw → the displayed
+% is deterministically ours, no poke race. This is the engine-side analogue of the OUTPUT-paint
+rule used for avoidance results. Mod feature: `PreviewHitPctControlEnabled` /
+`PreviewHitPctForcedValue` / `PreviewHitPctLogOnly`, default RVA `0x227FFE`, expected bytes
+`41 BA 02 00 00 00`. The hook records to a small buffer ([0]=fire count, [4]=last natural %,
+[8]=forced, [12]=site RVA; addr printed at install as `[PREVIEW-HITPCT-HOOK] … buf=0x…`) so the
+result is verifiable externally without the screen.
+
+**Live proof (2026-06-27):** force value 7 deployed; an Agrias→Ramza preview whose true odds
+were 3% (Blade Grasp) rendered **7%** on screen for every target. Memory cross-check
+(`work/read_hitpct_hook.py`) at that moment: `fireCount=1`, `lastNatural=3`, display buffer
+`0x7832C0 = 7`, natural source `object+0x2C = 3` — i.e. the engine computed 3, the hook painted
+7 into the buffer the renderer reads, and the real source was left at 3 (the actual roll is
+untouched). Both the screen and memory agree: the displayed forecast hit-% is fully ours.
+
+**Purely visual.** The actual hit roll is computed independently inside the VM at execution
+time; painting `0x7832C0` changes only the forecast number, not the outcome. This is DCL Layer 1
+(show a custom hit-% from our own formula); the matching *outcome* control is sections 4/9.
 
 ## Sources
 
