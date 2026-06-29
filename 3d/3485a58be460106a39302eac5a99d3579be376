@@ -1,0 +1,23 @@
+docs/job-balance/jobs/13-geomancer.md
+  s_a298d5c04f383c::t_0ffb5767ab0bb8 1-193
+work/1782751426-sim-geomancer.py
+  s_a298d5c04f383c::t_a8b33accd20210 1-116
+work/1782751426-sim-geomancer-gate.md
+  s_a298d5c04f383c::t_a8b33accd20210 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "3d3485a58be460106a39302eac5a99d3579be376",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
