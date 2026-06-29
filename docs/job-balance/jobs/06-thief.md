@@ -11,8 +11,9 @@ are owned by the DCL docs and cross-referenced inline; numbers are calibration
 
 ## Tier & tree position
 
-- **Tier C.** Tier is **acquisition position**, not power (`docs/deep-combat-layer/15`, *Tiers*): an
-  early first-rank unlock from the Squire, alongside Knight/Archer (`docs/job-balance/00-job-tree.md`).
+- **Tier B.** Tier is **acquisition position**, not power (`docs/deep-combat-layer/15`, *Tiers*): a
+  mid-tree unlock reached past a first-rank job (`docs/job-balance/00-job-tree.md`), alongside Monk and
+  Geomancer.
 
 ## The vanilla problem it solves
 

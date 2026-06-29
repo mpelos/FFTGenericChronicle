@@ -83,13 +83,26 @@ Two slots are replaced outright; two jobs are re-tiered.
   pushing it deep also removes the jarring light-lineage-into-full-plate jump that the old routing
   produced.
 
-## Tiers, not a locked wiring
+## Tiers
 
-The tree distinguishes **accessible** jobs (early, useful, export-rich) from **capstones** (deep,
-grind-gated, and obligated to feel like a great reward). That distinction is fixed. The **exact
-prerequisite graph, bands, and per-job placement are not** — because several jobs are redesigned
-heavily enough to change their natural routes. This document fixes intent and the confirmed moves; it
-does not lock the graph.
+Tier is **acquisition position** (how deep in the tree a job is reached), **not power** — `S` is the
+hardest to reach, `D` the most accessible (`../deep-combat-layer/15`, *Tiers*). The bands distinguish
+**accessible** jobs (early, useful, export-rich) from **capstones** (deep, grind-gated, and obligated
+to feel like a great reward). The **band each job sits in is fixed** (below); the **exact prerequisite
+wiring within and between bands is not** — several jobs are redesigned heavily enough to change their
+natural routes, so this document fixes the bands and the confirmed moves, not the graph.
+
+| Tier | Position | Jobs |
+|------|----------|------|
+| **D** | base — no prerequisite | Squire · Chemist |
+| **C** | first rank — unlocks directly off a base job | Knight · Archer · White Mage · Black Mage |
+| **B** | mid — reached past a first-rank job | Monk · Thief · Mystic *(Oracle)* · Time Mage · Geomancer · Bard · Dancer · Orator · Summoner |
+| **A** | deep — pre-capstone | Dragoon · Ninja · Samurai · Necromancer |
+| **S** | capstone — the deepest slot, the apex reward | Mystic Knight |
+
+The single deepest slot is the **Mystic Knight** (the spellblade that replaces the Mime, vanilla's
+deepest slot) — the roster's apex reward. Note *Mystic (Oracle)* in tier B is the caster job (`11`),
+distinct from the *Mystic Knight* capstone (`20`).
 
 ## Open tensions
 
@@ -103,4 +116,5 @@ does not lock the graph.
 ## Out of scope (deferred)
 
 - Every individual job's kit, stats, skills, reaction/support/movement, JP costs, and equipment.
-- The exact prerequisite graph, band assignments, and per-job tree placement.
+- The exact prerequisite graph and per-job tree wiring (the **tier bands are fixed above**; only the
+  exact routes within and between them remain open).
