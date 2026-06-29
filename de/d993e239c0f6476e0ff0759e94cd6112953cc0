@@ -1,0 +1,21 @@
+docs/reference/README.md
+  s_a298d5c04f383c::t_6f689a2139da42 24
+docs/formula-balance/13-brave-faith-combat-policy-v0.md
+  s_a298d5c04f383c::t_1749fff63ae7c7 11-12,173,312,323,325
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "ded993e239c0f6476e0ff0759e94cd6112953cc0",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
