@@ -24,16 +24,16 @@ internal sealed class BattleContextResolver
     {
         string ctSummary = "";
 
-        // Primary path (live-proven): the attacker is the unit whose CT (+0x41) just reset.
+        // Legacy diagnostic path. CT is useful for comparing old captures, but it is not accepted
+        // as DCL ownership. Shipping profiles should leave this disabled.
         if (_settings.ResolveAttackerByCt)
         {
             var byCt = ResolveByCt(target, observations, nowTick, out ctSummary);
             if (byCt is not null) return byCt;
         }
 
-        // Counterattacks do not spend/reset CT, so the CT path has no fresh drop to pick.
-        // Pattern: A damaged B, then B immediately damages A. If current target is the previous
-        // attacker, resolve the counter attacker as the previous target.
+        // Legacy diagnostic fallback. Native actor/selector context is preferred for reactions;
+        // this inversion only preserves old runtime traces for comparison profiles.
         if (_settings.ResolveCounterFromRecentDamage)
         {
             var byCounter = ResolveByCounterInversion(target, observations, nowTick);
@@ -64,11 +64,9 @@ internal sealed class BattleContextResolver
         _lastHpDamageEvent = new RecentHpDamageEvent(target, attacker, attackerSource, signedDamage, eventTick, eventIndex);
     }
 
-    // Attacker = the registered unit (!= target) whose CT (+0x41) most recently reset (dropped).
-    // Proven live across 6 controlled attacks: the attacker always had the most recent CT drop
-    // (5/6 also had the lowest absolute CT; the one tie resolved by most-recent drop -> 6/6).
-    // Requires having observed the drop within CtDropWindowMs; otherwise returns null so the caller
-    // falls through to the legacy heuristic instead of guessing.
+    // Diagnostic only: attacker = registered non-target unit whose CT (+0x41) most recently reset.
+    // This is intentionally opt-in because Wait, delayed actions, and reactions make CT too fragile
+    // for DCL ownership.
     private ResolvedAttacker? ResolveByCt(
         UnitSnapshot target,
         IReadOnlyDictionary<nint, UnitObservation> observations,

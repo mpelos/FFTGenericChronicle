@@ -186,7 +186,12 @@ a residual engine outcome pre-empts ours. (Layer C is now neutralized in MEMORY 
 evade bytes to `0` before the roll, proven above — so the DATA edits below are only needed for the
 reaction layers A/B, or as a static fallback.)
 
-- Layer A — Hamedo / First-Strike (Monk reaction): pre-empts the ENTIRE attack before any hook runs.
+- Layer A — Hamedo / First-Strike (Monk reaction): pre-empts the incoming attack before its HP-apply
+  hook. If the reaction itself deals damage, that reaction damage still routes through the normal
+  pre-clamp/selector hooks with the reaction attacker as source. For a basic incoming attack, the
+  cancelled incoming surface is also visible before apply: the defender's target cache holds the
+  interrupted debit at `+0x1C4`, and the correlated target-cache hook frame points back to the
+  original incoming source.
 - Layer B — reaction avoidance (Blade Grasp, Arrow Guard, Catch, Reflect): rolls BEFORE the evade
   bytes; Brave%-triggered; **zeroing evade bytes does NOT stop it.**
 - Layer C — the 4 equipment/class evade bytes (class `+0x4B`, shield `+0x4A`/`+0x4E`, weapon
@@ -360,19 +365,18 @@ exact known battle-unit pointers — if a register points at a battle controller
 object, the scan reveals actor/target unit pointers inside it without mutating game state. A
 stable engine context pointer found this way would supersede CT as the attacker source.
 
-## 9. CT attacker resolution (diagnostic/fallback)
+## 9. CT action-resolution evidence (diagnostic only)
 
-For immediate physical actions, the attacker can be resolved from CT evidence: `ct-reset` (a
-non-target unit whose CT recently dropped) is the strongest signal; `ct-low` (the actor still
-near its post-action CT value) is a necessary fallback when polling misses the reset frame. A
-CT drop into the low band must refresh the observation timestamp, or poll-only drops are
-excluded from `ct-low`. This proves out for immediate physical actions including dual wield.
+`unit+0x41` is CT and can explain some immediate physical captures: `ct-reset` means a non-target
+unit recently dropped CT, and `ct-low` means a non-target unit remains near a post-action CT value
+when polling misses the reset frame.
 
-CT is only a diagnostic/fallback signal. It is not a complete source of truth: charged spells
-and delayed actions can land long after the caster's CT reset; Wait changes CT without
-producing a damage action; reactions/counters need a separate inversion path; status/poison/
-trap/reflect effects need separate handling. The full CT / action-context model and the layered
-attacker-resolution architecture are owned by `04-engine-memory-model.md`.
+CT is **Refuted** as DCL ownership. It is not a complete source of truth: delayed actions can land
+long after the caster's CT reset; Wait changes CT without producing damage; reactions/counters do
+not require a clean CT drop; and passive/status/trap/reflect effects need separate ownership.
+Use CT only in throwaway comparison profiles and historical log analysis. The accepted ownership
+surfaces are native actor context, pending context, selector context, and final pre-clamp HP/MP
+targets; the action-context model is owned by `04-engine-memory-model.md`.
 
 ## 10. Forecast hit-% display buffer (Layer 1 — visual control) — ✅ CONFIRMED LIVE 2026-06-27
 

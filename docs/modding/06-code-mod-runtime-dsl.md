@@ -1,7 +1,7 @@
 # Code-Mod Runtime: Config & Formula DSL
 
 > Scope: **04-engine-memory-model.md** owns engine/memory facts (unit-struct offsets, the stable
-> hook anchor, death/clamp/KO engine model, CT attacker resolution, equipment offsets).
+> hook anchor, death/clamp/KO engine model, native-frame action context, equipment offsets).
 > **This file (06)** owns the code-mod's runtime-settings configuration language and the C#
 > formula DSL: operators, functions, variables, and every rule schema.
 >
@@ -100,19 +100,23 @@ Context is a set of dimensions, not a single piece:
 - **attacker unit / action id**: the primary architecture is the native pre-clamp actor context
   described in `04-engine-memory-model.md`: the pre-clamp stack exposes actor structs, each actor's
   `+0x148` links to its unit, and the caster actor's `+0x142` carries the resolving action id. The
-  current code has an observe-only resolver for this path (`PreClampResolveActorContext`, logging
-  `[PRECLAMP-ACTOR-CTX]`) and uses CT reset / counter-inversion only as fallback and diagnostic
-  provenance. Formula context exposes `a.present`, `a.ct`, `a.sourceCt`, `a.sourceCounter`, with
-  target equivalents; `sourceCt` means "this attacker came from the CT fallback", not "CT is the
-  primary model".
+  current code has both an observe-only resolver for this path (`PreClampResolveActorContext`,
+  logging `[PRECLAMP-ACTOR-CTX]`) and a validation-grade managed pre-clamp callback proof that uses
+  the same actor context to compute caster/target-stat damage in the native HP-apply frame for
+  basic, instant named, and delayed named damage. DCL
+  attacker/action ownership must come from native-frame context (registers, stack roots, actor
+  structs), pending context, or selector context. CT-derived source fields are legacy/debug trace
+  fields only and are not accepted by the mod as damage authorship.
+  Some historical proof profiles may still log or expose CT-derived provenance fields such as
+  `a.ct`, `a.sourceCt`, and `a.sourceCounter`; shipping DCL formulas must not depend on them.
 - **action family**: bridged through `ActionSignalRules`, which decode controlled vanilla deltas
   into `action.*` variables (`action.swing`, `action.thrust`, `action.cut`, `action.spell`, etc.).
 - **equipment ids**: read from fixed offsets or discovered through catalog scan slots, joined
   against the static item catalog.
 
-`a.sourceRecent` (recent-unit heuristic) remains a legacy/debug fallback, not the primary
-attacker model. `InferAttackerFromRecentUnits` (off by default) gates whether the heuristic is
-passed into formulas; when off, the runtime only logs `[CTX]` candidates.
+`a.sourceRecent` (recent-unit heuristic) remains a legacy/debug field and is not an accepted DCL
+attacker model. `InferAttackerFromRecentUnits` (off by default) gates whether the heuristic is passed
+into formulas for old proof profiles; shipping DCL profiles should leave it off.
 
 ### MemoryTableProbes
 
@@ -339,11 +343,11 @@ byte/word offset is confirmed:
 }
 ```
 
-### Attacker context and fallback provenance settings
+### Attacker context and legacy diagnostic settings
 
 The primary RE model for attacker/action context is the pre-clamp actor array (`actor+0x148 -> unit`,
-caster `actor+0x142 -> action id`), owned by `04-engine-memory-model.md`. In the current runtime
-surface, that path is still exposed as an observe-only probe:
+caster `actor+0x142 -> action id`), owned by `04-engine-memory-model.md`. The stable diagnostic
+surface is exposed as an observe-only probe:
 
 ```json
 {
@@ -353,19 +357,25 @@ surface, that path is still exposed as an observe-only probe:
 }
 ```
 
-It emits `[PRECLAMP-ACTOR-CTX]` for head-to-head validation against the pending tracker and fallback
-resolvers. CT is not the design-primary attacker source anymore; keep it enabled only as a fallback
-and diagnostic signal while the actor-context resolver is promoted into formula context. Relevant
-fallback settings:
+It emits `[PRECLAMP-ACTOR-CTX]` for head-to-head validation against pending and selector context.
+The same context is also used by the validation-grade managed pre-clamp callback proof, which has
+applied caster/target-stat damage in the native HP-apply frame for basic attack, instant named
+ability, and delayed named ability rows. Shipping DSL integration must route formula evaluation
+through this native-frame context rather than the legacy CT/recent-unit paths.
+The CT and recent-damage knobs below are legacy diagnostics for comparing old resolver traces and
+must not be required by shipping DCL profiles:
 
 ```json
 {
-  "ResolveAttackerByCt": true,
+  "ResolveAttackerByCt": false,
   "CtDropWindowMs": 4000,
-  "ResolveCounterFromRecentDamage": true,
+  "ResolveCounterFromRecentDamage": false,
   "CounterEventWindowMs": 1500
 }
 ```
+
+Set these to `true` only in throwaway RE/comparison profiles. They are not part of the accepted DCL
+runtime ownership path.
 
 ```json
 {
@@ -987,7 +997,12 @@ so a downgraded hit needs BOTH hooks.
   applies it. Settings: `PreClampDamageRewriteEnabled`; `PreClampDamageRewriteForcedDebit` /
   `…ForcedCredit` (`0` = zero the damage, `-1` = leave); `PreClampDamageRewriteTargetCharId`
   (`-1` = any target); `PreClampDamageRewriteMinHp` / `…MaxHp` (HP-range guard, default `1`/`9999`);
-  `PreClampDamageRewriteMaxWrites`; `PreClampDamageRewriteLogOnly`.
+  `PreClampDamageRewriteMaxWrites`; `PreClampDamageRewriteLogOnly`. `PreClampManagedCallbackEnabled`
+  is an opt-in ABI bridge that calls a C# reverse-wrapper callback from this same native frame and
+  lets the callback return the debit written to `[rbp+6]`; fixed-debit plus basic, instant named,
+  and delayed named caster/target-stat formula proofs are proven. The current callback formula path is
+  validation-grade and must be broadened into the full DSL/action-family integration before it is
+  treated as the shipping interface.
 - **Result/animation selector hook** (`0x205210`) — sets the evade-type render. Settings:
   `ResultSelectorControlEnabled`; `ResultSelectorControlForceEvadeType` (enum per 05 §4: `0x04`
   class-evade / `0x03` shield / `0x02` weapon / `0x01` cloak / `0x06` miss / `0x00` hit);

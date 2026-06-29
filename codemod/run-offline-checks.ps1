@@ -109,6 +109,7 @@ try {
         Invoke-Step "Python tooling smoke tests" {
             Invoke-Native 'python' @('tools\test_runtime_tooling.py')
             Invoke-Native 'python' @('tools\test_actor_probe_ct.py')
+            Invoke-Native 'python' @('tools\test_action_identity_log.py')
             Invoke-Native 'python' @('tools\test_memtable_candidates.py')
             Invoke-Native 'python' @('tools\test_neuter_data.py')
             Invoke-Native 'python' @('tools\test_neuter_gap_targets.py')

@@ -173,11 +173,31 @@ internal static class RuntimeSettingsValidator
                 report.Error("PreClampDamageRewriteForcedDebit", "Forced debit must be -1 or a signed 16-bit nonnegative value.");
             if (settings.PreClampDamageRewriteForcedCredit is < -1 or > short.MaxValue)
                 report.Error("PreClampDamageRewriteForcedCredit", "Forced credit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampManagedCallbackForcedDebit is < -1 or > short.MaxValue)
+                report.Error("PreClampManagedCallbackForcedDebit", "Managed callback forced debit must be -1 or a signed 16-bit nonnegative value.");
+            if (settings.PreClampManagedCallbackPaMultiplier is < 0 or > 1000)
+                report.Error("PreClampManagedCallbackPaMultiplier", "Managed callback PA multiplier must be within 0..1000.");
+            if (settings.PreClampManagedCallbackFormulaMinDamage < 0 ||
+                settings.PreClampManagedCallbackFormulaMaxDamage < settings.PreClampManagedCallbackFormulaMinDamage ||
+                settings.PreClampManagedCallbackFormulaMaxDamage > short.MaxValue)
+                report.Error("PreClampManagedCallbackFormulaDamageRange", "Managed callback formula damage range must be nonnegative, ordered, and <= Int16 max.");
+            if (settings.PreClampManagedCallbackStackScanBytes < 0 || settings.PreClampManagedCallbackStackScanBytes > 0x4000)
+                report.Error("PreClampManagedCallbackStackScanBytes", "Managed callback stack scan bytes must be within 0..0x4000.");
             if (!settings.PreClampDamageRewriteLogOnly &&
                 settings.PreClampDamageRewriteForcedDebit < 0 &&
                 settings.PreClampDamageRewriteForcedCredit < 0 &&
-                !settings.PreClampFormulaPlanEnabled)
-                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, or PreClampFormulaPlanEnabled.");
+                !settings.PreClampFormulaPlanEnabled &&
+                !settings.PreClampManagedCallbackEnabled)
+                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, PreClampFormulaPlanEnabled, or PreClampManagedCallbackEnabled.");
+            if (settings.PreClampManagedCallbackEnabled)
+            {
+                report.Warn("PreClampManagedCallbackEnabled", "managed callback calls C# from the native pre-clamp hook; use only for a tightly guarded ABI proof until live-stable.");
+                if (settings.PreClampManagedCallbackForcedDebit < 0 &&
+                    !settings.PreClampManagedCallbackActorFormulaEnabled)
+                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit or PreClampManagedCallbackActorFormulaEnabled.");
+                if (settings.PreClampManagedCallbackActorFormulaEnabled)
+                    report.Warn("PreClampManagedCallbackActorFormulaEnabled", "actor formula resolves caster/action from the pre-clamp frame; use only in controlled captures until it is live-stable across action families.");
+            }
             if (settings.PreClampDamageRewriteMaxWrites <= 0 || settings.PreClampDamageRewriteMaxWrites > 32)
                 report.Error("PreClampDamageRewriteMaxWrites", "Max writes must be within 1..32.");
             if (settings.PreClampPointerScanBytes < 0 || settings.PreClampPointerScanBytes > 0x4000)

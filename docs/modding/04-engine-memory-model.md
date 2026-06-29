@@ -28,7 +28,7 @@ Split of responsibility:
 - Code mod owns the combat number.
 - Engine owns HP clamp, death/KO lifecycle, and final effect application.
 - HP-write/pre-clamp target is the authoritative final impacted unit.
-- CT is fallback/diagnostic, not the primary action-context source.
+- CT is an observed engine field only; it is not accepted as a DCL action-context source.
 
 Core vocabulary:
 
@@ -309,6 +309,9 @@ actionId = caster_actor + 0x142                                  (also 0x17A / 0
 - The resolving action id lives in the caster actor struct: `258` (Cross Slash), `257` (Braver),
   `0` (basic attack — weapon identity then comes from equipment, §2.2). It is `0` in every
   target/other actor.
+- **Hypothesis** for self-hit or self-AoE: when the caster is also a final HP target, there may be no
+  non-target actor to select. In that case, a target-linked actor with a positive action id is the
+  self-caster candidate, logged as `resolved-self` by the probe.
 - `+0x142` sits right before the self unit pointer at `+0x148`, making it the primary "this actor's
   current action id" candidate.
 - No target list inside the caster actor — scanning the full `0x548` found only the self pointer at
@@ -319,20 +322,36 @@ actionId = caster_actor + 0x142                                  (also 0x17A / 0
   register, only as an actor-struct pointer on the stack.
 
 This is the strongest candidate for a real engine "current executing action context" and is
-reachable straight from memory at damage time; it can retire both CT and the pending-clear
-heuristic. An observe-only memory-only resolver (`[PRECLAMP-ACTOR-CTX]`) is validated head-to-head
-for Cross Slash AoE (resolved both hits to `caster=Cloud actionId=258` purely from the actor array,
-agreeing 100% with the pending tracker, with no CT; returns `no-caster-actor` for credit/tick
-events with `oldDebit=0`, naturally separating real actions from passive ticks).
+reachable straight from memory at damage time; it replaces CT for action classes covered by live
+validation. An observe-only memory-only resolver
+(`[PRECLAMP-ACTOR-CTX]`) is validated head-to-head in one battle/save for:
+
+- basic attack: `actionId=0`, weapon identity from equipment;
+- immediate named ability: `actionId=159` Divine Ruination;
+- charged single-target action: `actionId=257` Braver;
+- charged AoE action: `actionId=258` Cross Slash, same caster/action across multiple target HP
+  events.
+
+Credit/tick events with `oldDebit=0` return `no-caster-actor`, naturally separating real damage
+actions from passive ticks.
+
+Selector-frame source context (**Strong**, validated for normal-hit rows and a
+Shirahadori/Blade-Grasp no-HP row in one battle/save): the result/animation selector at
+`module+0x205210` carries the target/result actor through `actor`/`rbx`/`r8`/stack self refs and
+the source actor through `rdx`, `r15`, and a stack source ref such as `+0xA0` or `+0x90`. The source
+actor uses the same `actor+0x142` action id candidate (`0` for a basic attack). This is especially
+important for no-HP outcomes: a Blade-Grasp-style row has `+0x1BE=0`, `+0x1C4=0`, `+0x1E5=0` and no
+positive HP pre-clamp event, but the selector frame still exposes the non-target source actor/action.
 
 Cross-confirmation: the result/animation selector at `module+0x205210` reads its record as
 `[r8+0x148]` where `r8` is the actor object — i.e. the same `actor+0x148 -> unit` array.
 
-Still open before promoting actor-context to primary `DamageEvent.Attacker`/`Action` (gated on
-`oldDebit>0`, keeping pending tracker + CT as fallback): overlapping/simultaneous pending casters,
-counters/reactions, an explicit immediate-basic head-to-head, and actor-array RVA/layout stability
-across a DIFFERENT battle/save (captures so far were the same battle/save; the actor bases were
-identical across two launches of the same save, but cross-battle stability is unverified).
+Still open before promoting actor-context to primary `DamageEvent.Attacker`/`Action` everywhere
+(gated on `oldDebit>0`, with pending tracker and selector context as complementary ownership
+surfaces): overlapping/simultaneous pending casters, named-action no-HP outcomes, Hamedo/
+First-Strike cancellation of the incoming action, self-hit/self-AoE with `resolved-self`, and
+actor-array RVA/layout stability across a different battle/save. CT can appear in historical probe
+logs, but it is not an accepted ownership surface.
 
 ## 4. Hook Map
 
@@ -387,6 +406,18 @@ What it gives: pre-apply target HP; raw staged damage (`oldDebit`) before clamp;
 (`oldCredit`) for heal/credit-like cases; a place to rewrite damage before vanilla applies HP and
 KO; a native-frame register/stack capture point for the actor array (§3).
 
+Managed same-frame bridge (**Proven**, fixed-debit and actor-formula proof): the mid-function ASM
+hook can call a Reloaded reverse-wrapper C# callback synchronously, pass the target unit pointer
+(`rdi`), staged state pointer (`rbp`), hook-save stack pointer, and pre-clamp buffer, then write the
+callback's returned debit to `[rbp+6]` before vanilla consumes it. The callback can resolve the
+caster from the native actor context by scanning saved registers/original stack roots for an actor
+struct whose `+0x148` points to a registered unit, then compute a formula from caster and target
+stats. Guarded proofs resolved caster `0x1E`, target `0x1F`, and wrote formula debit `56` in the
+native HP-apply frame for both a basic attack (`oldDebit=151`, `actionId=0`) and an instant named
+ability (`oldDebit=205`, `actionId=159`). The same bridge also resolved delayed Braver at HP-apply
+time (`caster=0x32`, `target=0x1F`, `oldDebit=153`, `actionId=257`) and wrote formula debit `89`.
+Broader action-family coverage remains separate validation work.
+
 **Proven live (2026-06-26):** forcing `word[rbp+6]=0` here zeros a guaranteed hit's damage — a
 100%-to-hit attack left the target at full HP (567/567). Paired with the selector evade-type write
 (`05-reverse-engineering.md` §4, Control recipe) this gives full hit→miss control: debit-zero on this
@@ -420,7 +451,7 @@ healing/credit events.
 
 ## 5. Action-Context Models
 
-### 5.1 CT: Useful Fallback, Not the Final Resolver — **Proven** as CT; **Refuted** as robust primary
+### 5.1 CT: Observed Engine Field Only — **Proven** as CT; **Refuted** as mod ownership
 
 `unit+0x41` is CT. It rises with Speed and drops/resets when a unit acts in the normal FFT turn
 model. Early immediate-action resolution used `attacker ~= unit whose CT recently dropped/reset`,
@@ -432,10 +463,10 @@ several turns later; counters / Hamedo / First-Strike-like reactions and interru
 a clean CT drop; multiple charged actions can be pending at once; in delayed Cross Slash AoE,
 CT-only logic resolved no attacker for final HP events.
 
-Rule: use CT as fallback and diagnostic only; do not make CT the primary source. A counter-inversion
-fallback exists conceptually: if a unit immediately damages the unit that just attacked it, the
-resolver can invert the previous resolved HP-damage pair and mark the source as `counter-inversion`
-(`a.sourceCounter`). This is a heuristic, not a final reaction system.
+Rule: do not use CT for DCL action ownership. The mod's accepted ownership surfaces are native-frame
+register/stack/actor context, pending context, selector context, and final pre-clamp HP/MP targets.
+CT may remain in historical logs and sanity reports, but it must not be required by formulas or
+runtime decisions.
 
 ### 5.2 Immediate / Basic Action Model — **Strong**, with live formula rewrite success
 
@@ -459,9 +490,18 @@ plan matching; sane unit validation; exact active-source marker `ba == 1`.
 Dual wield (**Proven**): two separate native pre-clamp events, not one aggregate event. Each hit has
 its own staged debit. Implementation implication: immediate/basic plans need `maxWrites >= 2`.
 
-Open immediate-action risks: counters; Hamedo/First-Strike-like reactions; misses/evades/blocks;
-criticals and random damage; multi-target instant abilities; identifying weapon/action family, not
-just source and target.
+Counter/First-Strike damage that reaches HP apply (**Strong**): the reaction attack's own HP events
+route through the normal pre-clamp and selector hooks. Actor-context identifies the reaction attacker
+as source and the original attacker as target.
+
+First-Strike / Hamedo-like cancelled incoming actions expose a separate interrupted-action surface
+(**Strong for a basic incoming attack**): before the reaction damage applies, the original target's
+target cache can hold the interrupted incoming debit at `+0x1C4` with damage result metadata. At
+the correlated `targetcache` hook-register frame, `hookPtr` and multiple register/stack unit refs
+point to the original incoming source while `targetPtr` remains the defender. For a basic incoming
+attack this gives source + target before HP apply is cancelled. Open reaction risks: named incoming
+action id (`actionId > 0`) at this frame, Hamedo variants, criticals and random damage, multi-target
+instant abilities, and identifying weapon/action family, not just source and target.
 
 Mana Shield and non-HP channels (**Proven** as engine behavior; not solved as formula context): an
 attack on a Mana Shield unit produces no HP event because the engine redirects the damage to MP.
@@ -622,8 +662,9 @@ These are the rules the code mod should follow unless a newer test updates this 
 4. **Validate unit structs aggressively.**
    Stride scans can find false positives.
 
-5. **Do not use CT as primary.**
-   Keep it as fallback and diagnostic.
+5. **Do not use CT for mod ownership.**
+   Use native-frame register/stack/actor context, pending context, selector context, and pre-clamp
+   target context instead.
 
 6. **Track delayed actions before HP writes.**
    Pending flags clear before final damage events.
@@ -665,7 +706,7 @@ char/team/stat sanity. Common char ids in the controlled setup: Ramza `0x01`, Ni
 - `[HOOK-REGS]`: broad stable-hook register capture.
 - `[HOOK-REGS-EVENT]`: recent hook snapshot correlated with HP/MP/CT/pending-resolve events.
 - `[HOOK-PTRSCAN-EVENT]`: readable roots from a correlated stable-hook register snapshot.
-- `[ACTOR-PROBE]`: per-unit `0x40..0x52` window snapshot at a damage event (CT resolution).
+- `[ACTOR-PROBE]`: per-unit `0x40..0x52` window snapshot at a damage event (legacy CT comparison).
 - `[PENDING-ACTION-CANDIDATES]`: registered unit pending/action state at event time.
 - `[PENDING-ACTION-TRACK]`: runtime pending/resolving action lifecycle.
 - `[PRECLAMP-PLAN-QUEUE]`: formula plan staged for native pre-clamp.

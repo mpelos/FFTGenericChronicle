@@ -2,7 +2,7 @@
 
 Entry point to the manual of truth for modifying the battle system of **FINAL FANTASY TACTICS -
 The Ivalice Chronicles** (Steam, Enhanced v1.5.0). This file is the synthesis and index; the
-specifics live in `01`-`07`. Scope is *what is technically possible* and *where the battle math
+specifics live in `01`-`08`. Scope is *what is technically possible* and *where the battle math
 lives* - not gameplay design.
 
 The dated investigation logs (probe runs, build checkpoints, live-evidence narration) live in the
@@ -39,7 +39,8 @@ virtualized math. Proven control (2026-06-27):
   (poll-write of `obj+0x6`==`unit+0x1C4` for damage, `obj+0x8`==`unit+0x1C6` for healing) — are
   likewise controllable and coherent with the applied result for physical, magic, and healing actions.
 
-Attacker/action context is resolved at the damage frame, with CT as a fallback signal. Live struct
+Attacker/action context is resolved from native actor/pending/selector/pre-clamp surfaces. CT is an
+observed field and historical diagnostic only, not an accepted DCL ownership signal. Live struct
 offsets, the hook map, and the runtime DSL/control levers are documented in `04`, `05`, and `06`.
 
 ## The four editing layers
@@ -82,8 +83,8 @@ The mod has four distinct editing surfaces:
 - **No modding API exposes a battle-formula callback.** Loader managers only patch data tables;
   Faith Framework is a live Nex editor. The direct formula routine is Denuvo-virtualized; the code
   mod instead hooks stable `.text` touchpoints to read battle units, detect HP/MP deltas, resolve
-  attacker/action context at the damage frame (CT as fallback), compute formulas in C#, and
-  reconcile the final number.
+  attacker/action context through native actor/pending/selector/pre-clamp surfaces, compute formulas
+  in C#, and reconcile the final number.
 - **Classic FFT/WotL mods are a knowledge map, not portable code** (PSX/PSP MIPS vs x64
   reimplementation). They supply the exact math, struct layout, dispatch architecture, and a
   validation oracle, turning the RE from blind to guided.
@@ -103,6 +104,7 @@ The mod has four distinct editing surfaces:
 | `05-reverse-engineering.md` | using classic knowledge for RE: PSX decomp, cheat-table struct offsets + AOBs, formula fingerprint sheet, attack path, Denuvo notes |
 | `06-code-mod-runtime-dsl.md` | runtime code-mod: data placeholders, unit registry, event detector, context resolver, C# formula engine, HP/MP reconciler, and the proven control levers (pre-clamp damage/healing/MP, evade input-control, result selector, status/Brave, full forecast display: hit-% + HP amount number/bar) |
 | `07-sprite-asset-pipeline.md` | sprite/asset extraction and replacement pipeline |
+| `08-dcl-information-requirements.md` | DCL runtime information inventory: action context, metadata, unit state, outcome authority, and custom state required for full DCL formula control |
 
 ## Stable reference artifacts (this repo)
 
