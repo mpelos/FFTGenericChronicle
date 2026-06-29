@@ -279,27 +279,27 @@ Illustrative only (numbers are calibration placeholders, `12`):
 
 | Weight total | Move | who lands here |
 |--------------|------|----------------|
-| 0–14 | **−0** | robe/mage, leather (even + light shield) |
-| 15–28 | **−1** | **mail and "normal" plate** — the typical heavy cost |
-| 29–40 | **−2** | plate + heavy shield/helm — the deliberate bunker |
+| 0–14 | **−0** | robe/mage, clothes & suits (even + light shield) |
+| 15–28 | **−1** | **heavy armor** — the typical heavy cost |
+| 29–40 | **−2** | heavy armor + heavy shield/helm — the deliberate bunker |
 | 41+ | **−3** | the walking fortress |
 
 Tuning intent: a **generous dead-zone** (a light build, even with a shield, pays **zero** Move — only
-Dodge); **−1 is the typical heavy cost** (mail *and* normal plate); **−2/−3 is the deliberate bunker**
-(plate + heavy shield/helm). Mail shares plate's Move tier yet is never just plate-with-less-DR, because
-**lighter always dodges more** (the monotone Weight→Dodge gradient) and mail's flat DR covers plate's
-crush hole (validation B10, below). **The UI telegraphs the next breakpoint** ("Weight 24 / 26 → +2 more
-and Move drops") — that breakpoint *is* the equip decision.
+Dodge); **−1 is the typical heavy cost** (heavy armor); **−2/−3 is the deliberate bunker**
+(heavy armor + heavy shield/helm). Within heavy armor, **lighter pieces still dodge a touch more** (the
+monotone Weight→Dodge gradient), so two heavy SKUs at the same Move tier are never identical. **The UI
+telegraphs the next breakpoint** ("Weight 24 / 26 → +2 more and Move drops") — that breakpoint *is* the
+equip decision.
 
 Two locks on the Weight model (Marcelo, 2026-06-26 — approved):
 
 - **No PA/ST in the calculation.** Same Weight → same penalty for everyone. If PA reduced Weight, the
-  high-PA melee would wear plate at almost no mobility cost → **leather becomes pointless for it**.
+  high-PA melee would wear heavy armor at almost no mobility cost → **clothes & suits becomes pointless for it**.
   That cliff stays closed (it is the same hazard as a finesse-style stat shortcut).
 - **Weight is coupled to DR by default.** More protection costs more Weight, at *every* tier
   (early→late), so the heavy/light tradeoff is **invariant** across the whole game and never gets
   power-crept away. A "tough **and** light" piece (high DR, low Weight) is the exact item that
-  *dissolves* the tradeoff and kills leather builds — so it exists only as a **rare, costed premium**
+  *dissolves* the tradeoff and kills clothes-&-suits builds — so it exists only as a **rare, costed premium**
   (a mithril exception paid for in rarity / elemental weakness / slot cost), never the baseline.
 
 **Nature / feasibility:** the per-piece Weight value is plain **data** (easy); the **Weight → Move /
@@ -318,12 +318,13 @@ the Speed stat, `01`); so armor trades two opposed currencies:
 The axis is therefore **mitigation (DR) vs avoidance (Dodge) + positioning (Move)** — two different
 ways of not dying, not "more vs less of the same."
 
+FFT has **three** body-armor categories, and the DCL maps onto them exactly:
+
 | Classe | DR (corte/perf) | DR (crush) | Dodge | Move (banda Weight) | Identidade |
 |--------|-----------------|------------|-------|---------------------|------------|
-| **Plate (pesada)** | **alto** | **baixo** *(regra full-plate `03`)* | **mínimo** | **−1** *(−2 carregada)* | polo de **mitigação** — âncora anti-lâmina; buraco vs crush e penetração |
-| **Mail (média)** | médio | **médio (plano)** | médio | **−1** | DR real **sem buraco de tipo** — mais esquiva e à prova de crush que o plate, mesmo degrau de Move |
-| **Leather (leve)** | baixo | baixo | alto | **−0** | chassi de **mobilidade** — defesa = posição/flanco, não DR |
-| **Robe (pano)** | mínimo | mínimo | **máx.** | **−0** | polo de **esquiva** — caster (restrito a robe) |
+| **Heavy Armor (pesada)** | **alto** | **baixo** *(regra full-plate `03`)* | **mínimo** | **−1** *(−2 carregada)* | polo de **mitigação** — âncora anti-lâmina; buraco vs crush e penetração |
+| **Clothes & Suits (leve)** | baixo | baixo | alto | **−0** | chassi de **mobilidade** — defesa = posição/flanco, não DR |
+| **Robes (pano)** | mínimo | mínimo | **máx.** | **−0** | polo de **esquiva** — caster (restrito a robes) |
 
 (HP é um **buffer modesto** em todas as classes — ruling 2 abaixo, DR-primary; não é uma corrida de HP.
 Os números relativos provisórios estão no fim desta seção e em `sim_armor_calibration` / `12`.)
@@ -333,7 +334,7 @@ Design rulings (Marcelo, 2026-06-25 / 26 — approved):
 1. **The mobility cost is Weight → Move + Dodge, never CT** (see the Weight model above). Turn-frequency
    stays a pure function of the Speed stat (`01`); armor must not touch it (cutting CT would be the
    inverse of the rejected finesse *compounding* hammer). *A small heavy-armor CT penalty is kept as an
-   explicit **reserve knob** (`12`) only if the leather-melee proves too weak in playtest.*
+   explicit **reserve knob** (`12`) only if the clothes-&-suits-melee proves too weak in playtest.*
 2. **DR-primary, HP-modest.** DR (and its **type matchup**) is the star; the HP contribution is a
    small buffer, not an HP race. This keeps the matchup sharp and keeps **base-HP** clean as the
    status-resist stat (`13`) rather than swamping it with gear HP. (Deliberately unlike vanilla FFT,
@@ -342,62 +343,59 @@ Design rulings (Marcelo, 2026-06-25 / 26 — approved):
    with the **helmet** slot — pending.*
 3. **DR is type-specific** — the full-plate rule (`03`): plate walls cutting/impaling but is soft to
    **crush**; light armor is thin against everything.
-4. **Caster fragility comes from equip restriction** (mage jobs equip robe only, FFT-native), **not**
+4. **Caster fragility comes from equip restriction** (mage jobs equip robes only, FFT-native), **not**
    a magic-in-armor penalty. Mages cannot buy physical survivability with gear — they stay fragile by
    access, which is simpler and keeps the magic axis clean (`11`).
 5. **Light = no penalty**, not a bonus. Its edge is *relative* (it keeps the Move/Dodge that heavy
    loses); it is not over-sweetened with extra mobility.
 
 **Why this balances — a two-pole axis, not a cyclic "armor triangle" (validation B10).** Measured as
-pure defense (`sim_armor_calibration`), armor is a **two-pole mitigation↔avoidance axis** — **Plate**
-(mitigation, walls honest blades) at one end, **Robe** (avoidance, plus the DR-piercing/magic that
-flows off a no-DR target) at the other — with **Mail** and **Leather** as the interior, **not** the
-cyclic `Plate > Leather > Caster > Plate` the structure first implied. Two things make that honest and
-still healthy:
+pure defense (`sim_armor_calibration`), armor is a **two-pole mitigation↔avoidance axis** — **Heavy
+Armor** (mitigation, walls honest blades) at one end, **Robes** (avoidance, plus the DR-piercing/magic
+that flows off a no-DR target) at the other — with **Clothes & Suits** as the mobility interior, **not**
+the cyclic `Heavy > Clothes > Caster > Heavy` the structure first implied. Two things make that honest
+and still healthy:
 
-- **Armor is largely job-gated.** A mage wears robe *because it is a mage* (ruling 4); an archer wears
-  leather. You mostly choose a **job**, and the armor comes with it — so "which armor is strictly best"
-  is the wrong question for most units. The no-strictly-better pillar (`00`, P1′) bites only where a
-  single job can equip **more than one** class, and there the sim verifies **no class is dominated**.
-- **The Plate-melee / Leather-skirmisher / Caster rock-paper-scissors is a *playstyle* dynamic, not an
-  armor-tank cycle.** Leather beats Plate by **flanking and kiting** (mobility, `05`), *not* by
-  out-tanking it; the Caster beats Plate by **ignoring DR** (`11`); the Leather skirmisher closes and
+- **Armor is largely job-gated.** A mage wears robes *because it is a mage* (ruling 4); an archer wears
+  clothes & suits. You mostly choose a **job**, and the armor comes with it — so "which armor is strictly
+  best" is the wrong question for most units. The no-strictly-better pillar (`00`, P1′) bites only where
+  a single job can equip **more than one** class, and there the sim verifies **no class is dominated**.
+- **The Heavy-melee / Clothes-skirmisher / Caster rock-paper-scissors is a *playstyle* dynamic, not an
+  armor-tank cycle.** Clothes beats Heavy by **flanking and kiting** (mobility, `05`), *not* by
+  out-tanking it; the Caster beats Heavy by **ignoring DR** (`11`); the Clothes skirmisher closes and
   bursts the fragile Caster. The cycle rides on Move / range / magic — the *armor* underneath each is
   just a point on the mitigation↔avoidance axis.
 
 Each class's honest identity:
 
-- **Plate** = the mitigation pole: best survival vs honest cut/thrust, but **holed vs crush**
+- **Heavy Armor** = the mitigation pole: best survival vs honest cut/thrust, but **holed vs crush**
   (full-plate rule `03`) and vs **penetration/gun**, and the slowest (−1 Move, −2 when loaded with
   shield/helm). The anvil.
-- **Robe** = the avoidance pole: dodges most, but its zero DR means **thrust (×2) and any solid hit
+- **Robes** = the avoidance pole: dodges most, but its zero DR means **thrust (×2) and any solid hit
   land hard**; it survives by not being hit and by being the one *casting*, not the one tanking.
-- **Leather** = the **mobility chassis**: its defense is **positioning** (flank for back-attacks `05`,
-  kite, stay at range), not DR. Never the best *tank* — that is not its job — but the natural shell of
-  archers, monks, thieves.
-- **Mail** = the **flat, no-hole** middle: real DR across *all* types (no crush gap), and being lighter
-  it **dodges more than plate** at the same Move tier. Its clean niche is the **anti-crush /
-  anti-plate-hole** tank — the frontliner who wants real DR but expects maces or mixed threats and a
-  touch more evasion than the plate anvil.
+- **Clothes & Suits** = the **mobility chassis**: its defense is **positioning** (flank for back-attacks
+  `05`, kite, stay at range), not DR. Never the best *tank* — that is not its job — but the natural shell
+  of archers, monks, thieves, and the light frontliner.
 
-Two structural rules keep the interior from collapsing (the B10 fix, `sim_armor_calibration`):
+Two structural rules keep the axis from collapsing (the B10 fix, `sim_armor_calibration`):
 
 1. **Lighter always grants more Dodge** — the Weight→Dodge curve is monotone and fine-grained (above),
-   so a lighter class is never "the same but worse": it trades DR for Dodge. This alone keeps adjacent
-   classes off each other's domination.
-2. **Plate's crush / penetration holes are load-bearing.** Mail and "normal" plate share the −1 Move
-   tier, yet Mail is *not* just plate-with-less-DR: its **flat DR covers plate's crush hole** (so Mail
-   is the best pick the moment the enemy brings maces), and being lighter it **dodges more** (rule 1).
-   That earns Mail a real context without having to out-move plate. *(A sharper "lighter literally moves
-   more" identity is available by pushing plate to −2 — the sim confirms that also holds — but it is
-   not needed for non-domination and it costs knight mobility, so the default keeps plate at −1.)*
+   so a lighter class is never "the same but worse": it trades DR for Dodge (Clothes dodges more than
+   Heavy; Robes more than Clothes). This keeps adjacent classes off each other's domination.
+2. **Heavy Armor's crush / penetration holes are load-bearing.** Heavy armor is not a flat wall: its DR
+   is **type-shaped** (high vs cut/thrust, low vs crush — full-plate rule `03`) and **halved by armor
+   divisor** (penetration / gun, `03`). A mace or a crossbow is therefore the answer that stops Heavy
+   from being strictly-best wherever a job *can* choose it — no fourth "no-hole" middle class is needed
+   to police it. *(Folding the old four-class scheme — plate/mail/leather/robe — into FFT's three only
+   removes a redundant interior: fewer classes means fewer domination edges, so B10's conclusion holds
+   a fortiori.)*
 
-Provisional relative numbers satisfying both (full set + sweep in `sim_armor_calibration`, `12`;
-absolute magnitudes ride the global G / DR-scaling): DR cut/thr/crush ≈ Plate 9/8/**3**, Mail
-5/5/**5**, Leather 2/2/2, Robe 0/0/0; Weight ≈ 26 / 16 / 8 / 3 → Move: Leather/Robe 0, Mail/Plate −1
-(plate → −2 fully loaded). Against this set **no class is strictly dominated** and **each is the best
-pick in some context**; and with Speed out of Dodge (`01`, validation B1) **Plate, not Robe, holds the
-best worst-case** — the old "robe most-robust" artifact is gone.
+Provisional relative numbers (full set + sweep in `sim_armor_calibration`, `12`; absolute magnitudes
+ride the global G / DR-scaling): DR cut/thr/crush ≈ Heavy 9/8/**3**, Clothes 2/2/2, Robes 0/0/0;
+Weight ≈ 26 / 8 / 3 → Move: Clothes/Robes 0, Heavy −1 (→ −2 fully loaded). Against this set **no class
+is strictly dominated** and **each is the best pick in some context**; and with Speed out of Dodge
+(`01`, validation B1) **Heavy Armor, not Robes, holds the best worst-case** — the old "robe most-robust"
+artifact is gone.
 
 ### Shield (off-hand) — the finite active wall
 
@@ -432,20 +430,20 @@ Bonus** is held as a `12` reserve knob only if the shield plays too binary).
 
 A shield **also carries Weight** (`above`): a heavy tower shield adds real Weight (→ the Move/Dodge
 penalty), a light buckler almost none. That is the shield's own contribution to the heavy/light
-tradeoff — the leather skirmisher takes a light shield (stays in the Move dead-zone), the plate anvil
-can afford a heavy one (already past the breakpoint). Weight is *separate* from "DR/HP-light": the
+tradeoff — the clothes-&-suits skirmisher takes a light shield (stays in the Move dead-zone), the heavy
+anvil can afford a heavy one (already past the breakpoint). Weight is *separate* from "DR/HP-light": the
 shield adds no body DR, but a heavy one still slows you.
 
 **Why this balances:**
 
 - **Distinct from parry** (bigger, weapon-independent, and covers ranged) and **distinct from armor**
   (active / finite / facing-gated vs passive / always-on).
-- **Load-bearing for the mitigation pole:** the slow plate-tank (−Move) would otherwise be **kited and
-  shot down before closing** — ranged would hard-counter plate. With a shield it **advances under fire
+- **Load-bearing for the mitigation pole:** the slow heavy-armor tank (−Move) would otherwise be **kited
+  and shot down before closing** — ranged would hard-counter heavy armor. With a shield it **advances under fire
   (blocks shots on the approach)**. The shield is *how the mitigation-tank survives the approach*, and
   the melee answer to archers — completing **ranged > slow no-shield melee > (shield) > ranged**.
-- **Two flavors, both real:** leather + shield = a skirmisher who can still eat one hit per turn (pays
-  the off-hand for it); plate + shield = the classic anvil that walks into an arrow storm (pays in
+- **Two flavors, both real:** clothes & suits + shield = a skirmisher who can still eat one hit per turn (pays
+  the off-hand for it); heavy armor + shield = the classic anvil that walks into an arrow storm (pays in
   offense — no 2H Knight Sword / Katana).
 - **Fully countered:** focus-fire depletes Block; flank / back ignores it (facing, `05`); crit bypasses
   it; **fura-guarda** (Flail) is −2 to be blocked (`14`); and **massed ranged overwhelms** it (blocks

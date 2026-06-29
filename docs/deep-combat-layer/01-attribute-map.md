@@ -23,7 +23,7 @@ audit below is the proof that the constraint is satisfied: every line has a home
 | **HP** | Hit points, **decoupled from ST**; its own FFT pool (existing curves survive). **Double-homed: Base HP = the GURPS HT analogue** — innate physical resilience that resists *physical* statuses (poison, disease, stun, knockdown). Uses **base HP only** (excludes armor/equipment HP bonuses) → resilience is intrinsic, not bought with gear (the parallel to ST = base PA). | `02`, `12` (death), status |
 | **Speed** | **Turn frequency (CT).** Drives how often a unit acts. A *residual* emergent defense remains because guard resets on your own turn (a fast unit refreshes its depleted parry/block sooner) — open follow-up. **No longer feeds Dodge** (validation B1, 2026-06-26 — see note below). | `04-hit-and-defense.md` |
 | **Move / Jump** | Positioning resources — unchanged in spirit, but far more valuable because facing, flanking, and reach now decide fights. | `05`, `06` |
-| **C-Ev** (Class Evade) | **Primary source of Dodge** (the innate, non-depleting defense floor), together with equipment. After validation B1, **Dodge = C-Ev + equipment** (Speed removed) → evasion is a real build axis (evasive class + light armor, paid in DR) and the **survival mechanism for light/leather builds**. | `04` |
+| **C-Ev** (Class Evade) | **Primary source of Dodge** (the innate, non-depleting defense floor), together with equipment. After validation B1, **Dodge = C-Ev + equipment** (Speed removed) → evasion is a real build axis (evasive class + light armor, paid in DR) and the **survival mechanism for light clothes-&-suits builds**. | `04` |
 | **S-Ev** (Shield Evade) | Becomes **Block** — a strong but **depleting** active defense granted by shields. | `04` |
 | **W-Ev** (Weapon Evade) | Becomes **Parry** — a strong but **depleting** active defense granted by the weapon (≈ skill/2 + 3). | `04` |
 | **WP** (Weapon Power) | The weapon's **flat additive damage modifier** (scales fast to large endgame numbers). Pairs with the weapon's damage *type* and *reach*. | `02`, `03` |
@@ -63,7 +63,7 @@ Speed isolated from Brave). **Fix: Speed is decoupled from Dodge.**
 
 - **Speed now drives turn frequency (CT) only.** `Dodge = C-Ev (class) + equipment`; Speed is out of
   the Dodge formula. Evasion becomes a real build axis (evasive class + light armor, paid for in
-  DR/protection) — the **survival mechanism for light/leather builds**, not a free rider on Speed.
+  DR/protection) — the **survival mechanism for light clothes-&-suits builds**, not a free rider on Speed.
   A fast unit still acts more often, but is no longer harder to hit for free.
 - The **guard-refresh tie is KEPT** (depleting Parry/Block fully reset on the unit's own turn — a fast
   unit refreshes sooner, so focus-fire cracks *slow* tanks; the intended "tempo = hold the line"

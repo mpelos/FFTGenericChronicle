@@ -44,8 +44,9 @@ This keeps the four types genuinely different shapes rather than a power ranking
 
 ## Armor classes and the response matrix
 
-Armor provides **type-specific DR**. Different armor classes resist the four types differently. The
-load-bearing case is heavy plate:
+Armor provides **type-specific DR**. FFT's three body-armor classes — **Heavy Armor**, **Clothes &
+Suits**, and **Robes** (`14`) — resist the four types differently. The load-bearing case is heavy armor
+(its heaviest pieces, "full plate"):
 
 ### The full-plate rule
 

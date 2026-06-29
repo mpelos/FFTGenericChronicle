@@ -128,28 +128,30 @@ Marcelo explicitly deferred fine calibration ("deixa a calibragem fina para depo
   - **Weight → Move/Dodge curve (`14`, RESOLVED-model 2026-06-26):** the model is locked (per-piece
     Weight, summed, run through a curve — **never** a flat per-item `−Move`, because Move is too coarse).
     Open **calibration:** the per-piece Weight values; the **Weight→Move breakpoints** (coarse, with a
-    generous dead-zone — light −0, mail & normal plate −1, loaded plate −2/−3); the **Weight→Dodge
+    generous dead-zone — light −0, heavy armor −1, loaded heavy −2/−3); the **Weight→Dodge
     slope** (fine, near-smooth — and **monotone: lighter always dodges more**, which is what keeps
-    mail/plate non-dominated at the *same* Move tier — validation B10). Locks: **no PA/ST in the calc**
+    the armor classes non-dominated across Move tiers — validation B10). Locks: **no PA/ST in the calc**
     (same Weight = same penalty, else strong units escape the tradeoff); **Weight coupled to DR** (a
     "tough-and-light" piece is a rationed premium only). The curve is a **Tier-2 computed hook**
     (item 7); per-piece Weight is data.
   - **Armor-class non-domination (`14`, RESOLVED, validation B10, `sim_armor_calibration`):** the
-    "armor triangle" is reframed honestly as a **2-pole mitigation↔avoidance axis** (Plate↔Robe) with
-    Mail/Leather as non-tank interior, and armor is **largely job-gated** (so P1′ bites only where one
-    job can equip more than one class). The sim fixes provisional relative numbers (DR cut/thr/crush ≈
-    Plate 9/8/3, Mail 5/5/5, Leather 2/2/2, Robe 0/0/0; Weight 26/16/8/3 → Move: leather/robe 0,
-    mail/plate −1, loaded plate −2) where **no class is strictly dominated** and **each is the best pick
-    in some context** — mail/plate stay non-dominated at the same Move tier via the monotone Dodge
-    gradient + mail's flat DR covering plate's crush hole. Mail's clean niche = the anti-crush /
-    anti-plate-hole tank; Leather = mobility chassis (positional defense). Post-B1
-    (Speed off Dodge) **plate, not robe, holds the best worst-case** — the over-robustness artifact is
+    "armor triangle" is reframed honestly as a **2-pole mitigation↔avoidance axis** (Heavy↔Robes) with
+    **Clothes & Suits** as the mobility interior, and armor is **largely job-gated** (so P1′ bites only
+    where one job can equip more than one class). FFT has **three** body-armor classes — Heavy Armor /
+    Clothes & Suits / Robes — and the old four-class scheme (plate/mail/leather/robe) folds onto them
+    (plate+mail → Heavy Armor), which only drops a redundant interior. Provisional relative numbers (DR
+    cut/thr/crush ≈ Heavy 9/8/3, Clothes 2/2/2, Robes 0/0/0; Weight 26/8/3 → Move: clothes/robes 0,
+    heavy −1, loaded heavy −2) where **no class is strictly dominated** and **each is the best pick in
+    some context** — the classes stay non-dominated via the monotone Dodge gradient (lighter always
+    dodges more) + Heavy's **type-shaped DR hole** (crush / penetration, `03`) that stops it being
+    strictly-best where it can be chosen. Clothes = mobility chassis (positional defense). Post-B1
+    (Speed off Dodge) **heavy, not robes, holds the best worst-case** — the over-robustness artifact is
     gone. Open: only the absolute magnitudes (ride the global G / DR-scaling).
   - **Armor CT reserve knob (`14`, RESOLVED-with-reserve 2026-06-25):** armor costs **Move + Dodge,
     never CT** (GURPS-faithful; CT stays pure Speed-stat, `01`). A **small heavy-armor CT penalty** is
-    held in reserve as the one knob to deploy *only if* the leather-melee proves too weak vs the
-    plate-melee in playtest. **Main calibration risk of the armor model:** whether Move + Dodge +
-    positioning is enough to make leather-melee competitive with plate-melee's reliable DR + HP.
+    held in reserve as the one knob to deploy *only if* the clothes-melee proves too weak vs the
+    heavy-melee in playtest. **Main calibration risk of the armor model:** whether Move + Dodge +
+    positioning is enough to make clothes-melee competitive with heavy-melee's reliable DR + HP.
   - **HP pool home (`14`, OPEN):** whether armor's modest HP stays on the body slot or migrates
     entirely to the head slot (orthogonal: body = DR + Weight, head = HP/MP pool) — decided with the
     **helmet** slot. Base-HP stays the gear-independent status-resist stat (`13`) either way.
