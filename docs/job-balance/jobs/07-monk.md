@@ -1,4 +1,4 @@
-# 05 — Monk · "The Self-Sufficient Diver"
+# 07 — Monk · "The Self-Sufficient Diver"
 
 The bare-handed bruiser, reframed as a **melee diver that needs no healer**: it dives the scrum,
 outlasts a physical brawl, punches through armour with crush fists, and sustains itself and its
@@ -15,7 +15,7 @@ are owned by the DCL docs and cross-referenced inline; numbers are calibration
 
 ## The vanilla problem it solves
 
-The problem here is the inverse of the earlier jobs. Vanilla Monk (`docs/job-balance/vanilla/05-monk.md`)
+The problem here is the inverse of the earlier jobs. Vanilla Monk (`docs/job-balance/vanilla/07-monk.md`)
 is a consensus **top job** (tier A, many say S) because it does **everything** in one chassis: highest
 HP + near-highest PA + high Speed + high evade; Brawler (full bare-handed, free weapon slot); ranged
 fists *and* AoE; and MP-free Chakra / Revive / Purification. The design risk is **omnicapability /

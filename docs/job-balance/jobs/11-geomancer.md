@@ -1,4 +1,4 @@
-# 13 — Geomancer · "The Elemental Reaver"
+# 11 — Geomancer · "The Elemental Reaver"
 
 The terrain warrior, rebuilt as a **melee fighter whose tactical options come from the ground underfoot**.
 It fights up close with a strong weapon (best with the axe), and weaponizes the tile it stands on through
@@ -19,7 +19,7 @@ on are owned by the DCL docs and cross-referenced inline; numbers are calibratio
 
 ## The vanilla problems it solves
 
-Vanilla Geomancer (`docs/job-balance/vanilla/13-geomancer.md`) is "good at everything, best at nothing": a
+Vanilla Geomancer (`docs/job-balance/vanilla/11-geomancer.md`) is "good at everything, best at nothing": a
 sturdy hybrid with a free, instant, ranged elemental attack. Four concrete feel-bad problems are fixed,
 each mapped to a design move:
 

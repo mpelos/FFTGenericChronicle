@@ -1,4 +1,4 @@
-# 06 — Thief · "The Evasive Cutpurse"
+# 08 — Thief · "The Evasive Cutpurse"
 
 The mobility/theft specialist, reframed as an **evasive tempo skirmisher**: the fastest, hardest-to-hit
 body on the field, who **de-fangs dangerous weapon-users**, slips through the enemy line to strike from
@@ -17,7 +17,7 @@ are owned by the DCL docs and cross-referenced inline; numbers are calibration
 
 ## The vanilla problem it solves
 
-Vanilla Thief (`docs/job-balance/vanilla/06-thief.md`) is the textbook **mine-don't-field** job: its
+Vanilla Thief (`docs/job-balance/vanilla/08-thief.md`) is the textbook **mine-don't-field** job: its
 lasting value is the mobility it *exports* (Move +2/+3, evasion reactions) onto a better body, while
 Steal deals no damage, is Speed-gated, and is unrewarding to spam. Two fixes:
 
