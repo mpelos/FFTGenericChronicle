@@ -21,7 +21,7 @@ or by only the most famous jobs.
 | What does this vanilla command/job skillset do as a whole? | `fft-vanilla-command-skillset-effect-map.md` |
 | Which skills already use this mechanic, such as `status_add`, `ct_action`, `equipment_break`, `global`, `reaction`, `undead`, or `movement`? | `fft-vanilla-ability-effect-tag-crosswalk.md` |
 | What does a status do, and what validation track does it touch? | `fft-vanilla-status-effect-map.md` |
-| How should job-balance proposals cite this atlas? | `../job-balance/12-vanilla-skill-status-reference.md` |
+| How should job-balance proposals cite this atlas? | `../job-balance/legacy/12-vanilla-skill-status-reference.md` |
 
 ## Coverage Snapshot
 

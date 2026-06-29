@@ -8,8 +8,8 @@ Depends on:
 - `docs/formula-balance/09-combat-formula-design-frame.md`
 - `docs/formula-balance/10-mitigation-and-scaling-policy-v0.md`
 - `docs/formula-balance/11-validated-policy-v0.2.md`
-- `docs/job-balance/10-healing-attrition-model-schema.md`
-- `docs/job-balance/15-targeting-challenge-model-schema.md`
+- `docs/job-balance/legacy/10-healing-attrition-model-schema.md`
+- `docs/job-balance/legacy/15-targeting-challenge-model-schema.md`
 
 ## Purpose
 
@@ -170,7 +170,7 @@ Global reaction safety rules still apply unless later superseded:
 - strongest single mitigation channel applies when multiple mitigation reactions overlap.
 
 The strongest-single-channel rule enforces the no-broad-practical-immunity principle from
-`docs/job-balance/01-cross-job-build-principles.md`.
+`docs/job-balance/legacy/01-cross-job-build-principles.md`.
 
 ## Brave Bands For Simulation
 
@@ -309,7 +309,7 @@ This keeps Brave relevant in AI and target selection without turning it into raw
 
 The following existing project artifacts must be updated after Claude review:
 
-1. `docs/job-balance/01-cross-job-build-principles.md`
+1. `docs/job-balance/legacy/01-cross-job-build-principles.md`
    - Records the no-universal-default reaction trigger-identity model (the old
      `58-physical-foundation-rsm-concrete-v0.md` producer was consolidated into the per-job
      decision docs and this principle).
@@ -320,9 +320,9 @@ The following existing project artifacts must be updated after Claude review:
      policy or mark it superseded.
 4. `docs/formula-balance/08-scenario-set-v0.md`
    - Expand `S-STRESS-BRAVE-FAITH` into normal/high/low/extreme Brave and Faith cases.
-5. `docs/job-balance/15-targeting-challenge-model-schema.md`
+5. `docs/job-balance/legacy/15-targeting-challenge-model-schema.md`
    - Add future Brave-band challenge susceptibility rows.
-6. `docs/job-balance/10-healing-attrition-model-schema.md`
+6. `docs/job-balance/legacy/10-healing-attrition-model-schema.md`
    - Add the scaling premise for non-item healing and preserve item healing as item-progression
      based.
 
