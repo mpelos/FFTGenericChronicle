@@ -1,0 +1,38 @@
+docs/job-balance/00-job-tree.md
+  s_a298d5c04f383c::t_f1e27b7b73086f 109
+  s_a298d5c04f383c::t_268a6272639b79 6-7
+  s_a298d5c04f383c::t_b7ea268539fbd0 112,114-120
+  s_a298d5c04f383c::t_53690ec4859f47 52-53
+  s_a298d5c04f383c::t_662fce67bb45c5 15-16
+  s_a298d5c04f383c::t_c5d22d392cd39e 35
+  s_a298d5c04f383c::t_64b19efc105e2b 66-72
+  s_a298d5c04f383c::t_6de968e77d3ac3 104-105
+  s_a298d5c04f383c::t_69dd34afc02c71 74-89
+  s_a298d5c04f383c::t_1071cda6044bae 44-45
+  s_a298d5c04f383c::t_969d702864de90 73
+docs/job-balance/jobs/07-monk.md
+  s_a298d5c04f383c::t_8a5c5c9cbc544f 18
+  s_a298d5c04f383c::t_52861de1fc8930 1
+docs/job-balance/jobs/08-thief.md
+  s_a298d5c04f383c::t_ef48a819c8a942 1
+  s_a298d5c04f383c::t_297294f7c098d8 20
+docs/job-balance/jobs/11-geomancer.md
+  s_a298d5c04f383c::t_b64b6f9b71c67e 22
+  s_a298d5c04f383c::t_308d8138e3bde3 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "8380c1d8a24039447277233ecb1a505c3bd508af",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
