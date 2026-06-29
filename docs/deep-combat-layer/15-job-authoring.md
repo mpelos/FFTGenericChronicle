@@ -71,6 +71,65 @@ This **refines pillar #1 of `00`** ("no build is strictly better than another") 
 strict non-domination holds *within* a tier; *across* tiers it becomes J1's global floor. (`00` should
 absorb this refinement; tracked in `12`.)
 
+## Weapon aptitude — the grade budget
+
+Each job declares a **grade (A–F) per weapon family** (`10`) — the family's *reachable skill*, i.e.
+how good the job can get with that weapon. The grade is the **balancing handle**; the per-job-level /
+character-level growth that turns it into a live number is owned by `10`. This section is the rule for
+**assigning grades across the roster so no job is good at everything** — contextual differentiation
+(`00`) on the weapon axis.
+
+**Aptitude is a near-constant skill-mass, spent as a *shape*.** Give every weapon-using job a
+comparable **pool** of aptitude and let the *distribution* be the identity. Scoring (illustrative —
+magnitudes are calibration, `12`): A = 4 · B = 3 · C = 2 · D = 1 · F / no-access = 0. The pool is
+~fixed per tier, so **to be A in one family a job must be F in others** — the single constraint that
+mechanically forbids "great at everything". It realizes `10`'s generalist↔specialist split:
+
+- **Specialist** — narrow and deep: one A (its signature family), the rest F / no-access. Excellent
+  with its tool, helpless outside it. (Knight → Knight-Sword; Samurai → Katana; Dragoon → Spear.)
+- **Generalist** — broad and shallow: many families at C/D, **A in none**. Flexible, never excellent.
+  (Squire across blades / axe / crossbow — the "breadth *is* the cost" job.)
+
+**The shape maps the fantasy, not an even sprinkle.** A job's high grades sit in the families its kit
+and fantasy actually use; a family it never leans on is where the pool is *not* spent. The aptitude
+profile is part of the chassis (step 2), authored the same way.
+
+**Tier raises the pool, not the dominance (J3).** A higher tier buys a higher ceiling or one more
+point of specialization — never an A in everything; the per-tier pool rises modestly (`12`), the
+*shape* stays the identity.
+
+**Casters sit off the axis.** Rod/Staff is a magic implement, not a graded weapon — its bolt scales
+with MA/Faith (`11`/`14`), not the A–F grade. Pure casters spend almost none of the pool; the budget
+is a **martial-and-hybrid** concern, and bites hardest on the hybrids (Mystic Knight, Geomancer,
+Dragoon), which must split a finite pool between a weapon family and their other axis.
+
+**The guards:**
+
+- **A weapon-locked command needs its family at ≥ B.** A command gated to a family (Iaido → katana,
+  Aim → bow, Jump → spear) is dead if the job swings it clumsily, so the lock *forces* a high grade
+  there — itself a cost, since it spends the pool.
+- **At most one A below the capstone tier.** Two A-grades is a double-specialist with nothing left
+  over; reserve that for capstones, if at all.
+- **Weapon proficiency travels via a support export.** Every job's weapon proficiency is exportable: the
+  job teaches a **support ability** that lets the holder *equip that family **and** swing it at the
+  source job's grade* — aptitude travels, not just permission. Packaging is **case-by-case**: one
+  support per family, or a single support that carries several proficiencies. The holder pays a support
+  slot (and forgoes its other supports) and still brings its **own chassis** — a fragile body wielding a
+  heavy weapon lacks the HP/armour to exploit it. *(This supersedes the old "access ≠ skill" rule, under
+  the portability philosophy: kits travel; the main-job moat is the free innate + chassis, not
+  exclusivity — `docs/job-balance/job-design-process.md`.)* **Open — grade-budget reconciliation
+  (Hypothesis, needs a dedicated pass, `12`):** because aptitude now travels, the budget's "no job good
+  at everything" guarantee must be re-checked — likely keep **signature/exclusive families
+  non-exportable** (e.g. Knight Sword), with the support-slot cost and chassis mismatch as the balancing
+  handles.
+
+**Worked pair (illustrative, `12`):** *Squire (generalist)* Sword C · Knife C · Axe C · Crossbow D ·
+Spear D — top grade C, **A in nothing**. *Chemist (gun specialist)* **Gun A** (skill-primary — the
+grade *is* its Aimed-Shot damage, `10`) · Crossbow C · Knife D — deep in one tool, disarmed outside it.
+
+**Armour access** is the simpler half of "what it equips": one or two **classes** by archetype (`14`,
+job-gated) — declare it in the chassis table; it needs no pool because it is already gated by job.
+
 ## The authoring pipeline
 
 Walk these steps to author or rediscuss a job; each fills a section of the job's decision doc.
@@ -78,11 +137,16 @@ Walk these steps to author or rediscuss a job; each fills a section of the job's
 ### 0 · Frame — what a job is
 
 A job is the FFT-standard package: a **primary command** (its signature skill set), **one secondary
-command slot** (any unlocked job's command), and **one each of Reaction / Support / Movement** — all
-learned with JP, all but the primary **portable** to other jobs. *(This is the assumed FFT-standard
-frame; the exact portability freedom — how freely the secondary and R/S/M travel — is open calibration
-(`12`) and is **load-bearing**, because it is also what keeps low tiers from going obsolete under tiered
-power.)* You cannot budget a skill without knowing its slot and whether it travels.
+command slot** (any unlocked job's command), and an equipped **Reaction / Support / Movement** (one of
+each slot) — all learned with JP, all but the primary **portable** to other jobs. *(This is the assumed
+FFT-standard frame; the exact portability freedom — how freely the secondary and R/S/M travel — is open
+calibration (`12`) and is **load-bearing**, because it is also what keeps low tiers from going obsolete
+under tiered power.)* You cannot budget a skill without knowing its slot and whether it travels.
+
+**A job teaches a *set* of R/S/M, not one of each.** The unit equips one Reaction, one Support, one
+Movement — but a job may offer **several** options in any of those slots (and need not fill all three).
+"One R/S/M per job" is **not** a requirement; author as many as pass J2 (each has a wanting build and a
+sensible skip).
 
 A job also carries **innate traits / passives** — non-purchased, always-on properties bound to the job
 itself: equip access (which armour class, weapon families, shield), granted off-hand modes (dual-wield /
@@ -90,6 +154,17 @@ Doublehand), a built-in weapon family (the Monk's **Martial Arts**, `14`), movem
 like. Several are load-bearing — the caster's **robe-only** restriction (`14`) is what makes magic
 fragile, Martial Arts is the Monk's entire weapon — so a job **declares its innates explicitly**; they
 are never assumed.
+
+**Two mandatory exports (the portability rules).** Every job must teach:
+1. **Its innate, as a Support ability.** The job has the innate free (the main-job perk); others can
+   equip it as a support to get the same effect, paying the slot (Thief *Light Fingers*). The free innate
+   + chassis is the reason to *main* the job; the export is why splashing its kit is welcome.
+2. **Its weapon proficiency, as a Support ability** (per the grade-budget rule above) — equip the
+   family at the source grade; packaging case-by-case.
+
+This is the engine of the **portability philosophy** (`docs/job-balance/job-design-process.md`): kits
+travel by design, and a job stays worth maining through its free innate, chassis, and attributes — never
+through kit exclusivity.
 
 ### 1 · Identity & essence
 
@@ -110,15 +185,15 @@ every job doc:
 | Brave **dependency** | `07` | which Brave value the kit **rewards** (Brave is unit-owned, not job-set). Brave is the **physical-offense + courage + Will** temperament, two-sided (its offense is paid in active-defense); **not a magic axis**; taunt inverts |
 | Faith **dependency** | `08` | which Faith value the kit rewards — two-sided; a caster wants high Faith and is a glass cannon on both ends |
 | Zodiac | `09` | usually roster-level; note only if the job leans on it |
-| Armour-class access | `14` | the mitigation↔avoidance position (plate / mail / leather / robe), **job-gated** (B10) — a primary identity lever |
+| Armour-class access | `14` | the mitigation↔avoidance position (heavy armor / clothes & suits / robes), **job-gated** (B10) — a primary identity lever |
 | **Defensive profile** | `01`/`04`/`14` | the **C-Ev / Dodge floor** (the light-build survival stat), **shield access** (Block — the top rung *and* the only strong anti-ranged defense), and the active-defense lean (Parry duelist / Block tank / Dodge skirmisher) |
 | **Off-hand mode** | `14` | what the job's abilities grant in a free off-hand: **shield / dual-wield (guard-shredder, `04`) / Doublehand / none** |
-| Weapon families + grades | `10`/`14` | the damage-type identity (thrust / swing / crush, reach, right/wrong-tool) **and** its **per-job-level skill growth** (the grade × job-level table — a progression axis *separate* from JP) |
+| Weapon families + grades | `10`/`14` | the damage-type identity (thrust / swing / crush, reach, right/wrong-tool) **and** its **per-job-level skill growth** (the grade × job-level table — a progression axis *separate* from JP); assign the grades by the *grade budget* (above) |
 
-Worked translations: *Knight* → swing/crush + guard-shred + plate (the "break things" fantasy as a
-matchup, not a stat line); *Thief* → high Speed paid by low per-hit, leather, a utility kit; *Dragoon* →
+Worked translations: *Knight* → swing/crush + guard-shred + heavy armor (the "break things" fantasy as a
+matchup, not a stat line); *Thief* → high Speed paid by low per-hit, clothes & suits, a utility kit; *Dragoon* →
 the reach identity (`06`); *Monk* → unarmed fists (`14`) + self-contained sustain; *Black Mage* → high
-MA/Faith, robe, the magic family (`11`), anti-armour by ignoring DR.
+MA/Faith, robes, the magic family (`11`), anti-armour by ignoring DR.
 
 ### 3 · The ability kit
 
@@ -206,8 +281,8 @@ Forget one of these and the job breaks the engine:
   (+ courage reactions + Will), two-sided — the offense is **paid by an active-defense penalty**. Never
   route *magic* through it; no reaction is a universal Brave problem; taunt inverts (high Brave is the
   vulnerable one), which is what makes Brave's downside reach even a min-maxing backliner.
-- **Armour is job-gated (B10):** granting plate vs mail vs leather vs robe is an identity *and* a balance
-  decision.
+- **Armour is job-gated (B10):** granting heavy armor vs clothes & suits vs robes is an identity *and* a
+  balance decision.
 - **Faith is two-sided:** the devout hit harder *and* are hurt harder — both ends.
 - **Anti-armour comes two ways (`11`/`03`/`14`):** magic's is **ignoring DR** — the casters' exclusive
   mechanism; a physical job's is the **crush / penetration (×2) / gun-divisor matchup**, type-specific
@@ -229,7 +304,8 @@ build × cell where it is wanted (J2).
 
 ## Open / calibration
 
-Tracked in `12`: the **tier count and the 21-job → tier map**; the **per-tier power budget**; the **JP
-band** value and per-ability curves; the **portability / secondary-command model** (how freely skills
+Tracked in `12`: the **tier count and the 21-job → tier map**; the **per-tier power budget**; the
+**weapon-aptitude pool** (the A–F point scores + per-tier pool size) and **each job's grade
+assignments** (`10`); the **JP band** value and per-ability curves; the **portability / secondary-command model** (how freely skills
 travel — load-bearing for J3); the **ability-authoring feasibility envelope** (what "create a skill" can
 be, Tier-1 vs Tier-2); and the refinement of `00`'s contextual-differentiation pillar to **tier-relative**.
