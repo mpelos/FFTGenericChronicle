@@ -1,0 +1,22 @@
+docs/job-balance/00-job-tree.md
+  s_a298d5c04f383c::t_443a901098ecd0 119-120
+  s_a298d5c04f383c::t_975ac6446596fd 86-105
+docs/job-balance/jobs/06-thief.md
+  s_a298d5c04f383c::t_37e6c271ff5348 14-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "3a3a1e672ce12dfbd0afa12254f51c169d08da15",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
