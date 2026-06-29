@@ -1,0 +1,35 @@
+docs/deep-combat-layer/01-attribute-map.md
+  s_a298d5c04f383c::t_7bfaa3d0bebab0 26,63
+docs/deep-combat-layer/03-damage-types-and-armor.md
+  s_a298d5c04f383c::t_f2d3820ab33db1 47-49
+docs/deep-combat-layer/14-equipment.md
+  s_a298d5c04f383c::t_f187ea5900be09 433-434
+  s_a298d5c04f383c::t_c1b098c4bf8a43 346
+  s_a298d5c04f383c::t_e304a9ef19723d 445-446
+  s_a298d5c04f383c::t_3cb9fddfd9e2a8 441-442
+  s_a298d5c04f383c::t_edb90d373d4366 302
+  s_a298d5c04f383c::t_4ac88b46c9e189 282-284,288-292
+  s_a298d5c04f383c::t_335aed88dd3539 337
+  s_a298d5c04f383c::t_51d685d210e0eb 353-365,371,374,376-378,380,383-398
+  s_a298d5c04f383c::t_245a767b42afc4 321-322,325-327
+  s_a298d5c04f383c::t_1ca6e66b65a61e 297
+docs/deep-combat-layer/12-open-questions.md
+  s_a298d5c04f383c::t_a962aea9e67d88 133-143,147-149
+  s_a298d5c04f383c::t_306bc0853c5826 126,128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "6a19afd3dd7d911e113fc8775f6e6b4b7d541d37",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
