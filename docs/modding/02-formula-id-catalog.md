@@ -146,10 +146,21 @@ a generic routine that other formula ids expose without the check.
 - **Location in IVC (Strong):** inside the Denuvo-virtualized formula code. A capstone sweep
   of the real `.xcode` region (< `0x610000`) finds no graphic/job range compare, so the check
   cannot be byte-patched from a code mod the way classic patches do it.
-- **Bypass (Proven):** re-point each ability to the check-free formula whose body the
-  wrapper calls. A Formula re-point through `OverrideAbilityActionData` is honored by the
-  engine (live-confirmed: formula `0x3B` on ability 253 applied its effect to a Chocobo,
-  which the check would have force-missed):
+- **Bypass A — species widening, data-only (Proven):** the check's species input IS
+  `JobData.MonsterGraphic` — patch it. Setting a monster job's `MonsterGraphic` to `15` via
+  TableData `JobData.xml` makes the check pass for that species (live-confirmed with
+  controls: patched Goblin passed while unpatched Skeleton and a human stayed blocked), and
+  nothing else consumes the field — sprites render normally (IVC resolves them through a
+  different path; in the PSX decomp the check is the unit Graphic's only gameplay reader).
+  This keeps the vanilla formulas and their exact behavior, and keeps humans (graphic `0`)
+  excluded. No real-code copy of the JobData monster block into the battle struct exists
+  (scan negative), consistent with the boot-time table patch reaching ENTD-spawned units.
+- **Bypass B — remove the gate entirely, re-point (Proven):** re-point each ability to the
+  check-free formula whose body the wrapper calls. A Formula re-point through
+  `OverrideAbilityActionData` is honored by the engine (live-confirmed: formula `0x3B` on
+  ability 253 applied its effect to a Chocobo). The abilities then work on ANY unit,
+  humans included, with small behavior deltas (Gift loses its status-cancel rider;
+  Charm/Speed roll real hit formulas instead of flat 100%):
 
 ```text
 251 Dragon's Charm  0x5A -> 0x33  Hit_(PA+X)% + InflictStatus   (set X≈100 to mimic Hit(100)%)
@@ -158,8 +169,8 @@ a generic routine that other formula ids expose without the check.
 254 Dragon's Speed  0x5D -> 0x12  Hit_F(MA+X)% Set_Quick        (Faith-scaled; vanilla was flat 100%)
 ```
 
-  Re-pointing removes the species gate entirely — the abilities then work on any unit,
-  humans included; no data field exists to gate targeting by species.
+  No data field exists to gate an arbitrary ability's targeting by species — the
+  `MonsterGraphic` lever (Bypass A) only works because this check happens to read it.
 - The three breath attacks (248–250, `0x4E`) and Holy Breath (255, `0x1E`) are not
   dragon-gated.
 - Decomp cross-check: the low nibble of each `_N_<Name>` wrapper in the PSX decomp indexes
