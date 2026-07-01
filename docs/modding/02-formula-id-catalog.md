@@ -67,6 +67,7 @@ target states, and Zodiac compatibility.
 | `0x0E` | Percent damage plus status | Death style effects |
 | `0x0F` | MP drain percent/hit | Spell absorb style effects |
 | `0x10` | HP drain percent/hit | Life drain style effects |
+| `0x12` | `Hit_F(MA+X)%` grant immediate turn (Set_Quick) | Quick (Time Magick) |
 | `0x1A` | Stat reduction hit using `MA + Y` | Ruin/Drain stat skills |
 | `0x1E` | Multi-hit MA formula | Truth-like multi-hit |
 | `0x1F` | Faith-inverted multi-hit MA formula | Untruth-like multi-hit |
@@ -101,7 +102,12 @@ target states, and Zodiac compatibility.
 | `0x4C` | `MA * Y` healing | Choco Cure style |
 | `0x4E` | `MA * Y` non-Faith damage | Limit/monster style |
 | `0x4F` | Goblin Punch style | Monster skill |
+| `0x51` | `Hit_(MA+X)%` apply InflictStatus entry (cancel sets work) | Choco Esuna style |
 | `0x53` | Percent damage plus MA hit | Hurricane style |
+| `0x5A` | Dragon Check + `Hit(100)%` apply InflictStatus | Dragon's Charm |
+| `0x5B` | Dragon Check + Wish math + status-cancel rider | Dragon's Gift |
+| `0x5C` | Dragon Check + Scream body (= `0x3B` on target) | Dragon's Might |
+| `0x5D` | Dragon Check + Set_Quick | Dragon's Speed |
 | `0x5E` | Multi-hit MA variant | Hydra style |
 | `0x5F` | MA single-hit variant | Nanoflare style |
 | `0x60` | Unevadeable MA multi-hit variant | Special monster formulas |
@@ -117,7 +123,8 @@ to ability slots, command types, or hardcoded side logic:
 - Steal target slot.
 - Talk Brave/Faith interpretation.
 - Song/Dance ticking.
-- Dragon/monster special handling.
+- Dragon/monster special handling — the Dragonkin case is fully mapped, see "The Dragon
+  Check" below.
 - Item Z-values and item inventory behavior.
 - Jump range/vertical learned-ability lookup.
 - Charge/Aim special CT behavior.
@@ -125,6 +132,40 @@ to ability slots, command types, or hardcoded side logic:
 - Weapon proc behavior via Formula `0x02`.
 
 Treat these as "test before designing around it."
+
+## The Dragon Check (species-gated formulas)
+
+The only species gate in the formula catalog. Formulas `0x5A`–`0x5D` (Reis' Dragonkin
+support abilities 251–254) are thin wrappers: run the **Dragon Check**, then fall through to
+a generic routine that other formula ids expose without the check.
+
+- **The check (Proven, PSX decomp + FFHacktics `Dragon_Check`):** force a miss unless the
+  target's monster **graphic-set id** is 15 (Dragon family) or 16 (Hydra family). It tests the
+  sprite family, not the job id. IVC's `JobData.MonsterGraphic` keeps the same vocabulary
+  (1 Chocobo … 14 Behemoth, 15 Dragon, 16 Hydra), so the semantics carry over unchanged.
+- **Location in IVC (Strong):** inside the Denuvo-virtualized formula code. A capstone sweep
+  of the real `.xcode` region (< `0x610000`) finds no graphic/job range compare, so the check
+  cannot be byte-patched from a code mod the way classic patches do it.
+- **Bypass (Proven):** re-point each ability to the check-free formula whose body the
+  wrapper calls. A Formula re-point through `OverrideAbilityActionData` is honored by the
+  engine (live-confirmed: formula `0x3B` on ability 253 applied its effect to a Chocobo,
+  which the check would have force-missed):
+
+```text
+251 Dragon's Charm  0x5A -> 0x33  Hit_(PA+X)% + InflictStatus   (set X≈100 to mimic Hit(100)%)
+252 Dragon's Gift   0x5B -> 0x3C  Wish math, exact              (loses the status-cancel rider)
+253 Dragon's Might  0x5C -> 0x3B  Scream on target, IDENTICAL   (X=5 Brave, Y=2 PA/MA/SP inherit)
+254 Dragon's Speed  0x5D -> 0x12  Hit_F(MA+X)% Set_Quick        (Faith-scaled; vanilla was flat 100%)
+```
+
+  Re-pointing removes the species gate entirely — the abilities then work on any unit,
+  humans included; no data field exists to gate targeting by species.
+- The three breath attacks (248–250, `0x4E`) and Holy Breath (255, `0x1E`) are not
+  dragon-gated.
+- Decomp cross-check: the low nibble of each `_N_<Name>` wrapper in the PSX decomp indexes
+  its dispatch bank; walking the banks reproduces this catalog's id column exactly
+  (`_2_Quick`=0x12, `_3_Stigma`=0x33, `_B_Scream`=0x3B, `_C_Wish`=0x3C, `_A_DragonTame`=0x5A …
+  `_4_Jump`=0x64), which is what pins the wrapper→generic equivalences above.
 
 ## Data-First Design Guidance
 
