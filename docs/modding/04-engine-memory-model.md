@@ -129,6 +129,16 @@ pointers. The status bitfield is **partly mapped and DATA-controllable** (see §
 `0x10`=Undead are both live-confirmed (the earlier offline `0x10`="control-flip" guess was WRONG);
 remaining bits to map empirically. Stats drift with level, so only map level-matched dumps.
 
+**Offline candidates (2026-07-02, pending live validation)** — `work/dcl-unit-state-candidates.md`
+maps most of the above from snapshot cross-diffs + the community cheat table + the classic PSX
+layout: full 5-byte status arrays (source `+0x57..0x5B`, immunity `+0x5C..0x60`, effective
+`+0x61..0x65`, master `+0x1EF..0x1F3`, durations `+0x66..`) with a complete classic-verbatim bit
+map (`effective = master | source` verified 40/40 snapshot states); position `+0x4F/+0x50` X/Y,
+facing `+0x51`; caster pending-target/epicenter `+0x1AC/+0x1B0`; turn marker `+0x1B8 == 1`
+(exactly-one invariant, all snapshots); equipment stat bonus `+0x3B/3C/3D` (raw+bonus==effective
+15/15); per-job JP word arrays `+0xF0` / `+0x11E` (index `jobId-0x4A`); job-level nibbles
+`+0xE4..0xEE`; R/S/M ability words `+0x14/+0x16/+0x18`; elemental block candidate `+0x52..0x56`.
+
 Width limits: stats are bytes; HP/MP are 16-bit words; damage is a 16-bit word; engine math is
 integer (the remaster applies some multipliers as AVX floats, then truncates to int).
 

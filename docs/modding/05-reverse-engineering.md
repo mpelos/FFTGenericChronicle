@@ -533,7 +533,25 @@ and the applied HP amount for physical, magic, and healing actions.
 physical/magic, but magic *avoidance* is a separate Faith roll (`0x304E33`, §9); zeroing the
 physical evade bytes does **not** make a spell always-hit. That is the remaining always-hit gap for
 magic; everything in this section is independent of it (it controls the shown/applied **amount**,
-not whether the spell connects).
+not whether the spell connects). **Static answer found (2026-07-02, Strong-static, live-pending):**
+the roll site is inside function `0x304DF0` — spell hit-% (`obj+0x2C`) × target-Faith snapshot
+(`g_7B079D`) ÷ 100, then shared RNG `roll(range, chance)` at `0x278EE0`; a miss stamps evade-kind
+`+0x1C0 = 0x06`. Always-hit lever candidate: hook `0x304E2B`, force `edx = 100`. Full disasm
+evidence in `work/dcl-magic-status-reaction-candidates.md`.
+
+## 12. 2026-07-02 offline sweep — static anchors pending live confirmation
+
+A six-agent offline sweep (static disasm + snapshot mining + decomp/cheat-table cross-reference; no
+live tests) produced **Strong (static)** anchors for every remaining doc-08 front. They are
+inventoried in `08-dcl-information-requirements.md` (updated coverage cells) and evidenced in the
+`work/dcl-*.md` deliverables; each is promoted here only after its live confirmation. Headlines:
+current-action global block `0x14186AF60..F4` (`word[0x14186AFF0]` = ability id,
+`dword[0x14186AFF4]` = caster index); pending-order record `unit+0x1A1/+0x1A2`; executor
+`actor+0x142` = copy of `+0x1A2`; full 3×5-byte status arrays `+0x57`/`+0x5C`/`+0x61`/`+0x1EF`
+(classic PSX bit layout); position/facing `+0x4F/+0x50/+0x51`; active-turn marker `+0x1B8 == 1`;
+status-proc roll `0x306636` vs staged % `g_7B07AC` (`0x1407B07AC`, pokeable); reaction bitfield
+`unit+0x94..0x97` + dispatcher `0x30B584` + Brave-gates; shared RNG `0x278EE0`. Consolidated
+live-test checklist: `work/dcl-live-test-master-plan.md`.
 
 ## Sources
 
