@@ -172,6 +172,9 @@ public class Mod : ModBase
     private const int PREVIEW_HITPCT_BUFFER_SIZE = 64;
     private const int PREVIEW_DAMAGE_BUFFER_SIZE = 320;
     private const int PREVIEW_SOURCE_BUFFER_SIZE = 320;
+    private const int CALC_ENTRY_RING_SLOTS = 64;
+    private const int CALC_ENTRY_BUFFER_SIZE = 16 + (CALC_ENTRY_RING_SLOTS * 16); // [0] u32 count; 16B slots
+    private const int LT3_ROLL_BUFFER_SIZE = 48;                                   // +16 magic slot, +32 status slot
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -196,6 +199,13 @@ public class Mod : ModBase
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _previewDamageHooks = new();
     private nint _previewSourceBuf;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _previewSourceHooks = new();
+    private nint _calcEntryBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _calcEntryHook;
+    private nint _lt3RollBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _magicAccuracyHook;
+    private Reloaded.Hooks.Definitions.IAsmHook? _statusChanceHook;
+    private nint _rollRngBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _rollRngHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -346,6 +356,10 @@ public class Mod : ModBase
             InstallPreviewHitPctControlIfEnabled(baseAddr);
             InstallPreviewDamageControlIfEnabled(baseAddr);
             InstallPreviewForecastSourceControlIfEnabled(baseAddr);
+            InstallCalcEntryProbeIfEnabled(baseAddr);
+            InstallMagicAccuracyControlIfEnabled(baseAddr);
+            InstallStatusChanceControlIfEnabled(baseAddr);
+            InstallRollRngProbeIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -711,6 +725,309 @@ public class Mod : ModBase
         if (force)
             asm.Add($"mov {reg}, {forced}");   // the engine's own store then writes OUR value to obj+0x6 (= +0x1C4)
         return asm.ToArray();
+    }
+
+    // CALC-ENTRY PROBE (LT3) — log-only ring on computeActionResult 0x309A44, the single real-code
+    // entry the VM calls per (action, target) for forecast, execution and (hypothesis) AI evaluation.
+    // rcx = the caster's 0x14-byte order record (@ caster+0x1A0: [0] caster slot idx, [1] type,
+    // [2..3] ability id), dl = target unit index. One enemy turn with this probe answers the AI
+    // same-calc question and gives the PREVIEW-time ability id.
+    private void InstallCalcEntryProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.CalcEntryProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[CALC-PROBE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        int rva = _settings.CalcEntryProbeRva;
+        nint address = moduleBase + rva;
+        if (!ValidateExpectedBytes(address, "48 89 5C 24 18 55 56 57", out string byteError))
+        {
+            Line($"[CALC-PROBE-SKIP] rva=0x{rva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        _calcEntryBuf = Marshal.AllocHGlobal(CALC_ENTRY_BUFFER_SIZE);
+        for (int i = 0; i < CALC_ENTRY_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_calcEntryBuf, i, 0);
+
+        string buf = $"0{_calcEntryBuf:X}h";
+        string[] asm =
+        {
+            "use64",
+            "push rax",
+            "push rbx",
+            "push rsi",
+            "pushfq",
+            $"mov rax, {buf}",
+            "mov ebx, dword [rax]",       // ring write index (total count)
+            "add dword [rax], 1",
+            "and ebx, 0x3F",              // 64-slot ring; 32-bit op zero-extends rbx
+            "shl ebx, 4",                 // *16 bytes per slot
+            "lea rsi, [rax + rbx + 16]",
+            "mov qword [rsi], rcx",       // order-record ptr
+            "mov dword [rsi+8], edx",     // target unit index (dl)
+            "mov ebx, dword [rcx]",       // casterIdx | type | abilityId  (captured at fire time)
+            "mov dword [rsi+12], ebx",
+            "popfq",
+            "pop rsi",
+            "pop rbx",
+            "pop rax",
+        };
+        try
+        {
+            _calcEntryHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[CALC-PROBE-FAILED] {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private int _calcEntrySeen;
+    private const int CALC_ENTRY_LOG_PER_POLL = 12;
+    private const int CALC_TURN_OWNER_GLOBAL_RVA = 0x7B0708;   // dword: current turn-owner unit index
+    private void CaptureCalcEntryProbeEvents()
+    {
+        if (_calcEntryBuf == 0)
+            return;
+        int count = Marshal.ReadInt32(_calcEntryBuf);
+        if (count == _calcEntrySeen)
+            return;
+        int fresh = count - _calcEntrySeen;
+        int start = Math.Max(_calcEntrySeen, count - Math.Min(fresh, CALC_ENTRY_RING_SLOTS));
+        int logged = 0;
+        long unitTable = _moduleBase.ToInt64() + _settings.PreviewForecastUnitTableRva;
+        int turnOwner = Marshal.ReadInt32(_moduleBase + CALC_TURN_OWNER_GLOBAL_RVA);
+        for (int n = start; n < count && logged < CALC_ENTRY_LOG_PER_POLL; n++, logged++)
+        {
+            nint slot = _calcEntryBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * 16);
+            long rec = Marshal.ReadInt64(slot);
+            int targetIdx = Marshal.ReadInt32(slot + 8) & 0xFF;
+            int packed = Marshal.ReadInt32(slot + 12);
+            int casterIdx = packed & 0xFF;
+            int type = (packed >> 8) & 0xFF;
+            int abilityId = (packed >> 16) & 0xFFFF;
+            long casterRel = rec - 0x1A0 - unitTable;
+            long casterSlot = (casterRel >= 0 && casterRel % 0x200 == 0) ? casterRel / 0x200 : -1;
+            int casterTeam = casterSlot >= 0
+                ? Marshal.ReadByte((nint)(unitTable + casterSlot * 0x200 + 0x04))
+                : -1;
+            Line($"[CALC] n={n} rec=0x{rec:X} casterSlot={casterSlot} casterIdx={casterIdx} type=0x{type:X2} " +
+                 $"abilityId={abilityId} (0x{abilityId:X4}) targetIdx={targetIdx} casterTeam={casterTeam} turnOwner={turnOwner}");
+        }
+        if (count - start > logged)
+            Line($"[CALC-BULK] +{count - start - logged} more fires this poll (total={count})");
+        _calcEntrySeen = count;
+        Flush();
+    }
+
+    // MAGIC-ACCURACY control (LT3) — hook 0x304E2E (`mov ecx, 0x64`, just AFTER the natural chance
+    // lands in edx at 0x304E2B and just BEFORE roll(100, edx) at 0x304E33). Captures the natural
+    // Faith-scaled chance; optionally forces edx (100 = magic always-hits, 0 = always-misses).
+    private void InstallMagicAccuracyControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.MagicAccuracyControlEnabled)
+            return;
+        EnsureLt3RollBuf();
+        InstallChanceHook(moduleBase, _settings.MagicAccuracyRva, "B9 64 00 00 00", _lt3RollBuf + 16,
+            _settings.MagicAccuracyForcedChance, "MAGICROLL", h => _magicAccuracyHook = h);
+    }
+
+    // STATUS-CHANCE control (LT3) — hook 0x306633 (`lea ecx, [rbx+0x5C]`, AFTER `movzx edx,[g_7B07AC]`
+    // at 0x30662C loads the natural staged status chance, BEFORE roll(100, edx) at 0x306636).
+    // The LT2 data-poke of g_7B07AC was refuted (engine rewrites it at compute time); this hook fires
+    // at compute time so the forced value is what the roll consumes.
+    private void InstallStatusChanceControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.StatusChanceControlEnabled)
+            return;
+        EnsureLt3RollBuf();
+        InstallChanceHook(moduleBase, _settings.StatusChanceRva, "8D 4B 5C", _lt3RollBuf + 32,
+            _settings.StatusChanceForcedChance, "STATUSROLL", h => _statusChanceHook = h);
+    }
+
+    private void EnsureLt3RollBuf()
+    {
+        if (_lt3RollBuf != 0)
+            return;
+        _lt3RollBuf = Marshal.AllocHGlobal(LT3_ROLL_BUFFER_SIZE);
+        for (int i = 0; i < LT3_ROLL_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_lt3RollBuf, i, 0);
+    }
+
+    private void InstallChanceHook(nint moduleBase, int rva, string expectedBytes, nint slotAddr,
+        int forcedChance, string tag, Action<Reloaded.Hooks.Definitions.IAsmHook> store)
+    {
+        if (_hooks is null)
+        {
+            Line($"[{tag}-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+        nint address = moduleBase + rva;
+        if (!ValidateExpectedBytes(address, expectedBytes, out string byteError))
+        {
+            Line($"[{tag}-SKIP] rva=0x{rva:X} {byteError}");
+            Flush();
+            return;
+        }
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "pushfq",
+            $"mov rax, 0{slotAddr:X}h",
+            "add dword [rax], 1",         // [slot+0] fire count
+            "mov dword [rax+4], edx",     // [slot+4] last natural chance
+            "popfq",
+            "pop rax",
+        };
+        if (forcedChance >= 0)
+            asm.Add($"mov edx, {Math.Clamp(forcedChance, 0, 100)}");  // the roll consumes OUR chance
+        try
+        {
+            store(_hooks.CreateAsmHook(asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate());
+            Line($"[{tag}-HOOK] rva=0x{rva:X} addr=0x{address:X} forced={FormatMaybeInt(forcedChance)}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[{tag}-FAILED] rva=0x{rva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    // ROLL-RNG PROBE (LT3b, log-only) — ring probe on the shared RNG `roll(ecx=range, edx=chance)`
+    // head 0x278EE0 (a Denuvo trampoline: `jmp` into the VM — the CALLERS are real code, so the
+    // return address on the stack identifies every real roll site). Captures (retaddr, range, chance)
+    // per call: one battle maps which of the 11 static callers actually fire for magic accuracy,
+    // status infliction, reactions, crits — replacing per-site guesswork (LT3a: 0x304E2E/0x306633
+    // never fired for Fire/Blind).
+    private void InstallRollRngProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.RollRngProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[RNG-PROBE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+        int rva = _settings.RollRngProbeRva;
+        nint address = moduleBase + rva;
+        if (!ValidateExpectedBytes(address, "E9 0B F3 F4 0E", out string byteError))
+        {
+            Line($"[RNG-PROBE-SKIP] rva=0x{rva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        _rollRngBuf = Marshal.AllocHGlobal(CALC_ENTRY_BUFFER_SIZE);
+        for (int i = 0; i < CALC_ENTRY_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_rollRngBuf, i, 0);
+
+        string buf = $"0{_rollRngBuf:X}h";
+        string[] asm =
+        {
+            "use64",
+            "push rax",
+            "push rbx",
+            "push rsi",
+            "pushfq",
+            $"mov rax, {buf}",
+            "mov ebx, dword [rax]",
+            "add dword [rax], 1",
+            "and ebx, 0x3F",
+            "shl ebx, 4",
+            "lea rsi, [rax + rbx + 16]",
+            "mov rbx, [rsp+32]",          // return address (4 pushes deep) = the real caller site
+            "mov qword [rsi], rbx",
+            "mov dword [rsi+8], ecx",     // range
+            "mov dword [rsi+12], edx",    // chance
+            "popfq",
+            "pop rsi",
+            "pop rbx",
+            "pop rax",
+        };
+        try
+        {
+            _rollRngHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line($"[RNG-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} buf=0x{_rollRngBuf:X}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[RNG-PROBE-FAILED] {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private int _rollRngSeen;
+    private readonly Dictionary<long, (int Count, int Range, int Chance)> _rollRngCallers = new();
+    private readonly Dictionary<long, long> _rollRngLastLogTick = new();
+    private void CaptureRollRngProbeEvents(long nowTick)
+    {
+        if (_rollRngBuf == 0)
+            return;
+        int count = Marshal.ReadInt32(_rollRngBuf);
+        if (count == _rollRngSeen)
+            return;
+        int fresh = count - _rollRngSeen;
+        int start = Math.Max(_rollRngSeen, count - Math.Min(fresh, CALC_ENTRY_RING_SLOTS));
+        var touched = new HashSet<long>();
+        for (int n = start; n < count; n++)
+        {
+            nint slot = _rollRngBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * 16);
+            long ret = Marshal.ReadInt64(slot);
+            int range = Marshal.ReadInt32(slot + 8);
+            int chance = Marshal.ReadInt32(slot + 12);
+            _rollRngCallers.TryGetValue(ret, out var agg);
+            _rollRngCallers[ret] = (agg.Count + 1, range, chance);
+            touched.Add(ret);
+        }
+        long throttle = Stopwatch.Frequency;                 // 1 s per caller
+        foreach (long ret in touched)
+        {
+            bool isNew = !_rollRngLastLogTick.TryGetValue(ret, out long last);
+            if (!isNew && nowTick - last < throttle)
+                continue;
+            _rollRngLastLogTick[ret] = nowTick;
+            var agg = _rollRngCallers[ret];
+            long callerRva = ret - _moduleBase.ToInt64();
+            Line($"[RNG] caller=0x{callerRva:X}{(isNew ? " NEW" : "")} count={agg.Count} last=(range={agg.Range}, chance={agg.Chance})");
+        }
+        _rollRngSeen = count;
+        Flush();
+    }
+
+    private int _magicRollSeen;
+    private int _statusRollSeen;
+    private void CaptureLt3RollProbeEvents()
+    {
+        if (_lt3RollBuf == 0)
+            return;
+        int magicCount = Marshal.ReadInt32(_lt3RollBuf + 16);
+        if (magicCount != _magicRollSeen)
+        {
+            Line($"[MAGICROLL] fires={magicCount} lastNaturalChance={Marshal.ReadInt32(_lt3RollBuf + 20)} " +
+                 $"forced={FormatMaybeInt(_settings.MagicAccuracyForcedChance)}");
+            _magicRollSeen = magicCount;
+            Flush();
+        }
+        int statusCount = Marshal.ReadInt32(_lt3RollBuf + 32);
+        if (statusCount != _statusRollSeen)
+        {
+            Line($"[STATUSROLL] fires={statusCount} lastNaturalChance={Marshal.ReadInt32(_lt3RollBuf + 36)} " +
+                 $"forced={FormatMaybeInt(_settings.StatusChanceForcedChance)}");
+            _statusRollSeen = statusCount;
+            Flush();
+        }
     }
 
     private void InstallPreClampDamageRewriteIfEnabled(nint moduleBase)
@@ -2317,6 +2634,9 @@ public class Mod : ModBase
                 CaptureResultSelectorProbeEvents(nowTick);
                 CaptureEvadeInputProbeEvents(nowTick);
                 CaptureRollVerdictProbeEvents(nowTick);
+                CaptureCalcEntryProbeEvents();
+                CaptureLt3RollProbeEvents();
+                CaptureRollRngProbeEvents(nowTick);
                 PollRegisteredUnits(nowTick);
                 PokeForecastPreviewIfEnabled();
             }
@@ -8069,6 +8389,32 @@ internal sealed class RuntimeSettings
     public bool PreviewForecastSourceControlEnabled { get; set; } = false;
     public int PreviewForecastSourceForcedValue { get; set; } = -1;             // 0..65535 to force; -1 = observe only
     public bool PreviewForecastSourceLogOnly { get; set; } = false;             // record natural staged-damage without overwriting
+
+    // CALC-ENTRY PROBE (LT3, log-only) — ring-buffer probe on computeActionResult (0x309A44), the single
+    // real-code per-(action,target) calc entry. Logs caster slot/type/ability id + target index + caster
+    // team + turn owner per fire: the PREVIEW-time ability id and the AI same-calc discriminator.
+    public bool CalcEntryProbeEnabled { get; set; } = false;
+    public int CalcEntryProbeRva { get; set; } = 0x309A44;
+
+    // MAGIC-ACCURACY control (LT3) — hook at 0x304E2E captures the natural Faith-scaled chance in edx
+    // (loaded at 0x304E2B) and can force it before roll(100, edx) at 0x304E33. 100 = always-hit, 0 =
+    // always-miss, -1 = observe only.
+    public bool MagicAccuracyControlEnabled { get; set; } = false;
+    public int MagicAccuracyRva { get; set; } = 0x304E2E;
+    public int MagicAccuracyForcedChance { get; set; } = -1;
+
+    // STATUS-CHANCE control (LT3) — hook at 0x306633 captures/forces the status infliction chance in edx
+    // (loaded from g_7B07AC at 0x30662C) before roll(100, edx) at 0x306636. Compute-time, so it wins where
+    // the LT2 data-poke of g_7B07AC lost. 100 = always-proc, 0 = never-proc, -1 = observe only.
+    public bool StatusChanceControlEnabled { get; set; } = false;
+    public int StatusChanceRva { get; set; } = 0x306633;
+    public int StatusChanceForcedChance { get; set; } = -1;
+
+    // ROLL-RNG PROBE (LT3b, log-only) — ring probe on the shared RNG head (0x278EE0, a Denuvo
+    // trampoline whose CALLERS are real code). Logs (caller RVA, range, chance) per call to map every
+    // real roll site (magic accuracy, status infliction, reactions, crits) in one battle.
+    public bool RollRngProbeEnabled { get; set; } = false;
+    public int RollRngProbeRva { get; set; } = 0x278EE0;
 
     // FORECAST PREVIEW POKE — the universal preview HP-amount lever. With DamageFieldOffset=0x6 it writes
     // obj+0x6 == unit+0x1C4 (damage/debit); with 0x8 it writes obj+0x8 == unit+0x1C6 (healing/credit).

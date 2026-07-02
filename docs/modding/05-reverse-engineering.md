@@ -539,6 +539,26 @@ the roll site is inside function `0x304DF0` — spell hit-% (`obj+0x2C`) × targ
 `+0x1C0 = 0x06`. Always-hit lever candidate: hook `0x304E2B`, force `edx = 100`. Full disasm
 evidence in `work/dcl-magic-status-reaction-candidates.md`.
 
+## 12b. LT3 live results — the calc entry is PROVEN; combat rolls are VM-internal
+
+Live hooks (2026-07-02, `work/lt3-calc-rng-results.md`) settled the compute architecture:
+
+- **`computeActionResult 0x309A44` ✅ PROVEN live** — head-hookable real code; `rcx` = order record
+  at `caster+0x1A0` (`[0]` caster slot, `[1]` action type, `[2..3]` ability id), `dl` = target index.
+  Fires at preview-open, continuously during a charge, at execution, and — decisively — for **AI
+  actions including multi-target candidate sweeps** (AI same-calc PROVEN). This is the DCL's
+  per-(action,target) context spine.
+- **The shared RNG head `0x278EE0` is a Denuvo trampoline** (`E9 …` jmp into the VM); hooking the
+  head with a return-address ring maps every real caller. Live map: the Fire/Blind accuracy and
+  status rolls come from **VM-internal callers** (Blind's roll captured with `chance=71` — exact
+  match with the displayed %), so the real-code roll sites (`0x304E33`, `0x306636`) do NOT serve
+  these abilities and per-roll forcing there is refuted-in-practice. The one **real-code** combat
+  roll observed live: the reaction **Brave-gate caller `0x30BE8B`** (`chance=61` = defender Brave) —
+  hookable/forceable.
+- Doctrine consequence: control stays on **data** — input the VM reads (evade bytes, immunity bits)
+  or staged output rewritten post-roll/pre-apply (`+0x1C4` debit via pre-clamp; apply-mask `+0x1D0`,
+  kind `+0x1C0`, ailment `+0x1A8` are the LT4 status/magic-outcome candidates).
+
 ## 12. 2026-07-02 offline sweep — static anchors pending live confirmation
 
 A six-agent offline sweep (static disasm + snapshot mining + decomp/cheat-table cross-reference; no

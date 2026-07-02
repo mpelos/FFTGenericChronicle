@@ -1063,6 +1063,27 @@ The same "plant the data the VM reads" mechanism extends past avoidance:
   the staged MP words are `+0x1C8` (debit) / `+0x1CA` (credit), applied as `newMP = clamp(MP + 0x1CA -
   0x1C8)`. Force them exactly like the HP debit/credit.
 
+## Action-context and roll probes (LT3, 2026-07-02) — the DCL context spine
+
+Four probe/control surfaces added for the LT3 campaign (`work/lt3-calc-rng-results.md`):
+
+- **Calc-entry probe** (`CalcEntryProbeEnabled`, `CalcEntryProbeRva` = `0x309A44`). ✅ PROVEN live.
+  Ring-buffer hook on `computeActionResult` — the single real-code per-(action, target) calc entry.
+  Each fire logs: caster slot, action type, **ability id** (`0x01`/0 basic attack, `0x0B`/16 Fire,
+  `0x45`/234 Blind…), target index, caster team, turn owner. Fires at preview-open, continuously
+  during a charge, at execution, and for **AI actions including candidate-target sweeps** — the
+  universal action-context surface AND the AI discriminator (team `unit+0x04` + turn-owner global
+  `dword[0x1407B0708]`).
+- **Roll-RNG probe** (`RollRngProbeEnabled`, `RollRngProbeRva` = `0x278EE0`). ✅ ran live. The RNG
+  head is a Denuvo trampoline; the probe rings (caller return-address, range, chance) per call.
+  Result: Fire/Blind accuracy+status rolls are **VM-internal callers** (Blind captured at
+  `chance=71` = the displayed %); the only real-code combat roll is the reaction Brave-gate
+  (`0x30BE8B`, `chance=61` = Brave).
+- **Magic-accuracy / status-chance hooks** (`MagicAccuracyControl*` @ `0x304E2E`,
+  `StatusChanceControl*` @ `0x306633`, ForcedChance −1/0..100). Installed and byte-validated but
+  ❌ **0 fires for Fire/Blind** — those real-code handlers serve other formula ids; do NOT rely on
+  them for the standard spells. Kept for coverage of the handlers that do route through them.
+
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
 The sections above author the **outcome**; this one authors the **forecast numbers** the panel shows

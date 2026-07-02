@@ -141,6 +141,28 @@ internal static class RuntimeSettingsValidator
             if (!settings.PreviewForecastSourceLogOnly && settings.PreviewForecastSourceForcedValue >= 0)
                 report.Warn("PreviewForecastSourceControlEnabled", "forecast source control rewrites the staged-damage field (+0x1C4) at the preview finalizer; number + HP-bar both follow it, but it does not change the actual applied damage (that is the pre-clamp lever).");
         }
+        if (settings.CalcEntryProbeEnabled && settings.CalcEntryProbeRva <= 0)
+            report.Error("CalcEntryProbeRva", "CalcEntryProbeRva must be positive.");
+        if (settings.RollRngProbeEnabled && settings.RollRngProbeRva <= 0)
+            report.Error("RollRngProbeRva", "RollRngProbeRva must be positive.");
+        if (settings.MagicAccuracyControlEnabled)
+        {
+            if (settings.MagicAccuracyRva <= 0)
+                report.Error("MagicAccuracyRva", "MagicAccuracyRva must be positive.");
+            if (settings.MagicAccuracyForcedChance is < -1 or > 100)
+                report.Error("MagicAccuracyForcedChance", "Forced chance must be -1 (observe) or 0..100.");
+            if (settings.MagicAccuracyForcedChance >= 0)
+                report.Warn("MagicAccuracyControlEnabled", "magic accuracy control forces the Faith roll chance; 100 makes offensive magic always connect, 0 always fizzle.");
+        }
+        if (settings.StatusChanceControlEnabled)
+        {
+            if (settings.StatusChanceRva <= 0)
+                report.Error("StatusChanceRva", "StatusChanceRva must be positive.");
+            if (settings.StatusChanceForcedChance is < -1 or > 100)
+                report.Error("StatusChanceForcedChance", "Forced chance must be -1 (observe) or 0..100.");
+            if (settings.StatusChanceForcedChance >= 0)
+                report.Warn("StatusChanceControlEnabled", "status chance control forces the infliction roll; 100 always procs, 0 never procs.");
+        }
         if (settings.PreviewForecastPokeEnabled)
         {
             if (settings.PreviewForecastPokeValue is < -1 or > 0x7FFF)
