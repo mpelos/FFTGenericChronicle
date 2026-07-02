@@ -1,0 +1,505 @@
+=== KEY OUTPUT EXCERPTS (full runs in scratchpad; regenerate with disasm_ai_anchor.py) ===
+
+--- callers of key fns / enclosing heads (stage 1) ---
+E8 targets in range: 12730; total callsites: 79231
+
+=== callers of key functions ===
+0x278EE0 roll(range,chance): 11 callsites
+    callsite 0x271D88  (in fn ~0x271D20)
+    callsite 0x27223D  (in fn ~0x271F74)
+    callsite 0x27CA8C  (in fn ~0x27C82C)
+    callsite 0x304E33  (in fn ~0x304DF0)
+    callsite 0x306636  (in fn ~0x3065F0)
+    callsite 0x3083AB  (in fn ~0x307178)
+    callsite 0x30946B  (in fn ~0x307178)
+    callsite 0x30BE86  (in fn ~0x30BCF8)
+    callsite 0x30BEDC  (in fn ~0x30BEAC)
+    callsite 0x30BF32  (in fn ~0x30BEFC)
+    callsite 0x30BF72  (in fn ~0x30BEFC)
+0x2832F8 order-record setter: 2 callsites
+    callsite 0x28308C  (in fn ~0x282EB0)
+    callsite 0x2831BB  (in fn ~0x282EB0)
+0x2BB0D4 ability-row resolver (VM thunk): 29 callsites
+    callsite 0x206300  (in fn ~0x2059AC)
+    callsite 0x20CAED  (in fn ~0x20CABC)
+    callsite 0x27F995  (in fn ~0x27F8EC)
+    callsite 0x27FA3F  (in fn ~0x27F8EC)
+    callsite 0x280286  (in fn ~0x280060)
+    callsite 0x280C04  (in fn ~0x280550)
+    callsite 0x281870  (in fn ~0x281500)
+    callsite 0x307308  (in fn ~0x307178)
+    callsite 0x309C29  (in fn ~0x309A44)
+    callsite 0x309DD5  (in fn ~0x309A44)
+    callsite 0x30B2B7  (in fn ~0x30B234)
+    callsite 0x30B759  (in fn ~0x30B584)
+    callsite 0x30D2F9  (in fn ~0x30D260)
+    callsite 0x30E565  (in fn ~0x30E3FC)
+    callsite 0x30EB7E  (in fn ~0x30EACC)
+    callsite 0x30ED44  (in fn ~0x30ECDC)
+    callsite 0x30EDA4  (in fn ~0x30ECDC)
+    callsite 0x30F8CE  (in fn ~0x30F0C4)
+    callsite 0x3101EA  (in fn ~0x310058)
+    callsite 0x316A05  (in fn ~0x316878)
+    callsite 0x316A2C  (in fn ~0x316878)
+    callsite 0x316FCE  (in fn ~0x316B98)
+    callsite 0x317019  (in fn ~0x316B98)
+    callsite 0x3208C9  (in fn ~0x320598)
+    callsite 0x389074  (in fn ~0x388F48)
+    callsite 0x3890B9  (in fn ~0x388F48)
+    callsite 0x3890F7  (in fn ~0x388F48)
+    callsite 0x38B47D  (in fn ~0x38B3E0)
+    callsite 0x38C10D  (in fn ~0x38BFC8)
+0x304DF0 magic-accuracy fn: 2 callsites
+    callsite 0x307B32  (in fn ~0x307178)
+    callsite 0x307C06  (in fn ~0x307178)
+0x3065F0 status-proc fn: 4 callsites
+    callsite 0x307DE8  (in fn ~0x307178)
+    callsite 0x307E1C  (in fn ~0x307178)
+    callsite 0x307E80  (in fn ~0x307178)
+    callsite 0x307E94  (in fn ~0x307178)
+0x30B584 reaction dispatcher: 2 callsites
+    callsite 0x229CFA  (in fn ~0x228A08)
+    callsite 0x2E0920  (in fn ~0x2DF620)
+0x30BC3C staging helper B: 1 callsites
+site 0x307E1C -> fn ~0x307178
+site 0x307E80 -> fn ~0x307178
+site 0x307E94 -> fn ~0x307178
+site 0x30F4A7 -> fn ~0x30F0C4
+site 0x30F49C -> fn ~0x30F0C4
+site 0x30F0C4 -> fn ~0x30F0C4
+site 0x30A66F -> fn ~0x30A51C
+site 0x304E33 -> fn ~0x304DF0
+site 0x306636 -> fn ~0x3065F0
+site 0x30F8C7 -> fn ~0x30F0C4
+site 0x3062EC -> fn ~0x3062EC
+site 0x30AA80 -> fn ~0x30A51C
+site 0x309687 -> fn ~0x309678
+site 0x3096A3 -> fn ~0x309678
+
+=== callers of those enclosing fns (level up) ===
+fn 0x304DF0 (encloses site 0x304E33): 2 callers
+    from 0x307B32  (in fn ~0x307178)
+    from 0x307C06  (in fn ~0x307178)
+fn 0x3062EC (encloses site 0x30637E): 10 callers
+    from 0x30709D  (in fn ~0x307060)
+    from 0x3070FE  (in fn ~0x3070BC)
+    from 0x30737C  (in fn ~0x307178)
+    from 0x3074E9  (in fn ~0x307178)
+    from 0x3075D8  (in fn ~0x307178)
+    from 0x307630  (in fn ~0x307178)
+    from 0x307678  (in fn ~0x307178)
+    from 0x30774B  (in fn ~0x307178)
+    from 0x3078BB  (in fn ~0x307178)
+    from 0x307A87  (in fn ~0x307178)
+fn 0x3065F0 (encloses site 0x306636): 4 callers
+    from 0x307DE8  (in fn ~0x307178)
+    from 0x307E1C  (in fn ~0x307178)
+    from 0x307E80  (in fn ~0x307178)
+    from 0x307E94  (in fn ~0x307178)
+fn 0x307178 (encloses site 0x308D8F): 5 callers
+    from 0x3080ED  (in fn ~0x307178)
+    from 0x308159  (in fn ~0x307178)
+    from 0x308E09  (in fn ~0x307178)
+    from 0x308EB5  (in fn ~0x307178)
+    from 0x308F11  (in fn ~0x307178)
+fn 0x3095D4 (encloses site 0x309664): 1 callers
+    from 0x309B12  (in fn ~0x309A44)
+fn 0x309678 (encloses site 0x309687): 1 callers
+    from 0x309AEA  (in fn ~0x309A44)
+fn 0x30A51C (encloses site 0x30A66F): 5 callers
+    from 0x20452B  (in fn ~0x20435C)
+    from 0x2047BF  (in fn ~0x20435C)
+    from 0x20C06E  (in fn ~0x20BFD4)
+    from 0x30C7DC  (in fn ~0x30C798)
+    from 0x38A6F9  (in fn ~0x38A4A4)
+fn 0x30F0C4 (encloses site 0x30F4A7): 3 callers
+    from 0x3047A6  (in fn ~0x304580)
+    from 0x304A2B  (in fn ~0x304800)
+    from 0x38A6D3  (in fn ~0x38A4A4)
+
+--- fn 0x281D60 sweep loop + fn 0x309A44 head (stage 3) ---
+FN 0x309A44 (external-called formula driver) @ 0x309A44
+==========================================================================================
+    0x309A44  mov      qword ptr [rsp + 0x18], rbx
+    0x309A49  push     rbp
+    0x309A4A  push     rsi
+    0x309A4B  push     rdi
+    0x309A4C  push     r12
+    0x309A4E  push     r13
+    0x309A50  push     r14
+    0x309A52  push     r15
+    0x309A54  sub      rsp, 0x40
+    0x309A58  mov      rax, qword ptr [rip + 0x4725d1]
+    0x309A5F  xor      rax, rsp
+    0x309A62  mov      qword ptr [rsp + 0x38], rax
+    0x309A67  mov      eax, 0x14
+    0x309A6C  movzx    ebx, dl
+    0x309A6F  mov      r8, rcx
+    0x309A72  mov      r9d, eax
+    0x309A75  mov      edx, eax
+    0x309A77  lea      rcx, [rsp + 0x20]
+    0x309A7C  call     0x14002630c
+    0x309A81  movzx    eax, byte ptr [rsp + 0x20]
+    0x309A86  lea      r8, [rip + 0x154a253]
+    0x309A8D  mov      byte ptr [rip + 0x4a6ccd], al
+    0x309A93  xor      r15d, r15d
+    0x309A96  shl      rax, 9
+    0x309A9A  mov      ecx, ebx
+    0x309A9C  add      rax, r8
+    0x309A9F  shl      rcx, 9
+    0x309AA3  mov      qword ptr [rip + 0x15614ce], rax
+    0x309AAA  lea      rax, [r8 + 0x1be]
+    0x309AB1  add      rax, rcx
+    0x309AB4  mov      byte ptr [rip + 0x4a6ca7], bl
+    0x309ABA  cmp      dword ptr [rip + 0x15614db], r15d
+    0x309AC1  mov      qword ptr [rip + 0x15614a8], rax
+    0x309AC8  lea      rdx, [rcx + r8]
+    0x309ACC  lea      rax, [rip + 0x15614ed]
+    0x309AD3  mov      byte ptr [rip + 0x4a6cde], r15b
+    0x309ADA  mov      qword ptr [rip + 0x156147f], rax
+    0x309AE1  mov      qword ptr [rip + 0x1561480], rdx
+    0x309AE8  je       0x140309b09
+callsite 0x281F85 -> function head found at 0x281D60
+
+==========================================================================================
+FN 0x281D60 (contains call 0x309A44 at 0x281F85) @ 0x281D60
+==========================================================================================
+    0x281D60  mov      qword ptr [rsp + 0x18], rbx
+    0x281D65  push     rbp
+    0x281D66  push     rsi
+    0x281D67  push     rdi
+    0x281D68  push     r12
+    0x281D6A  push     r13
+    0x281D6C  push     r14
+    0x281D6E  push     r15
+    0x281D70  mov      rbp, rsp
+    0x281D73  sub      rsp, 0x50
+    0x281D77  mov      rax, qword ptr [rip + 0x4fa2b2]
+    0x281D7E  xor      rax, rsp
+    0x281D81  mov      qword ptr [rbp - 0x10], rax
+    0x281D85  movdqa   xmm0, xmmword ptr [rip + 0x4a1d73]
+    0x281D8D  xor      r13d, r13d
+    0x281D90  movq     rax, xmm0
+    0x281D95  movsxd   r15, ecx
+    0x281D98  mov      dword ptr [rbp - 0x18], eax
+    0x281D9B  mov      rdi, rdx
+    0x281D9E  mov      byte ptr [rbp - 0x14], al
+    0x281DA1  mov      byte ptr [rbp - 0x30], r13b
+    0x281DA5  mov      dword ptr [rbp - 0x2c], r13d
+    0x281DA9  mov      dword ptr [rip + 0xf25274], r13d
+    0x281DB0  mov      dword ptr [rip + 0xf254bd], r13d
+    0x281DB7  mov      byte ptr [rip + 0x52e9fb], r13b
+    0x281DBE  movups   xmmword ptr [rbp - 0x28], xmm0
+    0x281DC2  cmp      r15d, 0x15
+    0x281DC6  jl       0x140281dd1
+    0x281DC8  or       rax, 0xffffffffffffffff
+    0x281DCC  jmp      0x140282285
+    0x281DD1  lea      r12, [rip - 0x281dd8]
+    0x281DD8  mov      rsi, r15
+    0x281DDB  shl      rsi, 9
+    0x281DDF  lea      rbx, [r12 + 0x1853e9e]
+    0x281DE7  add      rbx, rsi
+    0x281DEA  lea      r14, [r12 + 0x1853ce0]
+    0x281DF2  mov      rcx, rbx
+    0x281DF5  add      r14, rsi
+    0x281DF8  call     0x14030a4a4
+    0x281DFD  mov      byte ptr [rbx], r13b
+    0x281E00  lea      rcx, [rip + 0x15e91b9]
+    0x281E07  mov      ebx, 8
+    0x281E0C  mov      byte ptr [rsi + r12 + 0x1853ea0], bl
+    0x281E14  call     0x14030a4a4
+    0x281E19  mov      byte ptr [rip + 0x15e91a0], r13b
+    0x281E20  mov      byte ptr [rdi + 0x24], r13b
+    0x281E24  mov      byte ptr [rdi + 0x16], r13b
+    0x281E28  mov      word ptr [rdi + 0x22], r13w
+    0x281E2D  mov      byte ptr [rdi + 0x13], r13b
+    0x281E31  cmp      dword ptr [rip + 0x15e9164], r13d
+    0x281E38  je       0x140281e74
+    0x281E3A  movzx    eax, word ptr [rip + 0x15e91af]
+    0x281E41  lea      r9, [rbp - 0x28]
+    0x281E45  lea      r8, [rbp - 0x2c]
+    0x281E49  mov      word ptr [rdi + 0x22], ax
+    0x281E4D  mov      rdx, rdi
+    0x281E50  mov      ecx, r15d
+    0x281E53  call     0x140281adc
+    0x281E58  test     eax, eax
+    0x281E5A  je       0x140281e83
+    0x281E5C  mov      eax, 0x1b8
+    0x281E61  cmp      word ptr [rip + 0x15e9188], ax
+    0x281E68  mov      eax, dword ptr [rbp - 0x2c]
+    0x281E6B  sete     r12b
+    0x281E6F  jmp      0x140281f44
+    0x281E74  cmp      byte ptr [rsi + r12 + 0x1853e81], 0x15
+    0x281E7D  jne      0x140281e83
+    0x281E7F  mov      byte ptr [rdi + 0x13], 1
+    0x281E83  lea      rcx, [r12 + 0x1853e80]
+    0x281E8B  add      rcx, rsi
+    0x281E8E  lea      rdx, [rbp - 0x30]
+    0x281E92  call     0x140281c9c
+    0x281E97  or       rcx, 0xffffffffffffffff
+    0x281E9B  cmp      eax, ecx
+    0x281E9D  jne      0x140281eae
+    0x281E9F  mov      byte ptr [rdi + 1], r13b
+    0x281EA3  mov      eax, ecx
+    0x281EA5  mov      byte ptr [rdi + 0x18], r13b
+    0x281EA9  jmp      0x140282285
+    0x281EAE  movzx    edx, byte ptr [rip + 0x52e8dd]
+    0x281EB5  cmp      dl, 0x15
+    0x281EB8  jae      0x140281f34
+    0x281EBA  cmp      word ptr [rip + 0x52e8a8], r13w
+    0x281EC2  jne      0x140281ecd
+    0x281EC4  test     byte ptr [rip + 0x52e8c5], 0x80
+    0x281ECB  je       0x140281f34
+    0x281ECD  mov      rax, r13
+    0x281ED0  and      byte ptr [rax + r12 + 0xd8dcb5], 0x7f
+    0x281ED9  add      rax, rbx
+    0x281EDC  cmp      rax, 0x1000
+    0x281EE2  jl       0x140281ed0
+    0x281EE4  movzx    eax, byte ptr [rip + 0x9e8e7f]
+    0x281EEB  mov      r8, rdx
+    0x281EEE  shl      r8, 9
+    0x281EF2  mov      qword ptr [rbp - 0x27], rcx
+    0x281EF6  mov      dword ptr [rbp - 0x1f], ecx
+    0x281EF9  mov      word ptr [rbp - 0x1b], cx
+    0x281EFD  mov      byte ptr [rbp - 0x19], cl
+    0x281F00  movzx    ecx, byte ptr [r8 + r12 + 0x1853d30]
+    0x281F09  imul     ecx, eax
+    0x281F0C  movzx    eax, byte ptr [r8 + r12 + 0x1853d31]
+    0x281F15  shr      eax, 7
+    0x281F18  shl      eax, 8
+    0x281F1B  mov      byte ptr [rbp - 0x28], dl
+    0x281F1E  add      ecx, eax
+    0x281F20  movzx    eax, byte ptr [r8 + r12 + 0x1853d2f]
+    0x281F29  add      ecx, eax
+    0x281F2B  or       byte ptr [r12 + rcx*8 + 0xd8dcb5], 0x80
+    0x281F34  mov      rdx, r14
+    0x281F37  lea      rcx, [rbp - 0x28]
+    0x281F3B  call     0x1402827cc
+    0x281F40  mov      r12b, byte ptr [rbp - 0x30]
+    0x281F44  movups   xmm0, xmmword ptr [rbp - 0x28]
+    0x281F48  mov      byte ptr [rip + 0x52e841], al
+    0x281F4E  lea      rax, [rip - 0x281f55]
+    0x281F55  lea      r14, [rax + 0x1853e80]
+    0x281F5C  add      r14, rsi
+    0x281F5F  mov      rcx, r14
+    0x281F62  movdqu   xmmword ptr [rip + 0x15e90c6], xmm0
+    0x281F6A  call     0x140309960
+    0x281F6F  mov      rbx, r13
+    0x281F72  mov      dl, byte ptr [rbp + rbx - 0x28]
+    0x281F76  cmp      dl, 0xff
+    0x281F79  je       0x140281f8a
+    0x281F7B  mov      rcx, r14
+    0x281F7E  mov      byte ptr [rip + 0x52e807], r13b
+ >> 0x281F85  call     0x140309a44
+    0x281F8A  inc      rbx
+    0x281F8D  cmp      rbx, 0x15
+    0x281F91  jl       0x140281f72
+    0x281F93  mov      r9d, 0x10
+    0x281F99  lea      r11, [rip - 0x281fa0]
+
+--- stage 4: no real-code callers of 0x281D60; no [reg+4] team reads in calc path ---
+callers:
+  0x228A08 fn calling reaction dispatcher:
+      callsite 0x22899D in fn 0x227D70
+  0x281ADC helper A:
+      callsite 0x281E53 in fn 0x281D60
+  0x281C9C helper B:
+      callsite 0x281E92 in fn 0x281D60
+  0x281D60 target-sweep driver:
+  0x2827CC target enumerator:
+      callsite 0x281F3B in fn 0x281D60
+  0x306864 post helper:
+      callsite 0x309FF5 in fn 0x309A44
+  0x309960 pre-sweep init:
+      callsite 0x281F6A in fn 0x281D60
+      callsite 0x309AF8 in fn 0x309A44
+  0x30A1B0 post helper 2:
+      callsite 0x30646D in fn 0x30644C
+      callsite 0x30992C in fn 0x309508
+      callsite 0x30A00C in fn 0x309A44
+  0x30B080 post helper 3:
+      callsite 0x309EAD in fn 0x309A44
+
+==========================================================================================
+context around callsite 0x281F3B -> 0x2827CC
+    0x281EDB  ret      
+    0x281EDC  cmp      rax, 0x1000
+    0x281EE2  jl       0x140281ed0
+    0x281EE4  movzx    eax, byte ptr [rip + 0x9e8e7f]
+    0x281EEB  mov      r8, rdx
+    0x281EEE  shl      r8, 9
+    0x281EF2  mov      qword ptr [rbp - 0x27], rcx
+    0x281EF6  mov      dword ptr [rbp - 0x1f], ecx
+    0x281EF9  mov      word ptr [rbp - 0x1b], cx
+    0x281EFD  mov      byte ptr [rbp - 0x19], cl
+    0x281F00  movzx    ecx, byte ptr [r8 + r12 + 0x1853d30]
+    0x281F09  imul     ecx, eax
+    0x281F0C  movzx    eax, byte ptr [r8 + r12 + 0x1853d31]
+    0x281F15  shr      eax, 7
+    0x281F18  shl      eax, 8
+    0x281F1B  mov      byte ptr [rbp - 0x28], dl
+
+--- formula dispatch table 0x140682BC8 (stage 5 rerun) ---
+entries with code ptrs up to index 0xFF; 162 distinct handlers
+  0x0103E0 <- formulas 0x11,0x13,0x18,0x19,0x46
+  0x010FA4 <- formulas 0x6D,0x74,0x77,0x78,0x7B,0x7D,0xD3,0xD4,0xD5,0xD6,0xD7,0xD8,0xD9,0xDA,0xDB,0xDC,0xDD,0xDE,0xDF,0xE0,0xE1,0xE2,0xE3,0xE4,0xE5,0xE6,0xE7,0xE8,0xE9,0xEA,0xEB,0xEC,0xED,0xEE,0xEF,0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
+  0x0A68C4 <- formulas 0xA9
+  0x3060C0 <- formulas 0x36
+  0x3060D8 <- formulas 0x3A
+  0x3060F0 <- formulas 0x39
+  0x306108 <- formulas 0x3B
+  0x306130 <- formulas 0x3C
+  0x30616C <- formulas 0x43
+  0x30618C <- formulas 0x44
+  0x3061A8 <- formulas 0x45
+  0x306A20 <- formulas 0x38
+  0x306C64 <- formulas 0x49
+  0x3071B4 <- formulas 0x01
+  0x3071D4 <- formulas 0x02
+  0x307238 <- formulas 0x03
+  0x307270 <- formulas 0x04
+  0x30738C <- formulas 0x05
+  0x30741C <- formulas 0x06
+  0x307458 <- formulas 0x07
+  0x307488 <- formulas 0x08
+  0x307508 <- formulas 0x09
+  0x307580 <- formulas 0x0A
+  0x3075A0 <- formulas 0x0B
+  0x3075F8 <- formulas 0x0C
+  0x307640 <- formulas 0x0D
+  0x3076D4 <- formulas 0x0E
+  0x3077DC <- formulas 0x0F
+  0x307834 <- formulas 0x10
+  0x307888 <- formulas 0x12
+  0x3078E0 <- formulas 0x14
+  0x307990 <- formulas 0x15
+  0x3079BC <- formulas 0x16
+  0x3079F4 <- formulas 0x17
+  0x307A3C <- formulas 0x1A
+  0x307AB8 <- formulas 0x1B
+  0x307B04 <- formulas 0x1C
+  0x307BD8 <- formulas 0x1D
+  0x307CA4 <- formulas 0x1E,0x5E,0x5F
+  0x307CBC <- formulas 0x1F
+  0x307DE4 <- formulas 0x20
+  0x307E18 <- formulas 0x21
+  0x307E7C <- formulas 0x22
+  0x307E90 <- formulas 0x23
+  0x307EC8 <- formulas 0x24
+  0x307F08 <- formulas 0x25
+  0x308060 <- formulas 0x26
+  0x30812C <- formulas 0x27
+  0x30818C <- formulas 0x28
+  0x30829C <- formulas 0x29
+  0x308318 <- formulas 0x2A
+  0x308488 <- formulas 0x2B
+  0x3084DC <- formulas 0x2C
+  0x308558 <- formulas 0x2D
+  0x3085CC <- formulas 0x2E
+  0x3086F8 <- formulas 0x2F
+  0x308740 <- formulas 0x30
+  0x308788 <- formulas 0x31
+  0x308814 <- formulas 0x32
+  0x3088B4 <- formulas 0x33
+  0x308908 <- formulas 0x34
+  0x308968 <- formulas 0x35
+  0x3089F0 <- formulas 0x37
+  0x308AB8 <- formulas 0x3D
+  0x308AD8 <- formulas 0x3E
+  0x308B04 <- formulas 0x3F
+  0x308B50 <- formulas 0x40
+  0x308BB8 <- formulas 0x41
+  0x308C10 <- formulas 0x42
+  0x308C80 <- formulas 0x47
+  0x308CC4 <- formulas 0x48
+  0x308D04 <- formulas 0x4A
+  0x308D2C <- formulas 0x4B
+  0x308DA0 <- formulas 0x4C
+  0x308DDC <- formulas 0x4D
+  0x308E50 <- formulas 0x4E
+  0x308E88 <- formulas 0x4F
+  0x308EE4 <- formulas 0x50
+  0x308F24 <- formulas 0x51
+  0x308F78 <- formulas 0x52
+  0x308FBC <- formulas 0x53
+  0x309034 <- formulas 0x54
+  0x30908C <- formulas 0x55
+  0x3090C0 <- formulas 0x56
+  0x3090F4 <- formulas 0x57
+  0x309188 <- formulas 0x58
+  0x309220 <- formulas 0x59
+  0x30926C <- formulas 0x5A
+  0x3092A8 <- formulas 0x5B
+  0x30931C <- formulas 0x5C
+  0x30936C <- formulas 0x5D
+  0x3093A4 <- formulas 0x60
+  0x3093AC <- formulas 0x61
+  0x3093E0 <- formulas 0x62
+  0x309414 <- formulas 0x63
+  0x309508 <- formulas 0x64
+  0x30D5D4 <- formulas 0x65
+  0x30D640 <- formulas 0x66
+  0x30D6AC <- formulas 0x67
+  0x30D6B4 <- formulas 0x68
+  0x30D774 <- formulas 0x69
+  0x30D7B4 <- formulas 0x6A
+  0x3134C0 <- formulas 0x6E
+  0x313970 <- formulas 0x6F
+  0x313EA4 <- formulas 0x70
+  0x313FC8 <- formulas 0x71
+  0x314AD4 <- formulas 0x72
+  0x314B08 <- formulas 0x73
+  0x314C38 <- formulas 0x75
+  0x314D5C <- formulas 0x76
+  0x314F38 <- formulas 0x79
+  0x315068 <- formulas 0x7A
+  0x3151A0 <- formulas 0x7C
+  0x315400 <- formulas 0x7E
+  0x3156B4 <- formulas 0x7F
+  0x315A80 <- formulas 0x80
+  0x315BA4 <- formulas 0x81
+  0x3161F4 <- formulas 0x82
+  0x316318 <- formulas 0x83
+  0x31AB7C <- formulas 0xA5
+  0x31AB94 <- formulas 0xA6
+  0x31ABAC <- formulas 0xA7
+  0x31AC40 <- formulas 0xA8
+  0x31ACB8 <- formulas 0xAA,0xD1,0xD2
+  0x31ACC4 <- formulas 0xAB
+  0x31AD2C <- formulas 0xAC
+  0x31ADB8 <- formulas 0xAD
+  0x31AE80 <- formulas 0xAE
+  0x31AEE0 <- formulas 0xAF
+  0x31AF6C <- formulas 0xB0
+  0x31AFEC <- formulas 0xB1
+  0x31B04C <- formulas 0xB2
+  0x31B0DC <- formulas 0xB3
+  0x31B19C <- formulas 0xB4
+  0x31B1FC <- formulas 0xB5
+  0x31B25C <- formulas 0xB6
+  0x31B294 <- formulas 0xB7
+  0x31B2CC <- formulas 0xB8
+  0x31B304 <- formulas 0xB9
+  0x31B33C <- formulas 0xBA
+  0x31B374 <- formulas 0xBB
+  0x31B3A0 <- formulas 0xBC
+  0x31B3CC <- formulas 0xBD
+  0x31B3F8 <- formulas 0xBE
+  0x31B468 <- formulas 0xBF
+  0x31B49C <- formulas 0xC0
+  0x31B4D0 <- formulas 0xC1
+  0x31B508 <- formulas 0xC2
+  0x31B53C <- formulas 0xC3
+  0x31B59C <- formulas 0xC4
+  0x31B5D0 <- formulas 0xC5
+  0x31B634 <- formulas 0xC6
+  0x31B698 <- formulas 0xC7
+  0x31B704 <- formulas 0xC8
+  0x31B770 <- formulas 0xC9
+  0x31B7FC <- formulas 0xCA
+  0x31B9F8 <- formulas 0xCB
+  0x31BA70 <- formulas 0xCC
+  0x31C370 <- formulas 0xCD
+  0x31D0A4 <- formulas 0xCE
+  0x31D618 <- formulas 0xCF
+  0x31D690 <- formulas 0xD0

@@ -550,7 +550,9 @@ current-action global block `0x14186AF60..F4` (`word[0x14186AFF0]` = ability id,
 `actor+0x142` = copy of `+0x1A2`; full 3×5-byte status arrays `+0x57`/`+0x5C`/`+0x61`/`+0x1EF`
 (classic PSX bit layout); position/facing `+0x4F/+0x50/+0x51`; active-turn marker `+0x1B8 == 1`;
 status-proc roll `0x306636` vs staged % `g_7B07AC` (`0x1407B07AC`, pokeable); reaction bitfield
-`unit+0x94..0x97` + dispatcher `0x30B584` + Brave-gates; shared RNG `0x278EE0`. Consolidated
+`unit+0x94..0x97` + dispatcher `0x30B584` + Brave-gates; shared RNG `0x278EE0`; battle tile table
+`0x140D8DCB0` (8 B/tile, height at `+2`, map dims `0x140C6AD6A/6B`, level bit = unit `+0x51` bit 7,
+per-action AoE mark byte at `+5`; see `work/dcl-tilemap-candidates.md`). Consolidated
 live-test checklist: `work/dcl-live-test-master-plan.md`.
 
 ## Sources

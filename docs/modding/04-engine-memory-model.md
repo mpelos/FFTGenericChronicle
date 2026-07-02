@@ -129,15 +129,43 @@ pointers. The status bitfield is **partly mapped and DATA-controllable** (see §
 `0x10`=Undead are both live-confirmed (the earlier offline `0x10`="control-flip" guess was WRONG);
 remaining bits to map empirically. Stats drift with level, so only map level-matched dumps.
 
-**Offline candidates (2026-07-02, pending live validation)** — `work/dcl-unit-state-candidates.md`
-maps most of the above from snapshot cross-diffs + the community cheat table + the classic PSX
-layout: full 5-byte status arrays (source `+0x57..0x5B`, immunity `+0x5C..0x60`, effective
-`+0x61..0x65`, master `+0x1EF..0x1F3`, durations `+0x66..`) with a complete classic-verbatim bit
-map (`effective = master | source` verified 40/40 snapshot states); position `+0x4F/+0x50` X/Y,
-facing `+0x51`; caster pending-target/epicenter `+0x1AC/+0x1B0`; turn marker `+0x1B8 == 1`
-(exactly-one invariant, all snapshots); equipment stat bonus `+0x3B/3C/3D` (raw+bonus==effective
-15/15); per-job JP word arrays `+0xF0` / `+0x11E` (index `jobId-0x4A`); job-level nibbles
-`+0xE4..0xEE`; R/S/M ability words `+0x14/+0x16/+0x18`; elemental block candidate `+0x52..0x56`.
+**✅ LIVE-PROVEN (LT1/LT2 mega-probe, 2026-07-02 — evidence `work/lt1-mega-probe-plan.md`):**
+
+- **Status arrays**: source `+0x57..0x5B`, **immunity `+0x5C..0x60`**, effective `+0x61..0x65`,
+  master `+0x1EF..0x1F3`, classic PSX bit layout verbatim (Blind landed as `eff[1] |= 0x20`
+  Darkness; Charging = `[0] 0x08` through a Fire charge). Equipment-granted immunities appear in
+  `+0x5C..` (e.g. Darkness+Sleep, DM+DA). **Writing an immunity bit is a proven input-control
+  lever**: `imm[1] |= 0x20` on a clean unit → the status forecast dropped to 0% and the cast missed.
+- **Position/facing**: `+0x4F` X, `+0x50` Y, `+0x51` facing (bit 7 = map level, bridge case
+  untested); every move/facing change tracked coherently with the tile table (§2.5).
+- **Turn owner**: `+0x1B8 == 1` — exactly-one invariant across player AND AI turns; `+0x1BA` = the
+  in-flight action owner (set at confirm, persists to resolution); `+0x2E` also flips at turn grant.
+- **Pending record**: `+0x1A1` type / `+0x1A2` ability id (Fire=`0x10`, Blind=`0xEA`, enemy=`0x118`
+  — classic id space), `+0x18D` timer, `+0x1AC/+0x1B0` epicenter.
+- **Per-job JP**: word arrays `+0xF0` (spendable) and `+0x11E` (total), **index = `jobId - 0x4A`**
+  (Agrias +48 @ 6 = `0x50-0x4A`; Beowulf +53 @ 8 = `0x52-0x4A`; ally spillover +9/10 at the same
+  index). Job level = total-JP vs Nex `GeneralJob.RequiredJobExp` thresholds. `+0x28` increments
+  with actions (EXP candidate).
+- **Reaction-eval id global**: `word[0x14186AFF0]` holds the reaction ability id under evaluation
+  (445/451 observed at Mana-Shield/parry moments) — NOT the current action id (refuted for that
+  role); `dword[0x14186AFF4]` = acting unit index (proven across player+enemy actions).
+- **Staged reaction redirection**: Cloud's Mana Shield turned the staged HP debit into
+  `+0x1C8 stagedMpDebit = 157` with result flag `+0x1E5 = 32` — reaction outcomes ride the same
+  staged surface.
+
+Still Hypothesis: job-level nibbles `+0xE4..0xEE`, R/S/M ability words `+0x14/+0x16/+0x18`,
+elemental block `+0x52..0x56`, equipment stat bonus `+0x3B/3C/3D` (snapshot-proven 15/15 but not
+re-checked live).
+
+### 2.5 Battle tile table — **Proven (LT1 2026-07-02)**
+
+Tile table at VA `0x140D8DCB0`: 8 bytes/tile, 256 tiles/level, 2 levels (`+0x800`); index =
+`(level<<8) + y*width + x`; map dims bytes at `0x140C6AD6A/6B`. Record: `+0` terrain type (`&0x3F`),
+`+2` height, `+3` slope-height (`&0x1F`) | water-depth (`>>5`), `+4` per-corner slope weights,
+`+5` **dynamic mark byte** (live: `0x20` = move-range highlight, `0x40`/`0xC0` = cursor/target —
+range/AoE membership is a direct read), `+6` flags (bit0 unselectable, bit1 unwalkable). Corner
+height = `2*b2 + ((b4>>2*corner)&3)*(b3&0x1F)` (recovered from `0x3050A5`). Full RE:
+`work/dcl-tilemap-candidates.md`.
 
 Width limits: stats are bytes; HP/MP are 16-bit words; damage is a 16-bit word; engine math is
 integer (the remaster applies some multipliers as AVX floats, then truncates to int).

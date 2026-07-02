@@ -9,6 +9,13 @@ Ground rules (unchanged): probes are read-mostly or single-field pokes; mod-code
 game closed for deploy; enable only `fftivc.utility.modloader` + `fftivc.generic.chronicle.codemod`.
 Claude builds/deploys/reads everything; the user only performs the in-game GUI steps.
 
+> **STATUS 2026-07-02: Session 1 EXECUTED (LT1+LT2, one battle) — results in
+> `work/lt1-mega-probe-plan.md`.** Items 1-6 resolved: turn owner/position/tile/status/immunity/JP
+> all PROVEN; `0x14186AFF0` refuted as action id (it is the reaction-eval id); `g_7B07AC` poke
+> refuted (compute-time rewrite). Session 2 (LT3) remains, updated by the results: the primary hook
+> is now `computeActionResult 0x309A44` (preview-time ability id + AI discriminator), plus magic
+> always-hit `0x304E2B`, status hook `0x30662C`, reaction gates.
+
 ## Session 1 — pure external reads/pokes (NO mod rebuild needed)
 
 These need only the running game + external memory probes.
@@ -20,10 +27,13 @@ These need only the running game + external memory probes.
 2. **Turn-owner marker.** Poll `unit+0x1B8` across several turns; expect the exactly-one invariant
    to track the acting unit, including AI turns.
    → `work/dcl-unit-state-candidates.md` §6 step 6.
-3. **Position/facing.** Read `+0x4F/+0x50/+0x51` before/after a Move and a facing change; cross-check
-   the pending epicenter `+0x1AC/+0x1B0` when targeting a tile. Height: stand a unit on a bridge and
-   confirm no struct field changes (map-derived).
-   → `work/dcl-unit-state-candidates.md` §6 steps 4-5.
+3. **Position/facing + TILE MAP.** Read `+0x4F/+0x50/+0x51` before/after a Move and a facing change;
+   cross-check the pending epicenter `+0x1AC/+0x1B0` when targeting a tile. Tile table (found
+   2026-07-02, `work/dcl-tilemap-candidates.md`): dump `0x140D8DCB0` + dims `0x140C6AD6A/6B`,
+   cross-check record `+2` (height) against units at visibly different heights, watch the `+5` mark
+   byte during AoE targeting (if `0x40` marks highlighted tiles, AoE membership is a direct read);
+   bridge tile checks the level bit (unit `+0x51` bit 7).
+   → `work/dcl-unit-state-candidates.md` §6 steps 4-5; `work/dcl-tilemap-candidates.md` §6.
 4. **Status bitmap sweep.** Cast known statuses (Poison, Protect, Haste, Blind...) and diff
    `+0x57..0x65` and `+0x1EF..0x1F3`; verify the PSX bit layout table; write-test one immunity byte
    (`+0x5C..0x60`) against a status attempt.

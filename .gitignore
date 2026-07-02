@@ -48,6 +48,8 @@ tools/*
 !tools/map_attributes.py
 !tools/dump_levels.py
 !tools/profile_struct.py
+!tools/lt1_mega_probe.py
+!tools/lt2_poke.py
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/
