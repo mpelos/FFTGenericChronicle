@@ -50,10 +50,58 @@ Callers reais capturados via return-address (uma batalha):
 4. O hook `0x309A44` é o ponto de contexto por (ação, alvo) para o DCL: id em preview, caster/target,
    e distingue player/AI — a espinha do runtime DCL.
 
-## Próximo (LT4, forcing)
+## LT4 — output control na janela compute→apply (staged-bundle probe)
 
-- **Status outcome (output)**: rewrite pós-roll de `+0x1D0`/`+0x1C0` (e `+0x1A8` ailment) na janela
-  entre compute e apply — provar forçar/suprimir status sem tocar o roll.
-- **Magic miss→hit (output)**: no caso miss (`+0x1C0=6`, staged dmg 0), re-stage dmg + kind antes do
-  apply (mesma janela do pre-clamp).
-- **Reaction força/supressão (real-code)**: hook no Brave-gate forçando chance 0/100.
+**Ponto de injeção achado (static + validado):** o sweep driver `0x281F85 call 0x309A44` tem o
+pós-call em **`0x281F8A`** (`inc rbx; cmp rbx,0x15; jl`). Nesse instante o VM já escreveu o bundle
+staged no alvo e o engine ainda NÃO aplicou. O índice do alvo (unit index) está vivo em
+`[rbp+rbx-0x28]` (rbx = índice do loop; rbp e rbx são callee-saved e sobrevivem ao call). Segundo
+caller `0x307F68` (single-target path via global) não hookado ainda.
+
+**Hook `StagedBundleProbe*` (Mod.cs, ExecuteFirst @ 0x281F8A):** deriva `target = 0x141853CE0 +
+targetIdx*0x200`, loga `+0x1C0` kind / `+0x1C4` dmg / `+0x1A8` ailment / `+0x1D0` mask / `+0x1E5`
+resFlag, e (gated por `ForceTargetCharId`) sobrescreve qualquer campo com `Force*>=0`. Bytes de
+validação `48 FF C3 48 83 FB 15`.
+
+Sequência de sub-testes:
+- **LT4a (log-only):** confirmar que o bundle está populado por-alvo em 0x281F8A (Fire AoE +
+  Blind), e que Blind passa pelo sweep (senão usa o caller 0x307F68). Perfil
+  `battle-runtime-settings.lt4a-bundle.json`.
+- **LT4b (status force):** `ForceTargetCharId` = alvo, `ForceApplyMask=0x08` (+`ForceAilment`) para
+  FORÇAR Blind num alvo que resistiria; e `ForceApplyMask=0` para SUPRIMIR num que pegaria. Prova
+  output-control de status.
+- **LT4c (magic miss→hit):** num miss de Fire (`kind=0x06`, dmg=0), `ForceKind=0` + `ForceDmg=N` →
+  provar que re-stage antes do apply converte miss em hit com dano.
+- **Reaction force/suppress (real-code, separado):** hook no Brave-gate `0x30BE86` forçando chance
+  0/100 — o único roll real-code; fica para LT5.
+
+## ✅ LT4 RESULTADOS (executado 2026-07-02, hook `StagedBundleProbe*` @ 0x281F8A)
+
+**LT4a (log-only):** o bundle staged é lido por-alvo no pós-compute. Confirmado que passam por aqui:
+Fire AoE (4 alvos, dmg 175/99/157/123), Blind (id 234, mas ERROU → `kind=0x06 dmg=0 resFlag=0`),
+e **ataques inimigos de execução** (Skeleton matou o Ninja: dmg 180→324). Campos: `+0x1C0` kind
+(0x00 hit / 0x06 miss), `+0x1C4` dmg, `+0x1E5` resFlag (0x80 hit-apply / 0x00 miss / bits 0x08|0x01
+= proc de status da arma), `+0x1A8` ailment e `+0x1D0` mask **ficaram 0** em todos os casos vistos
+(o Blind errou, então staging de status-hit não foi observado aqui — provável que status-apply seja
+no outro caller `0x307F68` ou VM-interno).
+
+**LT4b (force-miss, INCONCLUSIVO):** forçar `kind=6/dmg=0/resFlag=0` no ataque físico do Ramza deu
+"animação de defesa, sem texto de Miss, e o alvo petrificou" — contaminado: a **arma do Ramza tem
+proc de petrify** (natural `resFlag=0x89`, bits 0x08|0x01), caminho separado que não tocamos. Leitura
+ambígua.
+
+**LT4b2 (force-dmg, ✅ PROVEN):** forçar só `stagedDmg=111` no charId 0x82 via **Fire** (sem proc de
+arma). Dano natural seria 78/138 por alvo (no log); **em jogo todos os esqueletos tomaram exatamente
+111**. → **Escrever `target+0x1C4` no pós-compute `0x281F8A` VAZA para o resultado aplicado** — é um
+lever de OUTPUT autoritativo, no ponto por-(ação,alvo), para magia (e por simetria física/AI, mesmo
+sweep). Segundo lever de dano além do pre-clamp, e mais cedo/rico (tem kind + alvo + contexto).
+
+**Estado dos levers de combate (final da campanha LT):**
+- Dano/HP: ✅ pre-clamp `0x30A66F` (apply) **e** staged-bundle `0x281F8A` (compute) — ambos provados.
+- Magic miss→hit: campo `kind`+`dmg`+`resFlag` é reescrevível no bundle; o dano provou vazar. O
+  texto "Miss"/animação depende de mais que `kind` (LT4b sugere que resFlag/messaging tem nuance) —
+  refinar num LT5 sem arma-com-proc.
+- Status infliction: ✅ INPUT provado (immunity `+0x5C` suprime — LT2; `StatusOverride +0x1EF/+0x61`
+  força — Undead 2026-06-27). Output de status (ailment/mask) NÃO está em 0x281F8A; não é bloqueio.
+- Reactions: Brave-gate real-code `0x30BE86` (força/suprime) — LT5.
+- AI: ✅ same-calc; os writes de INPUT e o bundle-force em 0x281F8A são vistos pela AI (mesmo sweep).

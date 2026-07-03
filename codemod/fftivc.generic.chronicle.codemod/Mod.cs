@@ -175,6 +175,9 @@ public class Mod : ModBase
     private const int CALC_ENTRY_RING_SLOTS = 64;
     private const int CALC_ENTRY_BUFFER_SIZE = 16 + (CALC_ENTRY_RING_SLOTS * 16); // [0] u32 count; 16B slots
     private const int LT3_ROLL_BUFFER_SIZE = 48;                                   // +16 magic slot, +32 status slot
+    private const int STAGED_BUNDLE_HEADER = 28;                                   // [0]count [4]forceChar [8]kind [12]ail [16]mask [20]dmg [24]resFlag
+    private const int STAGED_BUNDLE_RING_SLOTS = 64;
+    private const int STAGED_BUNDLE_BUFFER_SIZE = STAGED_BUNDLE_HEADER + (STAGED_BUNDLE_RING_SLOTS * 16);
     private static readonly string[] RegisterNames =
     [
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -206,6 +209,8 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _statusChanceHook;
     private nint _rollRngBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _rollRngHook;
+    private nint _stagedBundleBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _stagedBundleHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _landmarkHooks = new();
     private readonly Dictionary<int, LandmarkProbe> _landmarkProbesById = new();
     private Thread? _poller;
@@ -360,6 +365,7 @@ public class Mod : ModBase
             InstallMagicAccuracyControlIfEnabled(baseAddr);
             InstallStatusChanceControlIfEnabled(baseAddr);
             InstallRollRngProbeIfEnabled(baseAddr);
+            InstallStagedBundleProbeIfEnabled(baseAddr);
 
             scanner.AddMainModuleScan(BattleBasePtr, r =>
             {
@@ -1003,6 +1009,135 @@ public class Mod : ModBase
             Line($"[RNG] caller=0x{callerRva:X}{(isNew ? " NEW" : "")} count={agg.Count} last=(range={agg.Range}, chance={agg.Chance})");
         }
         _rollRngSeen = count;
+        Flush();
+    }
+
+    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window. Hook at the sweep post-call 0x281F8A: the VM's
+    // computeActionResult (0x309A44) has just staged the whole effect bundle onto the target, and the
+    // engine has NOT applied it yet. The target index (unit index) is still on the stack at
+    // [rbp+rbx-0x28] (rbx = the sweep loop index; both rbp and rbx are callee-saved across the call).
+    // We log target+0x1C0 (evade kind) / +0x1C4 (staged dmg) / +0x1A8 (ailment) / +0x1D0 (apply mask)
+    // / +0x1E5 (result flag), and OPTIONALLY overwrite each (gated on the target charId) to prove
+    // OUTPUT control of status infliction and magic miss->hit without touching the VM roll.
+    // Buffer: [0]u32 ring count, [4]forceCharId, [8]forceKind, [12]forceAilment, [16]forceMask,
+    // [20]forceDmg (each -1 = leave alone), then 16-byte ring slots.
+    private void InstallStagedBundleProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.StagedBundleProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[BUNDLE-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+        int rva = _settings.StagedBundleProbeRva;
+        nint address = moduleBase + rva;
+        if (!ValidateExpectedBytes(address, "48 FF C3 48 83 FB 15", out string byteError))
+        {
+            Line($"[BUNDLE-SKIP] rva=0x{rva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        _stagedBundleBuf = Marshal.AllocHGlobal(STAGED_BUNDLE_BUFFER_SIZE);
+        for (int i = 0; i < STAGED_BUNDLE_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_stagedBundleBuf, i, 0);
+        Marshal.WriteInt32(_stagedBundleBuf + 4, _settings.StagedBundleForceTargetCharId);
+        Marshal.WriteInt32(_stagedBundleBuf + 8, _settings.StagedBundleForceKind);
+        Marshal.WriteInt32(_stagedBundleBuf + 12, _settings.StagedBundleForceAilment);
+        Marshal.WriteInt32(_stagedBundleBuf + 16, _settings.StagedBundleForceApplyMask);
+        Marshal.WriteInt32(_stagedBundleBuf + 20, _settings.StagedBundleForceDmg);
+        Marshal.WriteInt32(_stagedBundleBuf + 24, _settings.StagedBundleForceResFlag);
+
+        string buf = $"0{_stagedBundleBuf:X}h";
+        string[] asm =
+        {
+            "use64",
+            "push rax", "push rcx", "push rdx", "push r8", "push r9",
+            "pushfq",
+            "movzx eax, byte [rbp+rbx-0x28]",   // eax = target unit index (0xFF empties already skipped)
+            "cmp eax, 0x40",
+            "jae .done",                          // guard against a garbage index
+            "mov rdx, 0141853CE0h",
+            "mov rcx, rax",
+            "shl rcx, 9",                         // *0x200
+            "add rcx, rdx",                       // rcx = target unit ptr
+            $"mov r8, {buf}",
+            // ---- ring log ----
+            "mov edx, dword [r8]",
+            "add dword [r8], 1",
+            "and edx, 0x3F",
+            "shl edx, 4",
+            "add rdx, r8",
+            "add rdx, 28",                        // rdx = slot ptr (header = 28)
+            "mov byte [rdx], al",                 // targetIdx
+            "mov r9b, byte [rcx]",       "mov byte [rdx+1], r9b",       // target charId
+            "mov r9b, byte [rcx+0x1C0]", "mov byte [rdx+2], r9b",       // evade kind
+            "mov r9w, word [rcx+0x1C4]", "mov word [rdx+4], r9w",       // staged dmg
+            "mov r9w, word [rcx+0x1A8]", "mov word [rdx+6], r9w",       // ailment
+            "mov r9b, byte [rcx+0x1D0]", "mov byte [rdx+8], r9b",       // apply mask
+            "mov r9b, byte [rcx+0x1E5]", "mov byte [rdx+9], r9b",       // result flag
+            // ---- optional forcing, gated on charId ----
+            "mov r9d, dword [r8+4]",              // forceCharId
+            "cmp r9d, 0",
+            "jl .done",                           // -1 => observe only
+            "movzx eax, byte [rcx]",              // target charId
+            "cmp r9d, eax",
+            "jne .done",
+            "mov r9d, dword [r8+8]",  "cmp r9d, 0", "jl .noKind", "mov byte [rcx+0x1C0], r9b", ".noKind:",
+            "mov r9d, dword [r8+12]", "cmp r9d, 0", "jl .noAil",  "mov word [rcx+0x1A8], r9w", ".noAil:",
+            "mov r9d, dword [r8+16]", "cmp r9d, 0", "jl .noMask", "mov byte [rcx+0x1D0], r9b", ".noMask:",
+            "mov r9d, dword [r8+20]", "cmp r9d, 0", "jl .noDmg",  "mov word [rcx+0x1C4], r9w", ".noDmg:",
+            "mov r9d, dword [r8+24]", "cmp r9d, 0", "jl .noRes",  "mov byte [rcx+0x1E5], r9b", ".noRes:",
+            ".done:",
+            "popfq",
+            "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+        };
+        try
+        {
+            _stagedBundleHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line($"[BUNDLE-HOOK] rva=0x{rva:X} addr=0x{address:X} buf=0x{_stagedBundleBuf:X} " +
+                 $"forceChar={FormatMaybeInt(_settings.StagedBundleForceTargetCharId)} " +
+                 $"kind={FormatMaybeInt(_settings.StagedBundleForceKind)} ail={FormatMaybeInt(_settings.StagedBundleForceAilment)} " +
+                 $"mask={FormatMaybeInt(_settings.StagedBundleForceApplyMask)} dmg={FormatMaybeInt(_settings.StagedBundleForceDmg)} " +
+                 $"resFlag={FormatMaybeInt(_settings.StagedBundleForceResFlag)}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[BUNDLE-FAILED] {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private int _stagedBundleSeen;
+    private const int STAGED_BUNDLE_LOG_PER_POLL = 16;
+    private void CaptureStagedBundleProbeEvents()
+    {
+        if (_stagedBundleBuf == 0)
+            return;
+        int count = Marshal.ReadInt32(_stagedBundleBuf);
+        if (count == _stagedBundleSeen)
+            return;
+        int fresh = count - _stagedBundleSeen;
+        int start = Math.Max(_stagedBundleSeen, count - Math.Min(fresh, STAGED_BUNDLE_RING_SLOTS));
+        int logged = 0;
+        for (int n = start; n < count && logged < STAGED_BUNDLE_LOG_PER_POLL; n++, logged++)
+        {
+            nint slot = _stagedBundleBuf + STAGED_BUNDLE_HEADER + ((n & (STAGED_BUNDLE_RING_SLOTS - 1)) * 16);
+            int targetIdx = Marshal.ReadByte(slot);
+            int charId = Marshal.ReadByte(slot + 1);
+            int kind = Marshal.ReadByte(slot + 2);
+            int dmg = (ushort)Marshal.ReadInt16(slot + 4);
+            int ailment = (ushort)Marshal.ReadInt16(slot + 6);
+            int mask = Marshal.ReadByte(slot + 8);
+            int resFlag = Marshal.ReadByte(slot + 9);
+            Line($"[BUNDLE] n={n} targetIdx={targetIdx} charId=0x{charId:X2} kind=0x{kind:X2} " +
+                 $"stagedDmg={dmg} ailment=0x{ailment:X4} applyMask=0x{mask:X2} resFlag=0x{resFlag:X2}");
+        }
+        if (count - start > logged)
+            Line($"[BUNDLE-BULK] +{count - start - logged} more this poll (total={count})");
+        _stagedBundleSeen = count;
         Flush();
     }
 
@@ -2637,6 +2772,7 @@ public class Mod : ModBase
                 CaptureCalcEntryProbeEvents();
                 CaptureLt3RollProbeEvents();
                 CaptureRollRngProbeEvents(nowTick);
+                CaptureStagedBundleProbeEvents();
                 PollRegisteredUnits(nowTick);
                 PokeForecastPreviewIfEnabled();
             }
@@ -8415,6 +8551,20 @@ internal sealed class RuntimeSettings
     // real roll site (magic accuracy, status infliction, reactions, crits) in one battle.
     public bool RollRngProbeEnabled { get; set; } = false;
     public int RollRngProbeRva { get; set; } = 0x278EE0;
+
+    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window at the sweep post-call (0x281F8A), right after the
+    // VM stages the effect bundle on the target and before apply. Logs target+0x1C0/+0x1C4/+0x1A8/
+    // +0x1D0/+0x1E5, and (gated on ForceTargetCharId) overwrites any field whose Force* is >= 0:
+    // Kind (+0x1C0), Ailment (+0x1A8), ApplyMask (+0x1D0), Dmg (+0x1C4). Proves output control of
+    // status infliction and magic miss->hit without touching the (VM-internal) roll.
+    public bool StagedBundleProbeEnabled { get; set; } = false;
+    public int StagedBundleProbeRva { get; set; } = 0x281F8A;
+    public int StagedBundleForceTargetCharId { get; set; } = -1;   // -1 = observe only; else force only this charId
+    public int StagedBundleForceKind { get; set; } = -1;           // -1 = leave; else byte -> +0x1C0
+    public int StagedBundleForceAilment { get; set; } = -1;        // -1 = leave; else word -> +0x1A8
+    public int StagedBundleForceApplyMask { get; set; } = -1;      // -1 = leave; else byte -> +0x1D0
+    public int StagedBundleForceDmg { get; set; } = -1;            // -1 = leave; else word -> +0x1C4
+    public int StagedBundleForceResFlag { get; set; } = -1;        // -1 = leave; else byte -> +0x1E5 (0x80 hit/apply, 0x00 miss)
 
     // FORECAST PREVIEW POKE — the universal preview HP-amount lever. With DamageFieldOffset=0x6 it writes
     // obj+0x6 == unit+0x1C4 (damage/debit); with 0x8 it writes obj+0x8 == unit+0x1C6 (healing/credit).

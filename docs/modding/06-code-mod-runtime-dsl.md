@@ -1083,6 +1083,14 @@ Four probe/control surfaces added for the LT3 campaign (`work/lt3-calc-rng-resul
   `StatusChanceControl*` @ `0x306633`, ForcedChance −1/0..100). Installed and byte-validated but
   ❌ **0 fires for Fire/Blind** — those real-code handlers serve other formula ids; do NOT rely on
   them for the standard spells. Kept for coverage of the handlers that do route through them.
+- **Staged-bundle output lever** (`StagedBundleProbe*` @ `0x281F8A`, the sweep post-call). ✅ PROVEN
+  LT4 (2026-07-02). Reads/writes the target's staged effect bundle at the compute point, before
+  apply: `Force*` (gated on `StagedBundleForceTargetCharId`) overwrite `+0x1C0` kind, `+0x1C4` dmg,
+  `+0x1A8` ailment, `+0x1D0` apply-mask, `+0x1E5` result-flag. Forcing `+0x1C4=111` on a Fire target
+  made it take exactly 111 (natural 78/138) → **the compute-point write leaks to the applied
+  result**, a second damage-output lever alongside the pre-clamp, per-(action,target) and shared by
+  physical/magic/AI (same sweep). The status apply-mask/ailment are NOT staged here for a hit-Blind
+  (that path is elsewhere); status control stays on the proven input levers.
 
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 

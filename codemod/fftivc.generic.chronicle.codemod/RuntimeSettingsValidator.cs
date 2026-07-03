@@ -145,6 +145,26 @@ internal static class RuntimeSettingsValidator
             report.Error("CalcEntryProbeRva", "CalcEntryProbeRva must be positive.");
         if (settings.RollRngProbeEnabled && settings.RollRngProbeRva <= 0)
             report.Error("RollRngProbeRva", "RollRngProbeRva must be positive.");
+        if (settings.StagedBundleProbeEnabled)
+        {
+            if (settings.StagedBundleProbeRva <= 0)
+                report.Error("StagedBundleProbeRva", "StagedBundleProbeRva must be positive.");
+            if (settings.StagedBundleForceKind is < -1 or > 0xFF)
+                report.Error("StagedBundleForceKind", "Force kind must be -1 or a byte 0..255.");
+            if (settings.StagedBundleForceApplyMask is < -1 or > 0xFF)
+                report.Error("StagedBundleForceApplyMask", "Force apply mask must be -1 or a byte 0..255.");
+            if (settings.StagedBundleForceResFlag is < -1 or > 0xFF)
+                report.Error("StagedBundleForceResFlag", "Force result flag must be -1 or a byte 0..255.");
+            if (settings.StagedBundleForceAilment is < -1 or > 0xFFFF)
+                report.Error("StagedBundleForceAilment", "Force ailment must be -1 or a word 0..65535.");
+            if (settings.StagedBundleForceDmg is < -1 or > 0xFFFF)
+                report.Error("StagedBundleForceDmg", "Force dmg must be -1 or a word 0..65535.");
+            if (settings.StagedBundleForceTargetCharId >= 0 &&
+                (settings.StagedBundleForceKind >= 0 || settings.StagedBundleForceAilment >= 0 ||
+                 settings.StagedBundleForceApplyMask >= 0 || settings.StagedBundleForceDmg >= 0 ||
+                 settings.StagedBundleForceResFlag >= 0))
+                report.Warn("StagedBundleProbeEnabled", "staged-bundle forcing overwrites the computed effect result before apply; use for controlled LT4 proof captures only.");
+        }
         if (settings.MagicAccuracyControlEnabled)
         {
             if (settings.MagicAccuracyRva <= 0)
