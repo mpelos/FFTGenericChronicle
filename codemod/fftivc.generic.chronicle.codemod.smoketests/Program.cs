@@ -2931,6 +2931,19 @@ internal static class Program
         Check(
             hitDivZeroReport.Findings.Any(finding => finding.Scope == "DclHitChanceFormula" && finding.Severity == "ERROR"),
             "hit formula dividing by dcl.oldDebit must fail validation under hit control (oldDebit=0 in the hit context)");
+
+        var missOutputSettings = new RuntimeSettings
+        {
+            DclMissOutputControlEnabled = true,
+            DclMissKindValue = 256,
+        };
+        var missOutputReport = RuntimeSettingsValidator.Validate(missOutputSettings, catalog);
+        Check(
+            missOutputReport.Findings.Any(finding => finding.Scope == "DclMissOutputControlEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("DclHitControlEnabled")),
+            "validator should require hit control under miss output-control");
+        Check(
+            missOutputReport.Findings.Any(finding => finding.Scope == "DclMissKindValue" && finding.Severity == "ERROR"),
+            "validator should reject DclMissKindValue outside 0..255");
     }
 
     private static void TestRuntimeSettingsSimulator(string root, ItemCatalog catalog)

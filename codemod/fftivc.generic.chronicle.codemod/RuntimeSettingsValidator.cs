@@ -130,6 +130,19 @@ internal static class RuntimeSettingsValidator
                 report.Error("CalcEntryProbeRva", "DclHitControlEnabled hooks calc-entry; CalcEntryProbeRva must be positive.");
             report.Warn("DclHitControlEnabled", "the hit-control decision callback runs managed code on the calc-entry hot path (fires at preview, charge and AI evaluation, not only execution) and forces the binary outcome by writing the target's evade input bytes.");
         }
+        if (settings.DclMissKindValue is < 0 or > 255)
+            report.Error("DclMissKindValue", "DclMissKindValue must be within 0..255.");
+        if (settings.DclMissOutputControlEnabled)
+        {
+            if (!settings.DclHitControlEnabled)
+                report.Error("DclMissOutputControlEnabled", "output-control miss delivery rides the hit-control decision layer (roll + cache + calc-entry stamp); enable DclHitControlEnabled.");
+            if (settings.DclMissKindRva <= 0)
+                report.Error("DclMissKindRva", "DclMissKindRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.DclMissKindExpectedBytes))
+                report.Error("DclMissKindExpectedBytes", "Expected bytes are required for the result-kind commit hook.");
+            report.Warn("DclMissOutputControlEnabled",
+                "installs a THIRD managed hook at the result-kind commit site (DclMissKindRva, default 0x205B38): the VM always connects (both outcomes get the all-zero evade stamp), the pre-clamp zeroes the staged debit on a cached MISS, and the hook flips the committed outcome-kind byte +0x1C0 to DclMissKindValue. The site is Strong (static disassembly 2026-07-04) but UNPROVEN live until LT9; the double AOB guard disables the whole feature on any byte mismatch.");
+        }
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
         if (settings.HookRegisterProbeEventMaxLogs < 0)

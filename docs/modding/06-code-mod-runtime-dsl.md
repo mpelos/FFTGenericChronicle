@@ -1274,7 +1274,9 @@ rolls a fresh hit decision.
 no pre-clamp rewrite fires). A repeat of the same `(caster, target, ability, type)` within the TTL
 window after a MISS reuses that MISS (logged with `cached=1`) instead of rolling independently —
 per-swing UI-vs-log consistency is unaffected. Closing this needs a proven miss-consumption signal
-(new RE); deferred until after LT8 validates delivery. Invalidation may also clear a newer same-key
+(new RE); deferred until after LT8 validates delivery — **built 2026-07-04**: the `0x205B38`
+result-kind commit hook is that signal, active under `DclMissOutputControlEnabled` (see the miss
+output-control subsection below). Invalidation may also clear a newer same-key
 decision recorded between roll and damage apply — the cost is one extra re-roll, never a wrong
 outcome.
 
@@ -1318,6 +1320,100 @@ profile + hit control (`if(action.type == 1, 50, 100)`), stamp off, real RNG. PA
 attack's on-screen outcome (damage vs class-evade "Miss") matches its `[DCL-HIT]` line
 one-for-one; connecting swings still deal the LT7 model damage (`[DCL]` debit); spells forced-hit
 with vanilla damage.
+
+### DCL miss output-control (`DclMissOutputControlEnabled`) — built 2026-07-04, awaiting live test (LT9)
+
+The fix for LT8's frontal-arc finding, on the project's output-control-first rule: stop asking
+the VM to miss and rewrite what it committed instead. When `DclMissOutputControlEnabled` is on,
+the three delivery stages coordinate:
+
+1. **Calc-entry (decision callback):** BOTH outcomes stamp the target's evade bytes `+0x46..+0x4E`
+   all 0 — the VM always connects, from any angle, against anything. The decision itself is
+   rolled/cached/logged exactly as under LT8; only the stamp changes. With the setting off (or
+   **either** managed hook dead, below) the LT8 class-evade MISS stamp is untouched — the
+   input-control path remains the fallback.
+2. **Pre-clamp (damage callback):** before evaluating `DclDamageFormula`, the callback consults
+   the decision cache for the resolved `(caster, target, ability, type)`; a live MISS decision
+   short-circuits to a forced staged debit of **0** (the formula never runs) and logs the `[DCL]`
+   line with `outcome=forced-miss`. Hits proceed exactly as before.
+3. **Result-kind commit hook (the third managed hook):** static RE
+   (`work/1783184308-dcl-miss-consumption-and-counter-path.md` §Q1) located the sole real-code
+   writer of the per-target outcome-kind byte `record+0x1C0` at RVA **`0x205B38`** (fn `0x2055FC`):
+   `mov [rdi+0x1C0], r12b`, gated by `test [rdi+0x15C],4 ; je`, firing once per resolved target of
+   an **executed** action (never on preview) and mirroring the byte to `+0x360` while arming the
+   60-frame result animation. ExecuteFirst shim (pre-clamp-style mid-function ABI: the function
+   body's rsp is 16-aligned because `0x2055FC` makes calls, 64 bytes of GPR+flags saves keep it,
+   `sub 0x80` covers shadow + xmm0-5): rdi = result record, r12b = the VM-committed kind
+   (`0x00` hit / `0x04` class / `0x06` miss / `0x0B` Blade Grasp). The managed callback maps the
+   record to the target (`+0x1BC`), resolves the cached action context and decision, and on a live
+   MISS returns `DclMissKindValue` (default `0x06`) for the shim to place in `r12b` **before** the
+   original store — the engine itself commits and mirrors the forced kind. Otherwise it returns -1
+   and the natural kind stands.
+
+**Consumption-signal bonus (closes the V1 miss-reuse limitation when enabled):** the commit fires
+exactly once per executed target — the signal §Q1 was hunting. **Both** outcomes use the same
+**two-consumer handshake** (`DclHitDecisionCache.MarkConsumed`): the kind hook and the pre-clamp
+side each mark their side, and whichever fires second retires the entry. Hits are symmetric with
+misses because the pre-clamp HIT path invalidates the decision immediately (its own
+rewrite-success), so if it fired before `0x205B38` the kind callback would find nothing and log
+`decision=none` — breaking the LT9 per-swing 1:1 verification. Under armed output-control the
+pre-clamp HIT path therefore marks-consumed instead of invalidating, leaving the decision live for
+the kind callback to read (`decision=hit`) regardless of order; with output-control off it keeps
+the plain invalidate-on-rewrite (LT8 semantics unchanged). The fire order of `0x30A66F` vs
+`0x205B38` within one action is **not proven**, and retiring on first touch would hand the other
+consumer nothing (full formula damage on a "missed" swing, a kept hit-kind on a zeroed one, or a
+`decision=none` log). If one side never fires, TTL expiry is the backstop — exactly the pre-LT9
+behavior, never worse. The poller's stale-stamp sweep is unchanged.
+
+**Fail-safe:** the site is **Strong (static), unproven live** — LT9 is its proof. The install is
+double-AOB-guarded: the store bytes (`44 88 A7 C0 01 00 00`) at `DclMissKindRva` **and** the
+unique 16-byte gate window `F6 87 5C 01 00 00 04 74 07 44 88 A7 C0 01 00 00` at rva-9. Any
+mismatch (or a wrapper failure) logs `[DCL-KIND-SKIP]` and leaves `_dclMissKindHookActive` false.
+Output-control delivery is armed only when **both** managed hooks are live — the kind hook renders
+"miss" but only the pre-clamp hook zeroes the staged debit, so a kind-only install would ship a
+rendered miss dealing full vanilla damage. All three stages gate on `_preClampDamageRewriteHookActive
+&& _dclMissKindHookActive`; if either is missing the mod falls back to the proven LT8 input-control
+behavior. Pre-clamp installs first, so when the kind hook comes up half-armed it logs
+`[DCL-KIND-DISABLED]` naming the reason (the earlier `[PRECLAMP-REWRITE-SKIP]`/`-FAILED` line).
+
+Settings: `DclMissOutputControlEnabled` (false), `DclMissKindRva` (0x205B38),
+`DclMissKindExpectedBytes` (the store bytes; the gate window is checked as a built-in constant),
+`DclMissKindValue` (6), `DclMissKindLogOnly` (false — true observes the commit and logs but never
+writes r12b; the consumption handshake still runs). Validator: ERROR without
+`DclHitControlEnabled` (the decision layer this rides on), ERROR on `DclMissKindValue` outside
+0..255, WARN describing the third managed hook and its unproven-live status.
+
+Log formats (bounded by `DclHitMaxLogs`):
+
+```
+[DCL-KIND] target=%d naturalKind=0x%X forcedKind=0x%X|kept decision=hit|miss|none
+[DCL-KIND-ERR] fails=%d                                (poller-surfaced; emitted only when the count changes)
+[DCL] ... result=0 debit=0 oldDebit=%d outcome=forced-miss
+[DCL-HIT] ... ax=%d ay=%d af=%d tx=%d ty=%d tf=%d      (new position/facing tail)
+```
+
+The `[DCL-HIT]` line now carries raw attacker/target position and facing bytes (`+0x4F` X,
+`+0x50` Y, `+0x51` facing — Strong, `work/dcl-unit-state-candidates.md` §2; -1 on read failure).
+The facing enum's compass mapping is unconfirmed, so LT9 should correlate the raw values against
+the attack angles rather than interpret them.
+
+Known open questions (LT9 observables):
+- **Kind flip vs damage popup:** the commit site writes the kind, but the render classifier also
+  reads `+0x1BE` (result flag) and `+0x1C4` (staged dmg) — whether a flipped `0x06` alone renders
+  the full "Miss" presentation, a 0-damage popup, or something hybrid is exactly what LT9 records.
+- **Reactions on a forced miss:** the VM believes it hit — counters, knockback and status procs
+  firing on a rendered miss are expected observables to record, not automatic failures.
+- **The `+0x15C` bit-4 gate:** preview-vs-execute discrimination via that bit is Hypothesis; if it
+  is wrong the hook could fire on non-commits (watch `[DCL-KIND]` fire counts vs swings).
+- **Multiple pre-clamp fires per commit** (multi-hit staging) would let the second fire race the
+  handshake retirement; never observed in LT6-LT8 (one fire per swing per target), and the `[DCL]`
+  log would expose it.
+
+Test profile: `work/battle-runtime-settings.lt9-dcl-missoutput.json` — LT8 + output-control, and
+the damage formula grows the Mana-Shield guard from LT8's findings:
+`if(action.type == 1 && dcl.oldDebit > 0, dcl.weaponModel, dcl.oldDebit)`. PASS criteria are in
+the profile's `_note` (misses render as misses from any angle including side/rear and against
+monsters; hits unchanged from LT8; `[DCL-KIND]` shows every flip).
 
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 

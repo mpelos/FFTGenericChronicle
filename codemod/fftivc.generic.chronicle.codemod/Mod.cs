@@ -198,6 +198,16 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IReverseWrapper<PreClampManagedCallback>? _preClampManagedCallbackWrapper;
     private DclHitDecisionCallback? _dclHitDecisionCallback;
     private Reloaded.Hooks.Definitions.IReverseWrapper<DclHitDecisionCallback>? _dclHitDecisionWrapper;
+    private DclMissKindCallback? _dclMissKindCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclMissKindCallback>? _dclMissKindWrapper;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclMissKindHook;
+    private volatile bool _dclMissKindHookActive;
+    // True once the pre-clamp managed rewrite hook is live. Output-control MISS delivery needs BOTH
+    // this and _dclMissKindHookActive: the kind hook renders "miss" but the pre-clamp hook is what
+    // zeroes the staged debit. If only the kind hook installed, a rendered miss would deal full
+    // vanilla damage — so all output-control stages gate on both flags and fall back to LT8
+    // input-control when either is missing.
+    private volatile bool _preClampDamageRewriteHookActive;
     private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
     private nint _evadeInputProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
@@ -284,6 +294,8 @@ public class Mod : ModBase
     private Random? _dclHitRng;
     private int _dclHitLogCount;
     private long _dclHitFailCount;
+    private long _dclMissKindFailCount;
+    private long _lastDclMissKindFailLogged;
     private long _preClampManagedFormulaResolvedCount;
     private long _preClampManagedFormulaUnresolvedCount;
     private long _lastPreClampManagedFormulaResolvedLogged;
@@ -326,6 +338,15 @@ public class Mod : ModBase
         Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
         true)]
     private delegate long DclHitDecisionCallback(long orderRecordPtr, long targetIdx);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclMissKindCallback(long resultRecordPtr, long naturalKind);
 
     private static readonly int[] ActionBoundaryOffsets =
     [
@@ -388,6 +409,7 @@ public class Mod : ModBase
             for (int i = 0; i < B_SIZE; i++) Marshal.WriteByte(_buf, i, 0);
             InstallLandmarkProbesIfEnabled(baseAddr);
             InstallPreClampDamageRewriteIfEnabled(baseAddr);
+            InstallDclMissKindHookIfEnabled(baseAddr);
             InstallResultSelectorProbeIfEnabled(baseAddr);
             InstallEvadeInputProbeIfEnabled(baseAddr);
             InstallEvadeCopierOverrideIfEnabled(baseAddr);
@@ -1543,6 +1565,7 @@ public class Mod : ModBase
 
             var asm = BuildPreClampDamageRewriteAsm();
             _preClampDamageRewriteHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            _preClampDamageRewriteHookActive = true;
             Line(
                 $"[PRECLAMP-REWRITE-HOOK] rva=0x{_settings.PreClampDamageRewriteRva:X} addr=0x{address:X} " +
                 $"targetId={FormatMaybeByte(_settings.PreClampDamageRewriteTargetCharId)} " +
@@ -2921,6 +2944,33 @@ public class Mod : ModBase
             return false;
         }
 
+        // OUTPUT-CONTROL MISS: when output-control is armed (both the pre-clamp and kind hooks are
+        // live) the VM always connects (the decision callback stamps all-zero evade for BOTH
+        // outcomes), so a rolled MISS arrives here as staged damage that must be zeroed before
+        // apply. The decision is NOT invalidated on this path — the 0x205B38 kind hook is the
+        // second consumer of the same miss and the fire order is unproven; MarkConsumed retires
+        // the entry only when both sides have fired (TTL is the backstop if the kind hook never
+        // does). If output-control is not armed, this stage is skipped and misses fall back to the
+        // LT8 input-control class-evade stamp.
+        if (settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive)
+        {
+            long hitTtlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+            if (_dclHitDecisionCache.TryGet(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, nowTick, hitTtlTicks, out var hitDecision) &&
+                !hitDecision.Hit)
+            {
+                dclDebit = 0;
+                string missAbilityName = _abilityCatalog.TryGet(actionContext.AbilityId, out var missAbility)
+                    ? missAbility.Name
+                    : "unknown";
+                QueueDclDecisionLog(
+                    settings,
+                    $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
+                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit} outcome=forced-miss");
+                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
+                return true;
+            }
+        }
+
         if (TryResolvePreClampManagedActor(targetPtr, hookStackPtr, settings, out var resolvedCaster, out _, out _) &&
             resolvedCaster.Ptr != casterPtr)
         {
@@ -2974,7 +3024,16 @@ public class Mod : ModBase
             settings,
             $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
             $"ability={CleanDclLogValue(abilityName)} actionType=0x{actionContext.ActionType:X2} result={formulaDebit} debit={dclDebit} oldDebit={oldDebit}");
-        _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType);
+        // Retire the decision symmetrically with misses. Under armed output-control the kind hook
+        // (0x205B38) is a second consumer of this same HIT and may fire before OR after this
+        // pre-clamp path, so this side only MARKS consumed (damage side) and whoever completes the
+        // pair retires the entry — otherwise the kind callback would find no decision and log
+        // decision=none, breaking the LT9 per-swing 1:1 verification. When output-control is not
+        // armed there is no second consumer, so plain invalidate keeps LT8 semantics unchanged.
+        if (settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive)
+            _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
+        else
+            _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType);
         return true;
     }
 
@@ -3085,7 +3144,8 @@ public class Mod : ModBase
         long nowTick,
         bool cached,
         nint targetPtr,
-        int missClassEvade)
+        int missClassEvade,
+        bool forceConnect)
     {
         if ((uint)targetIdx >= 64)
             return;
@@ -3096,7 +3156,11 @@ public class Mod : ModBase
                 _dclHitDecisionCache.Record(targetIdx, casterIdx, abilityId, actionType, decision, nowTick);
 
             _dclHitStampedTargets[targetIdx] = true;
-            if (decision.Hit)
+            // Output-control (DclMissOutputControlEnabled + live 0x205B38 hook): the VM must
+            // ALWAYS connect — LT8 proved the class-evade input stamp only works in the target's
+            // frontal arc — so BOTH outcomes take the all-zero (force-hit) stamp and the miss is
+            // delivered downstream (pre-clamp zeroes the debit, the kind hook flips +0x1C0).
+            if (decision.Hit || forceConnect)
             {
                 Marshal.WriteByte(targetPtr, 0x4B, 0);
                 foreach (int offset in DclHitEvadeOffsets)
@@ -3169,14 +3233,25 @@ public class Mod : ModBase
             nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
             nint casterPtr = (nint)(unitTable + (long)casterIdx * BattleUnitStride);
             int missClassEvade = Math.Clamp(settings.DclMissClassEvadeValue, 0, 255);
-            StampDclHitDecision(targetIdx, casterIdx, abilityId, actionType, decision, nowTick, cached, targetPtr, missClassEvade);
+            bool forceConnect = settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive;
+            StampDclHitDecision(targetIdx, casterIdx, abilityId, actionType, decision, nowTick, cached, targetPtr, missClassEvade, forceConnect);
 
             int casterCharId = TryReadUnitByte(casterPtr, 0, out int cid) ? cid : -1;
             int targetCharId = TryReadUnitByte(targetPtr, 0, out int tid) ? tid : -1;
+            // Raw position/facing bytes (+0x4F X, +0x50 Y, +0x51 facing — Strong, work/
+            // dcl-unit-state-candidates.md §2). The facing enum's compass mapping is unconfirmed,
+            // so these are logged raw for LT9 arc correlation, not interpreted.
+            int ax = TryReadUnitByte(casterPtr, 0x4F, out int axv) ? axv : -1;
+            int ay = TryReadUnitByte(casterPtr, 0x50, out int ayv) ? ayv : -1;
+            int af = TryReadUnitByte(casterPtr, 0x51, out int afv) ? afv : -1;
+            int tx = TryReadUnitByte(targetPtr, 0x4F, out int txv) ? txv : -1;
+            int ty = TryReadUnitByte(targetPtr, 0x50, out int tyv) ? tyv : -1;
+            int tf = TryReadUnitByte(targetPtr, 0x51, out int tfv) ? tfv : -1;
             QueueDclHitLog(
                 settings,
                 $"[DCL-HIT] caster=0x{casterCharId:X2} target=0x{targetCharId:X2} ability={abilityId} type=0x{actionType:X2} " +
-                $"pct={decision.Pct} roll={decision.Roll} outcome={(decision.Hit ? "hit" : "miss")} cached={(cached ? 1 : 0)}");
+                $"pct={decision.Pct} roll={decision.Roll} outcome={(decision.Hit ? "hit" : "miss")} cached={(cached ? 1 : 0)} " +
+                $"ax={ax} ay={ay} af={af} tx={tx} ty={ty} tf={tf}");
             return 0;
         }
         catch
@@ -3320,6 +3395,218 @@ public class Mod : ModBase
         // log file) but with its own DclHitMaxLogs budget, independent of DclDecisionMaxLogs.
         lock (_dclDecisionLogGate)
             _dclDecisionLogQueue.Enqueue(line);
+    }
+
+    // DCL MISS OUTPUT-CONTROL — result-kind commit hook (the 3rd reverse-wrapper managed hook).
+    // Static RE (work/1783184308-dcl-miss-consumption-and-counter-path.md §Q1) located the SOLE
+    // real-code writer of the per-target outcome-kind byte record+0x1C0 at RVA 0x205B38 (fn
+    // 0x2055FC): `mov [rdi+0x1C0], r12b`, gated by `test [rdi+0x15C],4 ; je` at -9, fired once per
+    // resolved target of an EXECUTED action (never on preview), mirrored to +0x360 and arming the
+    // 60-frame result animation. ExecuteFirst: rdi = result record, r12b = the kind the VM
+    // committed (0x00 hit / 0x04 class / 0x06 miss / 0x0B Blade Grasp). The managed callback maps
+    // record -> target idx (+0x1BC) -> cached action context -> live hit-control decision; on a
+    // MISS decision it returns DclMissKindValue and the shim overwrites r12b BEFORE the game's own
+    // store, so the engine itself commits (and mirrors) the forced miss kind. The site is Strong
+    // (static) only until LT9, so it is AOB-guarded twice — the store bytes at the RVA plus the
+    // unique 16-byte gate window at RVA-9 — and any mismatch disables the WHOLE output-control
+    // feature (_dclMissKindHookActive stays false; calc-entry and pre-clamp fall back to the
+    // proven LT8 input-control behavior) with an install-time log.
+    private const string DclMissKindGuardWindow = "F6 87 5C 01 00 00 04 74 07 44 88 A7 C0 01 00 00";
+    private const int DclMissKindGuardWindowBackset = 9;
+
+    private void InstallDclMissKindHookIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclMissOutputControlEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-KIND-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        int rva = _settings.DclMissKindRva;
+        if (rva <= 0)
+        {
+            Line($"[DCL-KIND-SKIP] rva=0x{rva:X} must be positive (feature disabled)");
+            Flush();
+            return;
+        }
+
+        nint address = moduleBase + rva;
+        if (!ValidateExpectedBytes(address, _settings.DclMissKindExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-KIND-SKIP] rva=0x{rva:X} {byteError} (feature disabled: misses fall back to the input-control class-evade stamp)");
+            Flush();
+            return;
+        }
+        if (!ValidateExpectedBytes(address - DclMissKindGuardWindowBackset, DclMissKindGuardWindow, out string windowError))
+        {
+            Line($"[DCL-KIND-SKIP] rva=0x{rva:X} guard window at rva-0x{DclMissKindGuardWindowBackset:X}: {windowError} (feature disabled)");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            _dclMissKindCallback = DclMissKindCallbackImpl;
+            _dclMissKindWrapper = _hooks.CreateReverseWrapper(_dclMissKindCallback);
+            if (_dclMissKindWrapper is null || _dclMissKindWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-KIND-SKIP] reverse wrapper unavailable (feature disabled)");
+                Flush();
+                return;
+            }
+
+            _dclMissKindHook = _hooks.CreateAsmHook(BuildDclMissKindShimLines(), address, AsmHookBehaviour.ExecuteFirst).Activate();
+            _dclMissKindHookActive = true;
+            Line($"[DCL-KIND-HOOK] rva=0x{rva:X} addr=0x{address:X} kind=0x{Math.Clamp(_settings.DclMissKindValue, 0, 255):X2} " +
+                 $"logOnly={(_settings.DclMissKindLogOnly ? 1 : 0)} ttlMs={_settings.DclHitDecisionTtlMs} maxAgeMs={_settings.DclActionContextMaxAgeMs}");
+            // Half-armed guard: the kind hook renders "miss" but only the pre-clamp hook zeroes the
+            // staged debit. Pre-clamp installs first (see caller order), so its flag is settled
+            // here. If it failed, output-control would ship a rendered miss dealing full vanilla
+            // damage — so disable output-control delivery and fall back to LT8 input-control.
+            if (!_preClampDamageRewriteHookActive)
+                Line("[DCL-KIND-DISABLED] output-control disabled: pre-clamp rewrite hook inactive " +
+                     "(see [PRECLAMP-REWRITE-SKIP]/[PRECLAMP-REWRITE-FAILED]); misses fall back to the LT8 input-control class-evade stamp");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-KIND-FAILED] rva=0x{rva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    // Shim at 0x205B38. Stack alignment: this is a MID-FUNCTION site, so the reasoning is the
+    // pre-clamp shim's, not the calc-entry one — fn 0x2055FC makes calls from its body (the
+    // per-record self-loop call at 0x205AAF), so its post-prologue rsp is 16-aligned at every body
+    // instruction; the 8 saves (64 bytes) preserve rsp % 16 == 0 and sub 0x80 (0x20 shadow + 0x60
+    // xmm save) keeps the managed call 16-aligned per the Microsoft x64 ABI. All volatile GPRs +
+    // flags + xmm0-5 are saved around the call; rdi and r12 are callee-saved game state and are
+    // left untouched except the single intended r12b override on a forced miss.
+    private string[] BuildDclMissKindShimLines()
+    {
+        string callback = $"0{_dclMissKindWrapper!.WrapperPointer:X}h";
+        return
+        [
+            "use64",
+            "push rax",
+            "push rcx",
+            "push rdx",
+            "push r8",
+            "push r9",
+            "push r10",
+            "push r11",
+            "pushfq",
+            "test rdi, rdi",
+            "jz .dcl_kind_done",
+            // rdi = result record (arg1); r12b = the VM-committed outcome kind (arg2, zero-extended).
+            "mov rcx, rdi",
+            "movzx edx, r12b",
+            "sub rsp, 80h",
+            "movdqu [rsp+20h], xmm0",
+            "movdqu [rsp+30h], xmm1",
+            "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3",
+            "movdqu [rsp+60h], xmm4",
+            "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]",
+            "movdqu xmm1, [rsp+30h]",
+            "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]",
+            "movdqu xmm4, [rsp+60h]",
+            "movdqu xmm5, [rsp+70h]",
+            "add rsp, 80h",
+            // Callback contract (the pre-clamp idiom): rax = -1 keep the natural kind, else the
+            // kind byte to commit. Only r12's low byte is overwritten, and only when forcing, so
+            // the stolen store `mov [rdi+0x1C0], r12b` (and the +0x360 mirror after the hook)
+            // commit the forced value through the engine's own writes.
+            "cmp eax, -1",
+            "je .dcl_kind_done",
+            "mov r12b, al",
+            ".dcl_kind_done:",
+            "popfq",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            "pop rdx",
+            "pop rcx",
+            "pop rax",
+        ];
+    }
+
+    // Managed side of the result-kind commit hook. Runs inside the game's commit at 0x205B38: no
+    // file I/O, no engine writes (the shim performs the single r12b override), exceptions
+    // swallowed and counted. Returns -1 = keep the natural kind, else the kind byte to commit.
+    // Consumption semantics: any fire with a live decision proves that (caster,target,ability,
+    // type) EXECUTED for this target — the once-per-execution signal §Q1 was hunting. Both HITs
+    // and MISSes use the two-consumer handshake in DclHitDecisionCache.MarkConsumed: the pre-clamp
+    // side (0x30A66F damage path) may fire before OR after this commit, so neither side may retire
+    // the entry alone — the kind callback must still find the decision to log its outcome (LT9
+    // per-swing 1:1). If the pre-clamp hook is not live (half-armed install) the kind flip is
+    // suppressed so a rendered miss can never ship with full vanilla damage.
+    private long DclMissKindCallbackImpl(long resultRecordPtrRaw, long naturalKindRaw)
+    {
+        try
+        {
+            var settings = _settings;
+            if (!settings.DclMissOutputControlEnabled || !_preClampDamageRewriteHookActive)
+                return -1;
+
+            nint recordPtr = (nint)resultRecordPtrRaw;
+            int naturalKind = (int)(naturalKindRaw & 0xFF);
+            if (recordPtr == 0)
+                return -1;
+
+            int targetIdx = Marshal.ReadByte(recordPtr, 0x1BC);
+            if ((uint)targetIdx >= 64)
+            {
+                QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=none");
+                return -1;
+            }
+
+            long nowTick = Stopwatch.GetTimestamp();
+            DrainCalcEntryProbeEventsForDcl(nowTick);
+
+            long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
+            long ttlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+            if (!_dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out var actionContext) ||
+                !_dclHitDecisionCache.TryGet(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, nowTick, ttlTicks, out var decision))
+            {
+                QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=none");
+                return -1;
+            }
+
+            if (decision.Hit)
+            {
+                // Symmetric with the miss path: mark the kind side and let whoever completes the
+                // pair retire the entry, so the pre-clamp HIT consumer that fired first still left
+                // a live decision for this callback to read (decision=hit) regardless of order.
+                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: true);
+                QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=hit");
+                return -1;
+            }
+
+            _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: true);
+
+            if (settings.DclMissKindLogOnly)
+            {
+                QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=miss");
+                return -1;
+            }
+
+            int forcedKind = Math.Clamp(settings.DclMissKindValue, 0, 255);
+            QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=0x{forcedKind:X2} decision=miss");
+            return forcedKind;
+        }
+        catch
+        {
+            Interlocked.Increment(ref _dclMissKindFailCount);
+            return -1;
+        }
     }
 
     private static bool PreClampManagedCallbackPassesGuards(
@@ -3654,6 +3941,7 @@ public class Mod : ModBase
                 CaptureRollVerdictProbeEvents(nowTick);
                 CaptureCalcEntryProbeEvents(nowTick);
                 CaptureDclDecisionLogs();
+                LogDclMissKindFailCountIfChanged();
                 if (_settings.DclHitControlEnabled)
                     CaptureDclHitStaleStamps(nowTick);
                 CaptureLt3RollProbeEvents();
@@ -3854,6 +4142,20 @@ public class Mod : ModBase
         }
 
         return logged;
+    }
+
+    // Surface kind-callback exceptions from the poller when the count changes (mirrors the
+    // resolved/unresolved trace pattern above). The callback swallows exceptions to stay safe
+    // inside the game's commit, so this is the only place the fail count becomes visible.
+    private void LogDclMissKindFailCountIfChanged()
+    {
+        long fails = Interlocked.Read(ref _dclMissKindFailCount);
+        if (fails == _lastDclMissKindFailLogged)
+            return;
+
+        _lastDclMissKindFailLogged = fails;
+        Line($"[DCL-KIND-ERR] fails={fails}");
+        Flush();
     }
 
     private string FormatPreClampDamageRewriteHit(int sequence, int slot, long nowTick)
@@ -6898,6 +7200,7 @@ public class Mod : ModBase
         _running = false;
         _hook = null;
         _preClampDamageRewriteHook = null;
+        _preClampDamageRewriteHookActive = false;
         _preClampManagedCallbackWrapper = null;
         _preClampManagedCallback = null;
         _resultSelectorProbeHook = null;
@@ -9149,6 +9452,17 @@ internal sealed class RuntimeSettings
     public int DclHitForcedRoll { get; set; } = -1;         // -1 = real RNG; 0..99 = deterministic roll (live tests)
     public int DclHitMaxLogs { get; set; } = 400;           // [DCL-HIT*] log budget (separate from DclDecisionMaxLogs)
     public int DclMissClassEvadeValue { get; set; } = 100;  // byte for +0x4B on MISS (LT5-B proven force-Miss value)
+    // DCL MISS OUTPUT-CONTROL — the definitive miss lever (LT8 proved the input-control class-evade
+    // stamp is frontal-arc only). The VM always connects (both outcomes get the all-zero evade
+    // stamp), the pre-clamp zeroes the staged debit on a cached MISS, and a third managed hook at
+    // the result-kind commit (RVA 0x205B38, Strong-static 2026-07-04, UNPROVEN live until LT9)
+    // flips the committed outcome-kind byte +0x1C0 to DclMissKindValue before the engine's own
+    // store. AOB-guarded + fail-safe: byte mismatch disables the whole feature at install.
+    public bool DclMissOutputControlEnabled { get; set; } = false;
+    public int DclMissKindRva { get; set; } = 0x205B38;     // `mov [rdi+0x1C0], r12b` commit-site RVA
+    public string DclMissKindExpectedBytes { get; set; } = "44 88 A7 C0 01 00 00"; // the store; the 16-byte gate window at rva-9 is checked too
+    public int DclMissKindValue { get; set; } = 6;          // kind byte committed on a forced miss (0x06 = miss)
+    public bool DclMissKindLogOnly { get; set; } = false;   // true = observe the commit, never write r12b
     public string MpRewriteConditionFormula { get; set; } = "";
     public string FinalMpChangeFormula { get; set; } = "";
     public Dictionary<string, int> FormulaVariables { get; set; } = new();
