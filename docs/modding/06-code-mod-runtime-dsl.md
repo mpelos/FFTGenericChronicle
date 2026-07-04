@@ -1341,8 +1341,14 @@ findings:
 2. **CT sanity guard was too strict**: a live unit at CT 108 (legal in IVC) failed the unit
    reader's `ct > 100` check → context build failed → fail-open let FULL VANILLA damage through
    (killed a test target). Fixed same day: the guard accepts the byte's full range.
+   **✅ Fix proven live (LT9b, same day):** zero `invalid CT` errors across a full battle
+   including a 912-damage attacker.
 3. **Mana Shield leaks on a forced miss**: the HP debit is zeroed but the vanilla MP redirect
    (full 201 MP) still applied — the MP channel is not yet covered by the forced-miss path.
+   **✅ Fix proven live (LT9b, same day):** 5/5 forced misses vs a Mana-Shield target logged
+   `mpDebit=N->0` (including a crit-boosted 268 and a 912) with 0 MP lost on screen; hits still
+   drain vanilla MP — which also **live-proves the staged MP-debit word `unit+0x1C8`** (promote in
+   `04-engine-memory-model.md`). LT9b also confirmed AI attackers pass through the authored hit%.
 
 The fix for LT8's frontal-arc finding, on the project's output-control-first rule: stop asking
 the VM to miss and rewrite what it committed instead. When `DclMissOutputControlEnabled` is on,

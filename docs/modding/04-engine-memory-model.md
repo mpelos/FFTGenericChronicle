@@ -228,7 +228,7 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 | `+0x1C0` | EVADE-TYPE (animation lever) | **Proven** | see enum below |
 | `+0x1C4` | forecast HP-debit / staged HP-debit / target cache | **Proven**, context-dependent | damage preview number + ghost depletion; also "staged DAMAGE (word)" at apply |
 | `+0x1C6` | forecast HP-credit / staged HP-credit / target cache | **Proven**, context-dependent | healing preview number + ghost refill; apply: `newHP = clamp(HP + heal - dmg)` |
-| `+0x1C8` | staged MP-debit (word) | **Strong** (static-proven) | MP analogue of `+0x1C4` |
+| `+0x1C8` | staged MP-debit (word) | **Proven** (live 2026-07-04 LT9b: zeroing it pre-apply cancelled the Mana-Shield MP drain 5/5, incl. crit-boosted values) | MP analogue of `+0x1C4` |
 | `+0x1CA` | staged MP-credit (word) | **Strong** | apply: `newMP = clamp(MP + 0x1CA - 0x1C8)` |
 | `+0x1D8` | forecast / charge / target metadata | **Strong** | charge/forecast value (word) |
 | `+0x1E5` | forecast / target metadata; resultKind bits | **Strong** | see resultKind bits below |
