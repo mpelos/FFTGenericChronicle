@@ -1,0 +1,50 @@
+codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs
+  s_dfb22c10df6f1e::t_c8bb370dce43e6 3,14-17
+  s_dfb22c10df6f1e::t_0942dc44404949 18-20
+  s_26fb8f829dcac7::t_9290b6a21944fa 2175-2183
+  s_dfb22c10df6f1e::t_70ef8abb103d66 2228-2308
+codemod/fftivc.generic.chronicle.codemod/Mod.cs
+  s_dfb22c10df6f1e::t_c15021ceb0e3a9 6557,6559,6563,6566
+  s_dfb22c10df6f1e::t_585db15ef2f411 8657
+  s_dfb22c10df6f1e::t_861ee6d11893ac 9128
+  s_dfb22c10df6f1e::t_1f444a03cbae52 39,46-47
+  s_dfb22c10df6f1e::t_bf8cfe93d14139 4748-4761,4765-4766,4773-4774,4776,4779
+  s_dfb22c10df6f1e::t_b293daae9395e4 4703,4705
+  s_dfb22c10df6f1e::t_85cd9c62544869 6567
+codemod/Directory.Build.props
+  s_26fb8f829dcac7::t_f74f4009e29715 1-7
+codemod/fftivc.generic.chronicle.codemod/fftivc.generic.chronicle.codemod.csproj
+  s_dfb22c10df6f1e::t_a4ace644b272ba 42
+docs/modding/00-overview.md
+  s_26fb8f829dcac7::t_d9f16e5d0942a1 138-142
+docs/modding/06-code-mod-runtime-dsl.md
+  s_26fb8f829dcac7::t_428282192bdb1e 1019-1022
+  s_26fb8f829dcac7::t_da261818c7149f 498,502,508-559
+  s_26fb8f829dcac7::t_29bc1f14a35475 560
+codemod/fftivc.generic.chronicle.codemod/AbilityCatalog.cs
+  s_dfb22c10df6f1e::t_02ad7085473643 1-399
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c6256f860b51c8ae45f3b7c7b084744964492e60",
+  "prompts": {},
+  "sessions": {
+    "s_26fb8f829dcac7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "886a041a-53e0-472f-9f84-76c4eb7477b4",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_dfb22c10df6f1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2ace-e696-7732-b6b3-7d583468da39",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
