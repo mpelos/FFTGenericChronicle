@@ -109,6 +109,19 @@ public class Mod : ModBase
     private const int EVADE_INPUT_SLOT_SIZE = 48;
     private const int EVADE_INPUT_BUFFER_SIZE = EI_EVENTS + (EVADE_INPUT_RING_SIZE * EVADE_INPUT_SLOT_SIZE);
 
+    // DCL COUNTER-PATH probe buffer (observe-only; hook at fn entry 0x30C798). At entry rcx = the
+    // staged result record (verified on disk: prologue cmp byte[rcx+1],0xFF then movzx eax,[rcx+0x1BC]).
+    // The native shim only captures rcx into this ring; all field/HP reads happen in the managed drain
+    // (safe try/catch), so the shim never touches game memory beyond reading the pointer register.
+    private const int CTRPATH_RING_SIZE = 32;
+    private const int CTRPATH_RING_MASK = CTRPATH_RING_SIZE - 1;
+    private const int CP_COUNT = 0;        // dword header: total fires
+    private const int CP_EVENTS = 0x10;
+    private const int CP_SEQ = 0;          // dword (slot): sequence, written last (partial-slot guard)
+    private const int CP_RECORD = 8;       // qword: record ptr (rcx at entry)
+    private const int CTRPATH_SLOT_SIZE = 16;
+    private const int CTRPATH_BUFFER_SIZE = CP_EVENTS + (CTRPATH_RING_SIZE * CTRPATH_SLOT_SIZE);
+
     // Roll-VERDICT probe/control buffer (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the single VM
     // avoidance roll 0x30FA34 returns). eax IS the hit/miss verdict in REAL code (next: test eax,eax; je
     // miss). Forcing eax here overrides native evade+reactions (both virtualized inside the roll) WITHOUT
@@ -211,6 +224,8 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
     private nint _evadeInputProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
+    private nint _dclCounterPathProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclCounterPathProbeHook;
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _evadeCopierHooks = new();
     private nint _rollVerdictProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
@@ -310,6 +325,8 @@ public class Mod : ModBase
     private int _lastResultSelectorProbeSequence;
     private int _evadeInputProbeLogs;
     private int _lastEvadeInputProbeSequence;
+    private int _dclCounterPathProbeLogs;
+    private int _lastDclCounterPathProbeSequence;
     private int _rollVerdictProbeLogs;
     private int _lastRollVerdictProbeSequence;
     private int _evadeOverrideLogs;
@@ -412,6 +429,7 @@ public class Mod : ModBase
             InstallDclMissKindHookIfEnabled(baseAddr);
             InstallResultSelectorProbeIfEnabled(baseAddr);
             InstallEvadeInputProbeIfEnabled(baseAddr);
+            InstallDclCounterPathProbeIfEnabled(baseAddr);
             InstallEvadeCopierOverrideIfEnabled(baseAddr);
             InstallRollVerdictProbeIfEnabled(baseAddr);
             InstallPreviewHitPctControlIfEnabled(baseAddr);
@@ -2532,6 +2550,157 @@ public class Mod : ModBase
             $"before({Ev(before, before4E)}) after({Ev(after, after4E)}) now={nowTick}]{ctrlText}";
     }
 
+    // ── DCL COUNTER-PATH probe (observe-only) ─────────────────────────────────────────────────────
+    // RE 2026-07-04 (work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2). Counters/reactions
+    // bypass computeActionResult 0x309A44 (LT6-LT9: [DCL-MISS] reason=no-calc-entry on counter hits).
+    // The likely counter result-staging fn is 0x30C798: it reads target idx +0x1BC, applies staged HP
+    // via 0x30A51C, and emits result bytes +0x1E8/+0x1E9. Confidence: Strong (static) on structure;
+    // Hypothesis on counter-specificity — this probe settles it live.
+    //
+    // ENTRY ALIGNMENT: 0x30C798 is a FUNCTION ENTRY (standard prologue mov [rsp+8],rbx; push rdi;
+    // sub rsp,0x20 — same shape as calc-entry 0x309A44), so an ExecuteFirst asm hook runs our shim,
+    // then the stolen prologue, then the body unchanged — the identical alignment the calc-entry probe
+    // relies on. At entry RCX carries the result record: verified on disk the prologue is
+    // `48 89 5C 24 08 57 48 83 EC 20 80 79 01 FF` = cmp byte[rcx+1],0xFF, immediately followed by
+    // movzx eax,byte[rcx+0x1BC] (target idx read off rcx). The shim captures rcx only; every field/HP
+    // read is deferred to the managed drain under try/catch. NO writes to game memory — observe only.
+    private void InstallDclCounterPathProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclCounterPathProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-CTRPATH-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclCounterPathProbeBuf = Marshal.AllocHGlobal(CTRPATH_BUFFER_SIZE);
+        for (int i = 0; i < CTRPATH_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclCounterPathProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.DclCounterPathProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.DclCounterPathProbeExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-CTRPATH-SKIP] rva=0x{_settings.DclCounterPathProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            var asm = BuildDclCounterPathProbeAsm();
+            _dclCounterPathProbeHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[DCL-CTRPATH-HOOK] rva=0x{_settings.DclCounterPathProbeRva:X} addr=0x{address:X} " +
+                $"maxLogs={_settings.DclCounterPathProbeMaxLogs} expected={_settings.DclCounterPathProbeExpectedBytes} (observe-only)");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-CTRPATH-FAILED] rva=0x{_settings.DclCounterPathProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+
+        Flush();
+    }
+
+    // ExecuteFirst at fn entry 0x30C798: rcx = result record. Save/restore rax, rbx, rsi and flags so
+    // the original prologue runs unchanged after us. Pure ring-buffer capture of rcx; no game writes.
+    private string[] BuildDclCounterPathProbeAsm()
+    {
+        // The shim uses `shl ebx,4` for the *SLOT_SIZE index math; keep them in lockstep.
+        System.Diagnostics.Debug.Assert(CTRPATH_SLOT_SIZE == 16, "shim shift assumes 16-byte slots");
+        string buf = $"0{_dclCounterPathProbeBuf:X}h";
+        return new[]
+        {
+            "use64",
+            "push rax",
+            "push rbx",
+            "push rsi",
+            "pushfq",
+            $"mov rax, {buf}",
+            // Claim a sequence number first (post-increment count), then index the slot by it — the
+            // drain recomputes the same slot from (sequence & MASK), so both must use the SAME count.
+            $"mov ebx, dword [rax+{CP_COUNT}]",
+            "add ebx, 1",
+            $"mov dword [rax+{CP_COUNT}], ebx",   // header count = this event's sequence
+            $"and ebx, {CTRPATH_RING_MASK}",      // ring slot index (power-of-two ring)
+            "shl ebx, 4",                         // *16 (CTRPATH_SLOT_SIZE) bytes per slot
+            $"lea rsi, [rax + rbx + {CP_EVENTS}]",
+            $"mov dword [rsi+{CP_SEQ}], 0",        // zero seq first (partial-slot guard)
+            $"mov qword [rsi+{CP_RECORD}], rcx",   // capture the record ptr (rcx at entry)
+            // Publish LAST: write the real sequence only after the slot body is set (x86 TSO keeps
+            // store order), so a consumer that sees this seq never reads a torn/stale slot.
+            $"mov ebx, dword [rax+{CP_COUNT}]",
+            $"mov dword [rsi+{CP_SEQ}], ebx",
+            "popfq",
+            "pop rsi",
+            "pop rbx",
+            "pop rax",
+        };
+    }
+
+    private void CaptureDclCounterPathProbeEvents(long nowTick)
+    {
+        if (_dclCounterPathProbeBuf == 0 || !_settings.DclCounterPathProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclCounterPathProbeBuf, CP_COUNT);
+        if (count == _lastDclCounterPathProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclCounterPathProbeSequence + 1;
+        if (count - _lastDclCounterPathProbeSequence > CTRPATH_RING_SIZE)
+        {
+            int lost = count - _lastDclCounterPathProbeSequence - CTRPATH_RING_SIZE;
+            Line($"[DCL-CTRPATH-LOST last={_lastDclCounterPathProbeSequence} current={count} lost={lost}]");
+            start = count - CTRPATH_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclCounterPathProbeMaxLogs, 0, 100_000);
+        long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+        // Advance only over slots we actually consumed. The shim bumps CP_COUNT before it publishes the
+        // slot body+seq, so a slot in [start, count] can still read as unpublished (recordedSequence !=
+        // sequence). If we advanced _lastDclCounterPathProbeSequence to count regardless, that slot would
+        // be skipped forever; instead STOP at the first unpublished slot and leave the cursor just before
+        // it, so the next poll re-checks it once the shim has published it.
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = CP_EVENTS + ((sequence & CTRPATH_RING_MASK) * CTRPATH_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclCounterPathProbeBuf, slot + CP_SEQ);
+            if (recordedSequence != sequence)
+                break; // unpublished slot: stop, re-check it next poll rather than lose it
+            if (_dclCounterPathProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            nint record = Marshal.ReadIntPtr(_dclCounterPathProbeBuf, slot + CP_RECORD);
+            int targetIdx = TryReadUnitByte(record, 0x1BC, out int ti) ? ti : -1;
+            int e8 = TryReadUnitByte(record, 0x1E8, out int e8v) ? e8v : -1;
+            int e9 = TryReadUnitByte(record, 0x1E9, out int e9v) ? e9v : -1;
+
+            int hp = -1;
+            if ((uint)targetIdx < 64)
+            {
+                nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+                try { hp = Marshal.ReadInt16(targetPtr, 0x30) & 0xFFFF; } catch { hp = -1; }
+            }
+
+            Line($"[DCL-CTRPATH] rcx=0x{record:X} targetIdx={targetIdx} e8={e8} e9={e9} hp={hp}");
+            _dclCounterPathProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclCounterPathProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
     private void InstallRollVerdictProbeIfEnabled(nint moduleBase)
     {
         if (!_settings.RollVerdictProbeEnabled)
@@ -2944,6 +3113,18 @@ public class Mod : ModBase
             return false;
         }
 
+        // STATUS OUTPUT-CONTROL (LT10-B): observe the status the VM staged on THIS hit, in the same
+        // compute->apply window where the HP/MP debit writes are proven safe same-hit
+        // (docs/modding/04-engine-memory-model.md §2.3; inventory §1.9). The OBSERVE half runs here on
+        // every DCL-processed hit BEFORE the miss/damage branching so the log sees pristine staged bytes
+        // (and covers procs the VM staged on a swing the DCL then forces to miss — the LT9 open
+        // observable). The WRITE half is deferred: no staged-status byte may be mutated before a possible
+        // fail-open return (the formula path can still fail and return -1 => vanilla damage applies), so
+        // the computed plan is only applied on a COMMITTED outcome — inside the forced-miss branch and on
+        // the normal path after the formula succeeds. Failures are swallowed so a bad offset never
+        // disturbs the damage path.
+        var statusPlan = ObserveStagedStatus(settings, targetPtr, target, attacker, actionContext, oldDebit);
+
         // OUTPUT-CONTROL MISS: when output-control is armed (both the pre-clamp and kind hooks are
         // live) the VM always connects (the decision callback stamps all-zero evade for BOTH
         // outcomes), so a rolled MISS arrives here as staged damage that must be zeroed before
@@ -2982,6 +3163,78 @@ public class Mod : ModBase
                     }
                     catch { /* leave MP untouched on write failure; HP zero already applied */ }
                 }
+
+                // MISS PRESENTATION (LT10-C): render "Miss" instead of the "0" damage popup. record+0x1D8
+                // is the 32-bit "what-to-draw" bitfield the draw fn 0x2667E0 reads (Strong/static-proven
+                // 2026-07-04): bit 2 (0x4) routes to the damage-number popup (snapshots word[+0x1C4]); the
+                // evade/miss-glyph route is entered only when the low 16 bits are all clear, and bit 0x17
+                // (0x20000) there reads byte[+0x1C0] for the glyph kind. Neither bit has a real-code setter
+                // but +0x1D8 is plain record memory, so we RMW it: clear bit 2, set the glyph bit; write the
+                // kind byte to +0x1C0 and mirror to +0x360 (compared at 0x26D38A — stale values can mis-gate
+                // a redraw/SFX). The A/B unknown (does the VM populate +0x1D8/+0x1C0 before or after our
+                // hook?) is settled by the pres= log: if a number still shows, the post-write values were
+                // clobbered later (case B). Every write is try/catch-guarded and ordered so a partial failure
+                // leaves at worst the current "0" popup; a write failure never disturbs the debit-zero above.
+                string presClause = "";
+                if (settings.DclMissPresentationEnabled)
+                {
+                    const int WhatToDrawOffset = 0x1D8;
+                    const int GlyphKindOffset = 0x1C0;
+                    const int GlyphKindMirrorOffset = 0x360;
+                    // Clear the ENTIRE draw-bit range 0..24, not just the damage-number bit 2: the
+                    // renderer routes to the number path on ANY low-16 bit and stage C special popups
+                    // (crit/absorb, bits 0x19..0x1D) would also fight the glyph. Per the RE report
+                    // (work/1783203631-dcl-miss-presentation-re.md): new = (old & ~0x01FFFFFF) | (1<<glyphBit).
+                    const int DrawBitsMask = 0x01FFFFFF;
+
+                    int oldWhatToDraw = 0;
+                    int oldGlyphKind = 0;
+                    try { oldWhatToDraw = Marshal.ReadInt32(targetPtr, WhatToDrawOffset); } catch { oldWhatToDraw = 0; }
+                    try { oldGlyphKind = Marshal.ReadByte(targetPtr, GlyphKindOffset); } catch { oldGlyphKind = 0; }
+
+                    int kind = settings.DclMissPresentationKind & 0xFF;
+                    int glyphBit = settings.DclMissPresentationGlyphBit;
+                    int newWhatToDraw = oldWhatToDraw;
+
+                    // Kind byte first: it is what the glyph route reads, so it must be in place before the
+                    // route is armed. Mirror it too, then RMW the draw bitfield last so a partial failure
+                    // never leaves the glyph route armed pointing at a stale kind.
+                    bool kindWritten = false;
+                    try { Marshal.WriteByte(targetPtr, GlyphKindOffset, (byte)kind); kindWritten = true; } catch { /* leave kind; worst case is the "0" popup */ }
+                    // Mirror +0x360: this replicates proven engine behavior, it does not invent a write.
+                    // The engine's own action finalizer at RVA 0x205B4B does `mov [rdi+0x360], r12b` on the
+                    // SAME record base as its +0x1C0 store on real evades (alignment-verified, Proven — see
+                    // work/1783203631-dcl-miss-presentation-re.md §"The mirror +0x360"); targetPtr is the same
+                    // live pointer that base is captured from. Toggleable (DclMissPresentationMirrorWrite) so
+                    // the RE report's live Test 3 can flip it on/off between battles without a rebuild.
+                    if (settings.DclMissPresentationMirrorWrite)
+                        try { Marshal.WriteByte(targetPtr, GlyphKindMirrorOffset, (byte)kind); } catch { /* mirror best-effort */ }
+
+                    // Only arm the glyph route if the kind byte is actually in place: a glyph route pointing
+                    // at a stale kind would draw the wrong glyph, so on a kind-write failure leave +0x1D8
+                    // untouched and fall back to the "0" popup rather than commit a half-authored miss.
+                    if (kindWritten)
+                    {
+                        try
+                        {
+                            newWhatToDraw = (oldWhatToDraw & ~DrawBitsMask) | (1 << glyphBit);
+                            Marshal.WriteInt32(targetPtr, WhatToDrawOffset, newWhatToDraw);
+                        }
+                        catch { newWhatToDraw = oldWhatToDraw; /* draw bitfield untouched; falls back to the "0" popup */ }
+
+                        presClause = $" pres=d8:0x{oldWhatToDraw:X}->0x{newWhatToDraw:X} kind:0x{oldGlyphKind:X}->0x{kind:X}";
+                    }
+                    else
+                    {
+                        presClause = " pres=skipped(kind-write-failed)";
+                    }
+                }
+
+                // Committed outcome: apply the staged-status write plan now. Suppress must still cover a
+                // status proc the VM staged on this swing even though it is being forced to miss (original
+                // design intent). This is past every fail-open return, so no half-applied DCL result.
+                ApplyStagedStatusWrites(settings, targetPtr, statusPlan, target, actionContext);
+
                 string missAbilityName = _abilityCatalog.TryGet(actionContext.AbilityId, out var missAbility)
                     ? missAbility.Name
                     : "unknown";
@@ -2989,7 +3242,7 @@ public class Mod : ModBase
                 QueueDclDecisionLog(
                     settings,
                     $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
-                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit}{mpClause} outcome=forced-miss");
+                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit}{mpClause}{presClause} outcome=forced-miss");
                 _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
                 return true;
             }
@@ -3041,6 +3294,10 @@ public class Mod : ModBase
         }
 
         dclDebit = Math.Clamp(formulaDebit, 0, short.MaxValue);
+        // Committed normal path: the rewritten debit is now the return value, past every fail-open
+        // return, so apply the staged-status write plan here (never before, or a formula failure would
+        // fail-open with staged bytes already mutated).
+        ApplyStagedStatusWrites(settings, targetPtr, statusPlan, target, actionContext);
         string abilityName = abilityCatalog.TryGet(actionContext.AbilityId, out var ability)
             ? ability.Name
             : "unknown";
@@ -3059,6 +3316,224 @@ public class Mod : ModBase
         else
             _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType);
         return true;
+    }
+
+    // Staged-status offsets on the target unit struct, in the pre-clamp compute->apply window
+    // (docs/modding/04-engine-memory-model.md §2.3):
+    //   +0x1A8 = staged ailment id (word)      +0x1D0 = apply-mask (byte; inventory §1.9: bit 8 = status)
+    //   +0x1C0 = effect/evade kind (byte)      +0x1E5 = result-kind flag (byte; 0x08 = status effect)
+    private const int StagedAilmentOffset = 0x1A8;   // word
+    private const int StagedApplyMaskOffset = 0x1D0;  // byte
+    private const int StagedKindOffset = 0x1C0;       // byte
+    private const int StagedResultFlagOffset = 0x1E5; // byte
+    private int _dclStatusStageLogs;
+    private int _dclStatusForceLogs;
+
+    // One staged-status byte/word write in the plan: offset, width (1 or 2), the pristine old value and
+    // the computed new value. The plan is computed from PRISTINE staged bytes in the observe phase and
+    // applied only on a committed outcome path, so nothing is written ahead of a possible fail-open.
+    private readonly struct StagedStatusWrite
+    {
+        public StagedStatusWrite(int offset, int width, int oldValue, int newValue)
+        {
+            Offset = offset;
+            Width = width;
+            OldValue = oldValue;
+            NewValue = newValue;
+        }
+
+        public int Offset { get; }
+        public int Width { get; }
+        public int OldValue { get; }
+        public int NewValue { get; }
+    }
+
+    // The deferred staged-status write plan. Mode is "suppress"/"force"/"" (empty = observe-only, no
+    // writes). Writes is null when nothing is to be written. Detail is the log clause built from the
+    // planned old->new values; the apply phase appends per-write success/failure markers to it.
+    private sealed class StagedStatusPlan
+    {
+        public string Mode { get; init; } = "";
+        public List<StagedStatusWrite>? Writes { get; init; }
+        public string Detail { get; init; } = "";
+    }
+
+    // LT10-B status output-control OBSERVE phase. Reads the staged status bytes on every DCL-processed
+    // hit, emits the log-only probe line, and COMPUTES (but does not perform) the suppress/force write
+    // plan from the pristine bytes. Suppress and force are mutually exclusive (validator ERRORs on
+    // both). Encoding of the staged field is only Strong-static, so the raw offset/value lever lets the
+    // live session iterate the exact byte without a rebuild. All memory access is guarded; a read
+    // failure yields an empty (no-write) plan.
+    private StagedStatusPlan ObserveStagedStatus(
+        RuntimeSettings settings,
+        nint targetPtr,
+        UnitSnapshot target,
+        UnitSnapshot attacker,
+        DclActionContext actionContext,
+        int oldDebit)
+    {
+        if (!settings.DclStatusStageProbeEnabled &&
+            !settings.DclStatusSuppressEnabled &&
+            settings.DclStatusForceId < 0 &&
+            settings.DclStatusForceValue < 0)
+            return new StagedStatusPlan();
+
+        try
+        {
+            int oldAilment = (ushort)Marshal.ReadInt16(targetPtr, StagedAilmentOffset);
+            int oldApplyMask = Marshal.ReadByte(targetPtr, StagedApplyMaskOffset);
+            int oldKind = Marshal.ReadByte(targetPtr, StagedKindOffset);
+            int oldResultFlag = Marshal.ReadByte(targetPtr, StagedResultFlagOffset);
+
+            if (settings.DclStatusStageProbeEnabled)
+            {
+                int max = Math.Clamp(settings.DclDecisionMaxLogs, 0, 100_000);
+                if (max > 0 && _dclStatusStageLogs < max)
+                {
+                    _dclStatusStageLogs++;
+                    QueueDclDecisionLog(
+                        settings,
+                        $"[DCL-STATUS] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} " +
+                        $"abilityId={actionContext.AbilityId} actionType=0x{actionContext.ActionType:X2} oldDebit={oldDebit} " +
+                        $"ail(+0x1A8)=0x{oldAilment:X4} mask(+0x1D0)=0x{oldApplyMask:X2} " +
+                        $"kind(+0x1C0)=0x{oldKind:X2} resFlag(+0x1E5)=0x{oldResultFlag:X2}");
+                }
+            }
+
+            // SUPPRESS: zero the staged ailment word and clear the status bits on the apply-mask +
+            // result-flag, so a proc that landed does not apply this hit. Compute ALL new values first;
+            // the writes are performed later (transactionally) on the committed outcome path.
+            if (settings.DclStatusSuppressEnabled)
+            {
+                int clearMask = settings.DclStatusSuppressMask & 0xFF;
+                int newApplyMask = oldApplyMask & ~clearMask;
+                int newResultFlag = oldResultFlag & ~(settings.DclStatusResultFlagStatusBit & 0xFF);
+                var writes = new List<StagedStatusWrite>();
+                if (oldAilment != 0)
+                    writes.Add(new StagedStatusWrite(StagedAilmentOffset, 2, oldAilment, 0));
+                if (newApplyMask != oldApplyMask)
+                    writes.Add(new StagedStatusWrite(StagedApplyMaskOffset, 1, oldApplyMask, newApplyMask));
+                if (newResultFlag != oldResultFlag)
+                    writes.Add(new StagedStatusWrite(StagedResultFlagOffset, 1, oldResultFlag, newResultFlag));
+                return new StagedStatusPlan
+                {
+                    Mode = "suppress",
+                    Writes = writes,
+                    Detail = $"ail=0x{oldAilment:X4}->0x0000 mask=0x{oldApplyMask:X2}->0x{newApplyMask:X2} resFlag=0x{oldResultFlag:X2}->0x{newResultFlag:X2}",
+                };
+            }
+
+            // FORCE: write an authored status. DclStatusForceId (>=0) writes the id WORD to the staged
+            // ailment field +0x1A8 and OR-sets the status bits on the mask/result-flag so the effect
+            // applies; DclStatusForceValue (>=0) additionally writes a RAW byte to DclStatusForceOffset
+            // (the encoding-agnostic escape hatch the live test uses to iterate the exact byte). All new
+            // values are computed here; the writes are deferred to the committed outcome path.
+            bool forced = false;
+            string detail = "";
+            var forceWrites = new List<StagedStatusWrite>();
+            if (settings.DclStatusForceId >= 0)
+            {
+                int forcedId = settings.DclStatusForceId & 0xFFFF;
+                int setMask = settings.DclStatusSuppressMask & 0xFF;   // same status bit family
+                int newApplyMask = oldApplyMask | setMask;
+                int newResultFlag = oldResultFlag | (settings.DclStatusResultFlagStatusBit & 0xFF);
+                forceWrites.Add(new StagedStatusWrite(StagedAilmentOffset, 2, oldAilment, forcedId));
+                if (newApplyMask != oldApplyMask)
+                    forceWrites.Add(new StagedStatusWrite(StagedApplyMaskOffset, 1, oldApplyMask, newApplyMask));
+                if (newResultFlag != oldResultFlag)
+                    forceWrites.Add(new StagedStatusWrite(StagedResultFlagOffset, 1, oldResultFlag, newResultFlag));
+                detail += $"ail=0x{oldAilment:X4}->0x{forcedId:X4} mask=0x{oldApplyMask:X2}->0x{newApplyMask:X2} resFlag=0x{oldResultFlag:X2}->0x{newResultFlag:X2}";
+                forced = true;
+            }
+            if (settings.DclStatusForceValue >= 0 && settings.DclStatusForceOffset >= 0)
+            {
+                int off = settings.DclStatusForceOffset;
+                int old = Marshal.ReadByte(targetPtr, off);
+                int newRaw = settings.DclStatusForceValue & 0xFF;
+                forceWrites.Add(new StagedStatusWrite(off, 1, old, newRaw));
+                detail += $"{(detail.Length > 0 ? " " : "")}raw[+0x{off:X}]=0x{old:X2}->0x{newRaw:X2}";
+                forced = true;
+            }
+            if (forced)
+                return new StagedStatusPlan { Mode = "force", Writes = forceWrites, Detail = detail };
+        }
+        catch
+        {
+            // leave the staged status untouched on any read failure
+        }
+
+        return new StagedStatusPlan();
+    }
+
+    // LT10-B status output-control WRITE phase. Performs the plan computed by ObserveStagedStatus, but
+    // only on a committed outcome path (past every fail-open return). Transactional/best-effort: each
+    // write's success is tracked; on a mid-sequence exception the already-written bytes are restored
+    // from their captured originals; the log clause is built from what actually succeeded so it never
+    // overclaims. A plan with no writes (observe-only, or nothing changed) does nothing.
+    private void ApplyStagedStatusWrites(
+        RuntimeSettings settings,
+        nint targetPtr,
+        StagedStatusPlan plan,
+        UnitSnapshot target,
+        DclActionContext actionContext)
+    {
+        if (plan.Writes is null || plan.Writes.Count == 0 || plan.Mode.Length == 0)
+            return;
+
+        int failedOffset = -1;
+        int rollbackOk = 0;
+        int rollbackFailed = 0;
+        // Track the writes that succeeded so a mid-sequence exception can roll them back.
+        var applied = new List<StagedStatusWrite>();
+        for (int i = 0; i < plan.Writes.Count; i++)
+        {
+            var w = plan.Writes[i];
+            try
+            {
+                WriteStagedStatusValue(targetPtr, w.Offset, w.Width, w.NewValue);
+                applied.Add(w);
+            }
+            catch
+            {
+                failedOffset = w.Offset;
+                // Best-effort restore of the bytes already written this sequence, so a partial failure
+                // does not leave a half-authored status (e.g. mask set but ailment not).
+                for (int j = applied.Count - 1; j >= 0; j--)
+                {
+                    var done = applied[j];
+                    try { WriteStagedStatusValue(targetPtr, done.Offset, done.Width, done.OldValue); rollbackOk++; }
+                    catch { rollbackFailed++; /* leave as-is */ }
+                }
+                applied.Clear();
+                break;
+            }
+        }
+
+        // On failure the planned old->new clause did NOT land — log only what actually happened
+        // (the failing offset and the rollback outcome), never the plan's detail.
+        string detail = failedOffset < 0
+            ? plan.Detail
+            : $"FAILED(write +0x{failedOffset:X}; rollback {rollbackOk} ok, {rollbackFailed} failed)";
+        LogStatusForce(settings, plan.Mode, target, actionContext, detail);
+    }
+
+    private static void WriteStagedStatusValue(nint targetPtr, int offset, int width, int value)
+    {
+        if (width == 2)
+            Marshal.WriteInt16(targetPtr, offset, (short)value);
+        else
+            Marshal.WriteByte(targetPtr, offset, (byte)value);
+    }
+
+    private void LogStatusForce(RuntimeSettings settings, string mode, UnitSnapshot target, DclActionContext actionContext, string detail)
+    {
+        int max = Math.Clamp(settings.DclDecisionMaxLogs, 0, 100_000);
+        if (max <= 0 || _dclStatusForceLogs >= max)
+            return;
+        _dclStatusForceLogs++;
+        QueueDclDecisionLog(
+            settings,
+            $"[DCL-STATUS-WRITE] mode={mode} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} {detail}");
     }
 
     private bool TryGetUnitTableIndex(nint unitPtr, out int unitIdx, out long unitTable)
@@ -3962,6 +4437,7 @@ public class Mod : ModBase
                 CapturePreClampDamageRewriteEvents(nowTick);
                 CaptureResultSelectorProbeEvents(nowTick);
                 CaptureEvadeInputProbeEvents(nowTick);
+                CaptureDclCounterPathProbeEvents(nowTick);
                 CaptureRollVerdictProbeEvents(nowTick);
                 CaptureCalcEntryProbeEvents(nowTick);
                 CaptureDclDecisionLogs();
@@ -4613,7 +5089,122 @@ public class Mod : ModBase
         ApplyEvadeOverrideSweep();
         ApplyBraveOverrideSweep();
         ApplyStatusOverrideSweep();
+        ApplyStatusPokeIfEnabled();
+        ApplyMovePokeIfEnabled();
         ApplyItemTableEvadeZeroIfEnabled();
+    }
+
+    // DIRECT STATUS POKE (LT10-B) — a one-shot guarded ADD/REMOVE on the durable status master region
+    // of a chosen unit (outside actions). Proves status add/remove + duration control feasibility:
+    // add = OR the mask onto the offset; remove = AND-NOT the mask. Sanity-checks the charId exists in
+    // the registry, bounds the offset to the unit struct (0x0..0x1FF), and caps live writes with
+    // StatusPokeMaxWrites. Mirrors the ApplyStatusOverride poke pattern but one-shot (per session).
+    private int _statusPokeWrites;
+    private void ApplyStatusPokeIfEnabled()
+    {
+        if (_settings.StatusPokeTargetCharId < 0)
+            return;
+        int maxWrites = Math.Clamp(_settings.StatusPokeMaxWrites, 1, 32);
+        if (_statusPokeWrites >= maxWrites)
+            return;
+        int mask = _settings.StatusPokeMask >= 0 ? _settings.StatusPokeMask : _settings.StatusPokeValue;
+        if (mask < 0)
+            return;
+        mask &= 0xFF;
+        int off = _settings.StatusPokeOffset;
+        if (off < 0 || off > 0x1FF)
+            return;
+        bool remove = string.Equals(_settings.StatusPokeMode, "remove", StringComparison.OrdinalIgnoreCase);
+
+        foreach (var unitPtr in _unitRegistry.ToArray())
+        {
+            if (_statusPokeWrites >= maxWrites)
+                return;
+            if (!TryReadLiveUnitSnapshot(unitPtr, out var snap, out _))
+                continue;
+            if (snap.CharId != (_settings.StatusPokeTargetCharId & 0xFF))
+                continue;
+
+            int cur = snap.ReadByte(off);
+            int next = remove ? cur & ~mask : cur | mask;
+            // Consume the one-shot on the FIRST matching target regardless of outcome — a no-op match
+            // (bit already in the desired state) or a write failure both count, so the poke does not
+            // silently re-fire later when vanilla flips the byte back.
+            if (next == cur)
+            {
+                _statusPokeWrites++;
+                Line($"[STATUS-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} mode={(remove ? "remove" : "add")} off=0x{off:X} mask=0x{mask:X2} old=0x{cur:X2} new=0x{next:X2} no-op(already-set)");
+                Flush();
+                return;
+            }
+            try
+            {
+                Marshal.WriteByte(unitPtr, off, (byte)next);
+                _statusPokeWrites++;
+                Line($"[STATUS-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} mode={(remove ? "remove" : "add")} off=0x{off:X} mask=0x{mask:X2} old=0x{cur:X2} new=0x{next:X2}");
+                Flush();
+            }
+            catch
+            {
+                // Consume on write failure too (no retry semantics); log the failure.
+                _statusPokeWrites++;
+                Line($"[STATUS-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} mode={(remove ? "remove" : "add")} off=0x{off:X} mask=0x{mask:X2} old=0x{cur:X2} new=0x{next:X2} write-failed");
+                Flush();
+            }
+            return;
+        }
+    }
+
+    // MOVE-WRITE POKE (LT10-B piggyback) — one-shot write of the Move byte +0x42 on a chosen unit
+    // (docs/modding/04 §2.1 Proven as a field; inventory §1.19 cheap live poke). Proves Move is a
+    // writable data lever for the Weight->Move design rule.
+    private int _movePokeWrites;
+    private void ApplyMovePokeIfEnabled()
+    {
+        if (_settings.MovePokeTargetCharId < 0 || _settings.MovePokeValue < 0)
+            return;
+        int maxWrites = Math.Clamp(_settings.MovePokeMaxWrites, 1, 32);
+        if (_movePokeWrites >= maxWrites)
+            return;
+        int value = _settings.MovePokeValue & 0xFF;
+
+        foreach (var unitPtr in _unitRegistry.ToArray())
+        {
+            if (_movePokeWrites >= maxWrites)
+                return;
+            if (!TryReadLiveUnitSnapshot(unitPtr, out var snap, out _))
+                continue;
+            if (snap.CharId != (_settings.MovePokeTargetCharId & 0xFF))
+                continue;
+
+            const int MoveOffset = 0x42;
+            int cur = snap.ReadByte(MoveOffset);
+            // Consume the one-shot on the FIRST matching target regardless of outcome — a no-op match
+            // (Move already at the desired value) or a write failure both count, so the poke does not
+            // silently re-fire later when vanilla changes the byte.
+            if (cur == value)
+            {
+                _movePokeWrites++;
+                Line($"[MOVE-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} off=0x{MoveOffset:X} old=0x{cur:X2} new=0x{value:X2} no-op(already-set)");
+                Flush();
+                return;
+            }
+            try
+            {
+                Marshal.WriteByte(unitPtr, MoveOffset, (byte)value);
+                _movePokeWrites++;
+                Line($"[MOVE-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} off=0x{MoveOffset:X} old=0x{cur:X2} new=0x{value:X2}");
+                Flush();
+            }
+            catch
+            {
+                // Consume on write failure too (no retry semantics); log the failure.
+                _movePokeWrites++;
+                Line($"[MOVE-POKE] unit=0x{unitPtr:X} id=0x{snap.CharId:X2} off=0x{MoveOffset:X} old=0x{cur:X2} new=0x{value:X2} write-failed");
+                Flush();
+            }
+            return;
+        }
     }
 
     // ITEM-TABLE EVADE ZERO — kills every equipment-evade leg at the SOURCE (RE 2026-07-03,
@@ -7231,6 +7822,7 @@ public class Mod : ModBase
         _preClampManagedCallback = null;
         _resultSelectorProbeHook = null;
         _evadeInputProbeHook = null;
+        _dclCounterPathProbeHook = null;
         _rollVerdictProbeHook = null;
         _landmarkHooks.Clear();
         if (_buf != 0) { try { Marshal.FreeHGlobal(_buf); } catch { } _buf = 0; }
@@ -7238,6 +7830,7 @@ public class Mod : ModBase
         if (_preClampDamageRewriteBuf != 0) { try { Marshal.FreeHGlobal(_preClampDamageRewriteBuf); } catch { } _preClampDamageRewriteBuf = 0; }
         if (_resultSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_resultSelectorProbeBuf); } catch { } _resultSelectorProbeBuf = 0; }
         if (_evadeInputProbeBuf != 0) { try { Marshal.FreeHGlobal(_evadeInputProbeBuf); } catch { } _evadeInputProbeBuf = 0; }
+        if (_dclCounterPathProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclCounterPathProbeBuf); } catch { } _dclCounterPathProbeBuf = 0; }
         if (_rollVerdictProbeBuf != 0) { try { Marshal.FreeHGlobal(_rollVerdictProbeBuf); } catch { } _rollVerdictProbeBuf = 0; }
     }
 
@@ -9489,6 +10082,23 @@ internal sealed class RuntimeSettings
     public string DclMissKindExpectedBytes { get; set; } = "44 88 A7 C0 01 00 00"; // the store; the 16-byte gate window at rva-9 is checked too
     public int DclMissKindValue { get; set; } = 6;          // kind byte committed on a forced miss (0x06 = miss)
     public bool DclMissKindLogOnly { get; set; } = false;   // true = observe the commit, never write r12b
+    // DCL MISS PRESENTATION (LT10-C) — render "Miss" instead of the "0" damage popup on a forced miss.
+    // Static RE (2026-07-04): record+0x1D8 is a 32-bit "what-to-draw" bitfield the draw fn 0x2667E0
+    // walks in mutually-exclusive stages — bit 2 (0x4) = damage-number route (snapshots word[+0x1C4]
+    // into the popup); the evade/miss-glyph route is entered only if the low 16 bits are all clear,
+    // and bit 0x17 (0x20000) there reads byte[+0x1C0] for the glyph kind (01 accessory / 02-03
+    // parry-block / else generic miss). The forced-miss branch RMWs +0x1D8 (clear bit 2, set the
+    // glyph bit) + writes the kind byte to +0x1C0 and its mirror +0x360. Neither the bit nor the
+    // kind has a real-code setter (VM-set), but +0x1D8 is plain record memory so direct RMW works;
+    // the draw loop btr-self-clears the bit after drawing. #1 unknown (the A/B this slice tests):
+    // whether the VM populates +0x1D8/+0x1C0 BEFORE our pre-clamp hook fires (case A: our write
+    // survives → "Miss" renders) or AFTER (case B: clobbered → number still shows). The extended
+    // log's pres= d8/kind old->new values are the A/B evidence. Glyph-bit/kind mapping is Hypothesis;
+    // both iterate via settings without a rebuild.
+    public bool DclMissPresentationEnabled { get; set; } = false;
+    public int DclMissPresentationKind { get; set; } = 6;       // byte -> +0x1C0/+0x360 (glyph kind; 0x06 = generic miss)
+    public int DclMissPresentationGlyphBit { get; set; } = 0x17; // bit set in +0x1D8 for the evade/miss-glyph route (0x10..0x18)
+    public bool DclMissPresentationMirrorWrite { get; set; } = true; // mirror the kind byte to +0x360 (engine finalizer 0x205B4B does the same; RE Test 3 toggles this live)
     public string MpRewriteConditionFormula { get; set; } = "";
     public string FinalMpChangeFormula { get; set; } = "";
     public Dictionary<string, int> FormulaVariables { get; set; } = new();
@@ -9608,6 +10218,16 @@ internal sealed class RuntimeSettings
     public int EvadeInputForce4A { get; set; } = -1;             // shield evade 1
     public int EvadeInputForce4B { get; set; } = -1;             // class evade
     public int EvadeInputForce4E { get; set; } = -1;             // shield evade 2
+
+    // DCL COUNTER-PATH probe (OBSERVE-ONLY; RE work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2).
+    // Hooks fn entry 0x30C798 — the Strong-static candidate for the counter/reaction result-staging path
+    // that bypasses computeActionResult 0x309A44. At entry rcx = the staged result record. The managed
+    // drain logs [DCL-CTRPATH] rcx / targetIdx(+0x1BC) / e8(+0x1E8) / e9(+0x1E9) / hp(unit table, idx<64).
+    // No writes to game memory. ExpectedBytes = the verified function-entry prologue (double as an AOB guard).
+    public bool DclCounterPathProbeEnabled { get; set; } = false;
+    public int DclCounterPathProbeRva { get; set; } = 0x30C798;
+    public string DclCounterPathProbeExpectedBytes { get; set; } = "48 89 5C 24 08 57 48 83 EC 20 80 79 01 FF";
+    public int DclCounterPathProbeMaxLogs { get; set; } = 200;
 
     // Roll-VERDICT control (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the VM avoidance roll
     // 0x30FA34 returns). eax is the hit/miss verdict in REAL code (then: test eax,eax; je miss). Forcing
@@ -9783,6 +10403,39 @@ internal sealed class RuntimeSettings
     public int StagedBundleForceApplyMask { get; set; } = -1;      // -1 = leave; else byte -> +0x1D0
     public int StagedBundleForceDmg { get; set; } = -1;            // -1 = leave; else word -> +0x1C4
     public int StagedBundleForceResFlag { get; set; } = -1;        // -1 = leave; else byte -> +0x1E5 (0x80 hit/apply, 0x00 miss)
+
+    // STATUS OUTPUT-CONTROL (LT10-B) — observe + rewrite the status the VM staged on a DCL-processed
+    // hit, inside the pre-clamp managed callback (same compute->apply window where the HP/MP debit
+    // writes are proven safe same-hit). The staged surface on the target (docs/modding/04 §2.3;
+    // inventory §1.9) is +0x1A8 (ailment id word), +0x1D0 (apply-mask byte, status bit family),
+    // +0x1E5 (result-flag byte, 0x08 = status). Encodings are Strong-static at best; the probe run
+    // refines them, which is why force also exposes a RAW offset/value escape hatch.
+    public bool DclStatusStageProbeEnabled { get; set; } = false;  // log-only observe of the staged status bytes on every DCL hit
+    public bool DclStatusSuppressEnabled { get; set; } = false;    // zero +0x1A8 and clear the status bits on +0x1D0/+0x1E5 (proc lands but no status appears)
+    public int DclStatusSuppressMask { get; set; } = 0x08;         // apply-mask (+0x1D0) status bit(s) to clear on suppress / set on force
+    public int DclStatusResultFlagStatusBit { get; set; } = 0x08;  // result-flag (+0x1E5) status bit to clear on suppress / set on force
+    public int DclStatusForceId { get; set; } = -1;                // -1 = off; else authored status id WORD -> +0x1A8 (+ status bits set)
+    public int DclStatusForceOffset { get; set; } = 0x1A8;         // raw byte offset for the encoding-agnostic force lever
+    public int DclStatusForceValue { get; set; } = -1;             // -1 = off; else raw byte written to DclStatusForceOffset
+
+    // DIRECT STATUS POKE (LT10-B, outside actions) — one-shot guarded write to the durable status
+    // master region of a chosen unit, mirroring the Brave/status override pokes. add = OR the mask;
+    // remove = AND-NOT the mask. Proves ADD/REMOVE + duration-control feasibility (docs/modding/04
+    // §2.3: force = OR onto +0x1EF master + +0x61 mirror; cure = clear +0x1EF/+0x61/+0x57). Offsets
+    // are bounded to the unit struct 0x0..0x1FF. MaxWrites caps live writes for the session.
+    public int StatusPokeTargetCharId { get; set; } = -1;          // -1 = off; else the charId (+0x00) to poke
+    public string StatusPokeMode { get; set; } = "add";            // "add" (OR) or "remove" (AND-NOT)
+    public int StatusPokeOffset { get; set; } = 0x1EF;             // durable status master byte
+    public int StatusPokeValue { get; set; } = -1;                 // alias of StatusPokeMask (either sets the mask); -1 = unset
+    public int StatusPokeMask { get; set; } = -1;                  // bit mask to OR (add) / AND-NOT (remove); -1 = unset
+    public int StatusPokeMaxWrites { get; set; } = 1;              // 1..32 cap on live writes this session
+
+    // MOVE-WRITE POKE (LT10-B piggyback) — one-shot write of the Move byte +0x42 (docs/modding/04
+    // §2.1 Proven as a field; inventory §1.19 "Weight -> Move" cheap live poke). Proves the Move stat
+    // is a writable data lever for the Weight->Move design rule.
+    public int MovePokeTargetCharId { get; set; } = -1;            // -1 = off; else the charId (+0x00) to poke
+    public int MovePokeValue { get; set; } = -1;                   // -1 = off; else 0..32 Move value written to +0x42
+    public int MovePokeMaxWrites { get; set; } = 1;                // 1..32 cap on live writes this session
 
     // FORECAST PREVIEW POKE — the universal preview HP-amount lever. With DamageFieldOffset=0x6 it writes
     // obj+0x6 == unit+0x1C4 (damage/debit); with 0x8 it writes obj+0x8 == unit+0x1C6 (healing/credit).
@@ -9965,6 +10618,7 @@ internal sealed class RuntimeSettings
             probe.Normalize();
         PreClampDamageRewriteExpectedBytes = PreClampDamageRewriteExpectedBytes?.Trim() ?? "";
         ResultSelectorProbeExpectedBytes = ResultSelectorProbeExpectedBytes?.Trim() ?? "";
+        StatusPokeMode = string.IsNullOrWhiteSpace(StatusPokeMode) ? "add" : StatusPokeMode.Trim().ToLowerInvariant();
         ResultSelectorProbeActorRegister = string.IsNullOrWhiteSpace(ResultSelectorProbeActorRegister)
             ? "r8"
             : ResultSelectorProbeActorRegister.Trim().ToLowerInvariant();

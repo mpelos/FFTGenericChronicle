@@ -1335,7 +1335,8 @@ findings:
    writer" claim needs refinement: sole writer of *evade* kinds, not a per-execution commit for
    all outcomes. Consequence A: a forced miss renders as a **"0" damage popup with the hit (even
    crit) animation**, not a "Miss" — cosmetically wrong, functionally a miss; the Miss
-   presentation needs its own RE slice (LT5-C territory). Consequence B: the kind-side consumption
+   presentation is authored by its own slice (see "DCL miss presentation
+   (`DclMissPresentationEnabled`, LT10-C slice)" below). Consequence B: the kind-side consumption
    signal is dead in this mode — decisions retire via TTL only (V1 semantics; dual-wield swings
    still share one roll).
 2. **CT sanity guard was too strict**: a live unit at CT 108 (legal in IVC) failed the unit
@@ -1384,7 +1385,8 @@ the three delivery stages coordinate:
    reading**: the bit-4 gate skips the store on plain hits, so the site only commits **real evade
    outcomes** — and since output-control force-connects the VM, the hook never fires in exactly
    the mode that needs it (zero `[DCL-KIND]` lines in the LT9 log). The hook stays installed and
-   harmless; flipping the kind (and the Miss presentation generally) needs its own RE slice. ExecuteFirst shim (pre-clamp-style mid-function ABI: the function
+   harmless; flipping the kind (and the Miss presentation generally) is handled by the LT10-C
+   presentation slice below (`DclMissPresentationEnabled`). ExecuteFirst shim (pre-clamp-style mid-function ABI: the function
    body's rsp is 16-aligned because `0x2055FC` makes calls, 64 bytes of GPR+flags saves keep it,
    `sub 0x80` covers shadow + xmm0-5): rdi = result record, r12b = the VM-committed kind
    (`0x00` hit / `0x04` class / `0x06` miss / `0x0B` Blade Grasp). The managed callback maps the
@@ -1458,6 +1460,177 @@ the damage formula grows the Mana-Shield guard from LT8's findings:
 `if(action.type == 1 && dcl.oldDebit > 0, dcl.weaponModel, dcl.oldDebit)`. PASS criteria are in
 the profile's `_note` (misses render as misses from any angle including side/rear and against
 monsters; hits unchanged from LT8; `[DCL-KIND]` shows every flip).
+
+### DCL counter-path probe (`DclCounterPathProbeEnabled`) — observe-only, built 2026-07-04, awaiting LT10
+
+Counters/reactions bypass the calc-entry hook `0x309A44` (proven LT6-LT9: a counter's damage fires
+the pre-clamp with `reason=no-calc-entry` — no `computeActionResult` entry exists for it). Static RE
+(`work/1783184308-dcl-miss-consumption-and-counter-path.md` §Q2) located the **Strong-static**
+candidate for where a counter's result is staged instead: fn **`0x30C798`**, whose sole caller is
+`0x20460A` inside the action-resolution driver `0x20435C`. It reads the target index at record
+`+0x1BC`, applies staged HP via `0x30A51C`, and emits result bytes `+0x1E8`/`+0x1E9`. Whether it is
+**counter-specific** (vs. a shared post-roll commit used by ordinary actions too) is a **Hypothesis**
+this probe settles live.
+
+`DclCounterPathProbeEnabled` installs a read-only `ExecuteFirst` hook at `0x30C798`. This is a
+**function entry** (standard prologue `mov [rsp+8],rbx; push rdi; sub rsp,0x20` — same shape as
+calc-entry `0x309A44`), so the shim runs, then the stolen prologue, then the body unchanged. **At
+entry `rcx` carries the result record** — verified on the exe on disk (pefile+capstone, the RE
+report's method): the prologue is `48 89 5C 24 08 57 48 83 EC 20 80 79 01 FF` = `cmp byte[rcx+1],0xFF`,
+immediately followed by `movzx eax,byte[rcx+0x1BC]` (the target-idx read off `rcx`). The native shim
+captures only `rcx` into a ring buffer; the managed drain reads the record fields and the target HP
+(unit table, idx guard `<64`) under try/catch and logs — **no writes to game memory**. `ExpectedBytes`
+doubles as the AOB guard: any mismatch logs `[DCL-CTRPATH-SKIP]` and disables the probe.
+
+Settings: `DclCounterPathProbeEnabled` (false), `DclCounterPathProbeRva` (`0x30C798`),
+`DclCounterPathProbeExpectedBytes` (the verified function-entry prologue), `DclCounterPathProbeMaxLogs`
+(200). Validator: WARN describing the Strong-static observe-only site; ERROR if `MaxLogs < 0`, or if
+`Rva <= 0` / `ExpectedBytes` empty while enabled.
+
+Log format (bounded by `DclCounterPathProbeMaxLogs`):
+
+```
+[DCL-CTRPATH] rcx=0x%X targetIdx=%d e8=%d e9=%d hp=%d
+```
+
+Test profile: `work/battle-runtime-settings.lt10-counterpath-probe.json` (LT9 stack + the probe on).
+**PASS** = provoke counters (attack units with the Counter reaction) and confirm `[DCL-CTRPATH]` fires
+for the counter's target with sane values, correlating with the existing `[DCL-MISS]`/`[DCL]`
+`reason=no-calc-entry` lines from that counter. Also observe whether it fires for **normal** actions —
+if it does, `0x30C798` is a **shared** post-roll commit, not counter-specific (that refutes the
+hypothesis, and is a valuable result either way). `[DCL-CTRPATH-SKIP]` at install = AOB guard tripped;
+report immediately.
+
+### DCL status output-control (LT10-B slice) — built 2026-07-04, awaiting live test
+
+Status ADD/REMOVE is the largest outcome-authority group with zero live proof (inventory §1.9/§1.10).
+This slice builds three levers so the DCL can later author its own 3d6 status contest, suppress procs
+on authored misses, and manage durations. Everything rides on **proven** surfaces
+(`docs/modding/04-engine-memory-model.md` §2.3): the staged effect bundle on the target and the
+durable status master. The **staged-status encoding is Strong-static at best** — the probe run below
+refines which byte carries what before any write is trusted.
+
+**1. Staged-status observe + rewrite (in the pre-clamp managed callback).** Inside the same
+compute→apply window where the HP-debit (`+0x1C4`) and MP-debit (`+0x1C8`) rewrites are proven safe
+same-hit, the DCL callback reads the staged status bytes on every DCL-processed hit and can rewrite
+them same-hit. The two halves are split so no byte is mutated ahead of a possible fail-open: the
+**observe** half (probe log + computing the new values from the pristine bytes) runs **before** the
+miss/damage branching; the **write** half rides only a **committed outcome** — inside the forced-miss
+branch (so suppress still covers a proc the VM staged on a swing the DCL then forces to miss — the LT9
+open observable) and on the normal path **after the damage formula succeeds**. If the formula path
+throws/fails the callback returns −1 (fail-open, vanilla damage) with the staged status **untouched** —
+no half-applied DCL result. The write phase is transactional/best-effort: all new values are computed
+up front, per-write success is tracked, a mid-sequence failure rolls back the bytes already written,
+and the `[DCL-STATUS-WRITE]` log clause is built from what actually succeeded (appending
+`(partial: N failed, rolled back M write(s))`) so it never overclaims. Fields: `+0x1A8` staged ailment
+id (word), `+0x1D0` apply-mask (byte; inventory §1.9: bit 8 = status), `+0x1C0` effect/evade kind,
+`+0x1E5` result-flag (0x08 = status effect).
+
+- `DclStatusStageProbeEnabled` — **log-only**. Dumps `[DCL-STATUS] ... ail(+0x1A8)=.. mask(+0x1D0)=.. kind(+0x1C0)=.. resFlag(+0x1E5)=..` per DCL hit (bounded by `DclDecisionMaxLogs`). Read the proc-hit lines vs plain-hit lines to learn the encoding.
+- `DclStatusSuppressEnabled` — zeroes `+0x1A8` and clears the status bits (`DclStatusSuppressMask` on `+0x1D0`, `DclStatusResultFlagStatusBit` on `+0x1E5`). Observable: a Venom Fang / Choco Beak-style proc lands but **no status appears**. Logs `[DCL-STATUS-WRITE] mode=suppress ...`.
+- `DclStatusForceId` (int, −1 off) — writes the authored status id **word** into `+0x1A8` and OR-sets the status bits. `DclStatusForceValue` + `DclStatusForceOffset` (raw byte, default `+0x1A8`) is the **encoding-agnostic escape hatch** so the live session can iterate the exact byte without a rebuild. Observable: a plain basic attack inflicts the forced status. Logs `[DCL-STATUS-WRITE] mode=force ...` with old→new.
+
+Suppress and force are **mutually exclusive** (validator ERROR). Both write modes and the probe
+require `DclPipelineEnabled` (they live inside the DCL callback).
+
+**2. Direct status poke — ADD/REMOVE outside actions.** A one-shot guarded write to the durable
+status master region of a chosen unit, mirroring the Brave/status override pokes:
+`StatusPokeTargetCharId` (−1 off), `StatusPokeMode` (`add` = OR / `remove` = AND-NOT),
+`StatusPokeOffset` (default `+0x1EF` master; bounded to the unit struct `0x0..0x1FF`),
+`StatusPokeMask`/`StatusPokeValue` (either supplies the bit mask), `StatusPokeMaxWrites` (default 1).
+Sanity-checks the charId is registered, then logs
+`[STATUS-POKE] unit=0x%X id=.. mode=.. off=0x%X mask=.. old=0x%X new=0x%X`. Force a status via
+`+0x1EF|=bit` (re-poke `+0x61` if the mirror must show this frame) and cure via `remove`. The one-shot
+is consumed on the **first matching target regardless of outcome** — a no-op match (bit already in the
+desired state, logged `no-op(already-set)`) or a write failure (logged `write-failed`) both count, so
+the poke never silently re-fires later when vanilla flips the byte back. This proves ADD/REMOVE and, by
+extension, DCL-owned durations (a poller clears the bit after N turns on the proven turn-owner signal).
+
+**3. Move-write poke (piggyback).** Move `+0x42` is **Proven as a field** (04 §2.1) and the inventory
+(§1.19 "Weight → Move") calls for a cheap live poke to prove it as a **write** for the Weight→Move
+design rule. `MovePokeTargetCharId` (−1 off) + `MovePokeValue` (0..32) + `MovePokeMaxWrites`
+one-shot-write `+0x42` and log `[MOVE-POKE] unit=.. off=0x42 old=.. new=..`.
+
+**Honest confidence.** The staged-status field encodings (`+0x1A8`/`+0x1D0`/`+0x1E5` bit meanings)
+are **Strong-static at best** and the status **writes** (both the pre-clamp rewrite and the direct
+poke) are UNPROVEN live until LT10-B — Denuvo honors data writes as *observation*, but a status write
+has never been live-tested. The Move write is likewise Proven-as-field / unproven-as-write. Validator
+WARNs flag each write mode; the probe run refines the encodings before any write is trusted.
+
+Test profile: `work/battle-runtime-settings.lt10-counterpath-probe.json` extends the LT10-A counter
+probe + LT9 stack with `DclStatusStageProbeEnabled=true` (log-only); the write modes stay **off** and
+are flipped per-iteration via settings edits between battles (protocol in the profile `_note`:
+observe staged bytes on proc attacks first, then suppress, then force, then the direct add/remove +
+Move pokes).
+
+### DCL miss presentation (`DclMissPresentationEnabled`, LT10-C slice) — built 2026-07-04, awaiting live A/B test
+
+LT9 shipped a functional forced miss that renders as a **"0" damage popup with the hit animation**,
+not a "Miss" glyph (the kind hook `0x205B38` never fires under force-connect — see the miss
+output-control section). This slice makes the forced-miss branch also author the **presentation**, so
+the swing draws a Miss/evade glyph and no number.
+
+**Routing (Strong/static, 2026-07-04; full decode in
+`work/1783203631-dcl-miss-presentation-re.md`).** The draw fn `0x2667E0` reads `record+0x1D8`, a 32-bit
+"what-to-draw" bitfield, in **mutually-exclusive stages**:
+
+- **bit 2 (mask `0x4`) = damage-number route** — snapshots `word[+0x1C4]` (the staged debit) into the
+  damage popup. This is the bit LT9's "0" popup takes.
+- **bits `0x10..0x18` = evade/miss-glyph route** — entered **only if the low 16 bits are all clear**
+  (`test r8w,r8w / je`). Within it, **bit `0x17` (mask `0x20000`)** reads `byte[+0x1C0]` for the glyph
+  kind: `01` → accessory-evade glyph, `02`/`03` → parry/block glyph, else the generic **miss glyph
+  `0x22`**. Bit `0x16` is a narrower class-Miss branch (which glyph kind `0x06` yields there is a
+  **Hypothesis**).
+
+Neither bit 2 nor the evade bits has a real-code setter (they are VM-set), but `+0x1D8` is **plain
+record memory** — a direct read-modify-write works, and the draw loop `btr`-self-clears the bits after
+drawing. A **mirror `byte[+0x360]`** of the kind is compared at `0x26D38A`; a stale mirror can mis-gate
+a redraw/SFX, so it is kept in sync.
+
+**What the branch does (`record` = the same target unit base the pre-clamp callback already writes:
+staged HP debit `+0x1C4`, MP `+0x1C8`).** When `DclMissPresentationEnabled` is on **and** the same
+both-hooks output-control gate holds, the forced-miss branch, after zeroing the HP/MP debit:
+
+1. reads old `dword[+0x1D8]` and old `byte[+0x1C0]` (for the log);
+2. writes `byte[+0x1C0] = DclMissPresentationKind` (default `6`) and, when `DclMissPresentationMirrorWrite`
+   is on (default `true`), the mirror `byte[+0x360]` — this replicates the engine finalizer at
+   `0x205B4B` (`mov [rdi+0x360], r12b` on the same record base, alignment-verified), it does not invent
+   the write; the toggle lets the RE report's live Test 3 flip the mirror on/off between battles without
+   a rebuild;
+3. RMWs `dword[+0x1D8]`: **clears the entire draw-bit range 0..24** (`& ~0x01FFFFFF` — the glyph
+   route is only entered when the low 16 bits are ALL clear, and the stage-C special popups at bits
+   `0x19..0x1D` would also compete; clearing just bit 2 is not enough) and **sets the glyph bit**
+   `DclMissPresentationGlyphBit` (default `0x17`) as `| (1 << bit)`, per the RE report's
+   recommended write-set.
+
+Every write is try/catch-guarded and ordered kind-first, bitfield-last, so a partial failure leaves at
+worst the current LT9 "0" popup and never disturbs the debit-zero already applied. The `+0x1D8` glyph
+route is armed **only if the kind byte actually wrote** — on a kind-write failure the bitfield is left
+untouched (no glyph route pointing at a stale kind) and the log clause reads `pres=skipped(kind-write-failed)`.
+
+**#1 live unknown — the A/B experiment this slice exists to run.** Whether the VM populates
+`+0x1D8`/`+0x1C0` **before** the apply-staging where our pre-clamp hook (`0x30A66F`) fires — **case A**:
+our write survives to the draw fn → "Miss" renders — or **after** — **case B**: the VM clobbers our
+write → the number still shows and the hook must move later. The forced-miss `[DCL]` line is extended
+with `pres=d8:0xOLD->0xNEW kind:0xOLD->0xNEW` (old→new values) as the A/B evidence: if the on-screen
+result still shows a number, the logged post-write values were clobbered later (case B), and the d8
+values say where. **Case-B contingency (pre-planned, Strong/static):** move the presentation writes to
+a late hook at the action-finalizer tail `0x2059AC` (state `0x2D`), which runs after the VM has
+populated the record and before the draw fn consumes it — see the RE report for the site decode. The
+glyph-bit (`0x16` vs `0x17`) and kind (`4` vs `6`) mapping are **Hypothesis** — both iterate via
+settings between battles without a rebuild.
+
+Settings: `DclMissPresentationEnabled` (false), `DclMissPresentationKind` (`6`, glyph kind byte →
+`+0x1C0`/`+0x360`), `DclMissPresentationGlyphBit` (`0x17`, range `0x10..0x18`),
+`DclMissPresentationMirrorWrite` (`true`, gates the `+0x360` mirror write for live Test 3). Validator: ERROR if
+enabled without `DclMissOutputControlEnabled`; ERROR on kind outside 0..255 or glyph bit outside
+`0x10..0x18`; WARN stating the ordering (case A/B) and the glyph-bit/kind mapping are unproven and
+iterable via settings.
+
+Test profile: `work/battle-runtime-settings.lt10-counterpath-probe.json` enables
+`DclMissPresentationEnabled` (kind 6, glyph bit `0x17`) on the LT9+LT10 stack. PASS (case A) = a forced
+miss renders a Miss/evade glyph with no damage number; case B = a "0"/number still shows — record it,
+read the `pres=` d8 values, and iterate glyph bit `0x16` vs `0x17` / kind `4` vs `6` via settings edits.
 
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 

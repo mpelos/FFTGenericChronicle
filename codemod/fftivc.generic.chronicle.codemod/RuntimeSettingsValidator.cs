@@ -143,6 +143,7 @@ internal static class RuntimeSettingsValidator
             report.Warn("DclMissOutputControlEnabled",
                 "installs a THIRD managed hook at the result-kind commit site (DclMissKindRva, default 0x205B38): the VM always connects (both outcomes get the all-zero evade stamp), the pre-clamp zeroes the staged debit on a cached MISS, and the hook flips the committed outcome-kind byte +0x1C0 to DclMissKindValue. The site is Strong (static disassembly 2026-07-04) but UNPROVEN live until LT9; the double AOB guard disables the whole feature on any byte mismatch.");
         }
+        ValidateDclMissPresentation(settings, report);
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
         if (settings.HookRegisterProbeEventMaxLogs < 0)
@@ -182,6 +183,7 @@ internal static class RuntimeSettingsValidator
                 report.Error($"LandmarkProbes.{probe.TraceName}", error);
         }
         ValidateResultSelectorProbe(settings, report);
+        ValidateDclCounterPathProbe(settings, report);
         if (settings.PreviewHitPctControlEnabled)
         {
             if (settings.PreviewHitPctRva <= 0)
@@ -231,6 +233,9 @@ internal static class RuntimeSettingsValidator
                  settings.StagedBundleForceResFlag >= 0))
                 report.Warn("StagedBundleProbeEnabled", "staged-bundle forcing overwrites the computed effect result before apply; use for controlled LT4 proof captures only.");
         }
+        ValidateDclStatusOutputControl(settings, report);
+        ValidateStatusPoke(settings, report);
+        ValidateMovePoke(settings, report);
         if (settings.MagicAccuracyControlEnabled)
         {
             if (settings.MagicAccuracyRva <= 0)
@@ -534,6 +539,123 @@ internal static class RuntimeSettingsValidator
             report.Warn("ResultSelectorControlEnabled",
                 "result-selector CONTROL is LIVE: it writes the evade-type/result-code on matching results. " +
                 "Confine blast radius with MaxWrites / TargetCharId / MatchEvadeType.");
+    }
+
+    // OBSERVE-ONLY DCL counter-path probe: an ExecuteFirst hook at fn entry 0x30C798 (Strong-static
+    // candidate for the counter/reaction result-staging path that bypasses computeActionResult 0x309A44,
+    // per work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2). It logs [DCL-CTRPATH] with the
+    // record ptr, target idx, result bytes and HP; it never writes engine memory.
+    private static void ValidateDclCounterPathProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclCounterPathProbeMaxLogs < 0)
+            report.Error("DclCounterPathProbeMaxLogs", "DclCounterPathProbeMaxLogs must be nonnegative.");
+        if (settings.DclCounterPathProbeEnabled)
+        {
+            if (settings.DclCounterPathProbeRva <= 0)
+                report.Error("DclCounterPathProbeRva", "DclCounterPathProbeRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.DclCounterPathProbeExpectedBytes))
+                report.Error("DclCounterPathProbeExpectedBytes", "Expected bytes are required for the counter-path probe (they double as the AOB guard).");
+            report.Warn("DclCounterPathProbeEnabled",
+                "observe-only RE probe at the Strong-static counter result-staging site (fn 0x30C798): logs [DCL-CTRPATH] record/targetIdx/e8/e9/hp per fire, no writes to game memory. Counter-specificity is a Hypothesis this test settles (also fires for normal actions => it is a shared commit). Use only for short controlled captures.");
+        }
+    }
+
+    // STATUS OUTPUT-CONTROL (LT10-B): observe + rewrite the status the VM staged on a DCL-processed
+    // hit in the pre-clamp callback. Suppress and force are mutually exclusive; the staged encodings
+    // are Strong-static (the probe run refines them), so the write modes carry a WARN.
+    private static void ValidateDclStatusOutputControl(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        bool suppress = settings.DclStatusSuppressEnabled;
+        bool forceId = settings.DclStatusForceId >= 0;
+        bool forceRaw = settings.DclStatusForceValue >= 0;
+        bool anyForce = forceId || forceRaw;
+
+        if (settings.DclStatusForceId is < -1 or > 0xFFFF)
+            report.Error("DclStatusForceId", "DclStatusForceId must be -1 (off) or a status id word 0..65535.");
+        if (settings.DclStatusForceValue is < -1 or > 0xFF)
+            report.Error("DclStatusForceValue", "DclStatusForceValue must be -1 (off) or a raw byte 0..255.");
+        if (settings.DclStatusForceOffset is < 0 or > 0x1FF)
+            report.Error("DclStatusForceOffset", "DclStatusForceOffset must be within the unit struct 0x0..0x1FF.");
+        if (settings.DclStatusSuppressMask is < 0 or > 0xFF)
+            report.Error("DclStatusSuppressMask", "DclStatusSuppressMask must be a byte 0..255.");
+        if (settings.DclStatusResultFlagStatusBit is < 0 or > 0xFF)
+            report.Error("DclStatusResultFlagStatusBit", "DclStatusResultFlagStatusBit must be a byte 0..255.");
+
+        if (suppress && anyForce)
+            report.Error("DclStatusOutputControl", "DclStatusSuppressEnabled and DclStatusForce* are mutually exclusive; a hit is either suppressed or forced, not both.");
+
+        bool anyWriteMode = suppress || anyForce;
+        if (anyWriteMode && !settings.DclPipelineEnabled)
+            report.Error("DclStatusOutputControl", "status output-control runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
+        if (settings.DclStatusStageProbeEnabled && !settings.DclPipelineEnabled)
+            report.Error("DclStatusStageProbeEnabled", "the staged-status probe runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
+
+        if (suppress)
+            report.Warn("DclStatusSuppressEnabled", "zeroes the staged ailment (+0x1A8) and clears the status bits on the apply-mask (+0x1D0) / result-flag (+0x1E5) on every DCL hit. The staged-status encoding is Strong-static (2026-07-04) and UNPROVEN live until LT10-B; run DclStatusStageProbeEnabled first to confirm the bytes.");
+        if (anyForce)
+            report.Warn("DclStatusForce", "writes an authored status into the staged fields (+0x1A8 id word / RAW DclStatusForceOffset byte) on every DCL hit. The encoding is Strong-static and UNPROVEN live until LT10-B; use the RAW offset/value lever to iterate without a rebuild.");
+    }
+
+    // DCL MISS PRESENTATION (LT10-C): render "Miss" instead of the "0" damage popup on a forced miss.
+    // The forced-miss branch of the pre-clamp callback RMWs record+0x1D8 (clear bit 2 = damage-number
+    // route, set the glyph bit) and writes the glyph kind to +0x1C0 / mirror +0x360. It rides the same
+    // both-hooks output-control gate, so it needs DclMissOutputControlEnabled. Range-check the kind byte
+    // and the glyph bit (draw fn 0x2667E0 enters the evade/miss-glyph stage on bits 0x10..0x18).
+    private static void ValidateDclMissPresentation(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclMissPresentationKind is < 0 or > 255)
+            report.Error("DclMissPresentationKind", "DclMissPresentationKind must be a glyph-kind byte 0..255.");
+        if (settings.DclMissPresentationGlyphBit is < 0x10 or > 0x18)
+            report.Error("DclMissPresentationGlyphBit", "DclMissPresentationGlyphBit must be within the evade/miss-glyph route 0x10..0x18.");
+
+        if (!settings.DclMissPresentationEnabled)
+            return;
+
+        if (!settings.DclMissOutputControlEnabled)
+            report.Error("DclMissPresentationEnabled", "miss presentation rides the forced-miss branch of the miss output-control path; enable DclMissOutputControlEnabled.");
+
+        report.Warn("DclMissPresentationEnabled",
+            "on a forced miss also RMWs the record's \"what-to-draw\" bitfield +0x1D8 (clears the whole draw-bit range 0..24 = number route + special popups, sets DclMissPresentationGlyphBit) and writes DclMissPresentationKind to the glyph-kind byte +0x1C0 and (when DclMissPresentationMirrorWrite is on, default) its mirror +0x360, so the miss renders as a Miss/evade glyph instead of a \"0\" popup. The ORDERING is UNPROVEN live (case A: our write survives to draw / case B: the VM populates +0x1D8/+0x1C0 AFTER our hook and clobbers it — the pres= d8/kind old->new log values distinguish which). The glyph-bit (0x16 class-Miss vs 0x17 generic, kind 0x06) and kind mapping are Hypothesis; both iterate via settings without a rebuild.");
+    }
+
+    // DIRECT STATUS POKE (LT10-B, outside actions): one-shot ADD/REMOVE on the durable status master.
+    private static void ValidateStatusPoke(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.StatusPokeTargetCharId < -1 || settings.StatusPokeTargetCharId > 0xFF)
+            report.Error("StatusPokeTargetCharId", "StatusPokeTargetCharId must be -1 (off) or a charId byte 0..255.");
+        if (settings.StatusPokeTargetCharId < 0)
+            return;
+
+        string mode = settings.StatusPokeMode ?? "";
+        if (!mode.Equals("add", StringComparison.OrdinalIgnoreCase) && !mode.Equals("remove", StringComparison.OrdinalIgnoreCase))
+            report.Error("StatusPokeMode", "StatusPokeMode must be \"add\" (OR) or \"remove\" (AND-NOT).");
+        if (settings.StatusPokeOffset < 0 || settings.StatusPokeOffset > 0x1FF)
+            report.Error("StatusPokeOffset", "StatusPokeOffset must be within the unit struct 0x0..0x1FF.");
+        if (settings.StatusPokeMask is < -1 or > 0xFF)
+            report.Error("StatusPokeMask", "StatusPokeMask must be -1 (use StatusPokeValue) or a byte 0..255.");
+        if (settings.StatusPokeValue is < -1 or > 0xFF)
+            report.Error("StatusPokeValue", "StatusPokeValue must be -1 (use StatusPokeMask) or a byte 0..255.");
+        int mask = settings.StatusPokeMask >= 0 ? settings.StatusPokeMask : settings.StatusPokeValue;
+        if (mask < 0)
+            report.Error("StatusPoke", "StatusPokeTargetCharId is set but neither StatusPokeMask nor StatusPokeValue supplies a bit mask.");
+        if (settings.StatusPokeMaxWrites < 1 || settings.StatusPokeMaxWrites > 32)
+            report.Error("StatusPokeMaxWrites", "StatusPokeMaxWrites must be within 1..32.");
+        report.Warn("StatusPoke", "one-shot guarded write to a unit's durable status master region (add = OR, remove = AND-NOT). Denuvo honors data writes but this status WRITE (vs observation) is UNPROVEN live until LT10-B; confine with StatusPokeMaxWrites.");
+    }
+
+    // MOVE-WRITE POKE (LT10-B piggyback): one-shot write of the Move byte +0x42.
+    private static void ValidateMovePoke(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.MovePokeTargetCharId < -1 || settings.MovePokeTargetCharId > 0xFF)
+            report.Error("MovePokeTargetCharId", "MovePokeTargetCharId must be -1 (off) or a charId byte 0..255.");
+        if (settings.MovePokeTargetCharId < 0)
+            return;
+
+        if (settings.MovePokeValue < 0 || settings.MovePokeValue > 32)
+            report.Error("MovePokeValue", "MovePokeValue must be within 0..32 (Move is a small byte stat).");
+        if (settings.MovePokeMaxWrites < 1 || settings.MovePokeMaxWrites > 32)
+            report.Error("MovePokeMaxWrites", "MovePokeMaxWrites must be within 1..32.");
+        report.Warn("MovePoke", "one-shot write of the Move stat +0x42. Move is Proven as a field but UNPROVEN as a WRITE until LT10-B; confine with MovePokeMaxWrites.");
     }
 
     private static void ValidateTables(RuntimeSettings settings, SettingsValidationReport report)

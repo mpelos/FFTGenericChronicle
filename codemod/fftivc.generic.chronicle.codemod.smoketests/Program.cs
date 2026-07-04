@@ -2944,6 +2944,194 @@ internal static class Program
         Check(
             missOutputReport.Findings.Any(finding => finding.Scope == "DclMissKindValue" && finding.Severity == "ERROR"),
             "validator should reject DclMissKindValue outside 0..255");
+
+        // LT10-C miss presentation: rides the miss output-control path; glyph bit range-checked.
+        var missPresNoOutputReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissPresentationEnabled = true,
+            DclMissOutputControlEnabled = false,
+        }, catalog);
+        Check(
+            missPresNoOutputReport.Findings.Any(finding => finding.Scope == "DclMissPresentationEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("DclMissOutputControlEnabled")),
+            "validator should require miss output-control under miss presentation");
+
+        var missPresBadGlyphReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissPresentationGlyphBit = 0x1F,
+        }, catalog);
+        Check(
+            missPresBadGlyphReport.Findings.Any(finding => finding.Scope == "DclMissPresentationGlyphBit" && finding.Severity == "ERROR"),
+            "validator should reject DclMissPresentationGlyphBit outside 0x10..0x18");
+
+        var missPresBadKindReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissPresentationKind = 300,
+        }, catalog);
+        Check(
+            missPresBadKindReport.Findings.Any(finding => finding.Scope == "DclMissPresentationKind" && finding.Severity == "ERROR"),
+            "validator should reject DclMissPresentationKind outside 0..255");
+
+        // LT10-A counter-path probe: enabled needs a positive RVA + expected AOB bytes; max logs bounded.
+        var counterPathBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclCounterPathProbeEnabled = true,
+            DclCounterPathProbeRva = 0,
+            DclCounterPathProbeExpectedBytes = "",
+            DclCounterPathProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            counterPathBadReport.Findings.Any(finding => finding.Scope == "DclCounterPathProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive DclCounterPathProbeRva when the probe is enabled");
+        Check(
+            counterPathBadReport.Findings.Any(finding => finding.Scope == "DclCounterPathProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the enabled counter-path probe");
+        Check(
+            counterPathBadReport.Findings.Any(finding => finding.Scope == "DclCounterPathProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative DclCounterPathProbeMaxLogs");
+
+        // LT10-B status output-control: suppress + force are mutually exclusive, need the DCL pipeline.
+        var statusBothReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+            DclStatusSuppressEnabled = true,
+            DclStatusForceId = 5,
+        }, catalog);
+        Check(
+            statusBothReport.Findings.Any(finding => finding.Scope == "DclStatusOutputControl" && finding.Severity == "ERROR" && finding.Message.Contains("mutually exclusive")),
+            "validator should reject suppress + force together");
+
+        var statusNoPipelineReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPipelineEnabled = false,
+            DclStatusSuppressEnabled = true,
+        }, catalog);
+        Check(
+            statusNoPipelineReport.Findings.Any(finding => finding.Scope == "DclStatusOutputControl" && finding.Severity == "ERROR" && finding.Message.Contains("DclPipelineEnabled")),
+            "validator should require the DCL pipeline for status output-control");
+
+        var statusProbeWarnReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+            DclStatusSuppressEnabled = true,
+        }, catalog);
+        Check(statusProbeWarnReport.Success, "status suppress alone (with pipeline) should validate");
+        Check(
+            statusProbeWarnReport.Findings.Any(finding => finding.Scope == "DclStatusSuppressEnabled" && finding.Severity == "WARN"),
+            "validator should warn that the staged-status suppress encoding is unproven-live");
+
+        // Status output-control force/suppress field ranges: id word, raw value/offset, masks.
+        var statusForceRangeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclStatusForceId = 0x10000,
+            DclStatusForceValue = 256,
+            DclStatusForceOffset = 0x400,
+            DclStatusSuppressMask = 0x100,
+            DclStatusResultFlagStatusBit = 0x100,
+        }, catalog);
+        Check(
+            statusForceRangeReport.Findings.Any(finding => finding.Scope == "DclStatusForceId" && finding.Severity == "ERROR"),
+            "validator should reject a DclStatusForceId outside -1..65535");
+        Check(
+            statusForceRangeReport.Findings.Any(finding => finding.Scope == "DclStatusForceValue" && finding.Severity == "ERROR"),
+            "validator should reject a DclStatusForceValue outside -1..255");
+        Check(
+            statusForceRangeReport.Findings.Any(finding => finding.Scope == "DclStatusForceOffset" && finding.Severity == "ERROR"),
+            "validator should reject a DclStatusForceOffset outside the unit struct");
+        Check(
+            statusForceRangeReport.Findings.Any(finding => finding.Scope == "DclStatusSuppressMask" && finding.Severity == "ERROR"),
+            "validator should reject a DclStatusSuppressMask outside 0..255");
+        Check(
+            statusForceRangeReport.Findings.Any(finding => finding.Scope == "DclStatusResultFlagStatusBit" && finding.Severity == "ERROR"),
+            "validator should reject a DclStatusResultFlagStatusBit outside 0..255");
+
+        // Direct status poke: invalid offset / mode / missing mask.
+        var statusPokeBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            StatusPokeTargetCharId = 0x01,
+            StatusPokeMode = "toggle",
+            StatusPokeOffset = 0x400,
+            StatusPokeMask = -1,
+            StatusPokeValue = -1,
+        }, catalog);
+        Check(
+            statusPokeBadReport.Findings.Any(finding => finding.Scope == "StatusPokeMode" && finding.Severity == "ERROR"),
+            "validator should reject an unsupported StatusPokeMode");
+        Check(
+            statusPokeBadReport.Findings.Any(finding => finding.Scope == "StatusPokeOffset" && finding.Severity == "ERROR"),
+            "validator should reject a StatusPokeOffset outside the unit struct");
+        Check(
+            statusPokeBadReport.Findings.Any(finding => finding.Scope == "StatusPoke" && finding.Severity == "ERROR" && finding.Message.Contains("bit mask")),
+            "validator should reject a status poke with no mask/value");
+
+        var statusPokeOkReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            StatusPokeTargetCharId = 0x01,
+            StatusPokeMode = "add",
+            StatusPokeOffset = 0x1EF,
+            StatusPokeMask = 0x20,
+        }, catalog);
+        Check(statusPokeOkReport.Success, "a well-formed status poke should validate");
+
+        // Direct status poke: target/mask/value/max-writes ranges.
+        var statusPokeRangeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            StatusPokeTargetCharId = 0x100,
+            StatusPokeMode = "add",
+            StatusPokeOffset = 0x1EF,
+            StatusPokeMask = 0x100,
+            StatusPokeValue = 0x100,
+            StatusPokeMaxWrites = 0,
+        }, catalog);
+        Check(
+            statusPokeRangeReport.Findings.Any(finding => finding.Scope == "StatusPokeTargetCharId" && finding.Severity == "ERROR"),
+            "validator should reject a StatusPokeTargetCharId outside -1..255");
+        Check(
+            statusPokeRangeReport.Findings.Any(finding => finding.Scope == "StatusPokeMask" && finding.Severity == "ERROR"),
+            "validator should reject a StatusPokeMask outside -1..255");
+        Check(
+            statusPokeRangeReport.Findings.Any(finding => finding.Scope == "StatusPokeValue" && finding.Severity == "ERROR"),
+            "validator should reject a StatusPokeValue outside -1..255");
+        Check(
+            statusPokeRangeReport.Findings.Any(finding => finding.Scope == "StatusPokeMaxWrites" && finding.Severity == "ERROR"),
+            "validator should reject a StatusPokeMaxWrites outside 1..32");
+
+        // Move-write poke: out-of-range value.
+        var movePokeBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            MovePokeTargetCharId = 0x01,
+            MovePokeValue = 99,
+        }, catalog);
+        Check(
+            movePokeBadReport.Findings.Any(finding => finding.Scope == "MovePokeValue" && finding.Severity == "ERROR"),
+            "validator should reject a MovePokeValue above 32");
+
+        // Move-write poke: target/max-writes ranges.
+        var movePokeRangeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            MovePokeTargetCharId = 0x100,
+            MovePokeValue = 5,
+            MovePokeMaxWrites = 0,
+        }, catalog);
+        Check(
+            movePokeRangeReport.Findings.Any(finding => finding.Scope == "MovePokeTargetCharId" && finding.Severity == "ERROR"),
+            "validator should reject a MovePokeTargetCharId outside -1..255");
+        Check(
+            movePokeRangeReport.Findings.Any(finding => finding.Scope == "MovePokeMaxWrites" && finding.Severity == "ERROR"),
+            "validator should reject a MovePokeMaxWrites outside 1..32");
+
+        // The shipped LT10 profile (status stage PROBE on, write modes off) must validate clean.
+        string lt10Path = Path.Combine(root, "work", "battle-runtime-settings.lt10-counterpath-probe.json");
+        if (File.Exists(lt10Path))
+        {
+            Check(RuntimeSettings.TryLoad(lt10Path, out var lt10Settings, out string lt10Error), $"LT10 profile should load: {lt10Error}");
+            var lt10Report = RuntimeSettingsValidator.Validate(lt10Settings, catalog);
+            Check(lt10Report.ErrorCount == 0, $"LT10 profile should validate with 0 errors, got {lt10Report.ErrorCount}");
+            Check(lt10Settings.DclStatusStageProbeEnabled, "LT10 profile should enable the staged-status probe");
+            Check(!lt10Settings.DclStatusSuppressEnabled, "LT10 profile should keep status suppress off");
+            Check(lt10Settings.DclStatusForceId < 0, "LT10 profile should keep status force off");
+        }
     }
 
     private static void TestRuntimeSettingsSimulator(string root, ItemCatalog catalog)
