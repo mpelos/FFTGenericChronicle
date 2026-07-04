@@ -27,8 +27,11 @@ infliction, reaction dispatch), and `work/dcl-ai-and-progression-notes.md` (AI s
 progression rules). The consolidated ordered live-test checklist is
 `work/dcl-live-test-master-plan.md`.
 
-**2026-07-04 construction status — LT6 ✅ PASSED LIVE (same day):** the first end-to-end DCL
-delivery is PROVEN in-game: `DclPipelineEnabled` joins the calc-entry action-context probe
+**2026-07-04 construction status — LT6 ✅ + LT7 ✅ PASSED LIVE (same day):** the first end-to-end
+DCL delivery is PROVEN in-game — including the first real multi-step damage model (LT7: GURPS-shaped
+weapon model via `DclDerivedVariables`, 4 damage types × armor DR, spells untouched, ability
+resolution proven live with Fire id 16): `DclPipelineEnabled` joins the calc-entry action-context
+probe
 (`0x309A44` → per-target cache of caster/actionType/abilityId) with the pre-clamp managed callback
 (`0x30A66F`) that snapshots attacker+target, builds the full formula context (units + equipment via
 `ItemCatalog` + ability metadata via `AbilityCatalog`) and rewrites the staged debit with the
@@ -39,8 +42,11 @@ wield): every UI HP drop equaled the `[DCL]` `debit`, all different from vanilla
 `[DCL-ERR]`. Two facts learned live: the forecast panel still shows the vanilla number (preview
 paint not yet wired to DCL), and one `[DCL-MISS] no-calc-entry` on a hit against the attacking
 Ninja shows **reaction/counter attacks do not pass through calc-entry `0x309A44`** — they fall
-through to vanilla damage safely. See `06-code-mod-runtime-dsl.md` §"DCL pre-clamp pipeline" and
-`work/battle-runtime-settings.lt6-dcl-preclamp.json`.
+through to vanilla damage safely. LT7 added: the pre-clamp refires (idempotently) during a charged
+spell's evaluation loop, and charged spells log `[DCL-MISMATCH]` where the frame-side caster
+pointer disagrees with the cache — the cache side is the correct one. See
+`06-code-mod-runtime-dsl.md` §"DCL pre-clamp pipeline" and the two `work/battle-runtime-settings.
+lt6/lt7` profiles.
 
 ## 1. Action Identity and Lifecycle
 

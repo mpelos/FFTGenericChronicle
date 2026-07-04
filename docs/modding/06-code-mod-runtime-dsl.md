@@ -1201,6 +1201,16 @@ Test profiles:
   multipliers, Brave trait scaling) ported from the reconciler-era `dcl-damage-slice` profile to
   same-hit delivery via `DclDerivedVariables`. Basic attacks only (`action.type == 1`); spells
   keep vanilla damage. Numbers remain provisional pending calibration with Marcelo.
+  **✅ PASSED live 2026-07-04:** 6 weapon hits across 4 damage types (knife 34, rod 19/18,
+  bow 31, knight sword 117, katana 81 — all == `[DCL]` debit, all ≠ vanilla oldDebit) and armor DR
+  tracked the target (same Agrias rod: 19 vs lightly-armored Thief, 18 vs armored Ramza); Fire hit
+  for exactly vanilla 122 (`debit == oldDebit`, `actionType=0x0B` falls through as authored).
+  Three live observations: (a) the pre-clamp refires repeatedly during a charged spell's
+  evaluation/forecast loop (dozens of `122 → 122` rewrites — idempotent, benign); (b) charged
+  spells log `[DCL-MISMATCH]` (frame caster ptr ≠ cached caster) yet the **cache is the correct
+  side** — ability resolved as Fire id 16 with the right caster; the frame-side pointer is not
+  trustworthy for charged actions; (c) another `[DCL-MISS] no-calc-entry` on a counterattack hit,
+  confirming LT6: reactions bypass calc-entry and stay vanilla.
 
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
