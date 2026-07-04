@@ -15,6 +15,7 @@ internal static class Program
         var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath);
         Check(abilityCatalog.Loaded, $"ability catalog loaded: {abilityCatalog.Describe()}");
         TestAbilityCatalog(abilityCatalog);
+        TestDclActionContextCache();
         Check(
             ReferenceEquals(new BattleFormulaEngine(new RuntimeSettings(), catalog, abilityCatalog).AbilityCatalog, abilityCatalog),
             "formula engine should expose the supplied ability catalog");
@@ -33,6 +34,7 @@ internal static class Program
         attackerRaw[0x44] = 99;
         attackerRaw[0x50] = 19; // Broadsword in work/item_catalog.csv.
         var attacker = new UnitSnapshot((nint)0x1000, 0x01, 6, 40, 40, 1, false, 12, 5, 7, 5, 4, 75, 65, attackerRaw, 12, 20);
+        TestDclFormulaContextBuilder(catalog, abilityCatalog, target, attacker);
 
         TestPendingActionLethalClampMatch();
         TestImmediateActionCandidateScoring();
@@ -2306,6 +2308,77 @@ internal static class Program
         Check(actual == expected, $"{name} expected {expected}, got {actual}");
     }
 
+    private static void TestDclActionContextCache()
+    {
+        var cache = new DclActionContextCache();
+        Check(!cache.TryGetLatest(3, nowTicks: 100, maxAgeTicks: 50, out _), "empty DCL cache should miss");
+
+        cache.Record(3, casterIdx: 2, actionType: 1, abilityId: 99, timestampTicks: 100);
+        Check(cache.TryGetLatest(3, nowTicks: 150, maxAgeTicks: 50, out var first), "fresh DCL cache entry should hit at max age");
+        Check(first.CasterIdx == 2 && first.ActionType == 1 && first.AbilityId == 99 && first.TimestampTicks == 100,
+            "fresh DCL cache entry should preserve action context");
+
+        cache.Record(3, casterIdx: 7, actionType: 4, abilityId: 101, timestampTicks: 140);
+        Check(cache.TryGetLatest(3, nowTicks: 145, maxAgeTicks: 50, out var overwrite), "overwritten DCL cache entry should hit");
+        Check(overwrite.CasterIdx == 7 && overwrite.ActionType == 4 && overwrite.AbilityId == 101,
+            "DCL cache should keep latest per target");
+
+        cache.Record(3, casterIdx: 9, actionType: 9, abilityId: 9, timestampTicks: 130);
+        Check(cache.TryGetLatest(3, nowTicks: 145, maxAgeTicks: 50, out var stillLatest), "older DCL cache record should not evict latest");
+        Check(stillLatest.CasterIdx == 7 && stillLatest.AbilityId == 101, "DCL cache should ignore older timestamps");
+
+        Check(!cache.TryGetLatest(3, nowTicks: 191, maxAgeTicks: 50, out _), "expired DCL cache entry should miss");
+        cache.Record(-1, casterIdx: 1, actionType: 1, abilityId: 1, timestampTicks: 200);
+        cache.Record(64, casterIdx: 1, actionType: 1, abilityId: 1, timestampTicks: 200);
+        Check(!cache.TryGetLatest(-1, nowTicks: 200, maxAgeTicks: 50, out _), "negative DCL target index should miss");
+        Check(!cache.TryGetLatest(64, nowTicks: 200, maxAgeTicks: 50, out _), "out-of-range DCL target index should miss");
+    }
+
+    private static void TestDclFormulaContextBuilder(
+        ItemCatalog itemCatalog,
+        AbilityCatalog abilityCatalog,
+        UnitSnapshot target,
+        UnitSnapshot attacker)
+    {
+        var settings = new RuntimeSettings
+        {
+            FormulaVariables = new Dictionary<string, int> { ["dclConst"] = 3 },
+            EquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "Body", Offset = 0x70, Width = "Byte" },
+            ],
+            AttackerEquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "Weapon", Offset = 0x50, Width = "Byte" },
+            ],
+        };
+
+        var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings,
+            itemCatalog,
+            abilityCatalog,
+            target,
+            attacker,
+            eventIndex: 12,
+            eventSeed: 345,
+            actionType: 2,
+            abilityId: 1,
+            oldDebit: 7,
+            oldCredit: 4);
+
+        Check(FormulaExpression.TryEvaluate("a.pa * 2 + ability.y", context, out int mixed, out string mixedError),
+            $"DCL unit/ability formula should evaluate: {mixedError}");
+        Check(mixed == 38, $"DCL unit/ability formula expected 38, got {mixed}");
+
+        Check(FormulaExpression.TryEvaluate("dcl.oldDebit + dcl.oldCredit + action.type + action.abilityId + const.dclConst", context, out int dclVars, out string dclError),
+            $"DCL plumbing formula should evaluate: {dclError}");
+        Check(dclVars == 17, $"DCL plumbing formula expected 17, got {dclVars}");
+
+        Check(FormulaExpression.TryEvaluate("targetSlot.body.itemId + attackerSlot.weapon.itemId", context, out int slots, out string slotError),
+            $"DCL slot formula should evaluate: {slotError}");
+        Check(slots == 191, $"DCL slot formula expected 191, got {slots}");
+    }
+
     private static void TestMemoryTableProbe()
     {
         nint resolved = MemoryTableProbe.ResolveRipRelativeTarget((nint)0x1000, 0x20, 7);
@@ -2694,6 +2767,8 @@ internal static class Program
             HookRegisterProbeMaxLogs = -1,
             RewriteConditionFormula = "missingGateValue + 1",
             FinalDamageFormula = "missingVariable + 1",
+            DclPipelineEnabled = true,
+            DclDamageFormula = "ability.y + missingDclValue",
             FormulaPreActionVariables =
             [
                 new FormulaDerivedVariable { Name = "badPreAction", Formula = "missingPreActionValue + 1" },
@@ -2757,6 +2832,9 @@ internal static class Program
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "FinalDamageFormula" && finding.Message.Contains("missingVariable")),
             "validator should report unknown variable in FinalDamageFormula");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "DclDamageFormula" && finding.Message.Contains("missingDclValue")),
+            "validator should report unknown variable in DclDamageFormula");
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "RewriteConditionFormula" && finding.Message.Contains("missingGateValue")),
             "validator should report unknown variable in RewriteConditionFormula");

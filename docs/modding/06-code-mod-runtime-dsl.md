@@ -1146,6 +1146,48 @@ Four probe/control surfaces added for the LT3 campaign (`work/lt3-calc-rng-resul
   physical/magic/AI (same sweep). The status apply-mask/ailment are NOT staged here for a hit-Blind
   (that path is elsewhere); status control stays on the proven input levers.
 
+## DCL pre-clamp pipeline (`DclPipelineEnabled`) — built 2026-07-04, awaiting first live test (LT6)
+
+The first end-to-end DCL delivery: a **one-switch pipeline** that computes a config-authored
+damage formula from the full (attacker, target, equipment, ability) context and rewrites the
+staged debit **same-hit**, inside the pre-clamp hook. It wires together the two proven anchors:
+
+1. **Calc-entry probe** (`0x309A44`, auto-installed by the switch) — the asm stub rings
+   `(order-record ptr, target idx, packed casterIdx/type/abilityId)` per (action, target). The
+   slot is fully written **before** the ring count is published (x86 TSO), so a consumer never
+   reads a torn slot. Both the poller and the DCL callback drain the ring (shared gate, separate
+   cursors) into `DclActionContextCache` — latest `(casterIdx, actionType, abilityId)` per target
+   index, timestamped at drain (bounded by the poll cadence; `DclActionContextMaxAgeMs` guards on
+   top, default 5000 ms).
+2. **Pre-clamp managed callback** (`0x30A66F`, LT4-proven ABI) — on each staged damage apply, the
+   C# callback: resolves the target's unit-table index (base+`0x1853CE0`, stride `0x200`), looks
+   up the cached action context, snapshots **attacker and target** unit structs, builds a
+   `FormulaContext` via `FormulaRuntimeContextBuilder` (unit vars incl. raw growths/zodiac/gender,
+   `EquipmentSlots`/`AttackerEquipmentSlots` item vars from `ItemCatalog`, ability vars from
+   `AbilityCatalog`, settings vars/tables/matrices/maps, `dcl.oldDebit`/`dcl.oldCredit`,
+   `action.type`/`action.abilityId`), evaluates **`DclDamageFormula`**, and returns the clamped
+   result as the new debit. Any failure (no context, read error, formula error) falls through to
+   vanilla and logs `[DCL-MISS]`/`[DCL-ERR]`; successes log `[DCL] caster/target/ability/result`.
+   Logs are queued and flushed by the poller — the hook thread never touches the log file.
+
+Settings: `DclPipelineEnabled` (implies the calc-entry probe + pre-clamp hook + managed callback),
+`DclDamageFormula` (validated at deploy time against a synthetic full context — unknown variables
+are deploy errors), `DclActionContextMaxAgeMs`, `DclDecisionMaxLogs`. The validator **rejects**
+profiles that combine the pipeline with `PreClampFormulaPlanEnabled` or forced debit/credit values
+(those write after the callback in the same stub and would silently overwrite the DCL result) and
+warns when `PreClampDamageRewriteLogOnly` would disable the callback.
+
+Formula variables available to `DclDamageFormula`: `a.*`/`attacker.*` and `t.*`/`target.*` unit
+vars, `aslot.*`/`tslot.*` (+ `attackerSlot.*`/`targetSlot.*`/`slot.*`) item vars, `ability.*`
+vars, `action.type`/`action.abilityId`, `dcl.oldDebit`/`dcl.oldCredit`, and every
+`FormulaVariables`/`FormulaTables`/`FormulaMatrices`/`FormulaMaps` entry. Derived-variable chains
+(`FormulaDerivedVariables`) are **not** evaluated in this context yet — the formula must be one
+self-contained expression (multi-step authoring is the next construction step).
+
+Test profile: `work/battle-runtime-settings.lt6-dcl-preclamp.json` (LT5-A4 force-hit stack + a
+minimal predictable formula). PASS = each hit's HP drop equals its `[DCL]` `debit` and differs
+from `oldDebit`.
+
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
 The sections above author the **outcome**; this one authors the **forecast numbers** the panel shows

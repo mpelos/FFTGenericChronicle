@@ -40,6 +40,7 @@ public class Mod : ModBase
     private BattleFormulaEngine _formulaEngine = null!;
     private BattleContextResolver _contextResolver = null!;
     private readonly PendingActionTracker _pendingActionTracker = new();
+    private readonly DclActionContextCache _dclActionCache = new();
     private DateTime _settingsLastWriteUtc = DateTime.MinValue;
     private string _catalogPath = "";
     private DateTime _catalogLastWriteUtc = DateTime.MinValue;
@@ -50,6 +51,7 @@ public class Mod : ModBase
     private const string BattleBasePtr = "0F B7 41 30 66 89 42 0C"; // movzx eax,[rcx+0x30]; rcx=unit (stable)
     private const int DUMP = 0x200;       // copy 0x00..0x1FF (stats + suspected gear/action/death region)
     private const int BattleUnitStride = 0x200;
+    private const int BattleUnitTableRva = 0x1853CE0;
     private const int PlanExpectedAny = -1;
     private const int PlanExpectedPositiveDebit = -2;
     private const int B_PTR = DUMP;       // native pointer-sized: rcx unit pointer
@@ -267,6 +269,12 @@ public class Mod : ModBase
     private int _lastLandmarkProbeSequence;
     private int _lastPreClampDamageRewriteSequence;
     private int _lastPreClampManagedCallbackSequence;
+    private readonly object _calcEntryDrainGate = new();
+    private int _calcEntryDclSeen;
+    private readonly object _dclDecisionLogGate = new();
+    private readonly Queue<string> _dclDecisionLogQueue = new();
+    private int _dclDecisionLogCount;
+    private long _dclCacheMissCount;
     private long _preClampManagedFormulaResolvedCount;
     private long _preClampManagedFormulaUnresolvedCount;
     private long _lastPreClampManagedFormulaResolvedLogged;
@@ -750,7 +758,7 @@ public class Mod : ModBase
     // same-calc question and gives the PREVIEW-time ability id.
     private void InstallCalcEntryProbeIfEnabled(nint moduleBase)
     {
-        bool probe = _settings.CalcEntryProbeEnabled;
+        bool probe = _settings.CalcEntryProbeEnabled || _settings.DclPipelineEnabled;
         bool stamp = _settings.CalcEntryEvadeStampEnabled;
         if (!probe && !stamp)
             return;
@@ -786,7 +794,6 @@ public class Mod : ModBase
                 "pushfq",
                 $"mov rax, {buf}",
                 "mov ebx, dword [rax]",       // ring write index (total count)
-                "add dword [rax], 1",
                 "and ebx, 0x3F",              // 64-slot ring; 32-bit op zero-extends rbx
                 "shl ebx, 4",                 // *16 bytes per slot
                 "lea rsi, [rax + rbx + 16]",
@@ -794,6 +801,9 @@ public class Mod : ModBase
                 "mov dword [rsi+8], edx",     // target unit index (dl)
                 "mov ebx, dword [rcx]",       // casterIdx | type | abilityId  (captured at fire time)
                 "mov dword [rsi+12], ebx",
+                // Publish AFTER the slot is fully written (x86 TSO keeps store order): a consumer
+                // that sees the new count never reads a torn/stale slot.
+                "add dword [rax], 1",
                 "popfq",
                 "pop rsi",
                 "pop rbx",
@@ -864,38 +874,91 @@ public class Mod : ModBase
     private int _calcEntrySeen;
     private const int CALC_ENTRY_LOG_PER_POLL = 12;
     private const int CALC_TURN_OWNER_GLOBAL_RVA = 0x7B0708;   // dword: current turn-owner unit index
-    private void CaptureCalcEntryProbeEvents()
+    private void CaptureCalcEntryProbeEvents(long nowTick)
+        => DrainCalcEntryProbeEvents(nowTick, emitLogs: true, ref _calcEntrySeen);
+
+    private void DrainCalcEntryProbeEventsForDcl(long nowTick)
+        => DrainCalcEntryProbeEvents(nowTick, emitLogs: false, ref _calcEntryDclSeen);
+
+    // NOTE: cache entries are stamped with DRAIN time, not fire time (the asm stub records no
+    // timestamp). The poller drains every UnitPollIntervalMs and the DCL hook drains at entry, so
+    // stamp lag is bounded by the poll cadence in practice; DclActionContextMaxAgeMs is a guard on
+    // top of that, not an exact event-age bound. The real action's own calc-entry always lands
+    // later in the ring than any stale preview and overwrites the per-target cache on the same drain.
+    private void DrainCalcEntryProbeEvents(long nowTick, bool emitLogs, ref int seen)
     {
-        if (_calcEntryBuf == 0)
-            return;
-        int count = Marshal.ReadInt32(_calcEntryBuf);
-        if (count == _calcEntrySeen)
-            return;
-        int fresh = count - _calcEntrySeen;
-        int start = Math.Max(_calcEntrySeen, count - Math.Min(fresh, CALC_ENTRY_RING_SLOTS));
-        int logged = 0;
-        long unitTable = _moduleBase.ToInt64() + _settings.PreviewForecastUnitTableRva;
-        int turnOwner = Marshal.ReadInt32(_moduleBase + CALC_TURN_OWNER_GLOBAL_RVA);
-        for (int n = start; n < count && logged < CALC_ENTRY_LOG_PER_POLL; n++, logged++)
+        List<string>? lines = null;
+        lock (_calcEntryDrainGate)
         {
-            nint slot = _calcEntryBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * 16);
-            long rec = Marshal.ReadInt64(slot);
-            int targetIdx = Marshal.ReadInt32(slot + 8) & 0xFF;
-            int packed = Marshal.ReadInt32(slot + 12);
-            int casterIdx = packed & 0xFF;
-            int type = (packed >> 8) & 0xFF;
-            int abilityId = (packed >> 16) & 0xFFFF;
-            long casterRel = rec - 0x1A0 - unitTable;
-            long casterSlot = (casterRel >= 0 && casterRel % 0x200 == 0) ? casterRel / 0x200 : -1;
-            int casterTeam = casterSlot >= 0
-                ? Marshal.ReadByte((nint)(unitTable + casterSlot * 0x200 + 0x04))
-                : -1;
-            Line($"[CALC] n={n} rec=0x{rec:X} casterSlot={casterSlot} casterIdx={casterIdx} type=0x{type:X2} " +
-                 $"abilityId={abilityId} (0x{abilityId:X4}) targetIdx={targetIdx} casterTeam={casterTeam} turnOwner={turnOwner}");
+            if (_calcEntryBuf == 0)
+                return;
+
+            int count = Marshal.ReadInt32(_calcEntryBuf);
+            if (count == seen)
+                return;
+
+            int fresh = count - seen;
+            int start = fresh < 0
+                ? Math.Max(0, count - Math.Min(count, CALC_ENTRY_RING_SLOTS))
+                : Math.Max(seen, count - Math.Min(fresh, CALC_ENTRY_RING_SLOTS));
+            int logged = 0;
+            long unitTable = _moduleBase.ToInt64() + _settings.PreviewForecastUnitTableRva;
+            int turnOwner = emitLogs ? Marshal.ReadInt32(_moduleBase + CALC_TURN_OWNER_GLOBAL_RVA) : -1;
+            if (emitLogs)
+                lines = new List<string>();
+
+            for (int n = start; n < count; n++)
+            {
+                nint slot = _calcEntryBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * 16);
+                long rec = Marshal.ReadInt64(slot);
+                int targetIdx = Marshal.ReadInt32(slot + 8) & 0xFF;
+                int packed = Marshal.ReadInt32(slot + 12);
+                int casterIdx = packed & 0xFF;
+                int type = (packed >> 8) & 0xFF;
+                int abilityId = (packed >> 16) & 0xFFFF;
+                _dclActionCache.Record(targetIdx, casterIdx, type, abilityId, nowTick);
+
+                if (!emitLogs || logged >= CALC_ENTRY_LOG_PER_POLL)
+                    continue;
+
+                long casterRel = rec - 0x1A0 - unitTable;
+                long casterSlot = (casterRel >= 0 && casterRel % 0x200 == 0) ? casterRel / 0x200 : -1;
+                int casterTeam = casterSlot >= 0
+                    ? Marshal.ReadByte((nint)(unitTable + casterSlot * 0x200 + 0x04))
+                    : -1;
+                lines!.Add($"[CALC] n={n} rec=0x{rec:X} casterSlot={casterSlot} casterIdx={casterIdx} type=0x{type:X2} " +
+                           $"abilityId={abilityId} (0x{abilityId:X4}) targetIdx={targetIdx} casterTeam={casterTeam} turnOwner={turnOwner}");
+                logged++;
+            }
+
+            if (emitLogs && count - start > logged)
+                lines!.Add($"[CALC-BULK] +{count - start - logged} more fires this poll (total={count})");
+            seen = count;
         }
-        if (count - start > logged)
-            Line($"[CALC-BULK] +{count - start - logged} more fires this poll (total={count})");
-        _calcEntrySeen = count;
+
+        if (lines is null || lines.Count == 0)
+            return;
+
+        foreach (string line in lines)
+            Line(line);
+        Flush();
+    }
+
+    private void CaptureDclDecisionLogs()
+    {
+        List<string> lines;
+        lock (_dclDecisionLogGate)
+        {
+            if (_dclDecisionLogQueue.Count == 0)
+                return;
+
+            lines = new List<string>(_dclDecisionLogQueue.Count);
+            while (_dclDecisionLogQueue.Count > 0)
+                lines.Add(_dclDecisionLogQueue.Dequeue());
+        }
+
+        foreach (string line in lines)
+            Line(line);
         Flush();
     }
 
@@ -1333,7 +1396,8 @@ public class Mod : ModBase
 
     private void InstallPreClampDamageRewriteIfEnabled(nint moduleBase)
     {
-        if (!_settings.PreClampDamageRewriteEnabled)
+        // DclPipelineEnabled is a one-switch pipeline: it implies this hook (its delivery lever).
+        if (!_settings.PreClampDamageRewriteEnabled && !_settings.DclPipelineEnabled)
             return;
         if (_hooks is null)
         {
@@ -1346,7 +1410,7 @@ public class Mod : ModBase
             _settings.PreClampDamageRewriteForcedCredit < 0 &&
             !_settings.PreClampDamageRewriteLogOnly &&
             !_settings.PreClampFormulaPlanEnabled &&
-            !_settings.PreClampManagedCallbackEnabled)
+            !IsPreClampManagedCallbackEnabled(_settings))
         {
             Line("[PRECLAMP-REWRITE-SKIP] no forced debit/credit configured");
             Flush();
@@ -1367,7 +1431,7 @@ public class Mod : ModBase
 
         try
         {
-            if (_settings.PreClampManagedCallbackEnabled)
+            if (IsPreClampManagedCallbackEnabled(_settings))
             {
                 _preClampManagedCallback = PreClampManagedCallbackImpl;
                 _preClampManagedCallbackWrapper = _hooks.CreateReverseWrapper(_preClampManagedCallback);
@@ -1390,9 +1454,10 @@ public class Mod : ModBase
                 $"forcedCredit={FormatMaybeInt(_settings.PreClampDamageRewriteForcedCredit)} " +
                 $"maxWrites={_settings.PreClampDamageRewriteMaxWrites} logOnly={(_settings.PreClampDamageRewriteLogOnly ? 1 : 0)} " +
                 $"planEnabled={(_settings.PreClampFormulaPlanEnabled ? 1 : 0)} planSlots={PlanSlotCount} " +
-                $"managedCallback={(_settings.PreClampManagedCallbackEnabled ? 1 : 0)} " +
+                $"managedCallback={(IsPreClampManagedCallbackEnabled(_settings) ? 1 : 0)} " +
                 $"managedForcedDebit={FormatMaybeInt(_settings.PreClampManagedCallbackForcedDebit)} " +
-                $"managedActorFormula={(_settings.PreClampManagedCallbackActorFormulaEnabled ? 1 : 0)}");
+                $"managedActorFormula={(_settings.PreClampManagedCallbackActorFormulaEnabled ? 1 : 0)} " +
+                $"dclPipeline={(_settings.DclPipelineEnabled ? 1 : 0)} dclFormula={(string.IsNullOrWhiteSpace(_settings.DclDamageFormula) ? "off" : "on")}");
         }
         catch (Exception ex)
         {
@@ -1417,7 +1482,7 @@ public class Mod : ModBase
                              _settings.PreClampDamageRewriteLogOnly;
         bool planEnabled = _settings.PreClampFormulaPlanEnabled;
         bool planWrites = planEnabled && !_settings.PreClampDamageRewriteLogOnly;
-        bool managedCallbackEnabled = _settings.PreClampManagedCallbackEnabled &&
+        bool managedCallbackEnabled = IsPreClampManagedCallbackEnabled(_settings) &&
                                       _preClampManagedCallbackWrapper is not null &&
                                       _preClampManagedCallbackWrapper.WrapperPointer != 0;
         int planSlots = PlanSlotCount;
@@ -2636,6 +2701,9 @@ public class Mod : ModBase
     private static string FormatMaybeByte(int value)
         => value < 0 ? "any" : $"0x{value:X2}";
 
+    private static bool IsPreClampManagedCallbackEnabled(RuntimeSettings settings)
+        => settings.PreClampManagedCallbackEnabled || settings.DclPipelineEnabled;
+
     private static int ClampInt16Immediate(int value)
         => value < 0 ? -1 : Math.Clamp(value, short.MinValue, short.MaxValue);
 
@@ -2644,7 +2712,7 @@ public class Mod : ModBase
         try
         {
             var settings = _settings;
-            if (!settings.PreClampManagedCallbackEnabled || settings.PreClampDamageRewriteLogOnly)
+            if (!IsPreClampManagedCallbackEnabled(settings) || settings.PreClampDamageRewriteLogOnly)
                 return -1;
 
             nint targetPtr = (nint)targetPtrRaw;
@@ -2653,8 +2721,13 @@ public class Mod : ModBase
             if (targetPtr == 0 || statePtr == 0)
                 return -1;
 
-            if (!PreClampManagedCallbackPassesGuards(targetPtr, statePtr, settings, out int targetId, out int oldDebit, out _))
+            if (!PreClampManagedCallbackPassesGuards(targetPtr, statePtr, settings, out int targetId, out int oldDebit, out int oldCredit))
                 return -1;
+
+            if (settings.DclPipelineEnabled &&
+                !string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+                TryEvaluateDclPreClampDamage(targetPtr, hookStackPtr, settings, targetId, oldDebit, oldCredit, out int dclDebit))
+                return dclDebit;
 
             if (settings.PreClampManagedCallbackActorFormulaEnabled)
             {
@@ -2698,6 +2771,161 @@ public class Mod : ModBase
             return -1;
         }
     }
+
+    private bool TryEvaluateDclPreClampDamage(
+        nint targetPtr,
+        nint hookStackPtr,
+        RuntimeSettings settings,
+        int targetId,
+        int oldDebit,
+        int oldCredit,
+        out int dclDebit)
+    {
+        dclDebit = -1;
+        long nowTick = Stopwatch.GetTimestamp();
+        DrainCalcEntryProbeEventsForDcl(nowTick);
+
+        if (!TryGetUnitTableIndex(targetPtr, out int targetIdx, out long unitTable))
+        {
+            QueueDclCacheMiss(settings, "target-not-unit-table", targetIdx: -1, targetId, nowTick);
+            return false;
+        }
+
+        long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
+        if (!_dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out var actionContext))
+        {
+            QueueDclCacheMiss(settings, "no-calc-entry", targetIdx, targetId, nowTick);
+            return false;
+        }
+
+        if ((uint)actionContext.CasterIdx >= 64)
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] reason=caster-index-out-of-range target=0x{targetId:X2} targetIdx={targetIdx} casterIdx={actionContext.CasterIdx}");
+            return false;
+        }
+
+        nint casterPtr = (nint)(unitTable + actionContext.CasterIdx * BattleUnitStride);
+        if (!TryReadLiveUnitSnapshot(targetPtr, out var target, out string targetError))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] reason=target-read-failed target=0x{targetId:X2} targetIdx={targetIdx} error={CleanDclLogValue(targetError)}");
+            return false;
+        }
+
+        if (!TryReadLiveUnitSnapshot(casterPtr, out var attacker, out string casterError))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] reason=caster-read-failed target=0x{targetId:X2} targetIdx={targetIdx} casterIdx={actionContext.CasterIdx} error={CleanDclLogValue(casterError)}");
+            return false;
+        }
+
+        if (TryResolvePreClampManagedActor(targetPtr, hookStackPtr, settings, out var resolvedCaster, out _, out _) &&
+            resolvedCaster.Ptr != casterPtr)
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-MISMATCH] target=0x{target.CharId:X2} targetIdx={targetIdx} cacheCasterIdx={actionContext.CasterIdx} " +
+                $"cacheCaster=0x{attacker.CharId:X2} frameCaster=0x{resolvedCaster.CharId:X2} cachePtr=0x{casterPtr:X} framePtr=0x{resolvedCaster.Ptr:X}");
+        }
+
+        long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+        int syntheticCurrentHp = Math.Clamp(target.Hp - Math.Max(0, oldDebit), 0, Math.Max(0, target.MaxHp));
+        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, oldDebit);
+        var itemCatalog = _itemCatalog;
+        var abilityCatalog = _abilityCatalog;
+        var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings,
+            itemCatalog,
+            abilityCatalog,
+            target,
+            attacker,
+            eventIndex,
+            eventSeed,
+            actionContext.ActionType,
+            actionContext.AbilityId,
+            oldDebit,
+            oldCredit);
+
+        if (!FormulaExpression.TryEvaluate(settings.DclDamageFormula, context, out int formulaDebit, out string error))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
+                $"actionType=0x{actionContext.ActionType:X2} oldDebit={oldDebit} error={CleanDclLogValue(error)}");
+            return false;
+        }
+
+        dclDebit = Math.Clamp(formulaDebit, 0, short.MaxValue);
+        string abilityName = abilityCatalog.TryGet(actionContext.AbilityId, out var ability)
+            ? ability.Name
+            : "unknown";
+        QueueDclDecisionLog(
+            settings,
+            $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
+            $"ability={CleanDclLogValue(abilityName)} actionType=0x{actionContext.ActionType:X2} result={formulaDebit} debit={dclDebit} oldDebit={oldDebit}");
+        return true;
+    }
+
+    private bool TryGetUnitTableIndex(nint unitPtr, out int unitIdx, out long unitTable)
+    {
+        unitIdx = -1;
+        unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+        if (_moduleBase == 0 || unitPtr == 0)
+            return false;
+
+        long relative = unitPtr.ToInt64() - unitTable;
+        if (relative < 0 || relative % BattleUnitStride != 0)
+            return false;
+
+        long slot = relative / BattleUnitStride;
+        if (slot is < 0 or >= 64)
+            return false;
+
+        unitIdx = (int)slot;
+        return true;
+    }
+
+    private static long StopwatchTicksFromMilliseconds(int milliseconds)
+    {
+        if (milliseconds <= 0)
+            return 0;
+
+        return ((long)Math.Min(milliseconds, 3_600_000) * Stopwatch.Frequency) / 1000;
+    }
+
+    private void QueueDclCacheMiss(RuntimeSettings settings, string reason, int targetIdx, int targetId, long nowTick)
+    {
+        long miss = Interlocked.Increment(ref _dclCacheMissCount);
+        if (miss != 1 && miss % 64 != 0)
+            return;
+
+        QueueDclDecisionLog(
+            settings,
+            $"[DCL-MISS] reason={reason} miss={miss} target=0x{targetId:X2} targetIdx={targetIdx} now={nowTick}");
+    }
+
+    private void QueueDclDecisionLog(RuntimeSettings settings, string line)
+    {
+        int maxLogs = Math.Clamp(settings.DclDecisionMaxLogs, 0, 100_000);
+        if (maxLogs == 0)
+            return;
+
+        int logIndex = Interlocked.Increment(ref _dclDecisionLogCount);
+        if (logIndex > maxLogs)
+            return;
+
+        lock (_dclDecisionLogGate)
+            _dclDecisionLogQueue.Enqueue(line);
+    }
+
+    private static string CleanDclLogValue(string value)
+        => string.IsNullOrWhiteSpace(value)
+            ? ""
+            : value.Replace('|', '/').Replace('\r', ' ').Replace('\n', ' ').Trim();
 
     private static bool PreClampManagedCallbackPassesGuards(
         nint targetPtr,
@@ -3029,7 +3257,8 @@ public class Mod : ModBase
                 CaptureResultSelectorProbeEvents(nowTick);
                 CaptureEvadeInputProbeEvents(nowTick);
                 CaptureRollVerdictProbeEvents(nowTick);
-                CaptureCalcEntryProbeEvents();
+                CaptureCalcEntryProbeEvents(nowTick);
+                CaptureDclDecisionLogs();
                 CaptureLt3RollProbeEvents();
                 CaptureReactionRollEvents();
                 CaptureRollRngProbeEvents(nowTick);
@@ -6941,17 +7170,7 @@ internal sealed class BattleFormulaEngine
     {
         var context = new FormulaContext(e.Target, e.Attacker, e.EventIndex, e.EventSeed);
 
-        foreach (var kv in _settings.FormulaVariables)
-        {
-            context.Set(kv.Key, kv.Value);
-            context.Set($"const.{kv.Key}", kv.Value);
-        }
-        foreach (var kv in _settings.FormulaTables)
-            context.SetTable(kv.Key, kv.Value);
-        foreach (var kv in _settings.FormulaMatrices)
-            context.SetMatrix(kv.Key, kv.Value);
-        foreach (var kv in _settings.FormulaMaps)
-            context.SetMap(kv.Key, kv.Value);
+        FormulaRuntimeContextBuilder.AddSettingsVariables(context, _settings);
 
         context.Set("vanillaDamage", e.VanillaDamage);
         context.Set("vanillaDamageAbs", e.VanillaDamageAbs);
@@ -7017,17 +7236,7 @@ internal sealed class BattleFormulaEngine
     {
         var context = new FormulaContext(e.Target, e.Attacker, e.EventIndex, e.EventSeed);
 
-        foreach (var kv in _settings.FormulaVariables)
-        {
-            context.Set(kv.Key, kv.Value);
-            context.Set($"const.{kv.Key}", kv.Value);
-        }
-        foreach (var kv in _settings.FormulaTables)
-            context.SetTable(kv.Key, kv.Value);
-        foreach (var kv in _settings.FormulaMatrices)
-            context.SetMatrix(kv.Key, kv.Value);
-        foreach (var kv in _settings.FormulaMaps)
-            context.SetMap(kv.Key, kv.Value);
+        FormulaRuntimeContextBuilder.AddSettingsVariables(context, _settings);
 
         context.Set("vanillaDamage", 0);
         context.Set("vanillaDamageAbs", 0);
@@ -7334,25 +7543,7 @@ internal sealed class BattleFormulaEngine
     }
 
     private static void AddSlotVariables(FormulaContext context, string prefix, List<EquipmentSlotValue> slots)
-    {
-        foreach (var slot in slots)
-        {
-            string baseName = $"{prefix}.{slot.VariableName}";
-            context.Set(baseName, slot.ItemId);
-            context.Set($"{baseName}.present", slot.Present ? 1 : 0);
-            context.Set($"{baseName}.itemId", slot.ItemId);
-            context.Set($"{baseName}.offset", slot.Offset);
-            context.Set($"{baseName}.scanMatches", slot.MatchCount);
-            context.Set($"{baseName}.ambiguous", !slot.Present && slot.MatchCount > 1 ? 1 : 0);
-            context.Set($"{baseName}.widthByte", slot.Width.Equals("Byte", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
-            context.Set($"{baseName}.widthWord", slot.Width.Equals("Word", StringComparison.OrdinalIgnoreCase) ||
-                                         slot.Width.Equals("UInt16", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
-            if (slot.Item is not null)
-                slot.Item.AddVariables(context, baseName);
-            else
-                ItemCatalogEntry.AddDefaultVariables(context, baseName, slot.ItemId);
-        }
-    }
+        => FormulaRuntimeContextBuilder.AddSlotVariables(context, prefix, slots);
 
     private static void AddDamageResponseVariables(FormulaContext context, DamageResponse response)
     {
@@ -7374,86 +7565,10 @@ internal sealed class BattleFormulaEngine
     }
 
     private static void AddUnitVariables(FormulaContext context, string prefix, UnitSnapshot? unit)
-    {
-        context.Set($"{prefix}.present", unit is null ? 0 : 1);
-        context.Set($"{prefix}.charId", unit?.CharId ?? 0);
-        context.Set($"{prefix}.level", unit?.Level ?? 0);
-        context.Set($"{prefix}.hp", unit?.Hp ?? 0);
-        context.Set($"{prefix}.maxHp", unit?.MaxHp ?? 0);
-        context.Set($"{prefix}.mp", unit?.Mp ?? 0);
-        context.Set($"{prefix}.maxMp", unit?.MaxMp ?? 0);
-        context.Set($"{prefix}.team", unit?.Team ?? 0);
-        context.Set($"{prefix}.isFoe", unit?.IsFoe == true ? 1 : 0);
-        context.Set($"{prefix}.isAlly", unit is not null && !unit.IsFoe ? 1 : 0);
-        context.Set($"{prefix}.pa", unit?.Pa ?? 0);
-        context.Set($"{prefix}.ma", unit?.Ma ?? 0);
-        context.Set($"{prefix}.speed", unit?.Speed ?? 0);
-        context.Set($"{prefix}.ct", unit?.Ct ?? 0);
-        context.Set($"{prefix}.move", unit?.Move ?? 0);
-        context.Set($"{prefix}.jump", unit?.Jump ?? 0);
-        context.Set($"{prefix}.brave", unit?.Brave ?? 0);
-        context.Set($"{prefix}.faith", unit?.Faith ?? 0);
-
-        // Newly-mapped attributes, read from the captured struct bytes at confirmed offsets.
-        // See work/battle-unit-struct-attribute-map.md (all 5/5 ground-truthed). 0 when unit absent.
-        int B(int offset) => unit is null ? 0 : Math.Max(0, unit.ReadByte(offset));
-        context.Set($"{prefix}.job", B(0x03));
-        context.Set($"{prefix}.zodiac", B(0x09) >> 4);
-        int genderFlags = B(0x06);
-        context.Set($"{prefix}.genderFlags", genderFlags);
-        context.Set($"{prefix}.isMale", (genderFlags & 0x80) != 0 ? 1 : 0);
-        context.Set($"{prefix}.isFemale", (genderFlags & 0x40) != 0 ? 1 : 0);
-        context.Set($"{prefix}.isMonster", (genderFlags & 0x20) != 0 ? 1 : 0);
-        context.Set($"{prefix}.maxBrave", B(0x2A));
-        context.Set($"{prefix}.maxFaith", B(0x2C));
-        context.Set($"{prefix}.rawPa", B(0x38));
-        context.Set($"{prefix}.rawMa", B(0x39));
-        context.Set($"{prefix}.rawSpeed", B(0x3A));
-        context.Set($"{prefix}.weaponAtk", B(0x44));
-        context.Set($"{prefix}.weaponAtkL", B(0x45));
-        context.Set($"{prefix}.weaponParry", B(0x46));
-        context.Set($"{prefix}.weaponParryL", B(0x47));
-        context.Set($"{prefix}.shieldPhysParry", B(0x4A));
-        context.Set($"{prefix}.physEva", B(0x4B));
-        context.Set($"{prefix}.shieldMagParry", B(0x4E));
-        context.Set($"{prefix}.hpGrowth", B(0x8A));
-        context.Set($"{prefix}.hpMult", B(0x8B));
-        context.Set($"{prefix}.mpGrowth", B(0x8C));
-        context.Set($"{prefix}.mpMult", B(0x8D));
-        context.Set($"{prefix}.spdGrowth", B(0x8E));
-        context.Set($"{prefix}.spdMult", B(0x8F));
-        context.Set($"{prefix}.paGrowth", B(0x90));
-        context.Set($"{prefix}.paMult", B(0x91));
-        context.Set($"{prefix}.maGrowth", B(0x92));
-        context.Set($"{prefix}.maMult", B(0x93));
-    }
+        => FormulaRuntimeContextBuilder.AddUnitVariables(context, prefix, unit);
 
     private List<EquipmentSlotValue> ReadEquipmentSlots(UnitSnapshot? unit, List<EquipmentSlotProbe> probes)
-    {
-        var slots = new List<EquipmentSlotValue>();
-        foreach (var slot in probes)
-        {
-            string name = string.IsNullOrWhiteSpace(slot.Name) ? $"offset_{slot.Offset:X2}" : slot.Name;
-            string variableName = FormulaExpression.NormalizeIdentifierPart(name);
-
-            if (unit is null)
-            {
-                slots.Add(new EquipmentSlotValue(name, variableName, 0, null, false, -1, "", 0));
-                continue;
-            }
-
-            var resolved = slot.Resolve(unit, _itemCatalog);
-            if (!resolved.Present)
-            {
-                slots.Add(new EquipmentSlotValue(name, variableName, 0, null, false, resolved.Offset, resolved.Width, resolved.MatchCount));
-                continue;
-            }
-
-            slots.Add(new EquipmentSlotValue(name, variableName, resolved.ItemId, resolved.Item, true, resolved.Offset, resolved.Width, resolved.MatchCount));
-        }
-
-        return slots;
-    }
+        => FormulaRuntimeContextBuilder.ReadEquipmentSlots(unit, probes, _itemCatalog);
 
     private (bool Success, int Dr, string RuleName) ResolveEquipmentDr(
         DamageEvent e,
@@ -8643,6 +8758,10 @@ internal sealed class RuntimeSettings
     public int FlatDamageReduction { get; set; } = 0;
     public string RewriteConditionFormula { get; set; } = "";
     public string FinalDamageFormula { get; set; } = "";
+    public bool DclPipelineEnabled { get; set; } = false;
+    public string DclDamageFormula { get; set; } = "";
+    public int DclActionContextMaxAgeMs { get; set; } = 5000;
+    public int DclDecisionMaxLogs { get; set; } = 40;
     public string MpRewriteConditionFormula { get; set; } = "";
     public string FinalMpChangeFormula { get; set; } = "";
     public Dictionary<string, int> FormulaVariables { get; set; } = new();
@@ -9125,5 +9244,5 @@ internal sealed class RuntimeSettings
     }
 
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, AbilityCatalogPath={AbilityCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeOnTargetCache={HookRegisterProbeOnTargetCache}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, ResultSelectorProbeEnabled={ResultSelectorProbeEnabled}, ResultSelectorProbeRva=0x{ResultSelectorProbeRva:X}, ResultSelectorProbeActorRegister={ResultSelectorProbeActorRegister}, ResultSelectorProbeRecordUnitOffset=0x{ResultSelectorProbeRecordUnitOffset:X}, ResultSelectorProbeMaxLogs={ResultSelectorProbeMaxLogs}, ResultSelectorProbeRecordDumpBytes={ResultSelectorProbeRecordDumpBytes}, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampManagedCallbackEnabled={PreClampManagedCallbackEnabled}, PreClampManagedCallbackForcedDebit={PreClampManagedCallbackForcedDebit}, PreClampManagedCallbackActorFormulaEnabled={PreClampManagedCallbackActorFormulaEnabled}, PreClampManagedCallbackPaMultiplier={PreClampManagedCallbackPaMultiplier}, PreClampManagedCallbackStackScanBytes={PreClampManagedCallbackStackScanBytes}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, DclPipelineEnabled={DclPipelineEnabled}, DclDamageFormula={(string.IsNullOrWhiteSpace(DclDamageFormula) ? "off" : "on")}, DclActionContextMaxAgeMs={DclActionContextMaxAgeMs}, DclDecisionMaxLogs={DclDecisionMaxLogs}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, AbilityCatalogPath={AbilityCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeOnTargetCache={HookRegisterProbeOnTargetCache}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, ResultSelectorProbeEnabled={ResultSelectorProbeEnabled}, ResultSelectorProbeRva=0x{ResultSelectorProbeRva:X}, ResultSelectorProbeActorRegister={ResultSelectorProbeActorRegister}, ResultSelectorProbeRecordUnitOffset=0x{ResultSelectorProbeRecordUnitOffset:X}, ResultSelectorProbeMaxLogs={ResultSelectorProbeMaxLogs}, ResultSelectorProbeRecordDumpBytes={ResultSelectorProbeRecordDumpBytes}, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampManagedCallbackEnabled={PreClampManagedCallbackEnabled}, PreClampManagedCallbackForcedDebit={PreClampManagedCallbackForcedDebit}, PreClampManagedCallbackActorFormulaEnabled={PreClampManagedCallbackActorFormulaEnabled}, PreClampManagedCallbackPaMultiplier={PreClampManagedCallbackPaMultiplier}, PreClampManagedCallbackStackScanBytes={PreClampManagedCallbackStackScanBytes}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

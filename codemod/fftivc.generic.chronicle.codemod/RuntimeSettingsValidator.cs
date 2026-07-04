@@ -77,6 +77,29 @@ internal static class RuntimeSettingsValidator
             report.Warn("MaxTrackedBattleUnits", "values below 16 may skip units in larger battles.");
         if (settings.SuppressOwnRewriteEchoWindowMs < 0)
             report.Error("SuppressOwnRewriteEchoWindowMs", "SuppressOwnRewriteEchoWindowMs must be nonnegative.");
+        if (settings.DclActionContextMaxAgeMs < 0)
+            report.Error("DclActionContextMaxAgeMs", "DclActionContextMaxAgeMs must be nonnegative.");
+        else if (settings.DclActionContextMaxAgeMs > 60000)
+            report.Warn("DclActionContextMaxAgeMs", "values above 60000 ms can reuse stale calc-entry action context.");
+        if (settings.DclDecisionMaxLogs < 0)
+            report.Error("DclDecisionMaxLogs", "DclDecisionMaxLogs must be nonnegative.");
+        if (settings.DclPipelineEnabled && string.IsNullOrWhiteSpace(settings.DclDamageFormula))
+            report.Warn("DclDamageFormula", "DclPipelineEnabled is on but DclDamageFormula is empty, so the DCL path will fall through to legacy pre-clamp behavior.");
+        if (settings.DclPipelineEnabled && settings.CalcEntryProbeRva <= 0)
+            report.Error("CalcEntryProbeRva", "DclPipelineEnabled needs the calc-entry probe for action context; CalcEntryProbeRva must be positive.");
+        if (settings.DclPipelineEnabled && !string.IsNullOrWhiteSpace(settings.DclDamageFormula))
+        {
+            // The pre-clamp stub runs the managed (DCL) callback FIRST, then plan/static writes:
+            // any of these being armed would silently overwrite the DCL debit in the same hook fire.
+            if (settings.PreClampFormulaPlanEnabled)
+                report.Error("DclPipelineEnabled", "PreClampFormulaPlanEnabled overwrites the DCL debit after the managed callback; disable the plan when the DCL pipeline is on.");
+            if (settings.PreClampDamageRewriteForcedDebit >= 0)
+                report.Error("DclPipelineEnabled", "PreClampDamageRewriteForcedDebit overwrites the DCL debit after the managed callback; set it to -1 when the DCL pipeline is on.");
+            if (settings.PreClampDamageRewriteForcedCredit >= 0)
+                report.Error("DclPipelineEnabled", "PreClampDamageRewriteForcedCredit rewrites staged credit after the managed callback; set it to -1 when the DCL pipeline is on.");
+            if (settings.PreClampDamageRewriteLogOnly)
+                report.Warn("DclPipelineEnabled", "PreClampDamageRewriteLogOnly makes the managed callback return early, so the DCL formula never runs.");
+        }
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
         if (settings.HookRegisterProbeEventMaxLogs < 0)
@@ -240,9 +263,10 @@ internal static class RuntimeSettingsValidator
             if (settings.PreviewForecastPokeValue >= 0)
                 report.Warn("PreviewForecastPokeEnabled", "forecast poke poll-writes the configured HP amount field (offset 0x6 = unit+0x1C4 damage/debit, 0x8 = unit+0x1C6 healing/credit); drives the preview NUMBER + HP-bar together, but not the real result (that is the pre-clamp lever).");
         }
-        if (settings.PreClampDamageRewriteEnabled)
+        if (settings.PreClampDamageRewriteEnabled || settings.DclPipelineEnabled)
         {
-            report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");
+            if (settings.PreClampDamageRewriteEnabled)
+                report.Warn("PreClampDamageRewriteEnabled", "pre-clamp damage rewrite mutates staged engine damage; use only for one-shot controlled proof captures.");
             if (settings.PreClampDamageRewriteRva <= 0)
                 report.Error("PreClampDamageRewriteRva", "PreClampDamageRewriteRva must be positive.");
             if (string.IsNullOrWhiteSpace(settings.PreClampDamageRewriteExpectedBytes))
@@ -275,14 +299,16 @@ internal static class RuntimeSettingsValidator
                 settings.PreClampDamageRewriteForcedDebit < 0 &&
                 settings.PreClampDamageRewriteForcedCredit < 0 &&
                 !settings.PreClampFormulaPlanEnabled &&
-                !settings.PreClampManagedCallbackEnabled)
-                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, PreClampFormulaPlanEnabled, or PreClampManagedCallbackEnabled.");
-            if (settings.PreClampManagedCallbackEnabled)
+                !settings.PreClampManagedCallbackEnabled &&
+                !settings.DclPipelineEnabled)
+                report.Error("PreClampDamageRewrite", "Non-log-only mode requires a forced debit, forced credit, PreClampFormulaPlanEnabled, PreClampManagedCallbackEnabled, or DclPipelineEnabled.");
+            if (settings.PreClampManagedCallbackEnabled || settings.DclPipelineEnabled)
             {
                 report.Warn("PreClampManagedCallbackEnabled", "managed callback calls C# from the native pre-clamp hook; use only for a tightly guarded ABI proof until live-stable.");
                 if (settings.PreClampManagedCallbackForcedDebit < 0 &&
-                    !settings.PreClampManagedCallbackActorFormulaEnabled)
-                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit or PreClampManagedCallbackActorFormulaEnabled.");
+                    !settings.PreClampManagedCallbackActorFormulaEnabled &&
+                    !(settings.DclPipelineEnabled && !string.IsNullOrWhiteSpace(settings.DclDamageFormula)))
+                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit, PreClampManagedCallbackActorFormulaEnabled, or DclPipelineEnabled with DclDamageFormula.");
                 if (settings.PreClampManagedCallbackActorFormulaEnabled)
                     report.Warn("PreClampManagedCallbackActorFormulaEnabled", "actor formula resolves caster/action from the pre-clamp frame; use only in controlled captures until it is live-stable across action families.");
             }
@@ -632,6 +658,7 @@ internal static class RuntimeSettingsValidator
     private static void ValidateFormulas(RuntimeSettings settings, ItemCatalog catalog, SettingsValidationReport report)
     {
         var context = BuildRichFormulaContext(settings, catalog);
+        var dclContext = BuildDclFormulaContext(settings, catalog);
 
         foreach (var variable in settings.FormulaPreActionVariables)
             ValidateDerivedFormula(context, variable, "FormulaPreActionVariables", report);
@@ -699,6 +726,7 @@ internal static class RuntimeSettingsValidator
         }
 
         ValidateFormula(settings.FinalDamageFormula, context, "FinalDamageFormula", report, allowEmpty: true);
+        ValidateFormula(settings.DclDamageFormula, dclContext, "DclDamageFormula", report, allowEmpty: true);
         ValidateFormula(settings.MpRewriteConditionFormula, context, "MpRewriteConditionFormula", report, allowEmpty: true);
         ValidateFormula(settings.FinalMpChangeFormula, context, "FinalMpChangeFormula", report, allowEmpty: true);
     }
@@ -913,6 +941,24 @@ internal static class RuntimeSettingsValidator
         AddRuleItemVariables(context, catalog);
 
         return context;
+    }
+
+    private static FormulaContext BuildDclFormulaContext(RuntimeSettings settings, ItemCatalog catalog)
+    {
+        var target = BuildSyntheticTarget(settings, catalog);
+        var attacker = BuildSyntheticAttacker(settings, catalog);
+        return FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings,
+            catalog,
+            AbilityCatalog.Empty("validator"),
+            target,
+            attacker,
+            eventIndex: 1,
+            eventSeed: 12345,
+            actionType: 1,
+            abilityId: 1,
+            oldDebit: 20,
+            oldCredit: 0);
     }
 
     private static UnitSnapshot BuildSyntheticTarget(RuntimeSettings settings, ItemCatalog catalog)

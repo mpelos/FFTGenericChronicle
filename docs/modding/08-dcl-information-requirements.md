@@ -27,6 +27,17 @@ infliction, reaction dispatch), and `work/dcl-ai-and-progression-notes.md` (AI s
 progression rules). The consolidated ordered live-test checklist is
 `work/dcl-live-test-master-plan.md`.
 
+**2026-07-04 construction status:** the first end-to-end DCL delivery is BUILT (offline-verified,
+awaiting live test LT6): `DclPipelineEnabled` joins the calc-entry action-context probe
+(`0x309A44` → per-target cache of caster/actionType/abilityId) with the pre-clamp managed callback
+(`0x30A66F`) that snapshots attacker+target, builds the full formula context (units + equipment via
+`ItemCatalog` + ability metadata via `AbilityCatalog`) and rewrites the staged debit with the
+config-authored `DclDamageFormula`, same-hit. This closes the "action context + both-sides context
+at the damage write" plumbing for groups 1/2/3/4 of §8; outcome forcing (hit%/own-RNG), derived
+variable chains in the DCL context, and the authored damage-model metadata remain open. See
+`06-code-mod-runtime-dsl.md` §"DCL pre-clamp pipeline" and
+`work/battle-runtime-settings.lt6-dcl-preclamp.json`.
+
 ## 1. Action Identity and Lifecycle
 
 DCL formulas are action-dependent. The runtime must know not only who lost HP, but what action is
