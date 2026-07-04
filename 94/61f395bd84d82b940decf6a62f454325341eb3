@@ -1,0 +1,75 @@
+work/battle-runtime-settings.lt6-dcl-preclamp.json
+  s_6cc0081048ef79::t_c1b3783d0bad21 1-79
+docs/modding/08-dcl-information-requirements.md
+  s_6cc0081048ef79::t_26e646fc6acf53 30-40
+docs/modding/06-code-mod-runtime-dsl.md
+  s_6cc0081048ef79::t_3a577d0469f066 1149-1190
+codemod/fftivc.generic.chronicle.codemod/RuntimeSettingsValidator.cs
+  s_26fb8f829dcac7::t_a08cba9e75b6f1 266,268-269
+  s_0e0b8318d9268e::t_7d6af68d895458 80-87,302-305,309-311
+  s_0e0b8318d9268e::t_ef6102fc075f0a 661,729
+  s_6cc0081048ef79::t_5484ce88fb45b2 88-102
+  s_0e0b8318d9268e::t_ec87960dbbcc67 946-963
+codemod/fftivc.generic.chronicle.codemod/FormulaRuntimeContextBuilder.cs
+  s_0e0b8318d9268e::t_4f9107fe833ea6 1-166
+codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs
+  s_0e0b8318d9268e::t_fefb2159cb5ae0 2770-2771,2835-2837
+  s_0e0b8318d9268e::t_85631d58eac7dd 18,37,2311-2380
+  s_0e0b8318d9268e::t_0843d683a06315 2381
+codemod/fftivc.generic.chronicle.codemod/Mod.cs
+  s_0e0b8318d9268e::t_2626add539ee04 8761-8764
+  s_0e0b8318d9268e::t_72581982b805db 3260-3261
+  s_0e0b8318d9268e::t_45e28c3ddea04b 2704-2706
+  s_0e0b8318d9268e::t_703e16fc88b7ea 2788,2873
+  s_0e0b8318d9268e::t_53a93c159baf25 945,2775-2787,2789-2872,2874-2875,2877-2929
+  s_0e0b8318d9268e::t_228cdc94ceb64c 7173,7239
+  s_6cc0081048ef79::t_5334fdddd84d20 804-806
+  s_0e0b8318d9268e::t_a3ace45ba23839 43,272-277
+  s_0e0b8318d9268e::t_0584729c436844 877-882,888,890-939,941-943
+  s_0e0b8318d9268e::t_39313f13c59b8f 761
+  s_0e0b8318d9268e::t_cb5d7150081aec 2715,2724,2727-2730
+  s_0e0b8318d9268e::t_1634a57f2109db 9247
+  s_0e0b8318d9268e::t_0d5b9a2ac7d0ad 947-957,959-961
+  s_0e0b8318d9268e::t_1e51d54071087c 7546,7568,7571
+  s_6cc0081048ef79::t_4ba7495bf6ca80 883-887
+  s_0e0b8318d9268e::t_1499aa20fc79fb 54,2876
+  s_26fb8f829dcac7::t_f49ddd7ff52d14 1399-1400
+  s_0e0b8318d9268e::t_90b23f0b797a1f 1413,1434,1457,1459-1460,1485
+  s_0e0b8318d9268e::t_4ab0a31ac9eda1 944
+  s_0e0b8318d9268e::t_42d767f49d2c56 946
+  s_0e0b8318d9268e::t_28d57ada37dc3c 2731
+codemod/fftivc.generic.chronicle.codemod/DclActionContextCache.cs
+  s_0e0b8318d9268e::t_d83df61c310db9 1-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9461f395bd84d82b940decf6a62f454325341eb3",
+  "prompts": {},
+  "sessions": {
+    "s_0e0b8318d9268e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2ade-3921-7b02-8527-b1794605029a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_26fb8f829dcac7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "886a041a-53e0-472f-9f84-76c4eb7477b4",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_6cc0081048ef79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "861177ea-0c0b-4d71-bdb1-89f8eb59e33b",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
