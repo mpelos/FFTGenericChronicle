@@ -1,0 +1,36 @@
+codemod/fftivc.generic.chronicle.codemod/Mod.cs
+  s_6cc0081048ef79::t_2e22fbc01d791b 9234
+  s_6cc0081048ef79::t_f9ce09ba51df7e 9211
+  s_6cc0081048ef79::t_573ed814f67c70 2853-2861
+  s_6cc0081048ef79::t_d1d3738c521d87 7147
+  s_6cc0081048ef79::t_95e55335ab777e 8748
+work/battle-runtime-settings.lt7-dcl-damage-model.json
+  s_6cc0081048ef79::t_3228566e022d67 1-114
+docs/modding/06-code-mod-runtime-dsl.md
+  s_6cc0081048ef79::t_b56e7a8472431e 1183-1196
+codemod/fftivc.generic.chronicle.codemod/FormulaRuntimeContextBuilder.cs
+  s_6cc0081048ef79::t_06c8cb480558e7 45-75
+codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs
+  s_6cc0081048ef79::t_680531d8a83894 2791-2794
+  s_6cc0081048ef79::t_4df367bb9f1cd9 2862-2863
+  s_6cc0081048ef79::t_d78af014a1d24b 2380-2398
+  s_6cc0081048ef79::t_6a636d8f27fe26 2861
+codemod/fftivc.generic.chronicle.codemod/RuntimeSettingsValidator.cs
+  s_6cc0081048ef79::t_21c2c9acc5a406 729-730
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "26ff6465ca425a4da74bb1a547a3e4169ef813b6",
+  "prompts": {},
+  "sessions": {
+    "s_6cc0081048ef79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "861177ea-0c0b-4d71-bdb1-89f8eb59e33b",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
