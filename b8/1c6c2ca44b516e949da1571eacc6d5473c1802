@@ -1,0 +1,24 @@
+docs/deep-combat-layer/12-open-questions.md
+  s_5fa1ef7d423980::t_b75c4c5249f696 194,198-200
+  s_5fa1ef7d423980::t_6250425f0e0bc1 201-205
+docs/deep-combat-layer/11-magic.md
+  s_5fa1ef7d423980::t_b75c4c5249f696 88-101,207-209,307-308
+work/1782527765-dcl-magic-validation-report.md
+  s_5fa1ef7d423980::t_b75c4c5249f696 1-578
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b81c6c2ca44b516e949da1571eacc6d5473c1802",
+  "prompts": {},
+  "sessions": {
+    "s_5fa1ef7d423980": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7e9217dd-a6c9-4912-aefd-7d6bf213d25c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
