@@ -726,6 +726,8 @@ internal static class RuntimeSettingsValidator
         }
 
         ValidateFormula(settings.FinalDamageFormula, context, "FinalDamageFormula", report, allowEmpty: true);
+        foreach (var variable in settings.DclDerivedVariables)
+            ValidateDerivedFormula(dclContext, variable, "DclDerivedVariables", report);
         ValidateFormula(settings.DclDamageFormula, dclContext, "DclDamageFormula", report, allowEmpty: true);
         ValidateFormula(settings.MpRewriteConditionFormula, context, "MpRewriteConditionFormula", report, allowEmpty: true);
         ValidateFormula(settings.FinalMpChangeFormula, context, "FinalMpChangeFormula", report, allowEmpty: true);

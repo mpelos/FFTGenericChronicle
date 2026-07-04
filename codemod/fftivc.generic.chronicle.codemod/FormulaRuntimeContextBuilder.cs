@@ -42,6 +42,37 @@ internal static class FormulaRuntimeContextBuilder
         return context;
     }
 
+    public static bool TryApplyDerivedVariables(
+        FormulaContext context,
+        List<FormulaDerivedVariable> variables,
+        string groupName,
+        out string error)
+    {
+        error = "";
+
+        foreach (var variable in variables ?? [])
+        {
+            string name = variable.NormalizedName;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                error = $"{groupName}: variable has an empty name";
+                return false;
+            }
+
+            if (!FormulaExpression.TryEvaluate(variable.Formula, context, out int value, out string formulaError))
+            {
+                error = $"{groupName}: {name}: {formulaError}";
+                return false;
+            }
+
+            context.Set(name, value);
+            if (variable.SetConstAlias)
+                context.Set($"const.{name}", value);
+        }
+
+        return true;
+    }
+
     public static void AddSettingsVariables(FormulaContext context, RuntimeSettings settings)
     {
         foreach (var kv in settings.FormulaVariables ?? [])

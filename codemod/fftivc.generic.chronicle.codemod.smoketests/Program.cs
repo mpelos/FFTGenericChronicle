@@ -2377,6 +2377,25 @@ internal static class Program
         Check(FormulaExpression.TryEvaluate("targetSlot.body.itemId + attackerSlot.weapon.itemId", context, out int slots, out string slotError),
             $"DCL slot formula should evaluate: {slotError}");
         Check(slots == 191, $"DCL slot formula expected 191, got {slots}");
+
+        var derivedChain = new List<FormulaDerivedVariable>
+        {
+            new() { Name = "dcl.st", Formula = "a.pa + 4" },
+            new() { Name = "dcl.gross", Formula = "dcl.st * 2 + ability.y" },
+        };
+        Check(FormulaRuntimeContextBuilder.TryApplyDerivedVariables(context, derivedChain, "DclDerivedVariables", out string chainError),
+            $"DCL derived chain should apply: {chainError}");
+        Check(FormulaExpression.TryEvaluate("dcl.gross", context, out int gross, out string grossError),
+            $"DCL derived variable should be readable: {grossError}");
+        Check(gross == 46, $"DCL derived chain expected 46, got {gross}");
+
+        var badChain = new List<FormulaDerivedVariable>
+        {
+            new() { Name = "dcl.bad", Formula = "missingDclDerivedInput + 1" },
+        };
+        Check(!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(context, badChain, "DclDerivedVariables", out string badError) &&
+              badError.Contains("missingDclDerivedInput"),
+            "DCL derived chain should fail loudly on unknown inputs");
     }
 
     private static void TestMemoryTableProbe()
@@ -2769,6 +2788,10 @@ internal static class Program
             FinalDamageFormula = "missingVariable + 1",
             DclPipelineEnabled = true,
             DclDamageFormula = "ability.y + missingDclValue",
+            DclDerivedVariables =
+            [
+                new FormulaDerivedVariable { Name = "dcl.badDerived", Formula = "missingDclDerivedValue + 1" },
+            ],
             FormulaPreActionVariables =
             [
                 new FormulaDerivedVariable { Name = "badPreAction", Formula = "missingPreActionValue + 1" },
@@ -2835,6 +2858,9 @@ internal static class Program
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "DclDamageFormula" && finding.Message.Contains("missingDclValue")),
             "validator should report unknown variable in DclDamageFormula");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope.StartsWith("DclDerivedVariables") && finding.Message.Contains("missingDclDerivedValue")),
+            "validator should report unknown variable in DclDerivedVariables");
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "RewriteConditionFormula" && finding.Message.Contains("missingGateValue")),
             "validator should report unknown variable in RewriteConditionFormula");

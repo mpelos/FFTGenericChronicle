@@ -1180,13 +1180,20 @@ warns when `PreClampDamageRewriteLogOnly` would disable the callback.
 Formula variables available to `DclDamageFormula`: `a.*`/`attacker.*` and `t.*`/`target.*` unit
 vars, `aslot.*`/`tslot.*` (+ `attackerSlot.*`/`targetSlot.*`/`slot.*`) item vars, `ability.*`
 vars, `action.type`/`action.abilityId`, `dcl.oldDebit`/`dcl.oldCredit`, and every
-`FormulaVariables`/`FormulaTables`/`FormulaMatrices`/`FormulaMaps` entry. Derived-variable chains
-(`FormulaDerivedVariables`) are **not** evaluated in this context yet — the formula must be one
-self-contained expression (multi-step authoring is the next construction step).
+`FormulaVariables`/`FormulaTables`/`FormulaMatrices`/`FormulaMaps` entry. **`DclDerivedVariables`**
+(same schema as `FormulaDerivedVariables`) are evaluated in order in this context before the
+damage formula, enabling multi-step models; an unknown input anywhere in the chain is a deploy
+error (validator) and a `[DCL-ERR]` fall-through-to-vanilla at runtime.
 
-Test profile: `work/battle-runtime-settings.lt6-dcl-preclamp.json` (LT5-A4 force-hit stack + a
-minimal predictable formula). PASS = each hit's HP drop equals its `[DCL]` `debit` and differs
-from `oldDebit`.
+Test profiles:
+- `work/battle-runtime-settings.lt6-dcl-preclamp.json` — plumbing slice (LT5-A4 force-hit stack +
+  a minimal predictable formula). PASS = each hit's HP drop equals its `[DCL]` `debit` and differs
+  from `oldDebit`. **Run this first.**
+- `work/battle-runtime-settings.lt7-dcl-damage-model.json` — the provisional GURPS-shaped weapon
+  damage model (thr/sw base off raw PA, weapon Power, subtractive armor DR by damage type, wound
+  multipliers, Brave trait scaling) ported from the reconciler-era `dcl-damage-slice` profile to
+  same-hit delivery via `DclDerivedVariables`. Basic attacks only (`action.type == 1`); spells
+  keep vanilla damage. Numbers remain provisional pending calibration with Marcelo.
 
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
