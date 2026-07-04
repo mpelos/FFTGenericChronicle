@@ -1,0 +1,112 @@
+docs/job-balance/jobs/13-orator.md
+  s_a298d5c04f383c::t_403d248d5b097c 1-192
+work/1782757403-sim-dragoon-v2-gate.md
+  s_a298d5c04f383c::t_b53bc2db01341e 1-56
+work/1782755303-sim-dragoon.py
+  s_a298d5c04f383c::t_7ed53453e735e1 1-142
+work/1782757403-sim-dragoon-v2.py
+  s_a298d5c04f383c::t_b53bc2db01341e 1-126
+work/1782829577-sim-white-mage.py
+  s_a298d5c04f383c::t_228d38a0dca084 1-139
+docs/job-balance/jobs/15-dancer.md
+  s_a298d5c04f383c::t_080a5518c24d47 1-259
+work/1782755303-sim-dragoon-gate.md
+  s_a298d5c04f383c::t_7ed53453e735e1 1-64
+work/1782784366-dragoon-validation-gate.md
+  s_a298d5c04f383c::t_585ba895736664 1-53
+docs/job-balance/jobs/10-time-mage.md
+  s_a298d5c04f383c::t_7efb0a4ae496f1 1-221,225-236
+  s_a298d5c04f383c::t_a29e0db467f977 222-224
+work/1782850937-sim-summoner.py
+  s_a298d5c04f383c::t_f7549bd1193f3b 1-225
+work/1782784366-sim-dragoon-v5-corrected.py
+  s_a298d5c04f383c::t_56ed26769d327b 1-138
+work/1782829577-white-mage-validation-gate.md
+  s_a298d5c04f383c::t_8529852a628bf3 1-62
+docs/job-balance/jobs/09-mystic.md
+  s_a298d5c04f383c::t_3b4bc16413d7b1 1-100,109-238
+  s_a298d5c04f383c::t_2a7cb75d45f153 101-108
+docs/job-balance/job-design-process.md
+  s_a298d5c04f383c::t_c47602d1eb899e 180-184
+  s_a298d5c04f383c::t_373c6a67871366 20-23
+  s_a298d5c04f383c::t_0cbbacc068fa31 66-67
+  s_a298d5c04f383c::t_8eefb9b07d8a09 224-229
+  s_a298d5c04f383c::t_12542e8df8ab75 230-232
+  s_a298d5c04f383c::t_60ffa57920ba89 63-65,68
+work/1782759642-sim-dragoon-v3-heavy-gate.md
+  s_a298d5c04f383c::t_8aad3cec84600a 1-55
+docs/job-balance/jobs/06-black-mage.md
+  s_a298d5c04f383c::t_3a69a903b12a27 135-143
+  s_a298d5c04f383c::t_40820df363ef52 239
+  s_a298d5c04f383c::t_5c4dee37400780 1-134,144-164,170-238,243-253
+  s_a298d5c04f383c::t_517dc60ab76f49 240-242
+  s_a298d5c04f383c::t_a6733f2799ea98 165-169
+work/1782837029-time-mage-validation-gate.md
+  s_a298d5c04f383c::t_a568b2a190a7ff 1-90
+work/1783013144-dancer-validation-gate.md
+  s_a298d5c04f383c::t_ba0f8c4d3015e5 1-117
+docs/job-balance/jobs/12-dragoon.md
+  s_a298d5c04f383c::t_8e3eb5dd4110a2 1-229
+docs/job-balance/jobs/05-white-mage.md
+  s_a298d5c04f383c::t_55bc4ae807a5a1 1-242
+work/1782759642-sim-dragoon-v3-heavy.py
+  s_a298d5c04f383c::t_8aad3cec84600a 1-123
+work/1782848025-sim-orator.py
+  s_a298d5c04f383c::t_8e2f587c9c0c80 1-220
+docs/deep-combat-layer/15-job-authoring.md
+  s_a298d5c04f383c::t_b03cade1de4279 316-320
+  s_a298d5c04f383c::t_4a5765bae91525 169-176
+  s_a298d5c04f383c::t_662072aee33b77 13
+  s_a298d5c04f383c::t_458a6054adeffe 184-190
+  s_a298d5c04f383c::t_999d8e0e7e6ba9 49-59
+docs/job-balance/jobs/14-summoner.md
+  s_a298d5c04f383c::t_038618bde18232 1-206
+work/1782783296-sim-dragoon-v4-adopted.py
+  s_a298d5c04f383c::t_cd847fd70d579e 1-134
+work/1782842631-sim-mystic.py
+  s_a298d5c04f383c::t_c35c3f658d1de7 1-252
+work/1782837029-sim-time-mage.py
+  s_a298d5c04f383c::t_3e2a33912a8f4a 1-137
+work/1782850937-summoner-validation-gate.md
+  s_a298d5c04f383c::t_502fc0668419a9 1-105
+work/1783013144-sim-dancer.py
+  s_a298d5c04f383c::t_7c31dcdc33da43 1-246
+work/1782830726-black-mage-validation-gate.md
+  s_a298d5c04f383c::t_3132095e3144a3 1-83
+  s_a298d5c04f383c::t_93ac72e7d5a302 108-134
+  s_a298d5c04f383c::t_a4daa74d2fbd67 84-107
+work/1782842631-mystic-validation-gate.md
+  s_a298d5c04f383c::t_f472cadf4be377 1-87
+work/1782830726-sim-black-mage.py
+  s_a298d5c04f383c::t_a72a3c48932c99 1-147
+docs/deep-combat-layer/02-damage-model.md
+  s_a298d5c04f383c::t_17f7a685e5e7ed 18-29
+work/1782848025-orator-validation-gate.md
+  s_a298d5c04f383c::t_db5e22d3c9c43b 1-89
+.agents/skills/fft-job-redesign/evals/evals.json
+  s_fce6b25a5764ca::t_c31616bc8beb46 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bb613d2245ad1b854b601a2e06dd4b0131b85b74",
+  "prompts": {},
+  "sessions": {
+    "s_a298d5c04f383c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67cfd6cf-80c2-458b-b10b-fe218f85bbc9",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    },
+    "s_fce6b25a5764ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee61a-5e18-7432-b97c-bbb90989b7ae",
+        "model": "unknown"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
