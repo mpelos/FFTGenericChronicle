@@ -1,0 +1,35 @@
+{
+  "skill_name": "fft-job-redesign",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the current Orator redesign for FFTGenericChronicle. I am worried the skills are too weak, that Tame/Beast Tongue were removed even though monster recruitment and breeding are important, and that Brave/Faith policy was assumed instead of discussed. Produce a redesign review, not a final implementation.",
+      "expected_output": "A review that diagnoses Orator against combat-skill value, campaign/roster system preservation, monster recruitment/breeding access, Brave/Faith as a dependent global system, long-term policy, and identifies the package as needing revision rather than defending weak numbers.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Redesign Thief's Steal, Poach, Treasure Hunter, and Steal Heart package. Keep in mind that not every action has to be useful in a single battle, but every skill must justify its value somewhere in the game. Also check whether Steal Heart belongs thematically to Thief or another job.",
+      "expected_output": "A proposal that separates combat-facing steals from campaign/economy/monster-facing skills, preserves Poach or gives an explicit access promise, uses per-skill value cards, and performs thematic ownership review rather than blindly preserving vanilla placement.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The Knight and Archer proposals had cool mechanics but too many marks/statuses for a player to track. Create a revision process that keeps the good mechanics while simplifying visibility.",
+      "expected_output": "A process or review that lists mechanics worth preserving, identifies opacity/complexity risks, requires visible representation for every mark/status/zone, and suggests simpler visible expressions instead of deleting the mechanics.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Review an Orator proposal where Entice charms an enemy temporarily during battle but still permanently recruits them after battle. Also review Fast Talk having a once-per-round clause. Do not rewrite the whole job; focus on process failures.",
+      "expected_output": "A review that flags battle/campaign incoherence for Entice, questions invisible or unintuitive per-round limitations, and recommends resolving the story/mechanics relationship before accepting the skill card.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Create a first-pass redesign direction for Orator without being constrained to the vanilla skill list. Preserve FFT identity, recruitment, monster access, social manipulation, guns, and Brave/Faith if the system remains useful.",
+      "expected_output": "A direction that separates identity pillars from vanilla names, generates ambitious alternatives, preserves protected systems, and explains which vanilla skills could be kept, moved, replaced, or removed.",
+      "files": []
+    }
+  ]
+}

@@ -10,7 +10,7 @@ and start reinforcing each other — the Knight's "break armour" becomes crush +
 becomes reach, the Thief becomes Speed/tempo, the devout caster becomes two-sided Faith. This manual
 **owns the job-authoring doctrine**; the per-job decision docs are its consumers.
 
-## The five laws
+## The laws
 
 Every job and every skill obeys these. They are the **contextual-differentiation** pillar (`00`)
 pushed down to the job and the ability level.
@@ -45,6 +45,17 @@ pushed down to the job and the ability level.
   other jobs more easily, **per-ability JP doubles as the portability gate** (ties to J2). Consequence:
   a job's *power* and its *JP-to-master* are decoupled — **tier difficulty is unlock difficulty, not
   grind.**
+
+- **J6 — Self-sufficiency (solo-viability).** Every job, fielded **alone** against a pack of low-level
+  enemies, can **eliminate all of them by itself** — *no job is pure-support, pure-debuff, or
+  pure-control.* Clear **pace** may differ (a damage job fast, a controller slowly via drain / disables /
+  chip), but a job may **never risk losing nor stall the fight** ("demorar tempo demais"). The self-clear
+  may route through any mix of damage, drain, and disables (Confuse turning enemies on each other counts),
+  but the **floor must be a reliable button** — a contested status is *upside*, not the safety net — and
+  **modest is allowed while insufficient is not.** **Test:** the *solo-clear* sim gate
+  (`docs/job-balance/job-design-process.md`). J6 is the hard floor *under* J1: J1 says a job is the *best*
+  pick somewhere; J6 says it is *never helpless* anywhere. (This is why a control/support job still needs a
+  real offensive engine — e.g. Mystic's reliable HP-drain — not just a token chip attack.)
 
 ## Tiers — how J3 and J1 coexist
 
@@ -155,12 +166,27 @@ like. Several are load-bearing — the caster's **robe-only** restriction (`14`)
 fragile, Martial Arts is the Monk's entire weapon — so a job **declares its innates explicitly**; they
 are never assumed.
 
+**Desirability = base stats + innate (and every innate is exportable).** What makes a job worth *caring
+about* — beyond its command — is the combination of its **base attributes and its innate**: the two parts
+of the moat a secondary splash cannot fully take. Because **every innate is also taught as a Support
+ability** (below), players mine innates across the *whole* roster when assembling a final build — and that
+cross-job innate-shopping is a primary engine of **build variability**. So every innate must be a **real,
+build-relevant perk** wanted on its own merits (never a crutch for the job's own secondary — see *No crutch
+exports* below) **and** must be **exportable** so it can travel.
+
 **Two mandatory exports (the portability rules).** Every job must teach:
 1. **Its innate, as a Support ability.** The job has the innate free (the main-job perk); others can
    equip it as a support to get the same effect, paying the slot (Thief *Light Fingers*). The free innate
    + chassis is the reason to *main* the job; the export is why splashing its kit is welcome.
 2. **Its weapon proficiency, as a Support ability** (per the grade-budget rule above) — equip the
    family at the source grade; packaging case-by-case.
+
+**No crutch exports.** A taught Support (or innate) must be valuable in its **own right** to some build —
+**never** an ability whose only purpose is to make the home job's *own* command function when run as a
+secondary. If a command needs help to be reliable, that reliability belongs **inside the command** (so
+the secondary travels whole), not paywalled behind a support slot. (This killed Mystic's first innate,
+"Conduit Focus" — a status-reliability buff that left the Mystic secondary feeling broken without it; the
+reliability was moved into the tuning loop, and the innate became the export-worthy *Astral Resilience*.)
 
 This is the engine of the **portability philosophy** (`docs/job-balance/job-design-process.md`): kits
 travel by design, and a job stays worth maining through its free innate, chassis, and attributes — never
@@ -287,6 +313,11 @@ Forget one of these and the job breaks the engine:
 - **Anti-armour comes two ways (`11`/`03`/`14`):** magic's is **ignoring DR** — the casters' exclusive
   mechanism; a physical job's is the **crush / penetration (×2) / gun-divisor matchup**, type-specific
   and paid by weakness vs the unarmoured. Never hand a physical job a flat DR-ignore.
+- **All damage & healing is formula-derived (`02`/`11`):** every ability magnitude **scales** from stats
+  (PA/MA × weapon/spell-power × the multipliers) — **never a flat constant.** Only consumable **items**
+  may use fixed numbers (Potion = +100 HP). When an ability's damage is too low/high, tune its
+  **spell-power / weapon-mod / multiplier**, never a raw number. (Costs and the 3d6 status contest are
+  separate systems, not damage.)
 
 ## The J1 scenario palette
 

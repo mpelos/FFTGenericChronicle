@@ -17,7 +17,10 @@ the GPT peer agree 100%), and the **human** gate (Marcelo validates). Only then 
 - **GPT peer** (Codex MCP, adversarial reviewer) — defaults to objecting. It must understand the DCL
   and the job recipe deeply; it never rubber-stamps. A job reaches consensus only when the peer cannot
   find a remaining break. Treat its `broken` verdicts as binding when they carry a concrete reproducible
-  scenario (the same adjudication bar as `.claude/skills/game-design-validation`).
+  scenario (the same adjudication bar as `.claude/skills/game-design-validation`). It must **hold its own
+  opinion and actively pursue approaches that contrast with Claude's** — two AIs converging quickly is
+  shared bias, not validation, and the peer is pointless if it merely agrees. Instruct it to diverge each
+  job; it concedes only when it genuinely cannot find a better path or a remaining break.
 - **Marcelo** — the human design owner and the final gate. His feedback is **direction, not law**: apply
   game-design judgment toward a better-feeling FFT, justify deviations, stay inside the hard rails
   (`CLAUDE.md`, `00`).
@@ -56,6 +59,12 @@ weapon aptitude · early/mid/late · J1 (the pick) + the two-sided wrong-pick.**
 position** (S/A/B/C/D, S = only the hardest jobs to reach), and balance is enforced *within* the tier
 (`15`, *Tiers*). Every ability — especially every R/S/M and every movement — is **explained
 concretely**: what it actually does mechanically, not just a name.
+
+**Design from the vanilla job + the DCL laws — not from a prior draft.** Pass-era drafts
+(`tmp/job-drafts/pass-*`) predate later rule changes (the armour fold, the portability philosophy, the
+coherence gates) and re-import stale assumptions; read them only as critical reference, never as the
+base. Every candidate ability must clear the **two coherence gates** (engine-feasibility + job-fantasy —
+see the toolkit) before it enters the draft.
 
 ### 4 — Simulate in play (the falsification gate)
 
@@ -168,6 +177,11 @@ Run against a fixed spread so coverage is comparable across jobs:
    minigame" becomes misery if three misses means the unit did nothing all fight.
 10. **Fun-loop proof** — the first three meaningful turns present **choices**, not a single obvious
     script or repeated low-odds whiffing.
+11. **Solo-clear proof (J6, `docs/deep-combat-layer/15`)** — field the job **alone** against a pack of
+    low-level enemies and confirm it eliminates **all** of them with **no risk of loss and no stall** —
+    via any mix of damage, drain, and disables (Confuse-into-friendly-fire counts). The survival floor
+    must be a **reliable button** (a deterministic damage/drain spell), **not** a contested status; a job
+    that can only chip or only support **fails**. Pace may be slow; risk-of-losing and dragging may not.
 
 A job that fails a gate is revised and re-simulated, not argued past.
 
@@ -207,6 +221,15 @@ a one-off.
   the basics. Consolidate trivial unlocks (e.g. one status-cure ability that unlocks all single cures).
 - **Two-sided traits.** Lean on the Brave / Faith forks (`B9` / `A2`) so a stat is a build *choice* with
   a real downside, not a pure bonus.
+- **Two coherence gates on every skill (before it enters the draft).** (1) **Engine-feasibility gate** —
+  the effect must be **implementable** on the IVC engine (Tier-1 data or a feasible Tier-2 code hook).
+  New behaviors absent from vanilla are welcome — the DCL deliberately adds new statuses and mechanics —
+  *provided they are implementable*; the test is feasibility, **not** "does vanilla do this". What is
+  rejected is an effect that **strays beyond what the engine can be made to do** (e.g. one action
+  draining **both** HP and MP — the ability structure does HP-drain *or* MP-drain, not both at once).
+  (2) **Job-fantasy gate** — *"does it make sense in the FFT world for THIS job to do this?"*; a skill
+  that is buildable but off-fantasy is rejected. (The Dragoon's HP/MP-drain *Lancet* failed both and was
+  cut.) These run alongside the engine-real check below, not after it.
 - **Explain abilities concretely + verify FFT-implementability.** Every ability and movement is
   specified mechanically, and is checked against what the engine can actually do — no reaction-movement
   (the tile behind an enemy may be occupied; the engine has no such primitive), no effect that assumes a

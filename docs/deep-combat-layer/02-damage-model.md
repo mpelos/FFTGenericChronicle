@@ -15,6 +15,18 @@ This is the GURPS feel inverted for tactics: GURPS rolls damage dice, but for a 
 the player plans around a preview number, a swingy confirmed hit is frustrating. We keep GURPS'
 *structure* (a strength→damage table, damage types, subtractive armor) and drop its damage RNG.
 
+## Principle: every magnitude is formula-derived (only items are flat)
+
+All ability **damage and healing** is **computed from a formula that scales with the actor's stats** —
+physical via the pipeline below (`base(PA)`/skill × `wmod` × … × `G`), magic via the Faith-scaled axis
+(`11`), healing via MA/Faith or a fraction of formula damage. **No ability deals or heals a flat
+constant.** The only magnitudes allowed to be **fixed numbers are consumable items** (Potion = +100 HP,
+per the item economy) — hand-placed content, not stat-scaling abilities. A flat-number ability is a bug,
+not a balance knob: an ability's damage is tuned through its **spell-power / weapon-mod / multiplier**,
+never a raw constant, so it grows with the unit and reads off one transparent equation. (Out of scope
+here: **costs** — MP / CT / JP — and the **3d6 status-contest** numbers (`13`), which are their own
+systems, not damage.)
+
 ## The pipeline (model "d")
 
 For a confirmed, undefended hit:
