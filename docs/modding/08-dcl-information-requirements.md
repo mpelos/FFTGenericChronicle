@@ -48,8 +48,13 @@ pointer disagrees with the cache — the cache side is the correct one. LT8 (sam
 hit-control delivery (authored 50%, own RNG, forced outcomes 13/14 swings 1:1 with the log) and
 exposed the frontal-arc limit of the class-evade miss lever plus the crit ×1.2 staged multiplier,
 the Mana-Shield zero-debit guard requirement, and monster basic-attack action types
-(`0xB0`/`0xB3`/`0xB9`). See `06-code-mod-runtime-dsl.md` §"DCL hit control" and the
-`work/battle-runtime-settings.lt6/lt7/lt8` profiles.
+(`0xB0`/`0xB3`/`0xB9`). LT9 (same day) proved the output-control miss damage-side from any angle
+including monsters (rear/side forced misses all rendered 0 damage), calibrated the facing enum
+(`+0x51`: 0=−y 1=−x 2=+y 3=+x), refuted `0x205B38` as a per-execution commit (it fires only for
+real evade outcomes — Miss *presentation* still open), exposed the too-strict CT>100 unit-reader
+guard (CT 108 legal; fixed) and the Mana-Shield MP leak on forced miss. See
+`06-code-mod-runtime-dsl.md` §"DCL hit control" / §"DCL miss output-control" and the
+`work/battle-runtime-settings.lt6..lt9` profiles.
 
 ## 1. Action Identity and Lifecycle
 

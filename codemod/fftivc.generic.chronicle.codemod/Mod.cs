@@ -2959,13 +2959,37 @@ public class Mod : ModBase
                 !hitDecision.Hit)
             {
                 dclDebit = 0;
+                // MP CHANNEL COVERAGE (LT9): the return value only rewrites the staged HP-debit
+                // (word[rbp+6] == unit+0x1C4). A forced miss must also cancel the staged MP-debit
+                // word[unit+0x1C8] (docs/modding/04-engine-memory-model.md §2.3, Strong/static-proven:
+                // apply at 0x30A51C computes newMP = clamp(MP + [+0x1CA] - [+0x1C8])). LT9 leaked here:
+                // vs a Mana-Shield target the HP debit was already 0 (damage redirected to MP), so the
+                // HP-only zero left the full vanilla MP debit intact and the target still lost 201 MP.
+                // The unit base is targetPtr (guards read HP at targetPtr+0x30); zero the MP-debit word
+                // in-place so the downstream MP-apply subtracts nothing. Gated identically (both hooks
+                // active + DclMissOutputControlEnabled) so it only fires when a miss is being authored.
+                const int StagedMpDebitOffset = 0x1C8;
+                int mpDebit = 0;
+                bool mpDebitZeroed = false;
+                try { mpDebit = (ushort)Marshal.ReadInt16(targetPtr, StagedMpDebitOffset); }
+                catch { mpDebit = 0; }
+                if (mpDebit > 0)
+                {
+                    try
+                    {
+                        Marshal.WriteInt16(targetPtr, StagedMpDebitOffset, 0);
+                        mpDebitZeroed = true;
+                    }
+                    catch { /* leave MP untouched on write failure; HP zero already applied */ }
+                }
                 string missAbilityName = _abilityCatalog.TryGet(actionContext.AbilityId, out var missAbility)
                     ? missAbility.Name
                     : "unknown";
+                string mpClause = mpDebitZeroed ? $" mpDebit={mpDebit}->0" : "";
                 QueueDclDecisionLog(
                     settings,
                     $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
-                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit} outcome=forced-miss");
+                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit}{mpClause} outcome=forced-miss");
                 _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
                 return true;
             }
@@ -5182,7 +5206,9 @@ public class Mod : ModBase
             error = $"invalid team {team}";
             return false;
         }
-        if (ct > 100)
+        // CT legitimately exceeds 100 in IVC (LT9 live: Beowulf at CT 108 while acting) —
+        // the byte's full range is valid; only reject values impossible for the field.
+        if (ct > 255)
         {
             error = $"invalid CT {ct}";
             return false;

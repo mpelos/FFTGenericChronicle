@@ -1321,7 +1321,28 @@ attack's on-screen outcome (damage vs class-evade "Miss") matches its `[DCL-HIT]
 one-for-one; connecting swings still deal the LT7 model damage (`[DCL]` debit); spells forced-hit
 with vanilla damage.
 
-### DCL miss output-control (`DclMissOutputControlEnabled`) — built 2026-07-04, awaiting live test (LT9)
+### DCL miss output-control (`DclMissOutputControlEnabled`) — ✅ damage-side proven live 2026-07-04 (LT9); presentation + MP open
+
+**LT9 live results (2026-07-04):** the core goal PASSED — forced misses delivered from **any angle
+and against monsters** (rear ×2, side vs a Chocobo, rear with a crit roll: all `outcome=forced-miss
+debit=0`, 0 HP lost on screen), closing the LT8 frontal-arc hole. The facing log fields worked and
+calibrated the facing enum: **`+0x51`: 0 = −y, 1 = −x, 2 = +y, 3 = +x** (every player-reported
+front/side/rear case matches the geometry; Strong pending one more battle's confirmation). Three
+findings:
+1. **The kind hook at `0x205B38` NEVER fired** (zero `[DCL-KIND]` lines): the store executes only
+   when the engine has a real evade outcome to commit — the `+0x15C` bit-4 gate skips it for plain
+   hits, so with the VM force-connecting there is nothing for it to intercept. The Q1 "sole
+   writer" claim needs refinement: sole writer of *evade* kinds, not a per-execution commit for
+   all outcomes. Consequence A: a forced miss renders as a **"0" damage popup with the hit (even
+   crit) animation**, not a "Miss" — cosmetically wrong, functionally a miss; the Miss
+   presentation needs its own RE slice (LT5-C territory). Consequence B: the kind-side consumption
+   signal is dead in this mode — decisions retire via TTL only (V1 semantics; dual-wield swings
+   still share one roll).
+2. **CT sanity guard was too strict**: a live unit at CT 108 (legal in IVC) failed the unit
+   reader's `ct > 100` check → context build failed → fail-open let FULL VANILLA damage through
+   (killed a test target). Fixed same day: the guard accepts the byte's full range.
+3. **Mana Shield leaks on a forced miss**: the HP debit is zeroed but the vanilla MP redirect
+   (full 201 MP) still applied — the MP channel is not yet covered by the forced-miss path.
 
 The fix for LT8's frontal-arc finding, on the project's output-control-first rule: stop asking
 the VM to miss and rewrite what it committed instead. When `DclMissOutputControlEnabled` is on,
@@ -1336,12 +1357,28 @@ the three delivery stages coordinate:
    the decision cache for the resolved `(caster, target, ability, type)`; a live MISS decision
    short-circuits to a forced staged debit of **0** (the formula never runs) and logs the `[DCL]`
    line with `outcome=forced-miss`. Hits proceed exactly as before.
+
+   **MP coverage (LT9 fix):** the callback's return value only rewrites the staged HP-debit
+   (`word[rbp+6] == unit+0x1C4`); it does not touch the staged **MP**-debit at `word[unit+0x1C8]`
+   (Strong/static-proven, `04-engine-memory-model.md` §2.3; apply at `0x30A51C` computes
+   `newMP = clamp(MP + [+0x1CA] − [+0x1C8])`). LT9 exposed the gap: against a Mana-Shield target the
+   HP debit was already 0 (damage redirected to MP), so zeroing HP alone left the full vanilla MP
+   redirect and the target still lost 201 MP on a "missed" swing. The forced-miss branch now also
+   zeroes `word[targetPtr+0x1C8]` in place (`targetPtr` is the unit base — the same pointer whose
+   `+0x30` HP the guards read), under the identical `DclMissOutputControlEnabled && both-hooks-active`
+   gate, so nothing new is exposed when a miss is not being authored. It reads the staged MP-debit
+   first and, when it was nonzero, appends `mpDebit=N->0` to the `[DCL] outcome=forced-miss` line;
+   a zero (or read/write failure) is silent and leaves MP untouched. Like `+0x1C0` at the kind hook,
+   `+0x1C8` is static-proven but not yet live-proven — the LT9 re-run against Mana Shield is its proof.
 3. **Result-kind commit hook (the third managed hook):** static RE
    (`work/1783184308-dcl-miss-consumption-and-counter-path.md` §Q1) located the sole real-code
    writer of the per-target outcome-kind byte `record+0x1C0` at RVA **`0x205B38`** (fn `0x2055FC`):
-   `mov [rdi+0x1C0], r12b`, gated by `test [rdi+0x15C],4 ; je`, firing once per resolved target of
-   an **executed** action (never on preview) and mirroring the byte to `+0x360` while arming the
-   60-frame result animation. ExecuteFirst shim (pre-clamp-style mid-function ABI: the function
+   `mov [rdi+0x1C0], r12b`, gated by `test [rdi+0x15C],4 ; je`, mirroring the byte to `+0x360`
+   while arming the 60-frame result animation. **LT9 REFUTED the "fires once per executed target"
+   reading**: the bit-4 gate skips the store on plain hits, so the site only commits **real evade
+   outcomes** — and since output-control force-connects the VM, the hook never fires in exactly
+   the mode that needs it (zero `[DCL-KIND]` lines in the LT9 log). The hook stays installed and
+   harmless; flipping the kind (and the Miss presentation generally) needs its own RE slice. ExecuteFirst shim (pre-clamp-style mid-function ABI: the function
    body's rsp is 16-aligned because `0x2055FC` makes calls, 64 bytes of GPR+flags saves keep it,
    `sub 0x80` covers shadow + xmm0-5): rdi = result record, r12b = the VM-committed kind
    (`0x00` hit / `0x04` class / `0x06` miss / `0x0B` Blade Grasp). The managed callback maps the
@@ -1350,8 +1387,9 @@ the three delivery stages coordinate:
    original store — the engine itself commits and mirrors the forced kind. Otherwise it returns -1
    and the natural kind stands.
 
-**Consumption-signal bonus (closes the V1 miss-reuse limitation when enabled):** the commit fires
-exactly once per executed target — the signal §Q1 was hunting. **Both** outcomes use the same
+**Consumption-signal design (INOPERATIVE under force-connect — see the LT9 refutation above; kept
+for a future presentation slice that makes the commit fire):** the intended signal was the commit
+firing once per executed target. **Both** outcomes use the same
 **two-consumer handshake** (`DclHitDecisionCache.MarkConsumed`): the kind hook and the pre-clamp
 side each mark their side, and whichever fires second retires the entry. Hits are symmetric with
 misses because the pre-clamp HIT path invalidates the decision immediately (its own
