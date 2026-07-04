@@ -44,9 +44,12 @@ paint not yet wired to DCL), and one `[DCL-MISS] no-calc-entry` on a hit against
 Ninja shows **reaction/counter attacks do not pass through calc-entry `0x309A44`** — they fall
 through to vanilla damage safely. LT7 added: the pre-clamp refires (idempotently) during a charged
 spell's evaluation loop, and charged spells log `[DCL-MISMATCH]` where the frame-side caster
-pointer disagrees with the cache — the cache side is the correct one. See
-`06-code-mod-runtime-dsl.md` §"DCL pre-clamp pipeline" and the two `work/battle-runtime-settings.
-lt6/lt7` profiles.
+pointer disagrees with the cache — the cache side is the correct one. LT8 (same day) proved the
+hit-control delivery (authored 50%, own RNG, forced outcomes 13/14 swings 1:1 with the log) and
+exposed the frontal-arc limit of the class-evade miss lever plus the crit ×1.2 staged multiplier,
+the Mana-Shield zero-debit guard requirement, and monster basic-attack action types
+(`0xB0`/`0xB3`/`0xB9`). See `06-code-mod-runtime-dsl.md` §"DCL hit control" and the
+`work/battle-runtime-settings.lt6/lt7/lt8` profiles.
 
 ## 1. Action Identity and Lifecycle
 

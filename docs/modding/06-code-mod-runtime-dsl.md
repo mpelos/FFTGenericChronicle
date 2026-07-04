@@ -1212,7 +1212,23 @@ Test profiles:
   trustworthy for charged actions; (c) another `[DCL-MISS] no-calc-entry` on a counterattack hit,
   confirming LT6: reactions bypass calc-entry and stay vanilla.
 
-## DCL hit control (`DclHitControlEnabled`) — built 2026-07-04, awaiting live test (LT8)
+## DCL hit control (`DclHitControlEnabled`) — ✅ delivery proven live 2026-07-04 (LT8), miss lever frontal-arc only
+
+**LT8 live results (2026-07-04):** authored 50% hit on basic attacks delivered end-to-end — 13 of 14
+swings matched their `[DCL-HIT]` decision 1:1 on screen (forced misses displayed as class-evade
+"Miss"/Evaded; hits dealt the LT7 model damage; Fire and monster specials untouched; dual-wield
+swing 2 correctly reused the cached decision, `cached=1`). The one mismatch exposed an **engine
+truth, not a delivery bug**: the class-evade byte `+0x4B` is only consulted for attacks in the
+target's **frontal arc** (classic FFT evasion rules, already in the LT5 ledger) — a side/rear
+attack ignored the stamped 100 and landed (with a crit; crits multiply the staged debit ×1.2
+before our rewrite, so DCL currently nullifies crit damage). Additional LT8 findings: a Mana
+Shield hit stages `oldDebit=0` (HP damage redirected to MP) and the model formula overwrote it
+with phantom HP damage — profiles must guard `dcl.oldDebit > 0`; monster basic attacks use their
+own action types (`0xB0` Choco Beak / `0xB3` Tackle / `0xB9` Claw et al.), so `action.type == 1`
+does not cover them; the preview % flickers 0/100 with the live cached decision at redraw time.
+**Consequence:** input-control cannot force a miss from side/rear (accessory evade is
+item-table-derived and monsters wear none). The definitive miss is output-control — see the
+result-commit section below.
 
 The hit% layer of the DCL, implementing the "own RNG + binary forcing" design (handoff
 2026-07-03 §6.3c / definitive ledger §4): the VM's accuracy % is not writable (globals are
