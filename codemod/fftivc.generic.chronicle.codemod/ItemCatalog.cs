@@ -144,7 +144,20 @@ internal sealed record ItemCatalogEntry(
     int BonusMa,
     int BonusSpeed,
     int BonusMove,
-    int BonusJump)
+    int BonusJump,
+    int WeaponRange,
+    string WeaponAttackFlags,
+    string WeaponElements,
+    int WeaponOptionsAbilityId,
+    string BonusInnateStatus,
+    string BonusImmuneStatus,
+    string BonusStartingStatus,
+    string BonusAbsorbElements,
+    string BonusNullifyElements,
+    string BonusHalveElements,
+    string BonusWeakElements,
+    string BonusStrongElements,
+    int BonusBoostJp)
 {
     private static readonly string[] KnownCategories =
     [
@@ -156,6 +169,36 @@ internal sealed record ItemCatalogEntry(
     ];
 
     private static readonly string[] KnownTypeFlags = ["weapon", "shield", "armor", "headgear", "accessory", "rare"];
+
+    // Canonical name sets extracted from work/item_catalog.csv (2026-07-03); every list column is
+    // exploded into per-name 0/1 formula vars so DCL formulas never parse strings.
+    private static readonly string[] KnownAttackFlags =
+        ["arc", "direct", "forcedtwohands", "lunging", "striking", "throwable", "twohands", "twoswords"];
+
+    private static readonly string[] KnownElements =
+        ["dark", "earth", "fire", "holy", "ice", "lightning", "water", "wind"];
+
+    private static readonly string[] KnownStatuses =
+    [
+        "berserk", "blind", "charm", "confuse", "disable", "doom", "faith", "float", "haste",
+        "immobilize", "invisible", "ko", "poison", "protect", "reflect", "regen", "reraise",
+        "shell", "silence", "sleep", "slow", "stone", "stop", "toad", "traitor", "undead", "vampire"
+    ];
+
+    // (listPrefix, canonical set) pairs for the exploded 0/1 vars; value source resolved in AddVariables.
+    private static readonly (string Prefix, string[] Names)[] ListVarGroups =
+    [
+        ("atkflag", KnownAttackFlags),
+        ("element", KnownElements),
+        ("innate", KnownStatuses),
+        ("immune", KnownStatuses),
+        ("start", KnownStatuses),
+        ("absorb", KnownElements),
+        ("nullify", KnownElements),
+        ("halve", KnownElements),
+        ("weak", KnownElements),
+        ("strong", KnownElements),
+    ];
 
     public static ItemCatalogEntry FromRow(int itemId, Dictionary<string, string> row)
         => new(
@@ -180,7 +223,20 @@ internal sealed record ItemCatalogEntry(
             ItemCatalog.ReadInt(row, "bonus_ma"),
             ItemCatalog.ReadInt(row, "bonus_speed"),
             ItemCatalog.ReadInt(row, "bonus_move"),
-            ItemCatalog.ReadInt(row, "bonus_jump"));
+            ItemCatalog.ReadInt(row, "bonus_jump"),
+            ItemCatalog.ReadInt(row, "weapon_range"),
+            Text(row, "weapon_attack_flags"),
+            Text(row, "weapon_elements"),
+            ItemCatalog.ReadInt(row, "weapon_options_ability_id"),
+            Text(row, "bonus_innate_status"),
+            Text(row, "bonus_immune_status"),
+            Text(row, "bonus_starting_status"),
+            Text(row, "bonus_absorb_elements"),
+            Text(row, "bonus_nullify_elements"),
+            Text(row, "bonus_halve_elements"),
+            Text(row, "bonus_weak_elements"),
+            Text(row, "bonus_strong_elements"),
+            Text(row, "bonus_boost_jp").Trim().Equals("true", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
 
     public bool HasTypeFlag(string flag)
     {
@@ -219,6 +275,9 @@ internal sealed record ItemCatalogEntry(
         Set(context, prefix, "isArmor", IsSecondaryKind("armor"));
         Set(context, prefix, "isShield", IsSecondaryKind("shield"));
         Set(context, prefix, "isAccessory", IsSecondaryKind("accessory"));
+        Set(context, prefix, "weaponRange", WeaponRange);
+        Set(context, prefix, "weaponOptionsAbilityId", WeaponOptionsAbilityId);
+        Set(context, prefix, "boostJp", BonusBoostJp);
 
         foreach (string knownCategory in KnownCategories)
             Set(context, prefix, $"category_{knownCategory}", 0);
@@ -233,6 +292,31 @@ internal sealed record ItemCatalogEntry(
         {
             if (flag != "unnamed")
                 Set(context, prefix, $"type_{flag}", 1);
+        }
+
+        foreach (var (groupPrefix, names) in ListVarGroups)
+        {
+            string source = groupPrefix switch
+            {
+                "atkflag" => WeaponAttackFlags,
+                "element" => WeaponElements,
+                "innate" => BonusInnateStatus,
+                "immune" => BonusImmuneStatus,
+                "start" => BonusStartingStatus,
+                "absorb" => BonusAbsorbElements,
+                "nullify" => BonusNullifyElements,
+                "halve" => BonusHalveElements,
+                "weak" => BonusWeakElements,
+                "strong" => BonusStrongElements,
+                _ => "",
+            };
+            var present = source
+                .Split(',')
+                .Select(part => FormulaExpression.NormalizeIdentifierPart(part))
+                .Where(part => part != "unnamed" && part != "none")
+                .ToHashSet();
+            foreach (string name in names)
+                Set(context, prefix, $"{groupPrefix}_{name}", present.Contains(name) ? 1 : 0);
         }
     }
 
@@ -261,11 +345,18 @@ internal sealed record ItemCatalogEntry(
         Set(context, prefix, "isArmor", 0);
         Set(context, prefix, "isShield", 0);
         Set(context, prefix, "isAccessory", 0);
+        Set(context, prefix, "weaponRange", 0);
+        Set(context, prefix, "weaponOptionsAbilityId", 0);
+        Set(context, prefix, "boostJp", 0);
 
         foreach (string knownCategory in KnownCategories)
             Set(context, prefix, $"category_{knownCategory}", 0);
         foreach (string knownFlag in KnownTypeFlags)
             Set(context, prefix, $"type_{knownFlag}", 0);
+
+        foreach (var (groupPrefix, names) in ListVarGroups)
+            foreach (string name in names)
+                Set(context, prefix, $"{groupPrefix}_{name}", 0);
     }
 
     private static string Text(Dictionary<string, string> row, string name)
