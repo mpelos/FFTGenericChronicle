@@ -1,5 +1,6 @@
 using fftivc.generic.chronicle.codemod;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 internal static class Program
@@ -10,6 +11,13 @@ internal static class Program
         string catalogPath = Path.Combine(root, "work", "item_catalog.csv");
         var catalog = ItemCatalog.Load(catalogPath);
         Check(catalog.Loaded, $"item catalog loaded: {catalog.Describe()}");
+        string abilityCatalogPath = Path.Combine(root, "work", "wotl_ability_action_baseline.csv");
+        var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath);
+        Check(abilityCatalog.Loaded, $"ability catalog loaded: {abilityCatalog.Describe()}");
+        TestAbilityCatalog(abilityCatalog);
+        Check(
+            ReferenceEquals(new BattleFormulaEngine(new RuntimeSettings(), catalog, abilityCatalog).AbilityCatalog, abilityCatalog),
+            "formula engine should expose the supplied ability catalog");
 
         var targetRaw = new byte[0x180];
         targetRaw[0x70] = 172; // Leather Armor in work/item_catalog.csv.
@@ -2164,8 +2172,15 @@ internal static class Program
         Check(dryRunNoOpDecision.ShouldLogDryRun, "dry-run no-op rewrite decision should still log evaluation");
         Check(dryRunNoOpDecision.TrackingValue == 18, "dry-run no-op rewrite decision should keep current tracking");
 
-        TestMemoryTableProbe();
-        TestDeathStateWrite();
+        if (OperatingSystem.IsWindows())
+        {
+            TestMemoryTableProbe();
+            TestDeathStateWrite();
+        }
+        else
+        {
+            Console.WriteLine("skipping memory probe / death-state write tests (VirtualQuery is Windows-only)");
+        }
         TestRuntimeSettingsLoad();
         TestExampleSettingsLoad(root);
         TestRuntimeSettingsValidator(root, catalog);
@@ -2208,6 +2223,87 @@ internal static class Program
     {
         int actual = EvalFormula(expression, target, attacker, eventIndex, eventSeed);
         Check(actual == expected, $"{expression} expected {expected}, got {actual}");
+    }
+
+    private static void TestAbilityCatalog(AbilityCatalog catalog)
+    {
+        Check(catalog.Count == 512, $"ability catalog expected 512 rows, got {catalog.Count}");
+        Check(catalog.TryGet(1, out var cure), "ability catalog should contain Cure id 1");
+        Check(cure.Name == "Cure", $"Cure name expected Cure, got {cure.Name}");
+
+        var cureVars = VariablesFor(cure);
+        CheckVar(cureVars, "ability.id", 1);
+        CheckVar(cureVars, "ability.formula", 0x0C);
+        CheckVar(cureVars, "ability.y", 14);
+        CheckVar(cureVars, "ability.range", 4);
+        CheckVar(cureVars, "ability.mp_cost", 6);
+        CheckVar(cureVars, "ability.used_by_enemies", 1);
+        CheckVar(cureVars, "ability.reflectable", 1);
+        CheckVar(cureVars, "ability.evadeable", 0);
+
+        Check(catalog.TryGet(158, out var hallowedBolt), "ability catalog should contain Hallowed Bolt id 158");
+        var hallowedBoltVars = VariablesFor(hallowedBolt);
+        CheckVar(hallowedBoltVars, "ability.formula", 0x2D);
+        CheckVar(hallowedBoltVars, "ability.element_lightning", 1);
+        CheckVar(hallowedBoltVars, "ability.element_holy", 1);
+        CheckVar(hallowedBoltVars, "ability.element_fire", 0);
+        CheckVar(hallowedBoltVars, "ability.weapon_strike", 1);
+        CheckVar(hallowedBoltVars, "ability.inflict_silence", 1);
+        CheckVar(hallowedBoltVars, "ability.inflict_poison", 0);
+        CheckVar(hallowedBoltVars, "ability.inflict_mode_separate", 1);
+        CheckVar(hallowedBoltVars, "ability.inflict_mode_all", 0);
+
+        Check(catalog.TryGet(5, out var raise), "ability catalog should contain Raise id 5");
+        var raiseVars = VariablesFor(raise);
+        CheckVar(raiseVars, "ability.inflict_status", 0x20);
+        CheckVar(raiseVars, "ability.inflict_dead", 1);
+        CheckVar(raiseVars, "ability.inflict_mode_cancel", 1);
+
+        Check(catalog.TryGet(145, out var rendMagick), "ability catalog should contain Rend Magick id 145");
+        var rendVars = VariablesFor(rendMagick);
+        CheckVar(rendVars, "ability.weapon_range", 1);
+        CheckVar(rendVars, "ability.shirahadori", 1);
+        CheckVar(rendVars, "ability.evadeable", 1);
+        CheckVar(rendVars, "ability.normal_attack", 0);
+
+        Check(catalog.TryGet(487, out var movePlusTwo), "ability catalog should contain Move +2 id 487");
+        var moveVars = VariablesFor(movePlusTwo);
+        Check(movePlusTwo.Name == "Movement +2", $"Move +2 IVC name expected Movement +2, got {movePlusTwo.Name}");
+        CheckVar(moveVars, "ability.formula", 0);
+        CheckVar(moveVars, "ability.jp_cost", 560);
+        CheckVar(moveVars, "ability.used_by_enemies", 0);
+        CheckVar(moveVars, "ability.weapon_range", 0);
+
+        var defaultContext = MakeFormulaContext();
+        AbilityCatalogEntry.AddDefaultVariables(defaultContext, "ability", 999);
+        var defaultNames = FormulaVariableNames(defaultContext);
+        Check(defaultNames.SetEquals(cureVars.Keys), "ability default variable names should match loaded-row variable names");
+    }
+
+    private static Dictionary<string, int> VariablesFor(AbilityCatalogEntry entry)
+    {
+        var context = MakeFormulaContext();
+        entry.AddVariables(context, "ability");
+        return FormulaVariables(context);
+    }
+
+    private static FormulaContext MakeFormulaContext()
+        => new(new UnitSnapshot((nint)0x1, 0, 1, 1, 1, 0, false, 1, 1, 1, 1, 1, 50, 50, new byte[0x180], 1, 1));
+
+    private static Dictionary<string, int> FormulaVariables(FormulaContext context)
+    {
+        var field = typeof(FormulaContext).GetField("_variables", BindingFlags.Instance | BindingFlags.NonPublic);
+        var variables = field?.GetValue(context) as Dictionary<string, int>;
+        return variables ?? throw new InvalidOperationException("could not inspect FormulaContext variables");
+    }
+
+    private static HashSet<string> FormulaVariableNames(FormulaContext context)
+        => FormulaVariables(context).Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static void CheckVar(Dictionary<string, int> variables, string name, int expected)
+    {
+        Check(variables.TryGetValue(name, out int actual), $"missing formula variable {name}");
+        Check(actual == expected, $"{name} expected {expected}, got {actual}");
     }
 
     private static void TestMemoryTableProbe()

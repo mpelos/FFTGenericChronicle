@@ -135,6 +135,11 @@ This mod:    D:\Projects\FFTGenericChronicle\mod\fftivc.generic.chronicle
 FF16Tools:   D:\Projects\FFTModNewGame++\tools\FF16Tools.CLI-1.13.2-win-x64\win-x64\FF16Tools.CLI.exe
 ```
 
+**Cross-platform builds:** the `net9.0-windows` codemod projects also compile on Linux/macOS
+(`codemod/Directory.Build.props` sets `EnableWindowsTargeting`; export a dummy
+`RELOADEDIIMODS=/tmp/rmods`). The smoke-test console app runs everywhere — memory-probe tests
+auto-skip off-Windows. Only deploy + live testing require the Windows machine.
+
 ## External sources
 
 ```text

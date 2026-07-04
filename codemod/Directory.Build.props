@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Allows building the net9.0-windows projects on Linux/macOS for compile-check
+         and smoke tests. Deploy + live testing still happen on the Windows machine. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

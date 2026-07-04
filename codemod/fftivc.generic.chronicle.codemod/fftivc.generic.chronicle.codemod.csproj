@@ -39,6 +39,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\work\item_catalog.csv" Link="item_catalog.csv" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\work\item_catalog.csv')" />
+    <Content Include="..\..\work\wotl_ability_action_baseline.csv" Link="wotl_ability_action_baseline.csv" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\work\wotl_ability_action_baseline.csv')" />
     <None Update="Preview.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

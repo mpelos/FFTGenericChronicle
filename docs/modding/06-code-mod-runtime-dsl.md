@@ -495,15 +495,68 @@ Implemented item metadata variables:
 
 ```text
 id requiredLevel additionalDataId equipBonusId
-weaponPower weaponFormula weaponEvasion
+weaponPower weaponFormula weaponEvasion weaponRange weaponOptionsAbilityId
 armorHpBonus armorMpBonus
 shieldPhysicalEvasion shieldMagicalEvasion
 accessoryPhysicalEvasion accessoryMagicalEvasion
-bonusPa bonusMa bonusSpeed bonusMove bonusJump
+bonusPa bonusMa bonusSpeed bonusMove bonusJump boostJp
 isWeapon isArmor isShield isAccessory
 category_<normalizedItemCategory>
 type_<normalizedTypeFlag>
 ```
+
+Every list column of `item_catalog.csv` is additionally exploded into per-name 0/1 variables so
+formulas never parse strings (canonical sets extracted from the CSV, names normalized to
+lowercase identifiers):
+
+```text
+atkflag_<flag>       # weapon_attack_flags: arc direct forcedtwohands lunging striking
+                     #                      throwable twohands twoswords
+element_<element>    # weapon_elements:     dark earth fire holy ice lightning water wind
+innate_<status>      # bonus_innate_status    (28 statuses: berserk blind charm confuse disable
+immune_<status>      # bonus_immune_status     doom faith float haste immobilize invisible ko
+start_<status>       # bonus_starting_status   poison protect reflect regen reraise shell silence
+                     #                         sleep slow stone stop toad traitor undead vampire)
+absorb_<element>     # bonus_absorb_elements   (same 8-element set)
+nullify_<element>    # bonus_nullify_elements
+halve_<element>      # bonus_halve_elements
+weak_<element>       # bonus_weak_elements
+strong_<element>     # bonus_strong_elements
+```
+
+### Ability metadata variables (`AbilityCatalog`)
+
+The mod also loads `work/wotl_ability_action_baseline.csv` (512 ability rows, ids 0–511, 1:1
+PSX/WotL/IVC) from `AbilityCatalogPath` (default `wotl_ability_action_baseline.csv`, deployed
+next to the DLL) into an `AbilityCatalog` mirroring the `ItemCatalog` pattern. The ability id
+for a resolved action comes from the calc-entry order record (`05` — hook `0x309A44`,
+record bytes `[2..3]`). The catalog is loaded, hot-reloaded, and exposed on
+`BattleFormulaEngine`; injection into formula contexts is the next construction step (the DCL
+decision pipeline).
+
+`AbilityCatalogEntry.AddVariables(context, "ability")` exposes (prefix-dot style):
+
+```text
+ability.id ability.abilityId ability.formula ability.x ability.y
+ability.range ability.aoe ability.vertical ability.ct ability.mp_cost ability.jp_cost
+ability.inflict_status                     # raw inflict-status byte (hex column)
+ability.<flag>                             # 0/1 for each FFTPatcher ability flag, snake_case:
+    force_self_target blank7 weapon_range vertical_fixed vertical_tolerance weapon_strike
+    auto target_self hit_enemies hit_allies top_down_target follow_target random_fire
+    linear_attack three_directions hit_caster reflectable arithmetickable silenceable
+    mimicable normal_attack persevere show_quote animate_on_miss counter_flood counter_magic
+    direct shirahadori requires_sword requires_materia_blade evadeable used_by_enemies
+ability.element_<element>                  # dark earth fire holy ice lightning water wind
+ability.inflict_<status>                   # 30 statuses: berserk bloodsuck charm confusion
+                                           # crystal darkness dead deathsentence dontact dontmove
+                                           # faith float frog haste innocent invite oil petrify
+                                           # poison protect reflect regen reraise shell silence
+                                           # sleep slow stop transparent undead
+ability.inflict_mode_all / _random / _separate / _cancel   # 0/1 (AllOrNothing -> all)
+```
+
+String-ish columns (names, formula_text, targeting notes) are deliberately not formula
+variables; the entry keeps `Name` (IVC name, WotL fallback) for logging only.
 
 Example once `Body` is a confirmed equipment offset:
 
@@ -963,9 +1016,10 @@ fallback) and the engine-owned KO/death/clamp lifecycle are owned by `04` §6.
 
 ### Hot reload
 
-The code mod watches `battle-runtime-settings.json` and the configured `ItemCatalogPath` during
-the polling loop; changes are picked up about once per second, so formula constants, tables, DR
-rules, action signals, and catalog data can be iterated without rebuilding the DLL. If a settings
+The code mod watches `battle-runtime-settings.json` and the configured `ItemCatalogPath` and
+`AbilityCatalogPath` during the polling loop; changes are picked up about once per second, so
+formula constants, tables, DR rules, action signals, and catalog data can be iterated without
+rebuilding the DLL. If a settings
 edit is not valid JSON, the runtime logs `[SETTINGS-RELOAD-FAILED]` and keeps the last valid
 settings. `UnitPollIntervalMs` and `MaxTrackedBattleUnits` are also runtime settings.
 
