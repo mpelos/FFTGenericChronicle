@@ -1212,6 +1212,97 @@ Test profiles:
   trustworthy for charged actions; (c) another `[DCL-MISS] no-calc-entry` on a counterattack hit,
   confirming LT6: reactions bypass calc-entry and stay vanilla.
 
+## DCL hit control (`DclHitControlEnabled`) — built 2026-07-04, awaiting live test (LT8)
+
+The hit% layer of the DCL, implementing the "own RNG + binary forcing" design (handoff
+2026-07-03 §6.3c / definitive ledger §4): the VM's accuracy % is not writable (globals are
+recomputed at compute time — refuted live), so the mod does not fight the VM roll. Instead a
+**managed decision callback at calc-entry `0x309A44`** — the same reverse-wrapper pattern as the
+pre-clamp callback, appended into the **same single asm hook** as the probe ring-write (this
+codebase composes same-site logic by appending blocks into one `CreateAsmHook`; internal order is
+therefore deterministic: probe rings first, decision callback runs second, and the static evade
+stamp is suppressed — see validator) — computes the authored hit chance, rolls the mod's own RNG,
+and forces the binary outcome **before the VM avoidance roll inside that very call** by writing
+the target's evade input bytes, the inputs the VM is proven to honor:
+
+- **HIT** → target `+0x46..+0x4E` all 0 (Concentrate-equivalent: no evade source can win).
+- **MISS** → all 0 **except class evade `+0x4B` = `DclMissClassEvadeValue`** (default 100).
+  Class evade is job-derived and read live from the struct by the VM (proven 2026-06-27); 100
+  makes the class-evade source win, rendering the guaranteed class-evade "Miss" (proven LT5-B).
+
+Per fire the callback: reads the order record (`rcx`: dword[0] packs casterIdx/type/abilityId)
+and target index (`dl`); guards both indices (< 64, else fail-open + `[DCL-HIT-MISS] reason=...`);
+looks up a **decision cache** keyed `(casterIdx, targetIdx, abilityId, actionType)` with TTL
+`DclHitDecisionTtlMs` (default 2500 ms) so preview/charge/AI refires of the same action reuse ONE
+rolled outcome; on a fresh decision it snapshots attacker+target, builds the same full
+`FormulaContext` as the damage callback (unit + equipment + ability + settings vars), applies the
+**shared `DclDerivedVariables` chain**, evaluates **`DclHitChanceFormula`**, clamps to 0..100,
+and rolls `Next(100)` (hit iff roll < pct). This is **pre-roll**: `dcl.oldDebit`/`dcl.oldCredit`
+are 0 in the hit context — hit formulas must not depend on them.
+
+Failure/error handling is fail-open but active: once the target index is known-valid, every
+failure/error path zeros target `+0x46..+0x4E` before returning, restoring the HIT baseline. The
+guards that fire before a valid target exists (`null-order-record`, `target-index-oob`) still write
+nothing. Stamp writes are ordered to fail toward HIT if interrupted: HIT writes `+0x4B = 0` first,
+then the other evade bytes; MISS writes the other evade bytes first, then writes `+0x4B =
+DclMissClassEvadeValue` last. Exceptions are swallowed and counted; logs are queued and flushed by
+the poller (no file I/O on the hook thread).
+
+The poller sweeps tracked stamped targets once per poll tick. If a target's decision has expired or
+vanished, the sweep re-zeros target `+0x46..+0x4E` and untracks it; targets with live decisions are
+left untouched to avoid racing the imminent VM read. A successful pre-clamp DCL damage rewrite
+invalidates the matching decision cache entry, so the next real swing, including dual-wield swing 2,
+rolls a fresh hit decision.
+
+**Known V1 limitation:** only a HIT is consumption-invalidated (a forced MISS stages no damage, so
+no pre-clamp rewrite fires). A repeat of the same `(caster, target, ability, type)` within the TTL
+window after a MISS reuses that MISS (logged with `cached=1`) instead of rolling independently —
+per-swing UI-vs-log consistency is unaffected. Closing this needs a proven miss-consumption signal
+(new RE); deferred until after LT8 validates delivery. Invalidation may also clear a newer same-key
+decision recorded between roll and damage apply — the cost is one extra re-roll, never a wrong
+outcome.
+
+Settings: `DclHitControlEnabled` (default false), `DclHitChanceFormula` (validated at deploy time
+against the synthetic DCL hit context, after the derived chain — unknown variables and zero-debit
+errors are deploy errors), `DclHitDecisionTtlMs` (2500), `DclHitForcedRoll` (-1 = real RNG,
+0..99 = deterministic roll for live tests), `DclHitMaxLogs` (400, a separate budget from
+`DclDecisionMaxLogs`),
+`DclMissClassEvadeValue` (100). The RNG is seeded once at install and the seed logged
+(`[DCL-HIT-INSTALL] seed=...`).
+
+Log formats:
+
+```
+[DCL-HIT] caster=0x%X target=0x%X ability=%d type=0x%X pct=%d roll=%d outcome=hit|miss cached=%d
+[DCL-HIT-MISS] reason=<target-index-oob|caster-index-oob|null-order-record|empty-formula|target-read-failed|caster-read-failed> ...
+[DCL-HIT-ERR] caster=... target=... ability=... type=... error=<derived-chain or formula error>
+```
+
+Validator rules (deploy gates): hit control **requires** `DclPipelineEnabled` (catalogs + context
+machinery) and the LT5-A4 force-hit baseline — `ItemTableEvadeZeroEnabled` on AND
+`EvadeCopierOverrideEnabled` on with **all** `EvadeCopierOverride46..4E = 0` — so residual
+equipment evade (which the VM derives from the item tables, not the unit bytes) can never steal a
+HIT decision. It **rejects** `CalcEntryEvadeStampEnabled` (two writers of the same target bytes
+at the same site; the decision callback subsumes the stamp), an empty `DclHitChanceFormula`,
+`DclHitForcedRoll` outside -1..99, and `DclMissClassEvadeValue` outside 0..255; it **warns** that
+the callback runs managed code on the calc-entry hot path (preview/charge/AI evaluation fire it,
+not just execution).
+
+Known scope limits (as-built, before LT8):
+- **Reactions/counters are untouched** — they bypass calc-entry `0x309A44` entirely (observed
+  LT6/LT7: counterattack hits log `[DCL-MISS] no-calc-entry` on the damage path). Under the
+  baseline stack they behave as force-hit vanilla.
+- **Spells are not gated in LT8** — the test formula forces `pct=100` for `action.type != 1`;
+  magic avoidance authoring is future work on the same mechanism.
+- **The preview % display stays vanilla** — the forecast panel is a separate, already-proven
+  display lever (`0x227FFE`), not yet wired to `DclHitChanceFormula`.
+
+Test profile: `work/battle-runtime-settings.lt8-dcl-hitcontrol.json` — the LT7 damage-model
+profile + hit control (`if(action.type == 1, 50, 100)`), stamp off, real RNG. PASS = every basic
+attack's on-screen outcome (damage vs class-evade "Miss") matches its `[DCL-HIT]` line
+one-for-one; connecting swings still deal the LT7 model damage (`[DCL]` debit); spells forced-hit
+with vanilla damage.
+
 ## Preview display control (forecast hit-% AND damage) — ✅ proven live 2026-06-27 / 2026-06-28
 
 The sections above author the **outcome**; this one authors the **forecast numbers** the panel shows

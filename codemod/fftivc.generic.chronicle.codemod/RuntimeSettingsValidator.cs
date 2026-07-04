@@ -100,6 +100,36 @@ internal static class RuntimeSettingsValidator
             if (settings.PreClampDamageRewriteLogOnly)
                 report.Warn("DclPipelineEnabled", "PreClampDamageRewriteLogOnly makes the managed callback return early, so the DCL formula never runs.");
         }
+        if (settings.DclHitDecisionTtlMs < 0)
+            report.Error("DclHitDecisionTtlMs", "DclHitDecisionTtlMs must be nonnegative.");
+        if (settings.DclHitMaxLogs < 0)
+            report.Error("DclHitMaxLogs", "DclHitMaxLogs must be nonnegative.");
+        if (settings.DclHitForcedRoll is < -1 or > 99)
+            report.Error("DclHitForcedRoll", "DclHitForcedRoll must be -1 (use the RNG) or a fixed roll 0..99.");
+        if (settings.DclMissClassEvadeValue is < 0 or > 255)
+            report.Error("DclMissClassEvadeValue", "DclMissClassEvadeValue must be within 0..255.");
+        if (settings.DclHitControlEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclHitControlEnabled", "hit control needs the DCL pipeline (catalogs + formula-context machinery); enable DclPipelineEnabled.");
+            if (settings.CalcEntryEvadeStampEnabled)
+                report.Error("DclHitControlEnabled", "CalcEntryEvadeStampEnabled writes the same target evade bytes at the same calc-entry site; the hit-control decision callback subsumes the static stamp — disable it.");
+            if (!settings.ItemTableEvadeZeroEnabled)
+                report.Error("DclHitControlEnabled", "hit control requires ItemTableEvadeZeroEnabled: the VM derives equipment evade from the loaded item tables, so residual equipment evade would steal a HIT decision.");
+            if (!settings.EvadeCopierOverrideEnabled)
+                report.Error("DclHitControlEnabled", "hit control requires EvadeCopierOverrideEnabled with an all-zero profile so equip/refresh copiers cannot re-raise evade bytes between decisions.");
+            else if (settings.EvadeCopierOverride46 != 0 || settings.EvadeCopierOverride47 != 0 ||
+                     settings.EvadeCopierOverride48 != 0 || settings.EvadeCopierOverride49 != 0 ||
+                     settings.EvadeCopierOverride4A != 0 || settings.EvadeCopierOverride4B != 0 ||
+                     settings.EvadeCopierOverride4C != 0 || settings.EvadeCopierOverride4D != 0 ||
+                     settings.EvadeCopierOverride4E != 0)
+                report.Error("DclHitControlEnabled", "EvadeCopierOverride46..4E must all be 0 under hit control; the decision callback is the only writer allowed to raise an evade byte.");
+            if (string.IsNullOrWhiteSpace(settings.DclHitChanceFormula))
+                report.Error("DclHitChanceFormula", "DclHitControlEnabled requires DclHitChanceFormula.");
+            if (settings.CalcEntryProbeRva <= 0)
+                report.Error("CalcEntryProbeRva", "DclHitControlEnabled hooks calc-entry; CalcEntryProbeRva must be positive.");
+            report.Warn("DclHitControlEnabled", "the hit-control decision callback runs managed code on the calc-entry hot path (fires at preview, charge and AI evaluation, not only execution) and forces the binary outcome by writing the target's evade input bytes.");
+        }
         if (settings.HookRegisterProbeMaxLogs < 0)
             report.Error("HookRegisterProbeMaxLogs", "HookRegisterProbeMaxLogs must be nonnegative.");
         if (settings.HookRegisterProbeEventMaxLogs < 0)
@@ -729,6 +759,13 @@ internal static class RuntimeSettingsValidator
         foreach (var variable in settings.DclDerivedVariables)
             ValidateDerivedFormula(dclContext, variable, "DclDerivedVariables", report);
         ValidateFormula(settings.DclDamageFormula, dclContext, "DclDamageFormula", report, allowEmpty: true);
+        if (settings.DclHitControlEnabled)
+        {
+            var hitContext = BuildDclHitFormulaContext(settings, catalog);
+            foreach (var variable in settings.DclDerivedVariables)
+                ValidateDerivedFormula(hitContext, variable, "DclDerivedVariables", report);
+            ValidateFormula(settings.DclHitChanceFormula, hitContext, "DclHitChanceFormula", report, allowEmpty: true);
+        }
         ValidateFormula(settings.MpRewriteConditionFormula, context, "MpRewriteConditionFormula", report, allowEmpty: true);
         ValidateFormula(settings.FinalMpChangeFormula, context, "FinalMpChangeFormula", report, allowEmpty: true);
     }
@@ -960,6 +997,24 @@ internal static class RuntimeSettingsValidator
             actionType: 1,
             abilityId: 1,
             oldDebit: 20,
+            oldCredit: 0);
+    }
+
+    private static FormulaContext BuildDclHitFormulaContext(RuntimeSettings settings, ItemCatalog catalog)
+    {
+        var target = BuildSyntheticTarget(settings, catalog);
+        var attacker = BuildSyntheticAttacker(settings, catalog);
+        return FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings,
+            catalog,
+            AbilityCatalog.Empty("validator"),
+            target,
+            attacker,
+            eventIndex: 1,
+            eventSeed: 12345,
+            actionType: 1,
+            abilityId: 1,
+            oldDebit: 0,
             oldCredit: 0);
     }
 

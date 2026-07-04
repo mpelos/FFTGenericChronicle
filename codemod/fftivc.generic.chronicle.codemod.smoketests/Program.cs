@@ -2788,6 +2788,10 @@ internal static class Program
             FinalDamageFormula = "missingVariable + 1",
             DclPipelineEnabled = true,
             DclDamageFormula = "ability.y + missingDclValue",
+            DclHitControlEnabled = true,
+            DclHitChanceFormula = "ability.y + missingHitValue",
+            DclHitForcedRoll = 100,
+            DclMissClassEvadeValue = 256,
             DclDerivedVariables =
             [
                 new FormulaDerivedVariable { Name = "dcl.badDerived", Formula = "missingDclDerivedValue + 1" },
@@ -2862,6 +2866,18 @@ internal static class Program
             invalidReport.Findings.Any(finding => finding.Scope.StartsWith("DclDerivedVariables") && finding.Message.Contains("missingDclDerivedValue")),
             "validator should report unknown variable in DclDerivedVariables");
         Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "DclHitChanceFormula" && finding.Message.Contains("missingHitValue")),
+            "validator should report unknown variable in DclHitChanceFormula");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "DclHitControlEnabled" && finding.Message.Contains("ItemTableEvadeZeroEnabled")),
+            "validator should require the item-table evade-zero baseline under hit control");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "DclHitForcedRoll"),
+            "validator should reject DclHitForcedRoll outside -1..99");
+        Check(
+            invalidReport.Findings.Any(finding => finding.Scope == "DclMissClassEvadeValue"),
+            "validator should reject DclMissClassEvadeValue outside 0..255");
+        Check(
             invalidReport.Findings.Any(finding => finding.Scope == "RewriteConditionFormula" && finding.Message.Contains("missingGateValue")),
             "validator should report unknown variable in RewriteConditionFormula");
         Check(
@@ -2903,6 +2919,18 @@ internal static class Program
         Check(
             invalidReport.Findings.Any(finding => finding.Scope == "HookRegisterProbeMaxLogs" && finding.Severity == "ERROR"),
             "validator should report invalid hook register probe max logs");
+
+        var hitDivZeroSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+            DclHitChanceFormula = "100 / dcl.oldDebit",
+        };
+        var hitDivZeroReport = RuntimeSettingsValidator.Validate(hitDivZeroSettings, catalog);
+        Check(
+            hitDivZeroReport.Findings.Any(finding => finding.Scope == "DclHitChanceFormula" && finding.Severity == "ERROR"),
+            "hit formula dividing by dcl.oldDebit must fail validation under hit control (oldDebit=0 in the hit context)");
     }
 
     private static void TestRuntimeSettingsSimulator(string root, ItemCatalog catalog)

@@ -196,6 +196,8 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _preClampDamageRewriteHook;
     private PreClampManagedCallback? _preClampManagedCallback;
     private Reloaded.Hooks.Definitions.IReverseWrapper<PreClampManagedCallback>? _preClampManagedCallbackWrapper;
+    private DclHitDecisionCallback? _dclHitDecisionCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclHitDecisionCallback>? _dclHitDecisionWrapper;
     private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
     private nint _evadeInputProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
@@ -275,6 +277,13 @@ public class Mod : ModBase
     private readonly Queue<string> _dclDecisionLogQueue = new();
     private int _dclDecisionLogCount;
     private long _dclCacheMissCount;
+    private readonly DclHitDecisionCache _dclHitDecisionCache = new();
+    private readonly object _dclHitStampedTargetGate = new();
+    private readonly bool[] _dclHitStampedTargets = new bool[64];
+    private readonly object _dclHitRngGate = new();
+    private Random? _dclHitRng;
+    private int _dclHitLogCount;
+    private long _dclHitFailCount;
     private long _preClampManagedFormulaResolvedCount;
     private long _preClampManagedFormulaUnresolvedCount;
     private long _lastPreClampManagedFormulaResolvedLogged;
@@ -308,6 +317,15 @@ public class Mod : ModBase
         Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
         true)]
     private delegate long PreClampManagedCallback(long targetPtr, long statePtr, long originalRsp, long bufferPtr);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclHitDecisionCallback(long orderRecordPtr, long targetIdx);
 
     private static readonly int[] ActionBoundaryOffsets =
     [
@@ -760,7 +778,8 @@ public class Mod : ModBase
     {
         bool probe = _settings.CalcEntryProbeEnabled || _settings.DclPipelineEnabled;
         bool stamp = _settings.CalcEntryEvadeStampEnabled;
-        if (!probe && !stamp)
+        bool hitControl = _settings.DclHitControlEnabled;
+        if (!probe && !stamp && !hitControl)
             return;
         if (_hooks is null)
         {
@@ -810,14 +829,38 @@ public class Mod : ModBase
                 "pop rax",
             ]);
         }
-        if (stamp)
+        if (hitControl)
+        {
+            _dclHitDecisionCallback = DclHitDecisionCallbackImpl;
+            _dclHitDecisionWrapper = _hooks.CreateReverseWrapper(_dclHitDecisionCallback);
+            if (_dclHitDecisionWrapper is null || _dclHitDecisionWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-HIT-SKIP] decision callback reverse wrapper unavailable");
+                hitControl = false;
+            }
+            else
+            {
+                int seed = unchecked(Environment.TickCount ^ (int)Stopwatch.GetTimestamp());
+                lock (_dclHitRngGate)
+                    _dclHitRng = new Random(seed);
+                asm.AddRange(BuildDclHitDecisionShimLines());
+                Line($"[DCL-HIT-INSTALL] seed={seed} forcedRoll={FormatMaybeInt(_settings.DclHitForcedRoll)} " +
+                     $"ttlMs={_settings.DclHitDecisionTtlMs} missClassEvade={Math.Clamp(_settings.DclMissClassEvadeValue, 0, 255)} " +
+                     $"maxLogs={_settings.DclHitMaxLogs} formula={(string.IsNullOrWhiteSpace(_settings.DclHitChanceFormula) ? "off" : "on")}");
+            }
+        }
+        // The static evade stamp and the hit-control decision callback write the same target bytes;
+        // when both are configured (validator forbids it) the decision callback owns the site.
+        if (stamp && !hitControl)
             asm.AddRange(BuildCalcEntryEvadeStampLines(moduleBase));
+        else if (stamp)
+            Line("[DCL-HIT] CalcEntryEvadeStamp suppressed: the hit-control decision callback owns the target evade bytes at this site");
 
         try
         {
             _calcEntryHook = _hooks.CreateAsmHook(asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate();
             Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} probe={(probe ? $"on buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}" : "off")} " +
-                 $"evadeStamp={(stamp ? "ON " + DescribeEvadeCopierOverride() : "off")}");
+                 $"evadeStamp={(stamp && !hitControl ? "ON " + DescribeEvadeCopierOverride() : "off")} hitControl={(hitControl ? "ON" : "off")}");
         }
         catch (Exception ex)
         {
@@ -869,6 +912,61 @@ public class Mod : ModBase
         c.Add("pop rbx");
         c.Add("pop rax");
         return c.ToArray();
+    }
+
+    // DCL HIT-CONTROL DECISION SHIM — appended into the SAME calc-entry asm hook, AFTER the probe
+    // ring-write block (single hook at 0x309A44: deterministic internal order, no cross-hook
+    // activation-order dependence; this codebase composes same-site logic by appending blocks into
+    // one CreateAsmHook, exactly like probe+stamp did for LT5/LT7). At shim entry the registers
+    // still hold the original call args — the probe block saves/restores all of its scratch — so
+    // rcx = caster order record and dl = target unit index. We save every volatile register +
+    // flags, marshal (rcx, zero-extended dl) into the managed decision callback via the reverse
+    // wrapper, and restore everything, so neither the preceding probe ring-write nor the stolen
+    // prologue bytes (mov [rsp+18],rbx / push rbp / push rsi / push rdi) see any modified state.
+    // Stack alignment: the hook sits on the function's FIRST instruction, so rsp % 16 == 8 at
+    // entry (return address pushed); 8 pushes (64 bytes) keep rsp ≡ 8; sub rsp, 0x88 (0x20 shadow
+    // + 0x60 xmm save + 8 pad) makes rsp % 16 == 0 at the call, per the Microsoft x64 ABI.
+    // xmm0-5 (volatile) are saved around the managed call, mirroring the pre-clamp callback shim.
+    private string[] BuildDclHitDecisionShimLines()
+    {
+        string callback = $"0{_dclHitDecisionWrapper!.WrapperPointer:X}h";
+        return
+        [
+            "push rax",
+            "push rcx",
+            "push rdx",
+            "push r8",
+            "push r9",
+            "push r10",
+            "push r11",
+            "pushfq",
+            // rcx already = order-record ptr (arg1); arg2 = target unit index from the live dl.
+            "movzx edx, dl",
+            "sub rsp, 88h",
+            "movdqu [rsp+20h], xmm0",
+            "movdqu [rsp+30h], xmm1",
+            "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3",
+            "movdqu [rsp+60h], xmm4",
+            "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]",
+            "movdqu xmm1, [rsp+30h]",
+            "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]",
+            "movdqu xmm4, [rsp+60h]",
+            "movdqu xmm5, [rsp+70h]",
+            "add rsp, 88h",
+            "popfq",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            "pop rdx",
+            "pop rcx",
+            "pop rax",
+        ];
     }
 
     private int _calcEntrySeen;
@@ -2876,6 +2974,7 @@ public class Mod : ModBase
             settings,
             $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
             $"ability={CleanDclLogValue(abilityName)} actionType=0x{actionContext.ActionType:X2} result={formulaDebit} debit={dclDebit} oldDebit={oldDebit}");
+        _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType);
         return true;
     }
 
@@ -2935,6 +3034,293 @@ public class Mod : ModBase
         => string.IsNullOrWhiteSpace(value)
             ? ""
             : value.Replace('|', '/').Replace('\r', ' ').Replace('\n', ' ').Trim();
+
+    // DCL HIT CONTROL — the managed decision callback invoked from the calc-entry shim (0x309A44),
+    // BEFORE the VM's avoidance roll inside the same call. Computes the authored hit% from the full
+    // (attacker, target, equipment, ability) context, rolls the mod's own RNG, and forces the
+    // binary outcome by stamping the TARGET's Family-1 evade input bytes (the inputs the VM honors):
+    //   HIT  -> 0x46..0x4E all 0 (Concentrate-equivalent: no evade source can win -> connects);
+    //   MISS -> all 0 except class evade +0x4B = DclMissClassEvadeValue (job-derived class evade is
+    //           read live by the VM; 100 forces a guaranteed class-evade "Miss" — proven LT5-B).
+    // Decisions are cached per (caster, target, ability, type) for DclHitDecisionTtlMs so
+    // preview/charge/AI refires of the same action reuse ONE rolled outcome. Every failure with a
+    // valid target restores the force-hit baseline; exceptions are swallowed and counted. No file
+    // I/O ever happens here — logs are queued and flushed by the poller.
+    private static readonly int[] DclHitEvadeOffsets = [0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E];
+
+    private void ZeroDclTargetEvade(int targetIdx)
+    {
+        if ((uint)targetIdx >= 64)
+            return;
+
+        lock (_dclHitStampedTargetGate)
+        {
+            if (TryZeroDclTargetEvadeBytes(targetIdx))
+                _dclHitStampedTargets[targetIdx] = false;
+        }
+    }
+
+    private bool TryZeroDclTargetEvadeBytes(int targetIdx)
+    {
+        try
+        {
+            long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+            nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+            foreach (int offset in DclHitEvadeOffsets)
+                Marshal.WriteByte(targetPtr, offset, 0);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void StampDclHitDecision(
+        int targetIdx,
+        int casterIdx,
+        int abilityId,
+        int actionType,
+        DclHitDecision decision,
+        long nowTick,
+        bool cached,
+        nint targetPtr,
+        int missClassEvade)
+    {
+        if ((uint)targetIdx >= 64)
+            return;
+
+        lock (_dclHitStampedTargetGate)
+        {
+            if (!cached)
+                _dclHitDecisionCache.Record(targetIdx, casterIdx, abilityId, actionType, decision, nowTick);
+
+            _dclHitStampedTargets[targetIdx] = true;
+            if (decision.Hit)
+            {
+                Marshal.WriteByte(targetPtr, 0x4B, 0);
+                foreach (int offset in DclHitEvadeOffsets)
+                {
+                    if (offset != 0x4B)
+                        Marshal.WriteByte(targetPtr, offset, 0);
+                }
+            }
+            else
+            {
+                foreach (int offset in DclHitEvadeOffsets)
+                {
+                    if (offset != 0x4B)
+                        Marshal.WriteByte(targetPtr, offset, 0);
+                }
+                Marshal.WriteByte(targetPtr, 0x4B, (byte)missClassEvade);
+            }
+        }
+    }
+
+    private long DclHitDecisionCallbackImpl(long orderRecordPtrRaw, long targetIdxRaw)
+    {
+        int targetIdx = -1;
+        try
+        {
+            var settings = _settings;
+            if (!settings.DclHitControlEnabled)
+                return 0;
+
+            nint orderRecordPtr = (nint)orderRecordPtrRaw;
+            targetIdx = (int)(targetIdxRaw & 0xFF);
+            if ((uint)targetIdx >= 64)
+            {
+                QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=target-index-oob targetIdx={targetIdx}");
+                targetIdx = -1;
+                return 0;
+            }
+            if (orderRecordPtr == 0)
+            {
+                ZeroDclTargetEvade(targetIdx);
+                QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=null-order-record targetIdx={targetIdx}");
+                return 0;
+            }
+
+            // Same packing the probe stub captures: dword[record] = casterIdx | type<<8 | abilityId<<16.
+            int packed = Marshal.ReadInt32(orderRecordPtr);
+            int casterIdx = packed & 0xFF;
+            int actionType = (packed >> 8) & 0xFF;
+            int abilityId = (packed >> 16) & 0xFFFF;
+            if ((uint)casterIdx >= 64)
+            {
+                ZeroDclTargetEvade(targetIdx);
+                QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=caster-index-oob casterIdx={casterIdx} targetIdx={targetIdx}");
+                return 0;
+            }
+
+            long nowTick = Stopwatch.GetTimestamp();
+            long ttlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+            bool cached = _dclHitDecisionCache.TryGet(targetIdx, casterIdx, abilityId, actionType, nowTick, ttlTicks, out var decision);
+            if (!cached)
+            {
+                if (!TryComputeDclHitDecision(settings, targetIdx, casterIdx, actionType, abilityId, out decision))
+                {
+                    ZeroDclTargetEvade(targetIdx);
+                    return 0;
+                }
+            }
+
+            long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+            nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+            nint casterPtr = (nint)(unitTable + (long)casterIdx * BattleUnitStride);
+            int missClassEvade = Math.Clamp(settings.DclMissClassEvadeValue, 0, 255);
+            StampDclHitDecision(targetIdx, casterIdx, abilityId, actionType, decision, nowTick, cached, targetPtr, missClassEvade);
+
+            int casterCharId = TryReadUnitByte(casterPtr, 0, out int cid) ? cid : -1;
+            int targetCharId = TryReadUnitByte(targetPtr, 0, out int tid) ? tid : -1;
+            QueueDclHitLog(
+                settings,
+                $"[DCL-HIT] caster=0x{casterCharId:X2} target=0x{targetCharId:X2} ability={abilityId} type=0x{actionType:X2} " +
+                $"pct={decision.Pct} roll={decision.Roll} outcome={(decision.Hit ? "hit" : "miss")} cached={(cached ? 1 : 0)}");
+            return 0;
+        }
+        catch
+        {
+            Interlocked.Increment(ref _dclHitFailCount);
+            // Fail-open must not leave a stale MISS stamp: restore the force-hit baseline
+            // for the target when it was already validated before the exception.
+            if ((uint)targetIdx < 64)
+            {
+                try { ZeroDclTargetEvade(targetIdx); } catch { }
+            }
+            return 0;
+        }
+    }
+
+    private bool TryComputeDclHitDecision(
+        RuntimeSettings settings,
+        int targetIdx,
+        int casterIdx,
+        int actionType,
+        int abilityId,
+        out DclHitDecision decision)
+    {
+        decision = default;
+        if (string.IsNullOrWhiteSpace(settings.DclHitChanceFormula))
+        {
+            ZeroDclTargetEvade(targetIdx);
+            QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=empty-formula targetIdx={targetIdx}");
+            return false;
+        }
+
+        long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+        nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+        nint casterPtr = (nint)(unitTable + (long)casterIdx * BattleUnitStride);
+        if (!TryReadLiveUnitSnapshot(targetPtr, out var target, out string targetError))
+        {
+            ZeroDclTargetEvade(targetIdx);
+            QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=target-read-failed targetIdx={targetIdx} error={CleanDclLogValue(targetError)}");
+            return false;
+        }
+        if (!TryReadLiveUnitSnapshot(casterPtr, out var attacker, out string casterError))
+        {
+            ZeroDclTargetEvade(targetIdx);
+            QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=caster-read-failed casterIdx={casterIdx} targetIdx={targetIdx} error={CleanDclLogValue(casterError)}");
+            return false;
+        }
+
+        long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, target.Hp, 0);
+        var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings,
+            _itemCatalog,
+            _abilityCatalog,
+            target,
+            attacker,
+            eventIndex,
+            eventSeed,
+            actionType,
+            abilityId,
+            oldDebit: 0,   // pre-roll: no staged result exists yet; dcl.oldDebit/oldCredit are 0 here
+            oldCredit: 0);
+
+        if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+        {
+            ZeroDclTargetEvade(targetIdx);
+            QueueDclHitLog(
+                settings,
+                $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} type=0x{actionType:X2} error={CleanDclLogValue(derivedError)}");
+            return false;
+        }
+        if (!FormulaExpression.TryEvaluate(settings.DclHitChanceFormula, context, out int rawPct, out string formulaError))
+        {
+            ZeroDclTargetEvade(targetIdx);
+            QueueDclHitLog(
+                settings,
+                $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} type=0x{actionType:X2} error={CleanDclLogValue(formulaError)}");
+            return false;
+        }
+
+        int pct = Math.Clamp(rawPct, 0, 100);
+        int forcedRoll = settings.DclHitForcedRoll;
+        int roll;
+        if (forcedRoll is >= 0 and <= 99)
+        {
+            roll = forcedRoll;
+        }
+        else
+        {
+            lock (_dclHitRngGate)
+                roll = (_dclHitRng ??= new Random()).Next(100);
+        }
+
+        decision = new DclHitDecision(roll < pct, pct, roll);
+        return true;
+    }
+
+    private void CaptureDclHitStaleStamps(long nowTick)
+    {
+        var settings = _settings;
+        if (!settings.DclHitControlEnabled)
+            return;
+
+        long ttlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+        for (int targetIdx = 0; targetIdx < 64; targetIdx++)
+        {
+            bool tracked;
+            lock (_dclHitStampedTargetGate)
+                tracked = _dclHitStampedTargets[targetIdx];
+
+            if (!tracked)
+                continue;
+
+            if (_dclHitDecisionCache.HasLiveDecision(targetIdx, nowTick, ttlTicks))
+                continue;
+
+            lock (_dclHitStampedTargetGate)
+            {
+                if (!_dclHitStampedTargets[targetIdx])
+                    continue;
+
+                if (_dclHitDecisionCache.HasLiveDecision(targetIdx, Stopwatch.GetTimestamp(), ttlTicks))
+                    continue;
+
+                if (TryZeroDclTargetEvadeBytes(targetIdx))
+                    _dclHitStampedTargets[targetIdx] = false;
+            }
+        }
+    }
+
+    private void QueueDclHitLog(RuntimeSettings settings, string line)
+    {
+        int maxLogs = Math.Clamp(settings.DclHitMaxLogs, 0, 100_000);
+        if (maxLogs == 0)
+            return;
+
+        int logIndex = Interlocked.Increment(ref _dclHitLogCount);
+        if (logIndex > maxLogs)
+            return;
+
+        // Shares the DCL decision queue (drained by the poller; the hook thread never touches the
+        // log file) but with its own DclHitMaxLogs budget, independent of DclDecisionMaxLogs.
+        lock (_dclDecisionLogGate)
+            _dclDecisionLogQueue.Enqueue(line);
+    }
 
     private static bool PreClampManagedCallbackPassesGuards(
         nint targetPtr,
@@ -3268,6 +3654,8 @@ public class Mod : ModBase
                 CaptureRollVerdictProbeEvents(nowTick);
                 CaptureCalcEntryProbeEvents(nowTick);
                 CaptureDclDecisionLogs();
+                if (_settings.DclHitControlEnabled)
+                    CaptureDclHitStaleStamps(nowTick);
                 CaptureLt3RollProbeEvents();
                 CaptureReactionRollEvents();
                 CaptureRollRngProbeEvents(nowTick);
@@ -8748,6 +9136,19 @@ internal sealed class RuntimeSettings
     public List<FormulaDerivedVariable> DclDerivedVariables { get; set; } = new();
     public int DclActionContextMaxAgeMs { get; set; } = 5000;
     public int DclDecisionMaxLogs { get; set; } = 40;
+    // DCL HIT CONTROL — authored hit% + own RNG + binary outcome forcing at calc-entry (0x309A44).
+    // The managed decision callback evaluates DclHitChanceFormula in the full DCL context (pre-roll:
+    // dcl.oldDebit/oldCredit are 0), rolls the mod's own RNG (or uses DclHitForcedRoll), and stamps
+    // the TARGET's evade input bytes before the VM avoidance roll: HIT => 0x46..0x4E all 0; MISS =>
+    // all 0 except class evade +0x4B = DclMissClassEvadeValue (100 = guaranteed class-evade "Miss",
+    // proven LT5-B / 2026-06-27). Requires the LT5-A4 baseline stack (ItemTableEvadeZero +
+    // all-zero EvadeCopierOverride) so residual equipment evade cannot steal a HIT decision.
+    public bool DclHitControlEnabled { get; set; } = false;
+    public string DclHitChanceFormula { get; set; } = "";
+    public int DclHitDecisionTtlMs { get; set; } = 2500;    // decision reuse window per (caster,target,ability,type)
+    public int DclHitForcedRoll { get; set; } = -1;         // -1 = real RNG; 0..99 = deterministic roll (live tests)
+    public int DclHitMaxLogs { get; set; } = 400;           // [DCL-HIT*] log budget (separate from DclDecisionMaxLogs)
+    public int DclMissClassEvadeValue { get; set; } = 100;  // byte for +0x4B on MISS (LT5-B proven force-Miss value)
     public string MpRewriteConditionFormula { get; set; } = "";
     public string FinalMpChangeFormula { get; set; } = "";
     public Dictionary<string, int> FormulaVariables { get; set; } = new();
