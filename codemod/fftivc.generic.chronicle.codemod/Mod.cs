@@ -194,6 +194,7 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _resultSelectorProbeHook;
     private nint _evadeInputProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _evadeCopierHooks = new();
     private nint _rollVerdictProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
     private nint _previewHitPctBuf;
@@ -205,6 +206,9 @@ public class Mod : ModBase
     private nint _calcEntryBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _calcEntryHook;
     private nint _lt3RollBuf;
+    private nint _reactionRollBuf;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _reactionChanceHooks = new();
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _evadeRecordHooks = new();
     private Reloaded.Hooks.Definitions.IAsmHook? _magicAccuracyHook;
     private Reloaded.Hooks.Definitions.IAsmHook? _statusChanceHook;
     private nint _rollRngBuf;
@@ -357,6 +361,7 @@ public class Mod : ModBase
             InstallPreClampDamageRewriteIfEnabled(baseAddr);
             InstallResultSelectorProbeIfEnabled(baseAddr);
             InstallEvadeInputProbeIfEnabled(baseAddr);
+            InstallEvadeCopierOverrideIfEnabled(baseAddr);
             InstallRollVerdictProbeIfEnabled(baseAddr);
             InstallPreviewHitPctControlIfEnabled(baseAddr);
             InstallPreviewDamageControlIfEnabled(baseAddr);
@@ -364,6 +369,8 @@ public class Mod : ModBase
             InstallCalcEntryProbeIfEnabled(baseAddr);
             InstallMagicAccuracyControlIfEnabled(baseAddr);
             InstallStatusChanceControlIfEnabled(baseAddr);
+            InstallReactionChanceControlIfEnabled(baseAddr);
+            InstallEvadeRecordOverrideIfEnabled(baseAddr);
             InstallRollRngProbeIfEnabled(baseAddr);
             InstallStagedBundleProbeIfEnabled(baseAddr);
 
@@ -740,7 +747,9 @@ public class Mod : ModBase
     // same-calc question and gives the PREVIEW-time ability id.
     private void InstallCalcEntryProbeIfEnabled(nint moduleBase)
     {
-        if (!_settings.CalcEntryProbeEnabled)
+        bool probe = _settings.CalcEntryProbeEnabled;
+        bool stamp = _settings.CalcEntryEvadeStampEnabled;
+        if (!probe && !stamp)
             return;
         if (_hooks is null)
         {
@@ -758,43 +767,95 @@ public class Mod : ModBase
             return;
         }
 
-        _calcEntryBuf = Marshal.AllocHGlobal(CALC_ENTRY_BUFFER_SIZE);
-        for (int i = 0; i < CALC_ENTRY_BUFFER_SIZE; i++)
-            Marshal.WriteByte(_calcEntryBuf, i, 0);
-
-        string buf = $"0{_calcEntryBuf:X}h";
-        string[] asm =
+        var asm = new List<string> { "use64" };
+        if (probe)
         {
-            "use64",
-            "push rax",
-            "push rbx",
-            "push rsi",
-            "pushfq",
-            $"mov rax, {buf}",
-            "mov ebx, dword [rax]",       // ring write index (total count)
-            "add dword [rax], 1",
-            "and ebx, 0x3F",              // 64-slot ring; 32-bit op zero-extends rbx
-            "shl ebx, 4",                 // *16 bytes per slot
-            "lea rsi, [rax + rbx + 16]",
-            "mov qword [rsi], rcx",       // order-record ptr
-            "mov dword [rsi+8], edx",     // target unit index (dl)
-            "mov ebx, dword [rcx]",       // casterIdx | type | abilityId  (captured at fire time)
-            "mov dword [rsi+12], ebx",
-            "popfq",
-            "pop rsi",
-            "pop rbx",
-            "pop rax",
-        };
+            _calcEntryBuf = Marshal.AllocHGlobal(CALC_ENTRY_BUFFER_SIZE);
+            for (int i = 0; i < CALC_ENTRY_BUFFER_SIZE; i++)
+                Marshal.WriteByte(_calcEntryBuf, i, 0);
+
+            string buf = $"0{_calcEntryBuf:X}h";
+            asm.AddRange(
+            [
+                "push rax",
+                "push rbx",
+                "push rsi",
+                "pushfq",
+                $"mov rax, {buf}",
+                "mov ebx, dword [rax]",       // ring write index (total count)
+                "add dword [rax], 1",
+                "and ebx, 0x3F",              // 64-slot ring; 32-bit op zero-extends rbx
+                "shl ebx, 4",                 // *16 bytes per slot
+                "lea rsi, [rax + rbx + 16]",
+                "mov qword [rsi], rcx",       // order-record ptr
+                "mov dword [rsi+8], edx",     // target unit index (dl)
+                "mov ebx, dword [rcx]",       // casterIdx | type | abilityId  (captured at fire time)
+                "mov dword [rsi+12], ebx",
+                "popfq",
+                "pop rsi",
+                "pop rbx",
+                "pop rax",
+            ]);
+        }
+        if (stamp)
+            asm.AddRange(BuildCalcEntryEvadeStampLines(moduleBase));
+
         try
         {
-            _calcEntryHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
-            Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}");
+            _calcEntryHook = _hooks.CreateAsmHook(asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} probe={(probe ? $"on buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}" : "off")} " +
+                 $"evadeStamp={(stamp ? "ON " + DescribeEvadeCopierOverride() : "off")}");
         }
         catch (Exception ex)
         {
             Line($"[CALC-PROBE-FAILED] {ex.GetType().Name}: {ex.Message}");
         }
         Flush();
+    }
+
+    // CALC-ENTRY EVADE STAMP — the per-attack input injection the engine doesn't have. ExecuteFirst
+    // at computeActionResult 0x309A44 (dl = target unit index): resolve the TARGET's unit struct and
+    // stamp the configured Family-1 evade bytes microseconds before the VM avoidance roll inside this
+    // very call. Closes the residual leak seen in LT5-A (a VM-side/init writer the static RE cannot
+    // see re-stamped shield evade once): no state edge can intervene between this stamp and the roll.
+    // Reuses the EvadeCopierOverride* value profile (one forced-evade profile, two delivery points).
+    private string[] BuildCalcEntryEvadeStampLines(nint moduleBase)
+    {
+        nint unitTable = moduleBase + 0x1853CE0;   // unit struct table (stride 0x200), image-base-relative
+        int target = _settings.EvadeCopierOverrideTargetCharId;
+        (int Off, int Val)[] bytes =
+        {
+            (0x46, _settings.EvadeCopierOverride46), (0x47, _settings.EvadeCopierOverride47),
+            (0x48, _settings.EvadeCopierOverride48), (0x49, _settings.EvadeCopierOverride49),
+            (0x4A, _settings.EvadeCopierOverride4A), (0x4B, _settings.EvadeCopierOverride4B),
+            (0x4C, _settings.EvadeCopierOverride4C), (0x4D, _settings.EvadeCopierOverride4D),
+            (0x4E, _settings.EvadeCopierOverride4E),
+        };
+        var c = new List<string>
+        {
+            "push rax",
+            "push rbx",
+            "pushfq",
+            "movzx eax, dl",              // target unit index
+            "cmp eax, 0x40",
+            "jae .ces_done",              // guard: 64 slots max
+            "shl eax, 9",                 // idx * 0x200
+            $"mov rbx, 0{unitTable:X}h",
+            "add rbx, rax",               // rbx = target unit struct
+        };
+        if (target >= 0)
+        {
+            c.Add($"cmp byte [rbx], {target & 0xFF}");
+            c.Add("jne .ces_done");
+        }
+        foreach (var (off, val) in bytes)
+            if (val >= 0)
+                c.Add($"mov byte [rbx+{off:X}h], {val & 0xFF}");
+        c.Add(".ces_done:");
+        c.Add("popfq");
+        c.Add("pop rbx");
+        c.Add("pop rax");
+        return c.ToArray();
     }
 
     private int _calcEntrySeen;
@@ -1143,6 +1204,108 @@ public class Mod : ModBase
 
     private int _magicRollSeen;
     private int _statusRollSeen;
+    // REACTION CHANCE CONTROL — the 4 real-code Brave-gate roll sites (reaction trigger% = defender
+    // Brave; canon Phase A: Blade Grasp / Hamedo / Arrow Guard / Catch / Counter...). Each site is
+    // `mov ecx,0x64; movzx edx,[def+0x2B]; call 0x278EE0` and arms the reaction when eax==0, so the
+    // trigger probability IS edx: forced 0 = reactions NEVER arm (suppress), 100 = ALWAYS (force).
+    // The only combat roll in real code (LT3b) — hook the call sites and override edx.
+    private static readonly (int Rva, string Expected, string Tag)[] ReactionRollSites =
+    {
+        (0x30BE86, "E8 55 D0 F6 FF", "R1"),
+        (0x30BEDC, "E8 FF CF F6 FF", "R2"),
+        (0x30BF32, "E8 A9 CF F6 FF", "R3"),
+        (0x30BF72, "E8 69 CF F6 FF", "R4"),
+    };
+
+    private void InstallReactionChanceControlIfEnabled(nint moduleBase)
+    {
+        if (!_settings.ReactionChanceControlEnabled)
+            return;
+        _reactionRollBuf = Marshal.AllocHGlobal(64);
+        for (int i = 0; i < 64; i++)
+            Marshal.WriteByte(_reactionRollBuf, i, 0);
+        for (int i = 0; i < ReactionRollSites.Length; i++)
+        {
+            var site = ReactionRollSites[i];
+            InstallChanceHook(moduleBase, site.Rva, site.Expected, _reactionRollBuf + i * 16,
+                _settings.ReactionChanceForcedChance, $"REACTROLL-{site.Tag}", h => _reactionChanceHooks.Add(h));
+        }
+    }
+
+    // EVADE RECORD OVERRIDE — the definitive equipment-evade runtime lever (RE 2026-07-03,
+    // work/dcl-shield-evade-read-path.md). The preview/roll do NOT read the unit's evade bytes live:
+    // 3 combat-input record builders pack them into a separate record at action SETUP — class 1:1
+    // (record+0x44 = unit+0x4B) but shield/accessory as a DERIVED MAX (record+0x46 =
+    // MAX(unit+0x4A, unit+0x49); record+0x50 = MAX(unit+0x4D, unit+0x4E)) — which is why a late
+    // unit-byte stamp is ignored for shield (LT5-A2 fail). Fix: ExecuteFirst at each packed STORE
+    // (`mov [rec+off], ax`) injecting `mov eax, VALUE` so the engine's own store writes OUR value.
+    // eax is reloaded before every subsequent use in all 3 builders, so the clobber is free.
+    private static readonly (int Rva, string Expected, string Tag)[] EvadeRecordStoreSites =
+    {
+        (0x284BEC, "66 89 43 44", "B1+44"), (0x284C00, "66 89 43 46", "B1+46"), (0x284C28, "66 89 43 50", "B1+50"),
+        (0x3602D6, "66 89 43 44", "B2+44"), (0x3602EA, "66 89 43 46", "B2+46"), (0x360313, "66 89 43 50", "B2+50"),
+        (0x396468, "66 89 47 44", "B3+44"), (0x39647C, "66 89 47 46", "B3+46"), (0x3964A5, "66 89 47 50", "B3+50"),
+    };
+
+    private void InstallEvadeRecordOverrideIfEnabled(nint moduleBase)
+    {
+        if (!_settings.EvadeRecordOverrideEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[EVADE-RECORD-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+        foreach (var site in EvadeRecordStoreSites)
+        {
+            int value = site.Tag[^2..] switch
+            {
+                "44" => _settings.EvadeRecordOverride44,
+                "46" => _settings.EvadeRecordOverride46,
+                "50" => _settings.EvadeRecordOverride50,
+                _ => -1,
+            };
+            if (value < 0)
+                continue;
+            nint address = moduleBase + site.Rva;
+            if (!ValidateExpectedBytes(address, site.Expected, out string byteError))
+            {
+                Line($"[EVADE-RECORD-SKIP] site={site.Tag} rva=0x{site.Rva:X} {byteError}");
+                continue;
+            }
+            try
+            {
+                string[] asm = { "use64", $"mov eax, {value & 0xFF}" };
+                _evadeRecordHooks.Add(_hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate());
+                Line($"[EVADE-RECORD-HOOK] site={site.Tag} rva=0x{site.Rva:X} force={value & 0xFF}");
+            }
+            catch (Exception ex)
+            {
+                Line($"[EVADE-RECORD-FAILED] site={site.Tag} rva=0x{site.Rva:X} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+        Flush();
+    }
+
+    private readonly int[] _reactionRollSeen = new int[4];
+    private void CaptureReactionRollEvents()
+    {
+        if (_reactionRollBuf == 0)
+            return;
+        for (int i = 0; i < ReactionRollSites.Length; i++)
+        {
+            int count = Marshal.ReadInt32(_reactionRollBuf + i * 16);
+            if (count == _reactionRollSeen[i])
+                continue;
+            Line($"[REACTROLL-{ReactionRollSites[i].Tag}] fires={count} " +
+                 $"lastNaturalBrave={Marshal.ReadInt32(_reactionRollBuf + i * 16 + 4)} " +
+                 $"forced={FormatMaybeInt(_settings.ReactionChanceForcedChance)}");
+            _reactionRollSeen[i] = count;
+            Flush();
+        }
+    }
+
     private void CaptureLt3RollProbeEvents()
     {
         if (_lt3RollBuf == 0)
@@ -2017,6 +2180,100 @@ public class Mod : ModBase
             $"4A={Opt(_settings.EvadeInputForce4A)} 4B={Opt(_settings.EvadeInputForce4B)} 4E={Opt(_settings.EvadeInputForce4E)}])";
     }
 
+    // ── EVADE-COPIER OVERRIDE (airtight, race-free defender evade control) ──────────────────────
+    // RE 2026-07-03 (work/dcl-evade-recompute-site.md + dcl-miss-block-parry-DEFINITIVE-2026-07-03.md):
+    // the defender's Family-1 evade bytes (+0x46/47 weapon, +0x48/49 accessory, +0x4A/4E shield,
+    // +0x4B class) have NO per-attack real-code writer — the VM reads them live from the struct at
+    // roll time. Their ONLY real-code writers are 3 equip/refresh COPIERS that re-stamp them from
+    // equipment on state edges; that async re-stamp is what beat the 20ms EvadeOverride poll ~50% of
+    // the time. Fix: detour each copier's TAIL (after its equipment copy, unit ptr still live) and
+    // over-stamp our values. Because these own every legit path that changes the bytes, the value
+    // persists to the VM roll with no race — retires the poll. all=0 ⇒ forced HIT; one source high ⇒
+    // that avoid type. Hook sites are fixed RE discoveries (not user-tunable); values/target are settings.
+    // NOTE: former site A (0x59F93C, fn 0x59F550) REMOVED 2026-07-03 — RE follow-up proved that fn is
+    // HID gamepad enumeration (HidP_GetValueCaps consumers), a byte-scan false positive; hooking it
+    // stamped a HIDP_VALUE_CAPS heap array, not units. Equipment evade is table-derived anyway
+    // (see ItemTableEvadeZero).
+    private static readonly (int Rva, string Reg, string Expected, string Tag)[] EvadeCopierSites =
+    {
+        (0x285553, "rbx", "4C 8D 5C 24 60 49 8B 5B 10", "B/0x285394"),   // weapon-parry tail (pre-epilogue)
+        (0x396757, "rsi", "48 8B D7 48 8B CE",          "C/0x3965B0"),   // weapon-parry twin (rsi callee-saved)
+    };
+
+    private void InstallEvadeCopierOverrideIfEnabled(nint moduleBase)
+    {
+        if (!_settings.EvadeCopierOverrideEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[EVADE-COPIER-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        foreach (var site in EvadeCopierSites)
+        {
+            nint address = moduleBase + site.Rva;
+            if (!ValidateExpectedBytes(address, site.Expected, out string byteError))
+            {
+                Line($"[EVADE-COPIER-SKIP] site={site.Tag} rva=0x{site.Rva:X} {byteError}");
+                continue;
+            }
+            try
+            {
+                var asm = BuildEvadeCopierAsm(site.Reg);
+                _evadeCopierHooks.Add(_hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate());
+                Line($"[EVADE-COPIER-HOOK] site={site.Tag} rva=0x{site.Rva:X} addr=0x{address:X} unit={site.Reg} {DescribeEvadeCopierOverride()}");
+            }
+            catch (Exception ex)
+            {
+                Line($"[EVADE-COPIER-FAILED] site={site.Tag} rva=0x{site.Rva:X} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+        Flush();
+    }
+
+    // ExecuteFirst at a copier tail: `reg` = defender unit ptr (live). Force-stamp each configured
+    // evade byte (value >= 0). Only flags are clobbered (via the optional charId filter), so we
+    // pushfq/popfq and touch no GP register. Fail-open jump target = .ec_done (before popfq).
+    private string[] BuildEvadeCopierAsm(string reg)
+    {
+        int target = _settings.EvadeCopierOverrideTargetCharId;
+        (int Off, int Val)[] bytes =
+        {
+            (0x46, _settings.EvadeCopierOverride46), (0x47, _settings.EvadeCopierOverride47),
+            (0x48, _settings.EvadeCopierOverride48), (0x49, _settings.EvadeCopierOverride49),
+            (0x4A, _settings.EvadeCopierOverride4A), (0x4B, _settings.EvadeCopierOverride4B),
+            (0x4C, _settings.EvadeCopierOverride4C), (0x4D, _settings.EvadeCopierOverride4D),
+            (0x4E, _settings.EvadeCopierOverride4E),
+        };
+        var asm = new List<string> { "use64", "pushfq" };
+        if (target >= 0)
+        {
+            asm.Add($"cmp byte [{reg}], {target & 0xFF}");
+            asm.Add("jne .ec_done");
+        }
+        foreach (var (off, val) in bytes)
+            if (val >= 0)
+                asm.Add($"mov byte [{reg}+{off:X}h], {val & 0xFF}");
+        asm.Add(".ec_done:");
+        asm.Add("popfq");
+        return asm.ToArray();
+    }
+
+    private string DescribeEvadeCopierOverride()
+    {
+        static string Opt(int v) => v < 0 ? "--" : $"0x{v & 0xFF:X2}";
+        string tgt = _settings.EvadeCopierOverrideTargetCharId < 0
+            ? "any" : $"0x{_settings.EvadeCopierOverrideTargetCharId & 0xFF:X2}";
+        return
+            $"(target={tgt} force[46={Opt(_settings.EvadeCopierOverride46)} 47={Opt(_settings.EvadeCopierOverride47)} " +
+            $"48={Opt(_settings.EvadeCopierOverride48)} 49={Opt(_settings.EvadeCopierOverride49)} " +
+            $"4A={Opt(_settings.EvadeCopierOverride4A)} 4B={Opt(_settings.EvadeCopierOverride4B)} " +
+            $"4C={Opt(_settings.EvadeCopierOverride4C)} 4D={Opt(_settings.EvadeCopierOverride4D)} " +
+            $"4E={Opt(_settings.EvadeCopierOverride4E)}])";
+    }
+
     private void CaptureEvadeInputProbeEvents(long nowTick)
     {
         if (_evadeInputProbeBuf == 0 || !_settings.EvadeInputProbeEnabled)
@@ -2771,6 +3028,7 @@ public class Mod : ModBase
                 CaptureRollVerdictProbeEvents(nowTick);
                 CaptureCalcEntryProbeEvents();
                 CaptureLt3RollProbeEvents();
+                CaptureReactionRollEvents();
                 CaptureRollRngProbeEvents(nowTick);
                 CaptureStagedBundleProbeEvents();
                 PollRegisteredUnits(nowTick);
@@ -3400,6 +3658,50 @@ public class Mod : ModBase
         ApplyEvadeOverrideSweep();
         ApplyBraveOverrideSweep();
         ApplyStatusOverrideSweep();
+        ApplyItemTableEvadeZeroIfEnabled();
+    }
+
+    // ITEM-TABLE EVADE ZERO — kills every equipment-evade leg at the SOURCE (RE 2026-07-03,
+    // work/dcl-item-table-runtime-poke.md). The VM derives weapon/shield/accessory evade from item
+    // stat tables baked at fixed VAs in a writable section (fn 0x2B8CB8 chain). Zeroing the per-item
+    // evade bytes makes the VM's own derivation produce 0 for every unit, both teams, preview
+    // included — the one lever a VM-internal reader cannot bypass (it reads DATA we own).
+    //   Weapon    0x80F690 + aid*8, evade byte +5 (128 rows; +4 = WP, untouched)
+    //   Shield    0x80FA90, 16 rows * 2 (phys, magic)
+    //   Accessory 0x80FB30, 32 rows * 2 (phys, magic)
+    // Sanity gate: shield row 14 (Venetian Shield) at 0x80FAAC must read 32 19 (50/25) before the
+    // FIRST write; on mismatch the poke is disabled for the session (layout drift = game patch).
+    // Re-poked every poll: the section is writable, so a VM-side loader may re-stamp between battles.
+    private const int ITEMTABLE_WEAPON_RVA = 0x80F690;
+    private const int ITEMTABLE_SHIELD_RVA = 0x80FA90;
+    private const int ITEMTABLE_ACCESSORY_RVA = 0x80FB30;
+    private const int ITEMTABLE_SANITY_RVA = 0x80FAAC;
+    private bool _itemTableSanityChecked;
+    private bool _itemTableSanityOk;
+
+    private void ApplyItemTableEvadeZeroIfEnabled()
+    {
+        if (!_settings.ItemTableEvadeZeroEnabled || _moduleBase == 0)
+            return;
+        if (!_itemTableSanityChecked)
+        {
+            _itemTableSanityChecked = true;
+            byte s0 = Marshal.ReadByte(_moduleBase + ITEMTABLE_SANITY_RVA);
+            byte s1 = Marshal.ReadByte(_moduleBase + ITEMTABLE_SANITY_RVA + 1);
+            _itemTableSanityOk = s0 == 0x32 && s1 == 0x19;
+            Line(_itemTableSanityOk
+                ? "[ITEMTABLE-EVADE-ZERO] sanity ok (VenetianShield 32 19) — zeroing weapon W-Ev + shield + accessory evade every poll"
+                : $"[ITEMTABLE-EVADE-SKIP] sanity FAILED at rva=0x{ITEMTABLE_SANITY_RVA:X}: got {s0:X2} {s1:X2}, expected 32 19 (layout drift?) — poke disabled");
+            Flush();
+        }
+        if (!_itemTableSanityOk)
+            return;
+        for (int i = 0; i < 128; i++)
+            Marshal.WriteByte(_moduleBase + ITEMTABLE_WEAPON_RVA + i * 8 + 5, 0);
+        for (int i = 0; i < 0x20; i++)
+            Marshal.WriteByte(_moduleBase + ITEMTABLE_SHIELD_RVA + i, 0);
+        for (int i = 0; i < 0x40; i++)
+            Marshal.WriteByte(_moduleBase + ITEMTABLE_ACCESSORY_RVA + i, 0);
     }
 
     // Boost evade on EVERY unit in the battle, not just registry-tracked ones. The poller only tracks
@@ -8472,6 +8774,51 @@ internal sealed class RuntimeSettings
     // of an attack that hasn't been near a hook). 0 = only tracked units. ReadProcessMemory is safe on
     // unmapped addresses (returns false), so a generous margin is harmless.
     public int EvadeOverrideSweepSlots { get; set; } = 0;
+
+    // EvadeCopierOverride — airtight, race-free replacement for the EvadeOverride poll. Hooks the 3
+    // real-code equip/refresh copier tails (fixed RVAs) and over-stamps the defender's evade bytes so
+    // they persist to the VM roll with no race (RE work/dcl-miss-block-parry-DEFINITIVE-2026-07-03.md).
+    // Values -1 = leave that byte. TargetCharId -1 = every unit; else only the unit whose +0x00 == id.
+    // all=0 ⇒ forced HIT; one source (46/47 weapon, 49 accessory, 4A/4E shield, 4B class) high ⇒ that avoid type.
+    public bool EvadeCopierOverrideEnabled { get; set; } = false;
+    public int EvadeCopierOverrideTargetCharId { get; set; } = -1;
+    public int EvadeCopierOverride46 { get; set; } = -1;   // weapon parry R %
+    public int EvadeCopierOverride47 { get; set; } = -1;   // weapon parry L %
+    public int EvadeCopierOverride48 { get; set; } = -1;   // accessory magic-evade partner (inferred)
+    public int EvadeCopierOverride49 { get; set; } = -1;   // accessory/cloak physical evade -> evadeType 0x01
+    public int EvadeCopierOverride4A { get; set; } = -1;   // shield physical block %
+    public int EvadeCopierOverride4B { get; set; } = -1;   // class/physical evasion %
+    public int EvadeCopierOverride4C { get; set; } = -1;   // magic-evasion partner (inferred)
+    public int EvadeCopierOverride4D { get; set; } = -1;   // accessory magick partner (inferred)
+    public int EvadeCopierOverride4E { get; set; } = -1;   // shield magick block %
+
+    // CalcEntryEvadeStamp — per-attack delivery of the SAME EvadeCopierOverride* value profile:
+    // stamps the target's evade bytes at computeActionResult (CalcEntryProbeRva, 0x309A44) right
+    // before the VM avoidance roll inside that call. Zero-width race window; closes the residual
+    // VM-side/init re-stamp leak seen in LT5-A. Works with or without CalcEntryProbeEnabled.
+    public bool CalcEntryEvadeStampEnabled { get; set; } = false;
+
+    // ReactionChanceControl — the 4 real-code Brave-gate reaction roll sites (0x30BE86/0x30BEDC/
+    // 0x30BF32/0x30BF72). ForcedChance: -1 = observe only (log fires + natural Brave), 0 = suppress
+    // ALL reactions (Blade Grasp/Hamedo/Counter... never arm), 100 = force every reaction.
+    public bool ReactionChanceControlEnabled { get; set; } = false;
+    public int ReactionChanceForcedChance { get; set; } = -1;
+
+    // EvadeRecordOverride — forces the PACKED evade fields in the combat-input record at the 3
+    // builder store sites (the values the preview/roll actually consume; unit-byte stamps do NOT
+    // reach the shield leg). 44 = class (copy of +0x4B), 46 = shield/accessory physical
+    // (MAX(+0x4A,+0x49)), 50 = shield/accessory magick (MAX(+0x4D,+0x4E)). -1 = leave natural.
+    // GLOBAL (all units both teams) — no per-unit filter at these sites yet.
+    public bool EvadeRecordOverrideEnabled { get; set; } = false;
+    public int EvadeRecordOverride44 { get; set; } = -1;
+    public int EvadeRecordOverride46 { get; set; } = -1;
+    public int EvadeRecordOverride50 { get; set; } = -1;
+
+    // ItemTableEvadeZero — zeroes the per-item evade bytes in the LOADED item stat tables (fixed
+    // VAs, writable) every poll: weapon W-Ev, shield phys/magic, accessory phys/magic. The VM derives
+    // equipment evade from these tables, so its own derivation yields 0 for every unit — the
+    // source-level equipment-evade kill (armor HP/MP table untouched). Sanity-gated (Venetian 32 19).
+    public bool ItemTableEvadeZeroEnabled { get; set; } = false;
 
     // Persistent Brave/Faith INPUT override (the reaction input-control test). Same live-write mechanism
     // as EvadeOverride, for the bytes that gate Brave%-rolled reactions (Blade Grasp, Hamedo, Arrow

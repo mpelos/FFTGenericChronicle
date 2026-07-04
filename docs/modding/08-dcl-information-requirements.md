@@ -88,7 +88,7 @@ status/affinity columns).
 | Weapon modifier | DCL weapon damage adds a family/item modifier to thrust/swing/base damage. | Needs explicit DCL catalog mapping. |
 | Reach and range | Reach-1, reach-2, ranged weapons, point-blank weakness, and outrange rules require range metadata. | Some data exists in item/ability tables; runtime exposure is incomplete. |
 | Parry value | Weapon parry is an active defense and can deplete. | Live byte is **Proven**; DCL depletion state is not an item-catalog fact. |
-| Shield block value | Shields become finite Block resources. | Live evade bytes are **Proven**; DCL block capacity/value mapping needs catalog ownership. |
+| Shield block value | Shields become finite Block resources. | **Updated (RE 2026-07-03)**: shield evade has **NO live single-byte lever** — unlike class `+0x4B` (copied 1:1 to the forecast record and honored live), the shield field is a *derived* record value `MAX([unit+0x4A],[unit+0x49])` packed at builders `0x284BC0/0x3600DC/0x3962F0` before the roll, so a live `+0x4A` write is ignored (LT5-A2 FAIL). Neutralize shield in **DATA** (zero the shield item's evade columns in `item_catalog.csv`) or hook the record MAX. See `work/dcl-shield-evade-read-path.md`. |
 | Armor class and DR | Armor supplies type-specific DR instead of only HP. | Needs DCL catalog mapping for every body/head/accessory class. |
 | Weight | Weight affects Move/Dodge and possibly defense economy. | Needs DCL catalog mapping and formula exposure. |
 | Elements and affinities | Magic and elemental weapons need element, absorb/nullify/halve/weak/strong, and boost data. | CSV sources contain candidate fields; `ItemCatalogEntry` does not expose the full surface. |
@@ -124,7 +124,7 @@ Still MUST-AUTHOR: DCL action kind, spell/heal power, status category, hit/avoid
 | Status category | Status contests depend on mental, physical, magical, taunt/fear, or special categories. | Needs DCL metadata by status action. |
 | MP cost and CT/charge time | Pending tracker, forecast, and action economy need cost/charge data. | Data surfaces exist; live pending semantics need complete ownership. |
 | Targeting shape | Unit target, tile target, radius, vertical tolerance, line, cone, self, ally/enemy filters, and random targeting affect AoE resolution. | Data surfaces exist; runtime target reconstruction is incomplete. |
-| Hit/avoidance policy | Some actions should use physical defense, magic evade, no defense, guaranteed hit, or special checks. | Needs DCL metadata and runtime authority. |
+| Hit/avoidance policy | Some actions should use physical defense, magic evade, no defense, guaranteed hit, or special checks. | Needs DCL metadata (per-action policy). **Runtime authority ✅ PROVEN LT5-A4 (2026-07-03)** — `work/dcl-miss-block-parry-DEFINITIVE-2026-07-03.md`: equipment evade killed at the SOURCE via `ItemTableEvadeZero` (loaded item stat tables at fixed VAs — weapon `0x80F690`+5, shield `0x80FA90`, accessory `0x80FB30`; live: 50%-shield/parry targets → preview 100%, 12/12 hits); class evade via `+0x4B` live write; reactions via Brave `+0x2B` (Shirahadori roll is VM-internal, hook REFUTED). The mod rolls its own hit% and forces the binary outcome. See `05-reverse-engineering.md §Item-table evade kill`. |
 | Side effects | Knockback, drain, MP damage, healing inversion, undead inversion, revive, death sentence, and similar effects need explicit classification. | Partial through native data/status fields; not complete as a DCL surface. |
 
 ## 5. Formula Inputs and Derived Variables

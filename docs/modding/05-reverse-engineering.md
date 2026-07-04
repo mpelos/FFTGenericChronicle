@@ -231,6 +231,87 @@ sweeps the unit array so even untracked units — i.e. the actual defender — g
 compute the formula for that (attacker, defender) pair, write its evade before the roll. Damage value
 stays on the proven pre-clamp.
 
+#### AIRTIGHT delivery — hook the 3 equip/refresh copiers (✅ RE'd 2026-07-03, retires the poll race)
+
+The `EvadeOverride` poll loses ~50 % of attacks not to a per-attack writer but to a **misdiagnosis**:
+there is **no per-attack real-code writer of the evade bytes at all** (BFS from every writer never
+reaches the avoidance cluster `0x30F0C4 / 0x30FA34 / 0x309A44 / 0x205210 / 0x30A66F`; the combat region
+has zero genuine writers; the pre-roll gather `0x30FC30` reads `+0x61/64/65/1B4`, not the evade bytes —
+the VM consumes them internally). The bytes are owned by exactly **three real-code equip/refresh
+copiers** that re-stamp them from equipment on a state edge (turn / status / menu), asynchronously to the
+poll:
+
+```text
+Writer A  fn 0x59F550  unit ptr = RBX   copies [rdi+0x10..0x17] -> [rbx+0x48..0x4F]
+                                        (acc 0x48/49, shield 0x4A/4E, class 0x4B)  restamp after 0x59F927
+Writer B  fn 0x285394  unit ptr = RBX   weapon lookup -> [rbx+0x44..0x47] (weapon parry 0x46/47)  after 0x285550
+          fn 0x3965B0  unit ptr = RSI   twin of B                                                  after 0x39674B
+```
+
+Between A and B these own **every** legitimate path that changes the evade bytes. **Detour their tails and
+over-stamp our formula-computed evade bytes** → the value persists to the VM roll with **no race**; the
+`EvadeOverride` poll is retired. Shipping knob (to build): `EvadeCopierOverride*`. Two byte-families to
+keep distinct: **Family-1 INPUT** (unit `+0x46/47/48/49/4A/4B/4E`, above — what the VM rolls against,
+Phase B: 4 sources rolled separately in slot order acc→RH→LH→class, first success wins) vs **Family-2
+staged RESULT** (`+0x1D0`, `+0x1D2..+0x1D5`, `+0x1D8`, kind `+0x1C0`) — the renderer's inputs; `+0x1C0`
+sole writer = finalize `0x205B38` / fn `0x2055FC` (gated `test [rdi+0x15C],4`, unit=RDI), which runs
+AFTER compute-point `0x281F8A`.
+
+#### SHIELD ≠ CLASS — shield evade has NO live single-byte lever (✅ RE'd 2026-07-03)
+
+The 2026-06-27 input-control proof only ever moved **class `+0x4B`**. LT5-A2 (Agrias→Ramza) then FAILED
+for **shield**: with `+0x4A = 0x32` planted at `0x309A44` and the copiers zeroed, the preview still showed
+**50 % + Ramza shield-PARRIED**. Static RE (`work/dcl-shield-evade-read-path.md`, `disasm_shield_evade_*`)
+pins why:
+
+- The roll anchors read **no** evade bytes; the values enter via **combat-input record builders**
+  (`0x284BC0` / `0x3600DC` / `0x3962F0`) that pack the block into a **separate forecast/AI record**
+  `[dst+0x44..0x52]` at action SETUP (before `0x309A44`).
+- In that pack, **class is a 1:1 copy** — `dst+0x44 = [unit+0x4B]` — so a live `+0x4B` write is honored.
+- **Shield is DERIVED, not copied** — `dst+0x46 = MAX([unit+0x4A] shield, [unit+0x49] accessory)` and
+  `dst+0x50 = MAX([unit+0x4D],[unit+0x4E])`. A late `+0x4A := 0` neither reaches the already-built record
+  nor overrides the `+0x49` term, so shield block survives.
+- `unit+0x4A` itself is written by **only** Writer A (`[equip+0x12]→+0x4A`); no per-action re-derivation.
+
+**Verdict:** class `+0x4B` stays a clean runtime lever; **shield has none in the unit struct.**
+LT5-A3 then REFUTED the record-builder store hooks too (`0x3602EA`/`0x39647C`/`0x284C00` + `+0x50`
+twins installed and forced 0; shield still 50% in preview and still parried — those builders do not
+feed the combat roll; the VM packs its own record). The chain that DOES work is one level deeper — see
+the item-table section below. (Also: the earlier "Writer A `0x59F550`" copier is a byte-scan FALSE
+POSITIVE — it is HID gamepad enumeration (`HidP_GetValueCaps` consumers), not combat. Only the weapon
+copiers `0x285394`/`0x3965B0` are real.)
+
+#### ✅✅ ITEM-TABLE EVADE KILL — the proven equipment-evade lever (LIVE-PROVEN LT5-A4, 2026-07-03)
+
+The VM derives ALL equipment evade from **item stat tables baked at fixed VAs in a writable section**
+(RE `work/dcl-item-table-runtime-poke.md`; lookup fn `0x2B8CB8`: `ItemData row = base + (id<0x100 ?
+0x80EA90 : 0x67F910) + id*0xC`, `+4 = additional_data_id` indexing four stat sub-tables):
+
+```text
+Weapon     0x14080F690   stride 8   +4 = WP, +5 = W-Ev          (128 rows)
+Shield     0x14080FA90   stride 2   +0 phys evade, +1 magic     (16 rows)
+Armor      0x14080FAB0   stride 2   +0 HP, +1 MP  (untouched)   (64 rows)
+Accessory  0x14080FB30   stride 2   +0 phys evade, +1 magic     (32 rows)
+Sanity anchor: byte[0x14080FAAC] = 32 19 (Venetian Shield 50/25)
+```
+
+Zeroing the evade bytes there (mod knob `ItemTableEvadeZero`, managed poll write, sanity-gated) makes
+the VM's own derivation produce 0 evade for every unit, both teams, preview included. **LIVE: Ninja
+(dual wield) and Agrias vs Ramza wearing 50% parry/shield gear → preview 100%, 12/12 swings hit.**
+This is the source-level kill: a VM-internal reader cannot bypass data it reads. Rows map 1:1 to
+`item_catalog.csv` columns (weapon_evasion, shield/accessory phys/magical evasion; additional_data_id
+= row index). Re-poked every poll (writable section could be re-stamped by a loader between battles).
+
+#### Arbitrary hit% ⇒ the MOD rolls, not the engine
+
+`unit+0x1EA` is **display-only** (0 writers, 1 UI reader `0x3B122F`). The VM roll `roll(100, chance)` at
+`0x278EE0` takes `chance` from VM-recomputed globals (magic ← Faith `0x1407B079D`, status ← `0x1407B07AC`,
+physical ← `staging+0x2B` @ `qword[0x14186AF68]`) — **none has a real-code writer**, and poking
+`0x1407B07AC` was REFUTED live (engine overwrote it at compute). So there is no airtight input for an
+arbitrary engine-side %. Instead: **compute the DCL hit% and roll the mod's own RNG**, then force the
+binary outcome via Family-1 (all=0 ⇒ hit; chosen source=100 ⇒ that avoid type). Exact %, no dependence on
+the VM roll. Account for facing (rear nullifies class+RH+LH; only accessory survives).
+
 **DEAD ENDS (both refuted live; do not retry):**
 - Hook **`0x30F49C`** ("last real instr before the roll"): `rbx` is the **ATTACKER**, not the defender —
   the defender is never in a register here. (Also corrects the older `0x226EBC`/`0x226F39` anchor, a UI
@@ -238,6 +319,13 @@ stays on the proven pre-clamp.
 - Hook **`0x30F4A7`** (roll-verdict `eax` override): a per-unit CT/turn eval, `eax` is always `0`, not
   the accuracy verdict. The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the
   one VM call `0x30FA34`; there is no real-code verdict to flip.
+
+⚠️ **Reaction-roll hook REFUTED for Shirahadori (LT5-A3, 2026-07-03):** all 4 cluster sites hooked
+with forced chance 0 logged **zero fires** across a battle where Shirahadori triggered 4+ times — the
+negate-reactions roll is **VM-internal**; the real-code cluster serves OTHER reactions (LT3b's fires =
+Counter/Mana Shield class). The proven Shirahadori lever remains the **Brave write** below. Bonus
+mechanic find: Shirahadori catches only the FIRST dual-wield swing (once per action in IVC), and the
+IVC preview % folds the reaction-negate chance in (3% = 100 − Brave 97).
 
 **Reactions (Layers A/B)** are controllable by the SAME live-data mechanism — ✅ **proven offline +
 confirmed live 2026-06-27**. The reaction trigger is a `roll(100, Brave)` (canonical FFT Brave%-gate),

@@ -183,6 +183,52 @@ internal static class RuntimeSettingsValidator
             if (settings.StatusChanceForcedChance >= 0)
                 report.Warn("StatusChanceControlEnabled", "status chance control forces the infliction roll; 100 always procs, 0 never procs.");
         }
+        if (settings.ReactionChanceControlEnabled)
+        {
+            if (settings.ReactionChanceForcedChance is < -1 or > 100)
+                report.Error("ReactionChanceForcedChance", "Forced chance must be -1 (observe) or 0..100.");
+            if (settings.ReactionChanceForcedChance >= 0)
+                report.Warn("ReactionChanceControlEnabled", "reaction chance control overrides the Brave-gate on all 4 real-code roll sites; 0 suppresses every reaction (Blade Grasp/Hamedo/Counter...), 100 forces them.");
+        }
+        if (settings.ItemTableEvadeZeroEnabled)
+            report.Warn("ItemTableEvadeZeroEnabled", "zeroes weapon W-Ev + shield + accessory evade in the loaded item stat tables every poll (all items, both teams; sanity-gated on Venetian Shield bytes). Class evade (+0x4B) is job-derived and NOT covered — pair with CalcEntryEvadeStamp/EvadeOverride for full force-hit.");
+        if (settings.EvadeRecordOverrideEnabled)
+        {
+            foreach (var (name, v) in new[]
+                     {
+                         ("44", settings.EvadeRecordOverride44),
+                         ("46", settings.EvadeRecordOverride46),
+                         ("50", settings.EvadeRecordOverride50),
+                     })
+                if (v is < -1 or > 0xFF)
+                    report.Error($"EvadeRecordOverride{name}", "Packed evade value must be -1 (leave) or 0..255.");
+            if (settings.EvadeRecordOverride44 < 0 && settings.EvadeRecordOverride46 < 0 && settings.EvadeRecordOverride50 < 0)
+                report.Warn("EvadeRecordOverrideEnabled", "enabled but all packed values are -1; no hook will be installed.");
+            else
+                report.Warn("EvadeRecordOverrideEnabled", "forces the PACKED evade fields (class/shield/accessory) in the combat-input record for ALL units, both teams — the values the preview and roll actually consume.");
+        }
+        if (settings.CalcEntryEvadeStampEnabled)
+        {
+            if (settings.CalcEntryProbeRva <= 0)
+                report.Error("CalcEntryProbeRva", "CalcEntryEvadeStamp uses CalcEntryProbeRva; it must be positive.");
+            report.Warn("CalcEntryEvadeStampEnabled", "calc-entry evade stamp writes the EvadeCopierOverride* byte profile onto the TARGET unit at computeActionResult, immediately before the VM avoidance roll (per-attack, zero-width race window).");
+        }
+        if (settings.EvadeCopierOverrideEnabled || settings.CalcEntryEvadeStampEnabled)
+        {
+            if (settings.EvadeCopierOverrideTargetCharId is < -1 or > 0xFF)
+                report.Error("EvadeCopierOverrideTargetCharId", "Target charId must be -1 (all) or a byte 0..255.");
+            foreach (var (name, v) in new[]
+                     {
+                         ("46", settings.EvadeCopierOverride46), ("47", settings.EvadeCopierOverride47),
+                         ("48", settings.EvadeCopierOverride48), ("49", settings.EvadeCopierOverride49),
+                         ("4A", settings.EvadeCopierOverride4A), ("4B", settings.EvadeCopierOverride4B),
+                         ("4C", settings.EvadeCopierOverride4C), ("4D", settings.EvadeCopierOverride4D),
+                         ("4E", settings.EvadeCopierOverride4E),
+                     })
+                if (v is < -1 or > 0xFF)
+                    report.Error($"EvadeCopierOverride{name}", "Evade byte must be -1 (leave) or 0..255.");
+            report.Warn("EvadeCopierOverrideEnabled", "airtight evade override detours the 3 equip/refresh copier tails (0x59F93C/0x285553/0x396757) and over-stamps the defender's evade bytes every refresh; all=0 forces HIT, one source high forces that avoid type. Retires the EvadeOverride poll.");
+        }
         if (settings.PreviewForecastPokeEnabled)
         {
             if (settings.PreviewForecastPokeValue is < -1 or > 0x7FFF)
