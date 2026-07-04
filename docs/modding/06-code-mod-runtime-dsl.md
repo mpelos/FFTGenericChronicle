@@ -1146,7 +1146,7 @@ Four probe/control surfaces added for the LT3 campaign (`work/lt3-calc-rng-resul
   physical/magic/AI (same sweep). The status apply-mask/ailment are NOT staged here for a hit-Blind
   (that path is elsewhere); status control stays on the proven input levers.
 
-## DCL pre-clamp pipeline (`DclPipelineEnabled`) — built 2026-07-04, awaiting first live test (LT6)
+## DCL pre-clamp pipeline (`DclPipelineEnabled`) — ✅ proven live 2026-07-04 (LT6)
 
 The first end-to-end DCL delivery: a **one-switch pipeline** that computes a config-authored
 damage formula from the full (attacker, target, equipment, ability) context and rewrites the
@@ -1187,8 +1187,15 @@ error (validator) and a `[DCL-ERR]` fall-through-to-vanilla at runtime.
 
 Test profiles:
 - `work/battle-runtime-settings.lt6-dcl-preclamp.json` — plumbing slice (LT5-A4 force-hit stack +
-  a minimal predictable formula). PASS = each hit's HP drop equals its `[DCL]` `debit` and differs
-  from `oldDebit`. **Run this first.**
+  a minimal predictable formula). **✅ PASSED live 2026-07-04:** 6 attack scenarios (5 attackers,
+  incl. dual wield), every swing 100% preview + connected, every UI HP drop equaled its `[DCL]`
+  `debit` and differed from vanilla `oldDebit` (e.g. Ramza→Agrias 80 vs vanilla 576; Ninja→Ramza
+  45+45 vs 270+270). Zero `[DCL-ERR]`. Notes: (a) the forecast panel still shows the **vanilla**
+  number (`oldDebit`) — preview paint is a separate, already-proven lever, not yet wired to the DCL
+  formula; (b) one `[DCL-MISS] reason=no-calc-entry` fired for a hit **on the Ninja attacker**
+  (target `0x80`, unit idx 17) — almost certainly a counter/reaction hit, meaning **reaction
+  attacks do not pass through calc-entry `0x309A44`** (or their context ages differently); they
+  safely fall through to vanilla damage. Reactions are a known open front.
 - `work/battle-runtime-settings.lt7-dcl-damage-model.json` — the provisional GURPS-shaped weapon
   damage model (thr/sw base off raw PA, weapon Power, subtractive armor DR by damage type, wound
   multipliers, Brave trait scaling) ported from the reconciler-era `dcl-damage-slice` profile to
