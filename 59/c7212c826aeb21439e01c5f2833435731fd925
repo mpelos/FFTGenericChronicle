@@ -1,0 +1,19 @@
+docs/handoff/2026-07-04-1035.md
+  s_6cc0081048ef79::t_2288e3cd6024c2 1-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "59c7212c826aeb21439e01c5f2833435731fd925",
+  "prompts": {},
+  "sessions": {
+    "s_6cc0081048ef79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "861177ea-0c0b-4d71-bdb1-89f8eb59e33b",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
