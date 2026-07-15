@@ -1,56 +1,7 @@
-# === Third-party tools / downloads (large, not our source) ===
-tools/*
-!tools/entd_tool.py
-!tools/guest_scan.py
-!tools/dump_baseline.py
-!tools/dump_weapons.py
-!tools/map_battle_data.py
-!tools/sim_damage.py
-!tools/build_memtable_probe_settings.py
-!tools/build_runtime_settings_from_sim.py
-!tools/build_runtime_simulation_matrix.py
-!tools/build_verified_wp_bundle.py
-!tools/find_memtable_candidates.py
-!tools/summarize_weapon_baseline.py
-!tools/analyze_actor_probe_ct.py
-!tools/analyze_battleprobe_log.py
-!tools/analyze_ko_lifecycle_disasm.py
-!tools/dump_item_catalog.py
-!tools/promote_runtime_offsets.py
-!tools/build_neuter_data.py
-!tools/report_offline_readiness.py
-!tools/report_live_gate_plan.py
-!tools/report_neuter_gap_targets.py
-!tools/report_neuter_coverage.py
-!tools/scan_static_code_patterns.py
-!tools/report_runtime_profiles.py
-!tools/test_actor_probe_ct.py
-!tools/test_memtable_candidates.py
-!tools/test_offline_readiness.py
-!tools/test_live_gate_plan.py
-!tools/test_neuter_gap_targets.py
-!tools/test_neuter_data.py
-!tools/test_runtime_profiles.py
-!tools/test_static_code_patterns.py
-!tools/test_runtime_tooling.py
-!tools/watch_live_mapping.py
-!tools/check_build_incidence.py
-!tools/check_accuracy_evasion.py
-!tools/check_healing_attrition.py
-!tools/check_ct_delay.py
-!tools/check_healing_timing.py
-!tools/check_armor_response.py
-!tools/check_enemy_offense.py
-!tools/check_offense_armor_composition.py
-!tools/check_targeting_challenge.py
-!tools/build_vanilla_reference.py
-!tools/analyze_equipment_dumps.py
-!tools/map_attributes.py
-!tools/dump_levels.py
-!tools/profile_struct.py
-!tools/lt1_mega_probe.py
-!tools/lt2_poke.py
-!tools/manage_fft_enhanced_autosave.ps1
+# === Third-party tool/download directories (large, not our source) ===
+# First-level scripts in tools/ are repository source and must be versioned. Bundled/downloaded
+# runtimes belong in their own subdirectories and remain ignored.
+tools/*/
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/

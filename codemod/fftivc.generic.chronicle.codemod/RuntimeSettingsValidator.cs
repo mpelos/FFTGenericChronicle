@@ -552,8 +552,8 @@ internal static class RuntimeSettingsValidator
                     report.Warn(scope, "FlatChance is ignored by the default courage/caution curve; use ChanceFormula to author a custom curve.");
                 if (!string.IsNullOrWhiteSpace(rule.ConditionFormula))
                     report.Warn(scope,
-                        settings.DclHexWardEnabled && rule.AbilityId == 443
-                            ? "ConditionFormula is evaluated at Hex Ward's successful incoming-result commit because the native dispatcher has no carrier-443 branch. It reserves a producer request but does not consume cadence before pass-2 acceptance."
+                        settings.DclSyntheticReactionEnabled && rule.AbilityId == settings.DclSyntheticReactionCarrierId
+                            ? "ConditionFormula is evaluated at the synthetic Reaction's configured trigger because its carrier has no native dispatcher branch. It reserves a producer request but does not consume cadence before pass-2 acceptance."
                             : "ConditionFormula can suppress an existing native reaction evaluation by setting its chance to zero. It cannot create a new trigger window the native dispatcher never evaluates, and it does not consume cadence state.");
                 if (rule.VmInternalAvoidance)
                     report.Warn(scope, "VmInternalAvoidance reads the exact Reaction id from the calc-entry order record and temporarily virtualizes defender Brave only inside computeActionResult, covering equipped or innate VM-owned avoidance such as Shirahadori. This path is Strong offline and requires a live vertical slice.");
@@ -632,7 +632,7 @@ internal static class RuntimeSettingsValidator
         ValidateDclReactionPreSelectorProbe(settings, report);
         ValidateDclReactionMaterializationProbe(settings, report);
         ValidateDclReactionOrderRewrite(settings, report);
-        ValidateDclHexWard(settings, report);
+        ValidateDclSyntheticReaction(settings, report);
         ValidateDclReactionEffectProbe(settings, report);
         ValidateDclAutoPotionConsumeProbe(settings, report);
         ValidateDclWeaponLineOfFireProbe(settings, report);
@@ -1094,8 +1094,8 @@ internal static class RuntimeSettingsValidator
             if (string.IsNullOrWhiteSpace(settings.DclReactionPreSelectorProbeExpectedBytes))
                 report.Error("DclReactionPreSelectorProbeExpectedBytes", "Expected bytes are required for the pass-2 pre-selector probe.");
             report.Warn("DclReactionPreSelectorProbeEnabled",
-                settings.DclHexWardEnabled
-                    ? "pass-2 pre-selector probe/control snapshots all candidate words and consumes Hex Ward's successful-hit mailbox through a dynamic per-defender producer; Hex WardLogOnly controls whether carrier 443 is staged."
+                settings.DclSyntheticReactionEnabled
+                    ? "pass-2 pre-selector probe/control snapshots all candidate words and consumes the synthetic Reaction mailbox through a dynamic per-defender producer; DclSyntheticReactionLogOnly controls whether the configured carrier is staged."
                     : settings.DclReactionProducerEnabled
                         ? "pass-2 pre-selector probe/control snapshots all candidate words and hosts the separately guarded reaction producer."
                         : "observe-only pass-2 pre-selector probe: snapshots source/eval globals, incoming actor, and all 21 unit+0x1CE candidate words before native consumption. It never stages a carrier or mutates game memory.");
@@ -1135,62 +1135,55 @@ internal static class RuntimeSettingsValidator
             "observe-only state-0x2C probe after the VM execution workers: captures the executed actor, presentation/action ids, source, and target list before cleanup. It never applies an effect or consumes cadence.");
     }
 
-    private static void ValidateDclHexWard(RuntimeSettings settings, SettingsValidationReport report)
+    private static void ValidateDclSyntheticReaction(RuntimeSettings settings, SettingsValidationReport report)
     {
-        if (settings.DclHexWardMaxLogs < 0)
-            report.Error("DclHexWardMaxLogs", "Hex Ward log cap must be nonnegative.");
-        if (!settings.DclHexWardEnabled)
+        if (settings.DclSyntheticReactionMaxLogs < 0)
+            report.Error("DclSyntheticReactionMaxLogs", "synthetic Reaction log cap must be nonnegative.");
+        if (!settings.DclSyntheticReactionEnabled)
             return;
 
+        const string scope = "DclSyntheticReactionEnabled";
+        int carrierId = settings.DclSyntheticReactionCarrierId;
+        if (carrierId is < 422 or > 453)
+            report.Error("DclSyntheticReactionCarrierId", "synthetic Reaction carrier id must be a native Reaction id in 422..453.");
+        if (settings.DclSyntheticReactionTrigger != "successful-hit-survivor")
+            report.Error("DclSyntheticReactionTrigger", "the only currently owned synthetic trigger is 'successful-hit-survivor'.");
         if (!settings.DclPipelineEnabled)
-            report.Error("DclHexWardEnabled", "Hex Ward requires DclPipelineEnabled for exact incoming hit/action identity.");
+            report.Error(scope, "synthetic Reaction requires DclPipelineEnabled for exact incoming hit/action identity.");
         if (!settings.DclReactionTaxonomyEnabled)
-            report.Error("DclHexWardEnabled", "Hex Ward requires DclReactionTaxonomyEnabled for its managed Caution curve.");
-        var hexRules = (settings.DclReactionRules ?? []).Where(candidate => candidate.AbilityId == 443).ToArray();
-        var rule = hexRules.FirstOrDefault();
-        if (hexRules.Length != 1)
-            report.Error("DclHexWardEnabled", "Hex Ward requires exactly one DclReactionRules entry for carrier 443.");
-        else if (rule!.NormalizedMode != "caution")
-            report.Error("DclHexWardEnabled", "Hex Ward reaction 443 must use the caution (inverse-Brave) taxonomy.");
+            report.Error(scope, "synthetic Reaction requires DclReactionTaxonomyEnabled for its managed chance rule.");
+
+        var carrierRules = (settings.DclReactionRules ?? [])
+            .Where(candidate => candidate.AbilityId == carrierId)
+            .ToArray();
+        if (carrierRules.Length != 1)
+            report.Error(scope, "synthetic Reaction requires exactly one DclReactionRules entry for its configured carrier.");
 
         if (!settings.DclReactionPreSelectorProbeEnabled)
-            report.Error("DclHexWardEnabled", "Hex Ward requires the exact-byte-guarded pass-2 pre-selector producer boundary.");
+            report.Error(scope, "synthetic Reaction requires the exact-byte-guarded pass-2 pre-selector producer boundary.");
         if (!settings.DclReactionCommitProbeEnabled)
-            report.Error("DclHexWardEnabled", "Hex Ward requires pass-2 commit capture; cadence and effect delivery are forbidden before acceptance.");
+            report.Error(scope, "synthetic Reaction requires pass-2 commit capture; cadence is forbidden before acceptance.");
         if (settings.DclReactionProducerEnabled)
-            report.Error("DclHexWardEnabled", "disable the fixed-index reaction test producer; Hex Ward owns the dynamic per-defender producer on the same hook.");
+            report.Error(scope, "disable the fixed-index reaction test producer; the synthetic transaction owns the dynamic per-defender producer on the same hook.");
 
         if (!settings.DclReactionMaterializationProbeEnabled || !settings.DclReactionOrderRewriteEnabled)
-            report.Error("DclHexWardEnabled", "Hex Ward requires the guarded accepted-order rewrite boundary.");
+            report.Error(scope, "synthetic Reaction requires the guarded accepted-order rewrite boundary.");
         else
         {
-            if (settings.DclReactionOrderRewriteCarrierId != 443 ||
-                !settings.DclReactionOrderRewriteRetargetSource ||
-                settings.DclReactionOrderRewriteActionEnabled)
-                report.Error("DclHexWardEnabled", "Hex Ward order rewrite must target exact carrier 443, retarget to source, and preserve the native carrier action head.");
-            if (settings.DclReactionOrderRewriteExpectedActionType != 1 ||
-                settings.DclReactionOrderRewriteExpectedAbilityId != 0)
-                report.Error("DclHexWardEnabled", "Hex Ward live/order audit requires the proven generic-443 native head type=1, ability=0.");
-            if (!settings.DclHexWardLogOnly && settings.DclReactionOrderRewriteLogOnly)
-                report.Error("DclHexWardEnabled", "live Hex Ward requires live accepted-order source retargeting.");
+            if (settings.DclReactionOrderRewriteCarrierId != carrierId)
+                report.Error(scope, "synthetic Reaction and accepted-order rewrite must use the same exact carrier id.");
+            if (!settings.DclSyntheticReactionLogOnly && settings.DclReactionOrderRewriteLogOnly)
+                report.Error(scope, "live synthetic Reaction requires a live accepted-order rewrite.");
         }
 
-        if (settings.DclHexWardEffect is not ("blind" or "brave-down"))
-            report.Error("DclHexWardEffect", "Hex Ward effect must be 'blind' or 'brave-down'.");
-        if (settings.DclHexWardForcedRoll is < -1 or > 99)
-            report.Error("DclHexWardForcedRoll", "Hex Ward forced roll must be -1 (RNG) or 0..99.");
-        if (settings.DclHexWardBlindDurationTargetTurns is < 0 or > 99)
-            report.Error("DclHexWardBlindDurationTargetTurns", "Hex Ward Blind duration must be within 0..99 target turns.");
-        if (settings.DclHexWardBraveDecrease is < 1 or > 100)
-            report.Error("DclHexWardBraveDecrease", "Hex Ward Brave decrease must be within 1..100.");
-        if (settings.DclHexWardBraveFloor is < 0 or > 100)
-            report.Error("DclHexWardBraveFloor", "Hex Ward Brave floor must be within 0..100.");
-        if (settings.DclHexWardMaxWrites is < 1 or > 32)
-            report.Error("DclHexWardMaxWrites", "Hex Ward live producer writes must be bounded within 1..32.");
+        if (settings.DclSyntheticReactionForcedRoll is < -1 or > 99)
+            report.Error("DclSyntheticReactionForcedRoll", "synthetic Reaction forced roll must be -1 (RNG) or 0..99.");
+        if (settings.DclSyntheticReactionMaxWrites is < 1 or > 32)
+            report.Error("DclSyntheticReactionMaxWrites", "synthetic Reaction live producer writes must be bounded within 1..32.");
 
-        report.Warn("DclHexWardEnabled", settings.DclHexWardLogOnly
-            ? "Hex Ward is LOG-ONLY: the managed roll and exact dynamic producer intent are audited without staging carrier 443 or delivering an effect."
-            : "Hex Ward is LIVE and bounded: accepted managed Caution reservations stage carrier 443, retarget its accepted order to the source, then consume cadence and deliver one managed effect only at exact pass-2 commit.");
+        report.Warn(scope, settings.DclSyntheticReactionLogOnly
+            ? "synthetic Reaction is LOG-ONLY: the managed rule and exact dynamic producer intent are audited without staging the configured carrier."
+            : "synthetic Reaction is LIVE and bounded: an exact equipped-carrier owner that survives a successful incoming hit may reserve and stage the carrier; accepted-order rewriting owns delivery, and exact pass-2 acceptance consumes cadence once.");
     }
 
     private static void ValidateDclReactionMaterializationProbe(RuntimeSettings settings, SettingsValidationReport report)

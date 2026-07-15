@@ -4489,37 +4489,37 @@ internal static class Program
               cadence.TryConsumeOwnTurnCycle(441),
             "unit-slot reuse with a different character should reset reaction cadence state");
 
-        var hexWard = new DclHexWardCoordinator();
+        var syntheticReaction = new DclSyntheticReactionCoordinator();
         nint defenderPtr = (nint)0x3000;
-        var hexToken = new DclReactionActionToken(16, 0x44, 12, 1, 0);
-        var acceptedHex = hexWard.Evaluate(
-            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+        var syntheticToken = new DclReactionActionToken(16, 0x44, 12, 1, 0);
+        var acceptedSynthetic = syntheticReaction.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: syntheticToken,
             eligible: true, chance: 30, roll: 29);
-        Check(acceptedHex.Accepted && acceptedHex.ShouldRequestProducer && !acceptedHex.Replayed,
-            "Hex Ward should reserve exactly one producer request when the Caution roll succeeds");
-        var replayedHex = hexWard.Evaluate(
-            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+        Check(acceptedSynthetic.Accepted && acceptedSynthetic.ShouldRequestProducer && !acceptedSynthetic.Replayed,
+            "a synthetic Reaction should reserve exactly one producer request when its configured roll succeeds");
+        var replayedSynthetic = syntheticReaction.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: syntheticToken,
             eligible: true, chance: 30, roll: 0);
-        Check(replayedHex.Accepted && !replayedHex.ShouldRequestProducer && replayedHex.Replayed,
-            "duplicate Hex Ward gate callbacks for one attacker action must neither reroll nor restage");
-        Check(!hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 15, out _),
-            "Hex Ward commit must reject a source that differs from the reserved incoming attacker");
-        Check(hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out var committedHex) &&
-              committedHex.Phase == DclHexWardReservationPhase.Committed,
-            "the exact pass-2 actor/source pair should commit the accepted Hex Ward reservation");
-        Check(!hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out _),
-            "a duplicate pass-2 commit must not deliver Hex Ward twice");
-        var committedReplay = hexWard.Evaluate(
-            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+        Check(replayedSynthetic.Accepted && !replayedSynthetic.ShouldRequestProducer && replayedSynthetic.Replayed,
+            "duplicate synthetic-Reaction callbacks for one attacker action must neither reroll nor restage");
+        Check(!syntheticReaction.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 15, out _),
+            "synthetic-Reaction commit must reject a source that differs from the reserved incoming attacker");
+        Check(syntheticReaction.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out var committedSynthetic) &&
+              committedSynthetic.Phase == DclSyntheticReactionReservationPhase.Committed,
+            "the exact pass-2 actor/source pair should commit the accepted synthetic-Reaction reservation");
+        Check(!syntheticReaction.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out _),
+            "a duplicate pass-2 commit must not commit a synthetic Reaction twice");
+        var committedReplay = syntheticReaction.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: syntheticToken,
             eligible: true, chance: 100, roll: 0);
         Check(committedReplay.Replayed && !committedReplay.ShouldRequestProducer &&
               committedReplay.Reason == "already-committed",
             "a late callback for the committed attacker token must not reopen the transaction");
-        var rejectedHex = hexWard.Evaluate(
+        var rejectedSynthetic = syntheticReaction.Evaluate(
             defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55,
-            hexToken with { SourceTurnEpoch = 13 }, eligible: true, chance: 30, roll: 30);
-        Check(!rejectedHex.Accepted && !rejectedHex.ShouldRequestProducer && rejectedHex.Reason == "chance-failed",
-            "Hex Ward should reject the inclusive chance boundary roll and retain that decision idempotently");
+            syntheticToken with { SourceTurnEpoch = 13 }, eligible: true, chance: 30, roll: 30);
+        Check(!rejectedSynthetic.Accepted && !rejectedSynthetic.ShouldRequestProducer && rejectedSynthetic.Reason == "chance-failed",
+            "synthetic Reaction should reject the inclusive chance boundary roll and retain that decision idempotently");
     }
 
     private static void TestDclPhysicalContest(ItemCatalog catalog)
@@ -5626,11 +5626,11 @@ internal static class Program
                 finding.Scope == "DclReactionOrderRewriteEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("exact expected")),
             "validator should reject a live accepted-order rewrite without exact native-order guards");
 
-        var hexWardLogOnlyReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        var syntheticReactionLogOnlyReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
         {
             DclPipelineEnabled = true,
             DclReactionTaxonomyEnabled = true,
-            DclReactionRules = [new DclReactionRule { Name = "Hex Ward", AbilityId = 443, Mode = "caution" }],
+            DclReactionRules = [new DclReactionRule { Name = "Synthetic carrier probe", AbilityId = 443, Mode = "neutral", FlatChance = 100 }],
             DclReactionPreSelectorProbeEnabled = true,
             DclReactionCommitProbeEnabled = true,
             DclReactionMaterializationProbeEnabled = true,
@@ -5640,39 +5640,36 @@ internal static class Program
             DclReactionOrderRewriteRetargetSource = true,
             DclReactionOrderRewriteExpectedActionType = 1,
             DclReactionOrderRewriteExpectedAbilityId = 0,
-            DclHexWardEnabled = true,
-            DclHexWardLogOnly = true,
-            DclHexWardEffect = "blind",
-            DclHexWardMaxWrites = 1,
+            DclSyntheticReactionEnabled = true,
+            DclSyntheticReactionLogOnly = true,
+            DclSyntheticReactionCarrierId = 443,
+            DclSyntheticReactionTrigger = "successful-hit-survivor",
+            DclSyntheticReactionMaxWrites = 1,
         }, catalog);
-        Check(!hexWardLogOnlyReport.Findings.Any(finding => finding.Severity == "ERROR"),
-            "the complete log-only Hex Ward producer/retarget/commit contract should pass validation: " +
-            string.Join(" | ", hexWardLogOnlyReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+        Check(!syntheticReactionLogOnlyReport.Findings.Any(finding => finding.Severity == "ERROR"),
+            "the complete log-only synthetic-Reaction producer/rewrite/commit contract should pass validation: " +
+            string.Join(" | ", syntheticReactionLogOnlyReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
 
-        var hexWardUnsafeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        var syntheticReactionUnsafeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
         {
-            DclHexWardEnabled = true,
-            DclHexWardLogOnly = false,
-            DclHexWardEffect = "unknown",
-            DclHexWardForcedRoll = 100,
-            DclHexWardBlindDurationTargetTurns = -1,
-            DclHexWardBraveDecrease = 0,
-            DclHexWardBraveFloor = 101,
-            DclHexWardMaxWrites = 0,
+            DclSyntheticReactionEnabled = true,
+            DclSyntheticReactionLogOnly = false,
+            DclSyntheticReactionCarrierId = 999,
+            DclSyntheticReactionTrigger = "unknown",
+            DclSyntheticReactionForcedRoll = 100,
+            DclSyntheticReactionMaxWrites = 0,
         }, catalog);
         foreach (string scope in new[]
         {
-            "DclHexWardEnabled",
-            "DclHexWardEffect",
-            "DclHexWardForcedRoll",
-            "DclHexWardBlindDurationTargetTurns",
-            "DclHexWardBraveDecrease",
-            "DclHexWardBraveFloor",
-            "DclHexWardMaxWrites",
+            "DclSyntheticReactionEnabled",
+            "DclSyntheticReactionCarrierId",
+            "DclSyntheticReactionTrigger",
+            "DclSyntheticReactionForcedRoll",
+            "DclSyntheticReactionMaxWrites",
         })
         {
-            Check(hexWardUnsafeReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
-                $"validator should reject unsafe Hex Ward scope {scope}");
+            Check(syntheticReactionUnsafeReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject unsafe synthetic-Reaction scope {scope}");
         }
 
         var reactionEffectBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings

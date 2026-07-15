@@ -2149,35 +2149,32 @@ must instead add its authored bonus to `DclDodgeFormula` before the physical def
 the native Defending delivery, and reserve/commit the once-per-own-cycle token without consuming it
 during forecast or AI scoring. The calc-provenance classifier is the timing authority for that split.
 
-Hex Ward uses blank carrier `443`, not an NXD-authored action formula. The carrier is accepted by the
-pass-2 generic selector if `unit+0x1CE` is staged externally, but its native generic order targets the
-reactor. The native dispatcher never evaluates the equipped-reaction bit for `443`, so Hex Ward does
-not depend on the ordinary real-code Brave-gate callbacks. The successful pre-clamp result path
-checks exact `unit+0x14 == 443` owners after every fail-open return, requires a valid non-self
-source/action and a surviving defender, treats that committed result as the landed-hit authority,
-applies the authored Caution curve once per attacker-action token, and arms a private per-defender
-mailbox. Replayed result callbacks reuse the accepted/rejected reservation; they never reroll,
-restage, or consume cadence.
+The synthetic-Reaction transaction supplies a configurable carrier whose native dispatcher has no
+trigger. Blank carrier `443` is the current structural probe: the pass-2 generic selector accepts it
+if `unit+0x1CE` is staged externally, but the dispatcher never evaluates its equipped-reaction bit.
+The successful pre-clamp result path checks an exact `unit+0x14 == configured carrier` owner after
+every fail-open return, requires a valid non-self source/action and a surviving defender, treats the
+committed result as the landed-hit authority, evaluates the carrier's configured courage, caution,
+or neutral taxonomy rule once per attacker-action token, and arms a private per-defender mailbox.
+Replayed result callbacks reuse the accepted/rejected reservation; they never reroll, restage, or
+consume cadence.
 
-The pre-selector consumes each request once, requires an active unit and empty `unit+0x1CE`, and
-either audits `would-stage` or writes carrier `443` under `DclHexWardMaxWrites`. The controller
-preserves the exact Reaction id separately and retargets the
-accepted order at `0x2063BD`, before actor construction: `+0x0B` becomes the incoming source index and
-`+0x0C/+0x0E/+0x10` become that source unit's x/layer/y coordinates. Blind or Brave reduction is then
-delivered only when an exact producer-owned pass-2 commit agrees on actor, carrier, and source.
-The commit consumes `TryConsumeAttackerAction(443, token)` before effect delivery, so Dual Wield,
-repeated callbacks, and duplicate commit rows cannot apply it twice. Blind respects immunity byte
-`+0x5D` mask `0x20` and atomically ORs durable/effective bytes `+0x1F0/+0x62`; an optional DCL-owned
-duration never adopts a Blind that predated the transaction. `brave-down` instead decreases current
-Brave `+0x2B` to an authored floor without changing MaxBrave. The pass-2 commit remains the
-source/actor/cardinality authority; state `0x2C` audits each delivered strike/transaction
-(**Strong/offline-tested, live-gated**).
+The pre-selector consumes each request once, requires an active surviving unit and empty
+`unit+0x1CE`, and either audits `would-stage` or writes the configured carrier under
+`DclSyntheticReactionMaxWrites`. The separately configured accepted-order controller at `0x2063BD`
+may replace the action head, copy the incoming source target tuple, or do both before actor
+construction. The synthetic transaction itself never writes a status, stat, or job-specific effect.
+Only an exact producer-owned pass-2 commit that agrees on actor, carrier, and source consumes
+`TryConsumeAttackerAction(carrier, token)`, so repeated callbacks and duplicate commit rows cannot
+commit twice. Native execution of the accepted order owns effect delivery; state `0x2C` audits each
+delivered strike/transaction (**Strong/offline-tested, live-gated**).
 
-`DclHexWardEnabled` is disabled by default and `DclHexWardLogOnly` defaults true. The composed profile
-requires reaction taxonomy rule `443` in `caution` mode, the guarded pre-selector and pass-2 commit,
-and accepted-order source retargeting for exact native generic head type `1`, payload `0`. Effect
-policy is `DclHexWardEffect = blind | brave-down`; deterministic tests may set
-`DclHexWardForcedRoll = 0..99`. Live staging is bounded to `DclHexWardMaxWrites = 1..32`.
+`DclSyntheticReactionEnabled` is disabled by default and `DclSyntheticReactionLogOnly` defaults
+true. The profile selects `DclSyntheticReactionCarrierId`, requires exactly one taxonomy rule for
+that carrier, and composes the guarded pre-selector, pass-2 commit, materialization, and accepted-order
+rewrite boundaries. `DclSyntheticReactionTrigger` currently accepts only
+`successful-hit-survivor`; deterministic tests may set `DclSyntheticReactionForcedRoll = 0..99`.
+Live staging is bounded to `DclSyntheticReactionMaxWrites = 1..32`.
 
 `DclReactionProducerEnabled` is a disabled-by-default vertical-test control hosted by the AOB-guarded
 pass-2 pre-selector hook. It considers only the configured battle-unit index, requires that unit to

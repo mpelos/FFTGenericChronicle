@@ -177,13 +177,13 @@ public class Mod : ModBase
     private const int REACTION_PRESELECT_SLOT_SIZE = 128;
     private const int REACTION_PRESELECT_BUFFER_SIZE = RPS_EVENTS + (REACTION_PRESELECT_RING_SIZE * REACTION_PRESELECT_SLOT_SIZE);
 
-    // Dynamic Hex Ward producer mailbox. Gate callbacks reserve one byte per battle-table entry;
+    // Dynamic synthetic-Reaction producer mailbox. Gate callbacks reserve one byte per battle-table entry;
     // the guarded pre-selector hook consumes each request exactly once. States: 0 idle, 1 requested,
     // 2 staged, 3 blocked/capped, 4 would-stage (log-only).
-    private const int HWP_CONTROL_WRITES = 0;
-    private const int HWP_ATTEMPTS = 4;
-    private const int HWP_STATES = 0x10;
-    private const int HEX_WARD_PRODUCER_BUFFER_SIZE = HWP_STATES + 21;
+    private const int SRP_CONTROL_WRITES = 0;
+    private const int SRP_ATTEMPTS = 4;
+    private const int SRP_STATES = 0x10;
+    private const int SYNTHETIC_REACTION_PRODUCER_BUFFER_SIZE = SRP_STATES + 21;
 
     // Accepted pass-2 materialization snapshot. At 0x2063BD the selector has returned a nonnegative
     // reactor index in eax and left the carrier-specific 20-byte order at unit+0x1A0. The actor
@@ -401,7 +401,7 @@ public class Mod : ModBase
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _dclReactionCommitProbeHooks = new();
     private nint _dclReactionPreSelectorProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionPreSelectorProbeHook;
-    private nint _dclHexWardProducerBuf;
+    private nint _dclSyntheticReactionProducerBuf;
     private nint _dclReactionMaterializationProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionMaterializationProbeHook;
     private nint _dclReactionEffectProbeBuf;
@@ -502,9 +502,9 @@ public class Mod : ModBase
     private readonly Dictionary<nint, DclMpTrickleState> _dclMpTrickleStates = new();
     private readonly object _dclReactionCadenceGate = new();
     private readonly Dictionary<nint, DclReactionCadenceState> _dclReactionCadenceStates = new();
-    private readonly DclHexWardCoordinator _dclHexWardCoordinator = new();
-    private readonly object _dclHexWardRngGate = new();
-    private Random? _dclHexWardRng;
+    private readonly DclSyntheticReactionCoordinator _dclSyntheticReactionCoordinator = new();
+    private readonly object _dclSyntheticReactionRngGate = new();
+    private Random? _dclSyntheticReactionRng;
     private int _dclHitLogCount;
     private int _dclStatusLogCount;
     private int _dclGuardLogCount;
@@ -539,7 +539,7 @@ public class Mod : ModBase
     private int _lastDclReactionMaterializationProbeSequence;
     private int _dclReactionEffectProbeLogs;
     private int _lastDclReactionEffectProbeSequence;
-    private int _dclHexWardLogs;
+    private int _dclSyntheticReactionLogs;
     private int _dclAutoPotionConsumeProbeLogs;
     private int _lastDclAutoPotionConsumeProbeSequence;
     private int _dclWeaponLineOfFireProbeLogs;
@@ -2768,7 +2768,7 @@ public class Mod : ModBase
         }
     }
 
-    private long ResolveDclHexWardGate(
+    private long ResolveDclSyntheticReactionGate(
         nint defenderPtr,
         UnitSnapshot defender,
         int defenderTableIndex,
@@ -2777,6 +2777,7 @@ public class Mod : ModBase
         int chance,
         string ruleReason)
     {
+        int carrierId = _settings.DclSyntheticReactionCarrierId;
         bool structurallyEligible =
             ruleAccepted &&
             incoming.SourceValid && incoming.ActionValid &&
@@ -2792,7 +2793,7 @@ public class Mod : ModBase
         bool cadenceEligible;
         lock (_dclReactionCadenceGate)
             cadenceEligible = GetOrCreateDclReactionCadenceState(defender)
-                .CanConsumeAttackerAction(443, token);
+                .CanConsumeAttackerAction(carrierId, token);
 
         bool eligible = structurallyEligible && cadenceEligible;
         string reason = !ruleAccepted ? ruleReason
@@ -2810,17 +2811,17 @@ public class Mod : ModBase
         {
             roll = 99;
         }
-        else if (_settings.DclHexWardForcedRoll is >= 0 and <= 99)
+        else if (_settings.DclSyntheticReactionForcedRoll is >= 0 and <= 99)
         {
-            roll = _settings.DclHexWardForcedRoll;
+            roll = _settings.DclSyntheticReactionForcedRoll;
         }
         else
         {
-            lock (_dclHexWardRngGate)
-                roll = (_dclHexWardRng ??= new Random()).Next(0, 100);
+            lock (_dclSyntheticReactionRngGate)
+                roll = (_dclSyntheticReactionRng ??= new Random()).Next(0, 100);
         }
 
-        var decision = _dclHexWardCoordinator.Evaluate(
+        var decision = _dclSyntheticReactionCoordinator.Evaluate(
             defenderPtr,
             defenderTableIndex,
             defender.CharId,
@@ -2830,17 +2831,17 @@ public class Mod : ModBase
             roll,
             reason);
         bool mailboxArmed = false;
-        if (decision.ShouldRequestProducer && _dclHexWardProducerBuf != 0)
+        if (decision.ShouldRequestProducer && _dclSyntheticReactionProducerBuf != 0)
         {
-            Marshal.WriteByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex, 1);
+            Marshal.WriteByte(_dclSyntheticReactionProducerBuf, SRP_STATES + defenderTableIndex, 1);
             mailboxArmed = true;
         }
 
-        if (_dclHexWardLogs < Math.Clamp(_settings.DclHexWardMaxLogs, 0, 100_000))
+        if (_dclSyntheticReactionLogs < Math.Clamp(_settings.DclSyntheticReactionMaxLogs, 0, 100_000))
         {
-            _dclHexWardLogs++;
+            _dclSyntheticReactionLogs++;
             QueueDclDecisionLog(_settings,
-                $"[DCL-HEX-WARD-GATE] defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
+                $"[DCL-SYNTHETIC-REACTION-GATE] carrier={carrierId} defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
                 $"sourceIdx={incoming.SourceIdx} sourceChar=0x{incoming.SourceCharId:X2} " +
                 $"actionType=0x{incoming.ActionType:X2} ability={incoming.AbilityId} sourceEpoch={incoming.SourceTurnEpoch} " +
                 $"hitKnown={(incoming.HitDecisionKnown ? 1 : 0)} hit={(incoming.Hit ? 1 : 0)} chance={decision.Reservation.Chance} " +
@@ -2848,7 +2849,7 @@ public class Mod : ModBase
                 $"mailbox={(mailboxArmed ? "armed" : decision.ShouldRequestProducer ? "missing" : "none")} reason={CleanDclLogValue(decision.Reason)}");
         }
 
-        // The managed roll and dynamic producer own carrier 443. Returning zero prevents a second
+        // The managed roll and dynamic producer own the configured carrier. Returning zero prevents a second
         // native roll/dispatch attempt while the later pass-2 hook consumes the reservation.
         return 0;
     }
@@ -4660,7 +4661,7 @@ public class Mod : ModBase
                     ? "id-disagreement"
                     : "none";
 
-            ProcessDclHexWardCommit(queuePass, reactionId, idsAgree, actor, sourceIndex);
+            ProcessDclSyntheticReactionCommit(queuePass, reactionId, idsAgree, actor, sourceIndex);
             if (shouldLog)
             {
                 Line(
@@ -4680,98 +4681,43 @@ public class Mod : ModBase
             Flush();
     }
 
-    private void ProcessDclHexWardCommit(
+    private void ProcessDclSyntheticReactionCommit(
         int queuePass,
         int reactionId,
         bool idsAgree,
         nint actor,
         int sourceIndex)
     {
-        if (!_settings.DclHexWardEnabled || _settings.DclHexWardLogOnly ||
-            queuePass != 2 || reactionId != 443 || !idsAgree || actor == 0 ||
-            sourceIndex is < 0 or > 20 || _dclHexWardProducerBuf == 0)
+        int carrierId = _settings.DclSyntheticReactionCarrierId;
+        if (!_settings.DclSyntheticReactionEnabled || _settings.DclSyntheticReactionLogOnly ||
+            queuePass != 2 || reactionId != carrierId || !idsAgree || actor == 0 ||
+            sourceIndex is < 0 or > 20 || _dclSyntheticReactionProducerBuf == 0)
             return;
         if (!TryGetUnitTableIndex(actor, out int defenderTableIndex, out _) || defenderTableIndex is < 0 or > 20)
             return;
-        if (Marshal.ReadByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex) != 2)
-            return; // only the dynamic producer's exact staged request may deliver the managed effect.
+        if (Marshal.ReadByte(_dclSyntheticReactionProducerBuf, SRP_STATES + defenderTableIndex) != 2)
+            return; // only the dynamic producer's exact staged request may commit the transaction.
         if (!TryReadLiveUnitSnapshot(actor, out var defender, out _))
             return;
-        if (!_dclHexWardCoordinator.TryCommit(actor, defender.CharId, sourceIndex, out var reservation))
+        if (!_dclSyntheticReactionCoordinator.TryCommit(actor, defender.CharId, sourceIndex, out var reservation))
             return;
 
-        Marshal.WriteByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex, 0);
+        Marshal.WriteByte(_dclSyntheticReactionProducerBuf, SRP_STATES + defenderTableIndex, 0);
         bool cadenceCommitted;
         lock (_dclReactionCadenceGate)
             cadenceCommitted = GetOrCreateDclReactionCadenceState(defender)
-                .TryConsumeAttackerAction(443, reservation.ActionToken);
+                .TryConsumeAttackerAction(carrierId, reservation.ActionToken);
 
-        string outcome = cadenceCommitted
-            ? ApplyDclHexWardEffect(sourceIndex)
-            : "duplicate-cadence";
-        if (_dclHexWardLogs < Math.Clamp(_settings.DclHexWardMaxLogs, 0, 100_000))
+        if (_dclSyntheticReactionLogs < Math.Clamp(_settings.DclSyntheticReactionMaxLogs, 0, 100_000))
         {
-            _dclHexWardLogs++;
+            _dclSyntheticReactionLogs++;
             QueueDclDecisionLog(_settings,
-                $"[DCL-HEX-WARD-COMMIT] defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
+                $"[DCL-SYNTHETIC-REACTION-COMMIT] carrier={carrierId} defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
                 $"sourceIdx={sourceIndex} actionType=0x{reservation.ActionToken.ActionType:X2} " +
                 $"ability={reservation.ActionToken.AbilityId} sourceEpoch={reservation.ActionToken.SourceTurnEpoch} " +
-                $"cadence={(cadenceCommitted ? "consumed" : "duplicate")} effect={CleanDclLogValue(_settings.DclHexWardEffect)} " +
-                $"outcome={CleanDclLogValue(outcome)}");
+                $"cadence={(cadenceCommitted ? "consumed" : "duplicate")} " +
+                $"delivery={(cadenceCommitted ? "accepted-order-owned" : "suppressed")}");
         }
-    }
-
-    private string ApplyDclHexWardEffect(int sourceIndex)
-    {
-        nint sourcePtr = _moduleBase + _settings.PreviewForecastUnitTableRva + sourceIndex * BattleUnitStride;
-        if (!TryReadLiveUnitSnapshot(sourcePtr, out var source, out _))
-            return "source-invalid";
-
-        if (_settings.DclHexWardEffect == "brave-down")
-        {
-            int oldBrave = source.ReadByte(0x2B);
-            int nextBrave = Math.Max(Math.Clamp(_settings.DclHexWardBraveFloor, 0, 100),
-                oldBrave - Math.Clamp(_settings.DclHexWardBraveDecrease, 1, 100));
-            if (nextBrave == oldBrave)
-                return $"brave-floor:{oldBrave}";
-            Marshal.WriteByte(sourcePtr, 0x2B, (byte)nextBrave);
-            return $"brave:{oldBrave}->{nextBrave}";
-        }
-
-        const int byteIndex = 1;
-        const byte mask = 0x20; // Blind/Darkness
-        int immunityOffset = 0x5C + byteIndex;
-        if ((source.ReadByte(immunityOffset) & mask) != 0)
-            return "blind-immune";
-
-        int masterOffset = 0x1EF + byteIndex;
-        int effectiveOffset = 0x61 + byteIndex;
-        byte oldMaster = (byte)source.ReadByte(masterOffset);
-        byte oldEffective = (byte)source.ReadByte(effectiveOffset);
-        byte newMaster = (byte)(oldMaster | mask);
-        byte newEffective = (byte)(oldEffective | mask);
-        bool existedBefore = ((oldMaster | oldEffective) & mask) != 0;
-        try
-        {
-            Marshal.WriteByte(sourcePtr, masterOffset, newMaster);
-            Marshal.WriteByte(sourcePtr, effectiveOffset, newEffective);
-        }
-        catch
-        {
-            try { Marshal.WriteByte(sourcePtr, masterOffset, oldMaster); } catch { }
-            try { Marshal.WriteByte(sourcePtr, effectiveOffset, oldEffective); } catch { }
-            return "blind-write-failed";
-        }
-
-        RecordDclDirectStatusDuration(
-            sourcePtr,
-            source,
-            byteIndex,
-            mask,
-            "Hex Ward Blind",
-            _settings.DclHexWardBlindDurationTargetTurns,
-            existedBefore);
-        return existedBefore ? "blind-refresh-or-existing" : "blind-added";
     }
 
     // -- DCL pass-2 PRE-SELECTOR probe/control -------------------------------------------------
@@ -4791,11 +4737,11 @@ public class Mod : ModBase
         _dclReactionPreSelectorProbeBuf = Marshal.AllocHGlobal(REACTION_PRESELECT_BUFFER_SIZE);
         for (int i = 0; i < REACTION_PRESELECT_BUFFER_SIZE; i++)
             Marshal.WriteByte(_dclReactionPreSelectorProbeBuf, i, 0);
-        if (_settings.DclHexWardEnabled)
+        if (_settings.DclSyntheticReactionEnabled)
         {
-            _dclHexWardProducerBuf = Marshal.AllocHGlobal(HEX_WARD_PRODUCER_BUFFER_SIZE);
-            for (int i = 0; i < HEX_WARD_PRODUCER_BUFFER_SIZE; i++)
-                Marshal.WriteByte(_dclHexWardProducerBuf, i, 0);
+            _dclSyntheticReactionProducerBuf = Marshal.AllocHGlobal(SYNTHETIC_REACTION_PRODUCER_BUFFER_SIZE);
+            for (int i = 0; i < SYNTHETIC_REACTION_PRODUCER_BUFFER_SIZE; i++)
+                Marshal.WriteByte(_dclSyntheticReactionProducerBuf, i, 0);
         }
 
         nint address = moduleBase + _settings.DclReactionPreSelectorProbeRva;
@@ -4864,22 +4810,23 @@ public class Mod : ModBase
                 "jl .reaction_preselect_unit_loop",
             ];
 
-            if (_settings.DclHexWardEnabled && _dclHexWardProducerBuf != 0)
+            if (_settings.DclSyntheticReactionEnabled && _dclSyntheticReactionProducerBuf != 0)
             {
-                string hexBuf = $"0{_dclHexWardProducerBuf:X}h";
-                int maxWrites = Math.Clamp(_settings.DclHexWardMaxWrites, 1, 32);
-                var hexAsm = new List<string>();
+                string syntheticBuf = $"0{_dclSyntheticReactionProducerBuf:X}h";
+                int carrierId = Math.Clamp(_settings.DclSyntheticReactionCarrierId, 422, 453);
+                int maxWrites = Math.Clamp(_settings.DclSyntheticReactionMaxWrites, 1, 32);
+                var syntheticAsm = new List<string>();
                 for (int unitIndex = 0; unitIndex < 21; unitIndex++)
                 {
-                    string done = $".hex_ward_producer_{unitIndex}_done";
+                    string done = $".synthetic_reaction_producer_{unitIndex}_done";
                     int unitOffset = BattleUnitStride * unitIndex;
-                    hexAsm.AddRange(
+                    syntheticAsm.AddRange(
                     [
-                        $"mov rax, {hexBuf}",
-                        $"cmp byte [rax+{HWP_STATES + unitIndex}], 1",
+                        $"mov rax, {syntheticBuf}",
+                        $"cmp byte [rax+{SRP_STATES + unitIndex}], 1",
                         $"jne {done}",
-                        $"mov byte [rax+{HWP_STATES + unitIndex}], 3",
-                        $"add dword [rax+{HWP_ATTEMPTS}], 1",
+                        $"mov byte [rax+{SRP_STATES + unitIndex}], 3",
+                        $"add dword [rax+{SRP_ATTEMPTS}], 1",
                         $"mov r8, {unitTable}",
                         $"add r8, {unitOffset:X}h",
                         "cmp byte [r8+1], 0FFh",
@@ -4891,32 +4838,32 @@ public class Mod : ModBase
                         "cmp word [r8+1CEh], 0",
                         $"jne {done}",
                     ]);
-                    if (_settings.DclHexWardLogOnly)
+                    if (_settings.DclSyntheticReactionLogOnly)
                     {
-                        hexAsm.AddRange(
+                        syntheticAsm.AddRange(
                         [
-                            $"mov rax, {hexBuf}",
-                            $"mov byte [rax+{HWP_STATES + unitIndex}], 4",
+                            $"mov rax, {syntheticBuf}",
+                            $"mov byte [rax+{SRP_STATES + unitIndex}], 4",
                             $"mov dword [rsi+{RPS_PRODUCER}], 3",
                         ]);
                     }
                     else
                     {
-                        hexAsm.AddRange(
+                        syntheticAsm.AddRange(
                         [
-                            $"mov rax, {hexBuf}",
-                            $"mov ecx, dword [rax+{HWP_CONTROL_WRITES}]",
+                            $"mov rax, {syntheticBuf}",
+                            $"mov ecx, dword [rax+{SRP_CONTROL_WRITES}]",
                             $"cmp ecx, {maxWrites}",
                             $"jae {done}",
-                            "mov word [r8+1CEh], 443",
-                            $"mov byte [rax+{HWP_STATES + unitIndex}], 2",
-                            $"add dword [rax+{HWP_CONTROL_WRITES}], 1",
+                            $"mov word [r8+1CEh], {carrierId}",
+                            $"mov byte [rax+{SRP_STATES + unitIndex}], 2",
+                            $"add dword [rax+{SRP_CONTROL_WRITES}], 1",
                             $"mov dword [rsi+{RPS_PRODUCER}], 4",
                         ]);
                     }
-                    hexAsm.Add(done + ":");
+                    syntheticAsm.Add(done + ":");
                 }
-                asm = asm.Concat(hexAsm).ToArray();
+                asm = asm.Concat(syntheticAsm).ToArray();
             }
 
             if (_settings.DclReactionProducerEnabled)
@@ -4977,7 +4924,8 @@ public class Mod : ModBase
                 $"addr=0x{address:X} maxLogs={_settings.DclReactionPreSelectorProbeMaxLogs} " +
                 $"expected={_settings.DclReactionPreSelectorProbeExpectedBytes} " +
                 $"producer={(_settings.DclReactionProducerEnabled ? (_settings.DclReactionProducerLogOnly ? "log-only" : "live") : "off")} " +
-                $"hexWard={(_settings.DclHexWardEnabled ? (_settings.DclHexWardLogOnly ? "log-only" : "live") : "off")}");
+                $"synthetic={(_settings.DclSyntheticReactionEnabled ? (_settings.DclSyntheticReactionLogOnly ? "log-only" : "live") : "off")}:" +
+                $"carrier={_settings.DclSyntheticReactionCarrierId}");
         }
         catch (Exception ex)
         {
@@ -5038,21 +4986,21 @@ public class Mod : ModBase
                 if (candidate != 0)
                     candidates.Add($"{unitIndex}:{candidate}:active={active[unitIndex] != 0xFF}");
             }
-            var hexStates = new List<string>();
-            if (_dclHexWardProducerBuf != 0)
+            var syntheticStates = new List<string>();
+            if (_dclSyntheticReactionProducerBuf != 0)
             {
                 for (int unitIndex = 0; unitIndex < 21; unitIndex++)
                 {
-                    int state = Marshal.ReadByte(_dclHexWardProducerBuf, HWP_STATES + unitIndex);
+                    int state = Marshal.ReadByte(_dclSyntheticReactionProducerBuf, SRP_STATES + unitIndex);
                     if (state != 0)
-                        hexStates.Add($"{unitIndex}:{state}");
+                        syntheticStates.Add($"{unitIndex}:{state}");
                 }
             }
 
             string producerText = producer switch
             {
-                4 => "hex-staged",
-                3 => "hex-would-stage",
+                4 => "synthetic-staged",
+                3 => "synthetic-would-stage",
                 2 => "staged",
                 1 => "would-stage",
                 _ => "none",
@@ -5063,7 +5011,7 @@ public class Mod : ModBase
                 $"actor=0x{actor:X} actorIdx={actorIndex} actor142={actorId142} actor18C={actorId18C} " +
                 $"record=0x{actorRecord:X} recordIdx={recordIndex} candidates=[{string.Join(",", candidates)}] " +
                 $"producer={producerText}:unit={_settings.DclReactionProducerUnitIndex}:carrier={_settings.DclReactionProducerCarrierId} " +
-                $"hexStates=[{string.Join(",", hexStates)}] now={nowTick}");
+                $"syntheticStates=[{string.Join(",", syntheticStates)}]:carrier={_settings.DclSyntheticReactionCarrierId} now={nowTick}");
             _dclReactionPreSelectorProbeLogs++;
             consumedThrough = sequence;
             needsFlush = true;
@@ -6709,7 +6657,7 @@ public class Mod : ModBase
         // Committed normal path: numeric channels and the native status packet are now one staged
         // transaction, past every fail-open return. The game's later validator/committer remains the
         // authority for durable/effective status state and native side effects.
-        ReserveDclHexWardFromCommittedHit(
+        ReserveDclSyntheticReactionFromCommittedHit(
             targetPtr,
             targetIdx,
             target,
@@ -6764,7 +6712,7 @@ public class Mod : ModBase
         return true;
     }
 
-    private void ReserveDclHexWardFromCommittedHit(
+    private void ReserveDclSyntheticReactionFromCommittedHit(
         nint defenderPtr,
         int defenderTableIndex,
         UnitSnapshot defender,
@@ -6776,16 +6724,17 @@ public class Mod : ModBase
         DclHitDecision hitDecision,
         bool hasHitDecision)
     {
-        if (!_settings.DclHexWardEnabled || _dclHexWardProducerBuf == 0 ||
+        int carrierId = _settings.DclSyntheticReactionCarrierId;
+        if (!_settings.DclSyntheticReactionEnabled || _dclSyntheticReactionProducerBuf == 0 ||
             defenderTableIndex is < 0 or > 20 ||
             actionContext.CasterIdx is < 0 or > 20 ||
             actionContext.CasterIdx == defenderTableIndex ||
-            defender.ReadUInt16(0x14) != 443 ||
+            defender.ReadUInt16(0x14) != carrierId ||
             defender.Hp + hpCredit - hpDebit <= 0)
             return;
 
         DclReactionRule? rule = (_settings.DclReactionRules ?? [])
-            .FirstOrDefault(candidate => candidate.AbilityId == 443);
+            .FirstOrDefault(candidate => candidate.AbilityId == carrierId);
         if (rule is null)
             return;
 
@@ -6812,13 +6761,13 @@ public class Mod : ModBase
             TargetTurnEpoch: targetTurnEpoch,
             Origin: "committed-preclamp");
         DclReactions.AddIncomingVariables(context, incoming);
-        DclReactions.AddRuleVariables(context, 443, defender.Brave, rule.FlatChance, rule.NormalizedMode);
+        DclReactions.AddRuleVariables(context, carrierId, defender.Brave, rule.FlatChance, rule.NormalizedMode);
 
         bool ok = rule.TryMatches(context, out bool conditionMatched, out string error);
         int chance = 0;
         if (ok && conditionMatched)
             ok = rule.TryGetChance(defender.Brave, context, out chance, out error);
-        ResolveDclHexWardGate(
+        ResolveDclSyntheticReactionGate(
             defenderPtr,
             defender,
             defenderTableIndex,
@@ -10516,7 +10465,7 @@ public class Mod : ModBase
         lock (_dclGuardGate)
             _dclGuardPools.Remove(unitPtr);
         _dclMpTrickleStates.Remove(unitPtr);
-        _dclHexWardCoordinator.Forget(unitPtr);
+        _dclSyntheticReactionCoordinator.Forget(unitPtr);
         Line($"[UNIT-LOST ptr=0x{unitPtr:X}] {reason}");
         Flush();
     }
@@ -12522,7 +12471,7 @@ public class Mod : ModBase
         if (_dclCounterPathProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclCounterPathProbeBuf); } catch { } _dclCounterPathProbeBuf = 0; }
         if (_dclReactionCommitProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionCommitProbeBuf); } catch { } _dclReactionCommitProbeBuf = 0; }
         if (_dclReactionPreSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionPreSelectorProbeBuf); } catch { } _dclReactionPreSelectorProbeBuf = 0; }
-        if (_dclHexWardProducerBuf != 0) { try { Marshal.FreeHGlobal(_dclHexWardProducerBuf); } catch { } _dclHexWardProducerBuf = 0; }
+        if (_dclSyntheticReactionProducerBuf != 0) { try { Marshal.FreeHGlobal(_dclSyntheticReactionProducerBuf); } catch { } _dclSyntheticReactionProducerBuf = 0; }
         if (_dclReactionMaterializationProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionMaterializationProbeBuf); } catch { } _dclReactionMaterializationProbeBuf = 0; }
         if (_dclReactionEffectProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionEffectProbeBuf); } catch { } _dclReactionEffectProbeBuf = 0; }
         if (_dclAutoPotionConsumeProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclAutoPotionConsumeProbeBuf); } catch { } _dclAutoPotionConsumeProbeBuf = 0; }
@@ -15052,20 +15001,18 @@ internal sealed class RuntimeSettings
     public int DclReactionOrderRewriteExpectedAbilityId { get; set; } = -1;
     public int DclReactionOrderRewriteMaxWrites { get; set; } = 1;
 
-    // Hex Ward is a composed Reaction transaction built on blank native carrier 443. The managed
-    // successful incoming-result Caution roll reserves a dynamic pass-2 producer request;
-    // accepted-order retargeting points the
-    // carrier at the incoming source; the exact pass-2 commit consumes cadence and delivers one
-    // managed Blind or current-Brave reduction. Disabled and log-only by default.
-    public bool DclHexWardEnabled { get; set; } = false;
-    public bool DclHexWardLogOnly { get; set; } = true;
-    public string DclHexWardEffect { get; set; } = "blind";       // blind | brave-down
-    public int DclHexWardForcedRoll { get; set; } = -1;          // -1 = mod RNG; 0..99 deterministic
-    public int DclHexWardBlindDurationTargetTurns { get; set; } = 0;
-    public int DclHexWardBraveDecrease { get; set; } = 10;
-    public int DclHexWardBraveFloor { get; set; } = 0;
-    public int DclHexWardMaxWrites { get; set; } = 1;
-    public int DclHexWardMaxLogs { get; set; } = 64;
+    // Generic composed transaction for a Reaction carrier whose native dispatcher has no trigger.
+    // The supported trigger is a successful incoming hit survived by an exact equipped-carrier owner.
+    // A managed taxonomy rule reserves a dynamic pass-2 producer request; the separately configured
+    // accepted-order controller owns action replacement/retargeting and native effect delivery.
+    // Exact pass-2 acceptance consumes cadence. No job, ability name, carrier id, or effect is built in.
+    public bool DclSyntheticReactionEnabled { get; set; } = false;
+    public bool DclSyntheticReactionLogOnly { get; set; } = true;
+    public int DclSyntheticReactionCarrierId { get; set; } = -1;
+    public string DclSyntheticReactionTrigger { get; set; } = "successful-hit-survivor";
+    public int DclSyntheticReactionForcedRoll { get; set; } = -1; // -1 = mod RNG; 0..99 deterministic
+    public int DclSyntheticReactionMaxWrites { get; set; } = 1;
+    public int DclSyntheticReactionMaxLogs { get; set; } = 64;
 
     // Observe-only per-execution boundary after state-0x2B VM execution and current-actor resolution
     // in state 0x2C. A multi-transaction carrier such as Dual Wield Counter emits multiple rows.
@@ -15506,9 +15453,9 @@ internal sealed class RuntimeSettings
             rule.ChanceFormula = rule.ChanceFormula?.Trim() ?? "";
         }
         DclReactionCalcExitExpectedBytes = DclReactionCalcExitExpectedBytes?.Trim() ?? "";
-        DclHexWardEffect = string.IsNullOrWhiteSpace(DclHexWardEffect)
-            ? "blind"
-            : DclHexWardEffect.Trim().ToLowerInvariant();
+        DclSyntheticReactionTrigger = string.IsNullOrWhiteSpace(DclSyntheticReactionTrigger)
+            ? "successful-hit-survivor"
+            : DclSyntheticReactionTrigger.Trim().ToLowerInvariant();
         FormulaTables ??= new Dictionary<string, List<int>>();
         FormulaMatrices ??= new Dictionary<string, List<List<int>>>();
         FormulaMaps ??= new Dictionary<string, Dictionary<string, int>>();
@@ -15544,7 +15491,7 @@ internal sealed class RuntimeSettings
            $"DclResultFlagsControl={DclResultFlagsControlEnabled}/preserve=0x{DclResultFlagsPreserveMask:X2}, " +
            $"DclPhysicalContestEnabled={DclPhysicalContestEnabled}, DclMagicEvadeEnabled={DclMagicEvadeEnabled}, DclActionContextMaxAgeMs={DclActionContextMaxAgeMs}, DclDecisionMaxLogs={DclDecisionMaxLogs}, " +
            $"DclDerivedVariables={DclDerivedVariables.Count}, DclStatusControlEnabled={DclStatusControlEnabled}, DclStatusRules={DclStatusRules.Count}, DclInstantKoControlEnabled={DclInstantKoControlEnabled}, DclInstantKoRules={DclInstantKoRules.Count}, " +
-           $"DclReactionTaxonomyEnabled={DclReactionTaxonomyEnabled}, DclReactionRules={DclReactionRules.Count}, DclReactionCommitProbeEnabled={DclReactionCommitProbeEnabled}, DclReactionPreSelectorProbeEnabled={DclReactionPreSelectorProbeEnabled}, DclReactionProducer={DclReactionProducerEnabled}/{(DclReactionProducerLogOnly ? "log-only" : "live")}, DclReactionMaterializationProbeEnabled={DclReactionMaterializationProbeEnabled}, DclReactionOrderRewrite={DclReactionOrderRewriteEnabled}/{(DclReactionOrderRewriteLogOnly ? "log-only" : "live")}, DclHexWard={DclHexWardEnabled}/{(DclHexWardLogOnly ? "log-only" : "live")}/{DclHexWardEffect}, DclReactionEffectProbeEnabled={DclReactionEffectProbeEnabled}, " +
+           $"DclReactionTaxonomyEnabled={DclReactionTaxonomyEnabled}, DclReactionRules={DclReactionRules.Count}, DclReactionCommitProbeEnabled={DclReactionCommitProbeEnabled}, DclReactionPreSelectorProbeEnabled={DclReactionPreSelectorProbeEnabled}, DclReactionProducer={DclReactionProducerEnabled}/{(DclReactionProducerLogOnly ? "log-only" : "live")}, DclReactionMaterializationProbeEnabled={DclReactionMaterializationProbeEnabled}, DclReactionOrderRewrite={DclReactionOrderRewriteEnabled}/{(DclReactionOrderRewriteLogOnly ? "log-only" : "live")}, DclSyntheticReaction={DclSyntheticReactionEnabled}/{(DclSyntheticReactionLogOnly ? "log-only" : "live")}/{DclSyntheticReactionCarrierId}/{DclSyntheticReactionTrigger}, DclReactionEffectProbeEnabled={DclReactionEffectProbeEnabled}, " +
            $"DclAutoPotionConsumeProbeEnabled={DclAutoPotionConsumeProbeEnabled}, DclWeaponLineOfFireProbeEnabled={DclWeaponLineOfFireProbeEnabled}, DclCalcProvenanceProbeEnabled={DclCalcProvenanceProbeEnabled}, DclReactionActionReplacement={DclReactionActionReplacementEnabled}/{(DclReactionActionReplacementLogOnly ? "log-only" : "live")}, DclReactionRetarget={DclReactionRetargetEnabled}/{(DclReactionRetargetLogOnly ? "log-only" : "live")}, " +
            $"MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, " +
            $"FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, " +

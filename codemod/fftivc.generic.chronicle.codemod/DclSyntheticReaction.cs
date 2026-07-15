@@ -1,40 +1,41 @@
 namespace fftivc.generic.chronicle.codemod;
 
-internal enum DclHexWardReservationPhase
+internal enum DclSyntheticReactionReservationPhase
 {
     Rejected,
     Requested,
     Committed,
 }
 
-internal readonly record struct DclHexWardReservation(
+internal readonly record struct DclSyntheticReactionReservation(
     nint DefenderPtr,
     int DefenderTableIndex,
     int DefenderCharId,
     DclReactionActionToken ActionToken,
     int Chance,
     int Roll,
-    DclHexWardReservationPhase Phase);
+    DclSyntheticReactionReservationPhase Phase);
 
-internal readonly record struct DclHexWardGateDecision(
+internal readonly record struct DclSyntheticReactionGateDecision(
     bool Eligible,
     bool Accepted,
     bool ShouldRequestProducer,
     bool Replayed,
-    DclHexWardReservation Reservation,
+    DclSyntheticReactionReservation Reservation,
     string Reason);
 
 /// <summary>
-/// Idempotent bridge between Hex Ward's managed Caution roll and the later native pass-2 commit.
+/// Idempotent bridge between a managed synthetic-Reaction roll and the later native pass-2 commit.
 /// Evaluation reserves but never consumes reaction cadence. Only an exact actor/source commit may
 /// take the reservation; duplicate gate callbacks and duplicate commits remain side-effect free.
+/// The coordinator is carrier-, trigger-, and effect-agnostic.
 /// </summary>
-internal sealed class DclHexWardCoordinator
+internal sealed class DclSyntheticReactionCoordinator
 {
     private readonly object _gate = new();
-    private readonly Dictionary<nint, DclHexWardReservation> _latestByDefender = new();
+    private readonly Dictionary<nint, DclSyntheticReactionReservation> _latestByDefender = new();
 
-    public DclHexWardGateDecision Evaluate(
+    public DclSyntheticReactionGateDecision Evaluate(
         nint defenderPtr,
         int defenderTableIndex,
         int defenderCharId,
@@ -52,30 +53,32 @@ internal sealed class DclHexWardCoordinator
                 previous.DefenderCharId == defenderCharId &&
                 previous.ActionToken == actionToken)
             {
-                bool acceptedBefore = previous.Phase is DclHexWardReservationPhase.Requested or
-                    DclHexWardReservationPhase.Committed;
-                return new DclHexWardGateDecision(
+                bool acceptedBefore = previous.Phase is DclSyntheticReactionReservationPhase.Requested or
+                    DclSyntheticReactionReservationPhase.Committed;
+                return new DclSyntheticReactionGateDecision(
                     eligible,
                     acceptedBefore,
                     ShouldRequestProducer: false,
                     Replayed: true,
                     previous,
-                    previous.Phase == DclHexWardReservationPhase.Committed
+                    previous.Phase == DclSyntheticReactionReservationPhase.Committed
                         ? "already-committed"
                         : acceptedBefore ? "already-requested" : "already-rejected");
             }
 
             bool accepted = eligible && boundedRoll < boundedChance;
-            var reservation = new DclHexWardReservation(
+            var reservation = new DclSyntheticReactionReservation(
                 defenderPtr,
                 defenderTableIndex,
                 defenderCharId,
                 actionToken,
                 boundedChance,
                 boundedRoll,
-                accepted ? DclHexWardReservationPhase.Requested : DclHexWardReservationPhase.Rejected);
+                accepted
+                    ? DclSyntheticReactionReservationPhase.Requested
+                    : DclSyntheticReactionReservationPhase.Rejected);
             _latestByDefender[defenderPtr] = reservation;
-            return new DclHexWardGateDecision(
+            return new DclSyntheticReactionGateDecision(
                 eligible,
                 accepted,
                 ShouldRequestProducer: accepted,
@@ -89,18 +92,18 @@ internal sealed class DclHexWardCoordinator
         nint defenderPtr,
         int defenderCharId,
         int sourceTableIndex,
-        out DclHexWardReservation committed)
+        out DclSyntheticReactionReservation committed)
     {
         committed = default;
         lock (_gate)
         {
             if (!_latestByDefender.TryGetValue(defenderPtr, out var pending) ||
                 pending.DefenderCharId != defenderCharId ||
-                pending.Phase != DclHexWardReservationPhase.Requested ||
+                pending.Phase != DclSyntheticReactionReservationPhase.Requested ||
                 pending.ActionToken.SourceIdx != sourceTableIndex)
                 return false;
 
-            committed = pending with { Phase = DclHexWardReservationPhase.Committed };
+            committed = pending with { Phase = DclSyntheticReactionReservationPhase.Committed };
             _latestByDefender[defenderPtr] = committed;
             return true;
         }

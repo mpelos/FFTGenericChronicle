@@ -1221,13 +1221,14 @@ native-order guards and a bounded write count; invalid indices, mismatched order
 caps preserve the native order (**Implemented offline, live-gated**).
 
 `OverrideAbilityActionData` contains keys `0..367`, so reaction id `443` cannot receive an ordinary
-formula/status rider through that NXD surface. A Hex Ward built on carrier `443` requires code-mod
-trigger production and managed effect delivery while retaining `actor+0x18C = 443` for presentation.
-The dispatcher never evaluates the reaction-set bit corresponding to `443`; the code mod therefore
-checks exact `unit+0x14 == 443` owners at the successful incoming-result commit instead of waiting
-for a native Brave-gate callback that cannot occur. The owner admits only a valid non-self source,
-a surviving defender, and the committed hit/action identity; it resolves one Caution roll and
-reserves a per-defender pass-2 producer request (**Strong/offline-tested, live-gated**).
+formula/status rider through that NXD surface. The dispatcher never evaluates the reaction-set bit
+corresponding to `443`; it is therefore a useful blank-carrier probe for code-mod trigger production.
+The generic synthetic-Reaction owner checks an exact equipped carrier at the successful incoming-result
+commit instead of waiting for a native callback that cannot occur. It admits only a valid non-self
+source, a surviving defender, and committed hit/action identity; it evaluates the configured taxonomy
+rule and reserves a per-defender pass-2 producer request. Accepted-order rewriting owns any action or
+target transformation; the producer contains no ability-specific effect (**Strong/offline-tested,
+live-gated**).
 
 Auto-Potion `441` has a fixed three-word eligible-item table at RVA `0x7154B8`: Potion `240`,
 Hi-Potion `241`, and X-Potion `242` (**Proven-data/Strong-code**). The selector scans in that order
