@@ -1,0 +1,18 @@
+{
+  "_note": "LT35-A observe-only baseline. Logs calc provenance and finalized staged bundles during one enemy think/execute cycle; no result or game-state writes.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "UnitPollIntervalMs": 10,
+  "CalcEntryProbeEnabled": true,
+  "CalcEntryProbeRva": 3185068,
+  "DclCalcProvenanceProbeEnabled": true,
+  "DclCalcProvenanceProbeMaxLogs": 512,
+  "StagedBundleProbeEnabled": true,
+  "StagedBundleProbeRva": 2629394,
+  "StagedBundleForceTargetCharId": -1,
+  "StagedBundleForceKind": -1,
+  "StagedBundleForceAilment": -1,
+  "StagedBundleForceApplyMask": -1,
+  "StagedBundleForceDmg": -1,
+  "StagedBundleForceResFlag": -1
+}

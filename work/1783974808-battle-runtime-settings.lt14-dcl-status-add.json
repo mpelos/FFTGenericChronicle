@@ -1,0 +1,29 @@
+{
+  "_note": "LT14-A: prove formula-owned status application and one-target-turn duration on the current Steam executable. A connected basic Attack (ability 0, type 1) adds Blind through the durable master/effective arrays when forced 3d6 roll 18 exceeds resistance 10. Native Attack has no status rider. DurationTargetTurns=1 should preserve Blind through the application window and clear it only after the target completes its next turn. The DCL damage formula is deliberately empty: vanilla damage is preserved while the successful apply callback owns only the status.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 200,
+
+  "DclStatusControlEnabled": true,
+  "DclStatusForcedRoll": 18,
+  "DclStatusMaxLogs": 300,
+  "DclStatusRules": [
+    {
+      "Name": "LT14 Attack adds one-turn Blind",
+      "AbilityId": 0,
+      "ActionType": 1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "absent",
+      "ResistanceFormula": "10",
+      "DurationTargetTurns": 1
+    }
+  ]
+}

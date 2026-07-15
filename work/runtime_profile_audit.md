@@ -156,7 +156,7 @@ Overall status: PASS
 ### ko-hp-apply-probe
 
 - Path: `work/battle-runtime-settings.ko-hp-apply-probe.json`
-- Intent: Hook the 0x30A51C state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.
+- Intent: Hook the 0x30A484 state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.
 - Live mutation: no HP/MP rewrites
 - Summary: dryRun=False, hpDamage=False, hpHeal=False, mpLoss=False, mpGain=False, response=False/0, equipmentDr=False/0, slots=0/0, actionSignals=0, traces=0, deathWrite=False/0, minHpFloor=0, actorProbe=True, ctResolver=True/7000ms, counterResolver=False/0ms, hookRegs=True/96
 - Errors: none

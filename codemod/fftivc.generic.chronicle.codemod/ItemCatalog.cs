@@ -163,7 +163,7 @@ internal sealed record ItemCatalogEntry(
     [
         "none", "knife", "ninjablade", "sword", "knightsword", "fellsword", "katana", "axe",
         "flail", "rod", "staff", "pole", "polearm", "crossbow", "bow", "gun", "book",
-        "instrument", "bag", "cloth", "shield", "helmet", "hat", "hairadornment", "armor",
+        "instrument", "bag", "cloth", "bomb", "throwing", "shield", "helmet", "hat", "hairadornment", "armor",
         "clothing", "robe", "shoes", "armguard", "armlet", "cloak", "ring", "perfume",
         "liprouge"
     ];

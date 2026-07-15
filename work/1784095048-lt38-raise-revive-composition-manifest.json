@@ -1,0 +1,13 @@
+{
+  "note": "LT38 live-only profile composed from the unified DCL scaffold plus a forced-Death/fixed-Raise diagnostic. It is safe only with the audited Death-neutralized action data and must not be promoted as balance policy.",
+  "inputs": [
+    "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json",
+    "work/1784095048-battle-runtime-settings.lt38-raise-revive-fragment.json"
+  ],
+  "resolutions": {
+    "DclHealingFormula": "if(action.abilityId == 5, 111, if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), dcl.oldCredit)))",
+    "DclPreviewHealingFormula": "if(action.abilityId == 5, 111, if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), 0)))"
+  },
+  "patch": {},
+  "output": "work/1784095048-battle-runtime-settings.lt38-raise-revive.json"
+}

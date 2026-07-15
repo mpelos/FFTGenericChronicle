@@ -38,7 +38,13 @@ internal static class Program
         }
 
         var catalog = ItemCatalog.Load(catalogPath);
-        var report = RuntimeSettingsValidator.Validate(settings, catalog);
+        string abilityCatalogPath = string.IsNullOrWhiteSpace(settings.AbilityCatalogPath)
+            ? Path.Combine(root, "work", "wotl_ability_action_baseline.csv")
+            : Path.IsPathRooted(settings.AbilityCatalogPath)
+                ? settings.AbilityCatalogPath
+                : Path.Combine(root, "work", settings.AbilityCatalogPath);
+        var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath);
+        var report = RuntimeSettingsValidator.Validate(settings, catalog, abilityCatalog);
         if (!report.Success && !options.SkipValidate)
         {
             Console.Error.WriteLine("settings validation failed; use --skip-validate to simulate anyway");

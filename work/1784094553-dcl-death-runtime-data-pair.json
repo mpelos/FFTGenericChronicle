@@ -1,0 +1,11 @@
+{
+  "note": "Fail-closed offline pairing contract for the unified runtime scaffold and the round-trip-audited Death-neutralized action data used by LT37.",
+  "settings": "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json",
+  "action_data_sqlite": "work/1784090960-lt37-death-neutralized.sqlite",
+  "action_data_nxd": "work/1784090960-lt37-death-neutralized.nxd",
+  "sha256": {
+    "action_data_sqlite": "FC353C3B7CB206DF8DCED32D97AEBAF92363C73CFF072C9A760B9E4B7B65F25C",
+    "action_data_nxd": "1A18BD5D162F10E21F99287E9182773BAA7A015C9D750BA4494FC5B9A54B90FB"
+  },
+  "required_instant_ko_abilities": [30]
+}

@@ -1,0 +1,17 @@
+{
+  "note": "Offline DCL integration scaffold composed from the physical Weapon Skill/defense mechanism and numeric magic mechanism. Values remain mechanism fixtures, not ratified balance policy. The profile intentionally excludes design-open status, reaction, lifecycle, item, job, and multistrike metadata and must not be deployed as the final mod.",
+  "inputs": [
+    "work/1783980809-battle-runtime-settings.dcl-weapon-skill-mechanism.json",
+    "work/1783983032-battle-runtime-settings.dcl-magic-pipeline-mechanism.json"
+  ],
+  "resolutions": {
+    "DclDamageFormula": "if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, dcl.oldDebit)))"
+  },
+  "patch": {
+    "ResultSelectorProbeEnabled": false,
+    "ResultSelectorProbeMaxLogs": 0,
+    "DclResultFlagsControlEnabled": true,
+    "DclResultFlagsPreserveMask": 15
+  },
+  "output": "work/1784016797-battle-runtime-settings.dcl-integration-scaffold.json"
+}

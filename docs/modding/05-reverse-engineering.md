@@ -63,18 +63,18 @@ a game patch shifts them — re-locate via the neighboring stable bytes.
 ### `.text` anchors
 
 ```text
-battle_base_ptr    0x226D98   movzx eax, word [rcx+0x30]   rcx = battle unit; reads +0x30 HP (word)
-damage_mult_2      0x30A685   HP-bar / UI math (rdi = one unit; edx = MaxHP; eax = MaxHP-curHP) — NOT the formula
-jp_multiplier      0x283754
-xp_multiplier      0x283767
-min_spd_jmp_mov    0x36027F   movzx eax, byte [rdi+0x42]   reads +0x42 Move (byte)
+battle_base_ptr    0x226D20   movzx eax, word [rcx+0x30]   rcx = battle unit; reads +0x30 HP (word)
+damage_mult_2      0x30A5ED   HP-bar / UI math (rdi = one unit; edx = MaxHP; eax = MaxHP-curHP) — NOT the formula
+jp_multiplier      0x2836DC
+xp_multiplier      0x2836EF
+min_spd_jmp_mov    0x3601E7   movzx eax, byte [rdi+0x42]   reads +0x42 Move (byte)
 ```
 
 Byte signatures — the sig-scan keys to re-locate each `.text` anchor after a game patch shifts the
 RVAs (`battle_base_ptr` is also given with its full hook context in `04-engine-memory-model.md` §4.1):
 
 ```text
-battle_base_ptr   0F B7 41 30 66 89 42 0C          read-site +0x226D98; cheat-engine inject point +0x21305C
+battle_base_ptr   0F B7 41 30 66 89 42 0C          read-site +0x226D20
 damage_mult_2     2B C8 8D 04 11
 jp_multiplier     03 C2 8B CF 41 3B C0
 xp_multiplier     0F B7 84 7B 1E 01 00 00
@@ -99,11 +99,11 @@ unit/result RECORD array     0x1853CE0   stride 0x200, <=21 entries (runtime 0x1
                              The per-unit battle struct IS this array.
 result DISPATCHER            0x38A4FC    event-queue loop; DECISION branch at 0x38A6F1
                              (cmp edx,0x300), edx = (category<<8)|unitIdx:
-                             0x300 = apply HP/MP/stat -> 0x30A51C
+                             0x300 = apply HP/MP/stat -> 0x30A484
                              0x200 = status | 0x100 = turn-done | 0xFF00 = terminator | 0xE000 = init
-APPLY path                   0x30A51C    newHP = clamp(HP + word[unit+0x1C6] - word[unit+0x1C4], 0, MaxHP)
+APPLY path                   0x30A484    newHP = clamp(HP + word[unit+0x1C6] - word[unit+0x1C4], 0, MaxHP)
                              reads staged dmg word[+0x1C4], heal word[+0x1C6]; consults NO hit-flag
-pre-clamp staged-dmg HOOK    0x30A66F    0F BF 45 06 = movsx eax, word[rbp+6] (= word[unit+0x1C4]);
+pre-clamp staged-dmg HOOK    0x30A5D7    0F BF 45 06 = movsx eax, word[rbp+6] (= word[unit+0x1C4]);
                              the damage-rewrite hook — controls hit-vs-zero damage
 result/animation SELECTOR    0x205210    prologue 48 89 5C 24 08 48 89 6C 24 10;
                              r8 = actor, record = [r8+0x148], cl (arg) = evade-type; reads +0x1E5, +0x1C4
@@ -157,9 +157,9 @@ and the HP debit are TWO INDEPENDENT paths on different call trees, so authoring
 right write on EACH path:
 
 ```text
-force-HIT(D):   pre-clamp 0x30A66F -> word[rbp+6]=D (=target+0x1C4) ; word[rbp+8]=0 (=+0x1C6)
+force-HIT(D):   pre-clamp 0x30A5D7 -> word[rbp+6]=D (=target+0x1C4) ; word[rbp+8]=0 (=+0x1C6)
                 selector 0x205210  -> leave +0x1BE=01 / +0x1C0=0x00          => damage popup, HP -D
-force-EVADE(t): pre-clamp 0x30A66F -> word[rbp+6]=0 ; word[rbp+8]=0           (no HP change)  AND
+force-EVADE(t): pre-clamp 0x30A5D7 -> word[rbp+6]=0 ; word[rbp+8]=0           (no HP change)  AND
                 selector 0x205210  -> +0x1BE=0 ; +0x1C0=t (0x04 class / 0x03 shield / 0x02 weapon
                                       / 0x01 cloak / 0x06 miss) + force saved cl=t  => evade anim, HP kept
 ```
@@ -169,6 +169,12 @@ class-evade "Miss" AND dealt 0 damage (HP 567/567) — the pre-clamp forced the 
 and the selector flipped `+0x1C0` `0x00(hit)->0x04(class-evade)`. Proof log
 `work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`; full analysis
 `work/1782517714-miss-block-parry-control-definitive.md`.
+
+**Proven:** formula-driven misses use a per-target decision cache to deliver the same authored
+decision to three native execution surfaces. The pre-clamp hook zeros the staged debit, selector
+`0x205210` writes `+0x1BE=0` and `+0x1C0=0x06`, and the four Counter-class Brave-roll sites force
+their chance to zero for that cached miss. The target keeps its HP, the selector takes the clean
+evade branch, and no Counter is armed. Hits and cache misses preserve the native reaction chance.
 
 **Both writes are required (this corrects the earlier note).** Writing only `+0x1C0`/`+0x1BE` at the
 selector is render-complete but **damage-incomplete**: the selector render and the HP apply run on
@@ -235,7 +241,7 @@ stays on the proven pre-clamp.
 
 The `EvadeOverride` poll loses ~50 % of attacks not to a per-attack writer but to a **misdiagnosis**:
 there is **no per-attack real-code writer of the evade bytes at all** (BFS from every writer never
-reaches the avoidance cluster `0x30F0C4 / 0x30FA34 / 0x309A44 / 0x205210 / 0x30A66F`; the combat region
+reaches the avoidance cluster `0x30F0C4 / 0x30FA34 / 0x3099AC / 0x205210 / 0x30A5D7`; the combat region
 has zero genuine writers; the pre-roll gather `0x30FC30` reads `+0x61/64/65/1B4`, not the evade bytes —
 the VM consumes them internally). The bytes are owned by exactly **three real-code equip/refresh
 copiers** that re-stamp them from equipment on a state edge (turn / status / menu), asynchronously to the
@@ -255,18 +261,18 @@ keep distinct: **Family-1 INPUT** (unit `+0x46/47/48/49/4A/4B/4E`, above — wha
 Phase B: 4 sources rolled separately in slot order acc→RH→LH→class, first success wins) vs **Family-2
 staged RESULT** (`+0x1D0`, `+0x1D2..+0x1D5`, `+0x1D8`, kind `+0x1C0`) — the renderer's inputs; `+0x1C0`
 sole writer = finalize `0x205B38` / fn `0x2055FC` (gated `test [rdi+0x15C],4`, unit=RDI), which runs
-AFTER compute-point `0x281F8A`.
+AFTER compute-point `0x281F12`.
 
 #### SHIELD ≠ CLASS — shield evade has NO live single-byte lever (✅ RE'd 2026-07-03)
 
 The 2026-06-27 input-control proof only ever moved **class `+0x4B`**. LT5-A2 (Agrias→Ramza) then FAILED
-for **shield**: with `+0x4A = 0x32` planted at `0x309A44` and the copiers zeroed, the preview still showed
+for **shield**: with `+0x4A = 0x32` planted at `0x3099AC` and the copiers zeroed, the preview still showed
 **50 % + Ramza shield-PARRIED**. Static RE (`work/dcl-shield-evade-read-path.md`, `disasm_shield_evade_*`)
 pins why:
 
 - The roll anchors read **no** evade bytes; the values enter via **combat-input record builders**
   (`0x284BC0` / `0x3600DC` / `0x3962F0`) that pack the block into a **separate forecast/AI record**
-  `[dst+0x44..0x52]` at action SETUP (before `0x309A44`).
+  `[dst+0x44..0x52]` at action SETUP (before `0x3099AC`).
 - In that pack, **class is a 1:1 copy** — `dst+0x44 = [unit+0x4B]` — so a live `+0x4B` write is honored.
 - **Shield is DERIVED, not copied** — `dst+0x46 = MAX([unit+0x4A] shield, [unit+0x49] accessory)` and
   `dst+0x50 = MAX([unit+0x4D],[unit+0x4E])`. A late `+0x4A := 0` neither reaches the already-built record
@@ -329,15 +335,22 @@ IVC preview % folds the reaction-negate chance in (3% = 100 − Brave 97).
 
 **Reactions (Layers A/B)** are controllable by the SAME live-data mechanism — ✅ **proven offline +
 confirmed live 2026-06-27**. The reaction trigger is a `roll(100, Brave)` (canonical FFT Brave%-gate),
-in the real-code cluster `0x30BE86 / 0x30BEDC / 0x30BF32 / 0x30BF72`; write the defender's **Brave**
+in the real-code cluster `0x30BDEE / 0x30BE44 / 0x30BE9A / 0x30BEDA`; write the defender's **Brave**
 (`+0x2B`) before the roll to suppress the trigger. Live: Brave 10 → Blade Grasp suppressed, 3/3 hits.
-⚠️ **Chicken floor — never write Brave < 10** (`0x30A9BD cmp [+0x2B],0x0A` flips the unit to panic/
+⚠️ **Chicken floor — never write Brave < 10** (`0x30A925 cmp [+0x2B],0x0A` flips the unit to panic/
 chicken). No reaction-slot byte exists in the struct (reactions resolve via VM `0x2BB0D4` from the
 skillset object), so DATA-disable (ENTD / JobCommand R/S/M) remains the static alternative. Shipping
 knob: `BraveOverride*` (offline notes `work/reaction-input-control-offline.md`).
 
-The forecast hit% display now follows the live evade bytes too (Ramza showed 0%), so writing evade is
-also the lever for an honest custom-% preview.
+**Proven:** the same four real-code call sites also support selective, per-action suppression without
+mutating Brave. At each site the defender is in `rax` and the native chance is in `edx`; a cached DCL
+miss for that defender returns chance `0`, while a DCL hit or missing cache entry leaves `edx`
+unchanged. This covers Counter/Mana-Shield-class reactions. Shirahadori remains VM-internal and is
+not claimed by this gate.
+
+The native forecast hit% follows live evade bytes, but binary DCL outcome stamps therefore make it
+flicker between 0% and 100%; they are not an honest display lever for an authored intermediate
+percentage. Formula-driven preview instead uses the copy-time output hook in §10.
 
 ## 5. Formula fingerprint constants
 
@@ -505,11 +518,22 @@ enumerates them; the previous scan windowed `0x7832E6..` and missed `0x7832C0` j
 forced value before the engine's own store at `0x228004` runs. The game then writes **our**
 value at copy time, *before* the renderer reads the buffer on the same redraw → the displayed
 % is deterministically ours, no poke race. This is the engine-side analogue of the OUTPUT-paint
-rule used for avoidance results. Mod feature: `PreviewHitPctControlEnabled` /
-`PreviewHitPctForcedValue` / `PreviewHitPctLogOnly`, default RVA `0x227FFE`, expected bytes
-`41 BA 02 00 00 00`. The hook records to a small buffer ([0]=fire count, [4]=last natural %,
-[8]=forced, [12]=site RVA; addr printed at install as `[PREVIEW-HITPCT-HOOK] … buf=0x…`) so the
+rule used for avoidance results. Mod features: the diagnostic static controls
+`PreviewHitPctControlEnabled` / `PreviewHitPctForcedValue` / `PreviewHitPctLogOnly`, plus the
+formula-driven `DclPreviewHitPctEnabled`. The default RVA is `0x227FFE` with expected bytes
+`41 BA 02 00 00 00`. In DCL mode calc-entry mirrors the percentage from the same cached decision
+used by execution into one native slot per target. The copy hook derives the target index from the
+forecast-object relation `rbp = target_unit + 0x1BE` and paints that slot into `AX`; no managed call
+runs on the UI path. The hook records [0]=fire count, [4]=last natural %,
+[8]=displayed override, [12]=site RVA, followed by 64 per-target DCL percentages; the address is
+printed at install as `[PREVIEW-HITPCT-HOOK] … buf=0x…`, so the
 result is verifiable externally without the screen.
+
+**Proven:** with the DCL hit formula authoring 50%, the forecast rendered 50% for a basic attack
+whose native panel otherwise showed 532 damage/KO and Counter. Execution reused the matching
+cached decision, rolled the deterministic value 90, produced a miss, preserved the target's 363 HP,
+and suppressed the defender's Counter chance from 69 to 0. Forecast percentage and execution
+therefore share the authored per-target decision path.
 
 **Live proof (2026-06-27):** force value 7 deployed; an Agrias→Ramza preview whose true odds
 were 3% (Blade Grasp) rendered **7%** on screen for every target. Memory cross-check
@@ -534,11 +558,11 @@ For damage, `obj+0x6` drives **all three** of:
 
 1. the forecast **damage NUMBER** (the red "500 Damage" in the panel),
 2. the **HP-bar ghost-depletion** (how much of the target bar greys out), and
-3. the **apply path** — it is the *same* staged debit `word[unit+0x1C4]` that APPLY (`0x30A51C`)
-   reads and the pre-clamp hook (`0x30A66F`, §4) rewrites at resolution.
+3. the **apply path** — it is the *same* staged debit `word[unit+0x1C4]` that APPLY (`0x30A484`)
+   reads and the pre-clamp hook (`0x30A5D7`, §4) rewrites at resolution.
 
 For healing, `obj+0x8` drives the forecast **healing NUMBER** (green `+N HP`) and the **HP-bar ghost
-refill**. The same staged credit `word[unit+0x1C6]` is read by APPLY (`0x30A51C`) as
+refill**. The same staged credit `word[unit+0x1C6]` is read by APPLY (`0x30A484`) as
 `newHP = clamp(HP + credit - debit, 0, MaxHP)`. A natural healing forecast uses `+0x1C4 = 0`,
 `+0x1C6 = heal`, and `+0x1E5 = 0x40`. The ghost refill clamps at MaxHP.
 
@@ -590,9 +614,9 @@ a value written after that draw shows only on the next open. This applies to bot
 
 ### The result (actual applied HP change)
 
-Force the staged debit at the pre-clamp hook **`0x30A66F`** (§4), bytes `0F BF 45 06`
-(`movsx eax, word[rbp+6]` = `word[unit+0x1C4]`). ⚠️ **Decimal gotcha:** `0x30A66F` = **`3188335`**,
-not `3188847` (which is `0x30A86F`, where the bytes are `8B D5 41 8D` — a wrong RVA silently logs
+Force the staged debit at the pre-clamp hook **`0x30A5D7`** (§4), bytes `0F BF 45 06`
+(`movsx eax, word[rbp+6]` = `word[unit+0x1C4]`). ⚠️ **Decimal gotcha:** `0x30A5D7` = **`3188183`**,
+not `3188695` (which is `0x30A7D7`, where the bytes are `8B D5 41 8D` — a wrong RVA silently logs
 `[PRECLAMP-REWRITE-SKIP]` and the result stays natural). **Magic damage rides the same pre-clamp**
 (the dispatcher keys on effect-kind `0x300` = apply-HP, not weapon-vs-spell), so one hook covers
 physical and magic results alike.
@@ -607,7 +631,7 @@ HP-credit events before forcing credit.
 
 ```
 damage preview = poke (or finalizer) writes obj+0x6 = formula      -> damage number + ghost depletion
-damage result  = pre-clamp 0x30A66F forces word[+0x1C4] = formula  -> actual HP loss
+damage result  = pre-clamp 0x30A5D7 forces word[+0x1C4] = formula  -> actual HP loss
 
 heal preview   = poke writes obj+0x8 = formula                     -> healing number + ghost refill
 heal result    = pre-clamp forces word[+0x1C6] = formula           -> actual HP gain
@@ -631,7 +655,7 @@ evidence in `work/dcl-magic-status-reaction-candidates.md`.
 
 Live hooks (2026-07-02, `work/lt3-calc-rng-results.md`) settled the compute architecture:
 
-- **`computeActionResult 0x309A44` ✅ PROVEN live** — head-hookable real code; `rcx` = order record
+- **`computeActionResult 0x3099AC` ✅ PROVEN live** — head-hookable real code; `rcx` = order record
   at `caster+0x1A0` (`[0]` caster slot, `[1]` action type, `[2..3]` ability id), `dl` = target index.
   Fires at preview-open, continuously during a charge, at execution, and — decisively — for **AI
   actions including multi-target candidate sweeps** (AI same-calc PROVEN). This is the DCL's
@@ -641,11 +665,12 @@ Live hooks (2026-07-02, `work/lt3-calc-rng-results.md`) settled the compute arch
   status rolls come from **VM-internal callers** (Blind's roll captured with `chance=71` — exact
   match with the displayed %), so the real-code roll sites (`0x304E33`, `0x306636`) do NOT serve
   these abilities and per-roll forcing there is refuted-in-practice. The one **real-code** combat
-  roll observed live: the reaction **Brave-gate caller `0x30BE8B`** (`chance=61` = defender Brave) —
+  roll observed live: the reaction **Brave-gate return `0x30BDF3`** (`chance=61` = defender Brave) —
   hookable/forceable.
 - Doctrine consequence: control stays on **data** — input the VM reads (evade bytes, immunity bits)
   or staged output rewritten post-roll/pre-apply (`+0x1C4` debit via pre-clamp; apply-mask `+0x1D0`,
-  kind `+0x1C0`, ailment `+0x1A8` are the LT4 status/magic-outcome candidates).
+  kind `+0x1C0` remains an outcome candidate; `+0x1A8` is an item/inventory side-effect id and must
+  not be used as status authority).
 
 ## 12. 2026-07-02 offline sweep — static anchors pending live confirmation
 
@@ -658,7 +683,7 @@ current-action global block `0x14186AF60..F4` (`word[0x14186AFF0]` = ability id,
 `actor+0x142` = copy of `+0x1A2`; full 3×5-byte status arrays `+0x57`/`+0x5C`/`+0x61`/`+0x1EF`
 (classic PSX bit layout); position/facing `+0x4F/+0x50/+0x51`; active-turn marker `+0x1B8 == 1`;
 status-proc roll `0x306636` vs staged % `g_7B07AC` (`0x1407B07AC`, pokeable); reaction bitfield
-`unit+0x94..0x97` + dispatcher `0x30B584` + Brave-gates; shared RNG `0x278EE0`; battle tile table
+`unit+0x94..0x97` + dispatcher `0x30B4EC` + Brave-gates; shared RNG `0x278EE0`; battle tile table
 `0x140D8DCB0` (8 B/tile, height at `+2`, map dims `0x140C6AD6A/6B`, level bit = unit `+0x51` bit 7,
 per-action AoE mark byte at `+5`; see `work/dcl-tilemap-candidates.md`). Consolidated
 live-test checklist: `work/dcl-live-test-master-plan.md`.

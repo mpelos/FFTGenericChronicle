@@ -1,0 +1,4 @@
+{
+  "disabledMcpjsonServers": [],
+  "enabledMcpjsonServers": ["codex"]
+}

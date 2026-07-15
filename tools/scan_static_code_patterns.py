@@ -44,7 +44,7 @@ PATTERNS: tuple[AobPattern, ...] = (
         "battle_base_ptr",
         "0F B7 41 30 66 89 42 0C",
         "stable unit-struct touchpoint; rcx is a battle unit and +0x30 is HP",
-        (0x226D98,),
+        (0x226D20,),
     ),
     AobPattern(
         "damage_multiplier",
@@ -57,19 +57,19 @@ PATTERNS: tuple[AobPattern, ...] = (
         "damage_mult_2",
         "2B C8 8D 04 11",
         "stable helper anchor near damage math evidence",
-        (0x30A685,),
+        (0x30A5ED,),
     ),
     AobPattern(
         "jp_multiplier",
         "03 C2 8B CF 41 3B C0",
         "stable JP math anchor",
-        (0x283754,),
+        (0x2836DC,),
     ),
     AobPattern(
         "xp_multiplier",
         "0F B7 84 7B 1E 01 00 00",
         "stable XP math anchor",
-        (0x283767,),
+        (0x2836EF,),
     ),
     AobPattern(
         "min_brave_faith",
@@ -80,7 +80,7 @@ PATTERNS: tuple[AobPattern, ...] = (
         "min_spd_jmp_mov",
         "0F B6 47 42 66 89 43 30",
         "stable movement stat anchor; confirms +0x42 Move",
-        (0x36027F,),
+        (0x3601E7,),
     ),
 )
 

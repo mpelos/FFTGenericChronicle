@@ -1,0 +1,16 @@
+{
+  "_note": "Offline-proven Death Instant-KO mechanism fragment. It contains no forced rolls or probe-only switches. Pair it only with action data whose ability 30 row is Formula=8, X=1, Y=1, InflictStatus=0; the runtime then owns the 3d6 resistance decision while native HP apply owns the KO lifecycle.",
+  "DclComputePointNumericEnabled": true,
+  "DclComputePointCacheTtlMs": 5000,
+  "DclInstantKoControlEnabled": true,
+  "DclInstantKoRules": [
+    {
+      "Name": "Death inverse-Faith 3d6",
+      "AbilityId": 30,
+      "ActionType": -1,
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "ZeroDamageOnFailure": true,
+      "NativeKoSuppressedByData": true
+    }
+  ]
+}

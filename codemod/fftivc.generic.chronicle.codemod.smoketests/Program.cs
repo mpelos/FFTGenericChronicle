@@ -11,17 +11,40 @@ internal static class Program
         string catalogPath = Path.Combine(root, "work", "item_catalog.csv");
         var catalog = ItemCatalog.Load(catalogPath);
         Check(catalog.Loaded, $"item catalog loaded: {catalog.Describe()}");
+        TestItemCatalog(catalog);
         string abilityCatalogPath = Path.Combine(root, "work", "wotl_ability_action_baseline.csv");
         var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath);
         Check(abilityCatalog.Loaded, $"ability catalog loaded: {abilityCatalog.Describe()}");
         TestAbilityCatalog(abilityCatalog);
+        TestDclAbilityMetadata(abilityCatalogPath);
         TestDclActionContextCache();
+        TestDclComputePointNumericPlan();
+        TestDclComputePointCache(catalog);
+        TestDclHitDecisionCache();
+        TestDclStatusControl(catalog, abilityCatalog);
+        TestDclPhysicalContest(catalog);
+        TestDclMultistrike();
+        TestDclMagicEvade(catalog);
+        TestDclWeaponSkill(catalog, abilityCatalog);
+        TestDclMagicPipeline(catalog, abilityCatalog);
+        TestDclIntegratedScaffold(root, catalog, abilityCatalog);
+        TestDclResultFlags(catalog);
+        TestDclMpEconomy(catalog);
+        TestDclReactions(catalog);
         Check(
             ReferenceEquals(new BattleFormulaEngine(new RuntimeSettings(), catalog, abilityCatalog).AbilityCatalog, abilityCatalog),
             "formula engine should expose the supplied ability catalog");
 
-        var targetRaw = new byte[0x180];
+        var targetRaw = new byte[0x200];
         targetRaw[0x70] = 172; // Leather Armor in work/item_catalog.csv.
+        targetRaw[0x4F] = 3;
+        targetRaw[0x50] = 4;
+        targetRaw[0x51] = 0x83; // facing 3 on map level 1
+        targetRaw[0x62] = 0x20; // effective Blind
+        targetRaw[0x60] = 0x10; // Sleep immunity
+        targetRaw[0x1F0] = 0x20; // durable/master Blind
+        targetRaw[0x52] = 0x80; // absorbs Fire
+        targetRaw[0x55] = 0x02; // weak to Holy
         var target = new UnitSnapshot((nint)0x2000, 0x80, 5, 30, 50, 2, true, 4, 3, 6, 4, 3, 70, 60, targetRaw, 18, 30);
         UnitSnapshot TargetWithBodyItem(int itemId, nint ptr)
         {
@@ -30,7 +53,7 @@ internal static class Program
             return target with { Ptr = ptr, Raw = raw };
         }
 
-        var attackerRaw = new byte[0x180];
+        var attackerRaw = new byte[0x200];
         attackerRaw[0x44] = 99;
         attackerRaw[0x50] = 19; // Broadsword in work/item_catalog.csv.
         var attacker = new UnitSnapshot((nint)0x1000, 0x01, 6, 40, 40, 1, false, 12, 5, 7, 5, 4, 75, 65, attackerRaw, 12, 20);
@@ -2282,10 +2305,150 @@ internal static class Program
         Check(defaultNames.SetEquals(cureVars.Keys), "ability default variable names should match loaded-row variable names");
     }
 
+    private static void TestDclAbilityMetadata(string abilityCatalogPath)
+    {
+        string metadataPath = Path.Combine(Path.GetTempPath(), $"fft-dcl-ability-{Guid.NewGuid():N}.csv");
+        string invalidPath = Path.Combine(Path.GetTempPath(), $"fft-dcl-ability-invalid-{Guid.NewGuid():N}.csv");
+        try
+        {
+            File.WriteAllText(metadataPath,
+                "ability_id,approved,action_kind,damage_type,avoidance_policy,status_category,side_effect_policy,power,strike_count\n" +
+                "1,1,healing,none,none,none,managed_resource_commit,17,0\n" +
+                "101,1,physical_damage,crush,physical_contest,none,managed_multistrike,11,3\n" +
+                "173,1,magic_damage,magic_untyped,magic_evade_per_target_then_status_contest,mixed,native_multistrike_status_rider,9,0\n" +
+                "358,1,physical_damage,weapon_defined,physical_contest,none,native_multistrike,7,0\n" +
+                "16,0,magic_damage,elemental,magic_evade_per_target,none,none_or_catalog_visuals,22,0\n");
+            var catalog = AbilityCatalog.Load(abilityCatalogPath, metadataPath);
+            Check(catalog.Loaded, $"base ability catalog must survive metadata loading: {catalog.Describe()}");
+            Check(catalog.MetadataCount == 4 && string.IsNullOrWhiteSpace(catalog.MetadataError),
+                $"only approved metadata rows should load: {catalog.Describe()}");
+            Check(catalog.TryGet(1, out var cure), "metadata catalog should preserve Cure");
+            var cureVars = VariablesFor(cure);
+            CheckVar(cureVars, "ability.dcl.approved", 1);
+            CheckVar(cureVars, "ability.dcl.power", 17);
+            CheckVar(cureVars, "ability.dcl.strike_count", 0);
+            CheckVar(cureVars, "ability.dcl.action_kind_healing", 1);
+            CheckVar(cureVars, "ability.dcl.action_kind_magic_damage", 0);
+            CheckVar(cureVars, "ability.dcl.damage_type_none", 1);
+            CheckVar(cureVars, "ability.dcl.side_effect_managed_resource_commit", 1);
+
+            Check(catalog.TryGet(101, out var pummel), "metadata catalog should preserve Pummel");
+            var pummelVars = VariablesFor(pummel);
+            CheckVar(pummelVars, "ability.dcl.approved", 1);
+            CheckVar(pummelVars, "ability.dcl.power", 11);
+            CheckVar(pummelVars, "ability.dcl.strike_count", 3);
+            CheckVar(pummelVars, "ability.dcl.action_kind_physical_damage", 1);
+            CheckVar(pummelVars, "ability.dcl.damage_type_crush", 1);
+            CheckVar(pummelVars, "ability.dcl.side_effect_managed_multistrike", 1);
+            Check(pummel.DclMetadata.IsManagedMultistrike,
+                "approved Pummel metadata should arm the managed multistrike route");
+
+            Check(catalog.TryGet(173, out var celestialVoid), "metadata catalog should preserve Celestial Void");
+            var celestialVars = VariablesFor(celestialVoid);
+            CheckVar(celestialVars, "ability.dcl.strike_count", 0);
+            CheckVar(celestialVars, "ability.dcl.avoidance_magic_evade_per_target_then_status_contest", 1);
+            CheckVar(celestialVars, "ability.dcl.side_effect_native_multistrike_status_rider", 1);
+            Check(celestialVoid.DclMetadata.IsNativeMultistrike &&
+                  !celestialVoid.DclMetadata.IsManagedMultistrike &&
+                  celestialVoid.DclMetadata.HasManagedStatusRider,
+                "the composite policy must preserve native repetition and managed status-rider ownership");
+
+            Check(catalog.TryGet(358, out var barrage), "metadata catalog should preserve Barrage");
+            var barrageVars = VariablesFor(barrage);
+            CheckVar(barrageVars, "ability.dcl.strike_count", 0);
+            CheckVar(barrageVars, "ability.dcl.side_effect_native_multistrike", 1);
+            Check(barrage.DclMetadata.IsNativeMultistrike && !barrage.DclMetadata.IsManagedMultistrike,
+                "Barrage metadata must not arm the aggregate managed-multistrike route over four native repeats");
+
+            Check(catalog.TryGet(16, out var fire), "metadata catalog should preserve Fire");
+            var fireVars = VariablesFor(fire);
+            CheckVar(fireVars, "ability.dcl.approved", 0);
+            CheckVar(fireVars, "ability.dcl.damage_type_elemental", 0);
+            CheckVar(fireVars, "ability.dcl.strike_count", 0);
+
+            File.WriteAllText(invalidPath,
+                "ability_id,approved,action_kind,damage_type,avoidance_policy,status_category,side_effect_policy,power,strike_count\n" +
+                "1,1,healing,none,none,none,managed_resource_commit,17,-1\n");
+            var failClosed = AbilityCatalog.Load(abilityCatalogPath, invalidPath);
+            Check(failClosed.Loaded && failClosed.Count == 512,
+                "invalid DCL metadata must not disable the vanilla ability catalog");
+            Check(failClosed.MetadataCount == 0 && !string.IsNullOrWhiteSpace(failClosed.MetadataError),
+                "invalid strike_count metadata must fail closed with an explicit diagnostic");
+            Check(failClosed.TryGet(1, out var unchangedCure), "fail-closed metadata must preserve Cure");
+            CheckVar(VariablesFor(unchangedCure), "ability.dcl.approved", 0);
+
+            File.WriteAllText(invalidPath,
+                "ability_id,approved,action_kind,damage_type,avoidance_policy,status_category,side_effect_policy,power,strike_count\n" +
+                "101,1,physical_damage,crush,physical_contest,none,managed_multistrike,11,1\n");
+            var incompleteMultistrike = AbilityCatalog.Load(abilityCatalogPath, invalidPath);
+            Check(incompleteMultistrike.MetadataCount == 0 && !string.IsNullOrWhiteSpace(incompleteMultistrike.MetadataError),
+                "managed_multistrike without at least two authored strikes must fail closed");
+
+            File.WriteAllText(invalidPath,
+                "ability_id,approved,action_kind,damage_type,avoidance_policy,status_category,side_effect_policy,power,strike_count\n" +
+                "1,1,healing,none,none,none,managed_resource_commit,17,3\n");
+            var strayStrikeCount = AbilityCatalog.Load(abilityCatalogPath, invalidPath);
+            Check(strayStrikeCount.MetadataCount == 0 && !string.IsNullOrWhiteSpace(strayStrikeCount.MetadataError),
+                "strike_count outside managed_multistrike must fail closed");
+        }
+        finally
+        {
+            if (File.Exists(metadataPath)) File.Delete(metadataPath);
+            if (File.Exists(invalidPath)) File.Delete(invalidPath);
+        }
+    }
+
+    private static void TestItemCatalog(ItemCatalog catalog)
+    {
+        Check(catalog.Count == 261, $"item catalog expected 261 rows, got {catalog.Count}");
+
+        Check(catalog.TryGet(1, out var dagger), "item catalog should contain Dagger id 1");
+        var daggerVars = VariablesFor(dagger);
+        CheckVar(daggerVars, "item.id", 1);
+        CheckVar(daggerVars, "item.category_knife", 1);
+        CheckVar(daggerVars, "item.weaponRange", 1);
+        CheckVar(daggerVars, "item.atkflag_throwable", 1);
+        CheckVar(daggerVars, "item.atkflag_twoswords", 1);
+        CheckVar(daggerVars, "item.atkflag_striking", 1);
+        CheckVar(daggerVars, "item.atkflag_lunging", 0);
+
+        Check(catalog.TryGet(35, out var excalibur), "item catalog should contain Excalibur id 35");
+        var excaliburVars = VariablesFor(excalibur);
+        CheckVar(excaliburVars, "item.innate_haste", 1);
+        CheckVar(excaliburVars, "item.absorb_holy", 1);
+        CheckVar(excaliburVars, "item.strong_holy", 1);
+        CheckVar(excaliburVars, "item.strong_fire", 0);
+
+        Check(catalog.TryGet(142, out var venetianShield), "item catalog should contain Venetian Shield id 142");
+        var shieldVars = VariablesFor(venetianShield);
+        CheckVar(shieldVars, "item.shieldPhysicalEvasion", 50);
+        CheckVar(shieldVars, "item.shieldMagicalEvasion", 25);
+        CheckVar(shieldVars, "item.halve_ice", 1);
+        CheckVar(shieldVars, "item.halve_lightning", 1);
+        CheckVar(shieldVars, "item.halve_fire", 1);
+        CheckVar(shieldVars, "item.halve_holy", 0);
+
+        Check(catalog.TryGet(260, out var ringOfAptitude), "item catalog should contain Ring of Aptitude id 260");
+        CheckVar(VariablesFor(ringOfAptitude), "item.boostJp", 1);
+
+        var defaultContext = MakeFormulaContext();
+        ItemCatalogEntry.AddDefaultVariables(defaultContext, "item", 999);
+        var defaultNames = FormulaVariableNames(defaultContext);
+        Check(defaultNames.SetEquals(daggerVars.Keys),
+            "item default variable names should match loaded-row variable names");
+    }
+
     private static Dictionary<string, int> VariablesFor(AbilityCatalogEntry entry)
     {
         var context = MakeFormulaContext();
         entry.AddVariables(context, "ability");
+        return FormulaVariables(context);
+    }
+
+    private static Dictionary<string, int> VariablesFor(ItemCatalogEntry entry)
+    {
+        var context = MakeFormulaContext();
+        entry.AddVariables(context, "item");
         return FormulaVariables(context);
     }
 
@@ -2313,9 +2476,9 @@ internal static class Program
         var cache = new DclActionContextCache();
         Check(!cache.TryGetLatest(3, nowTicks: 100, maxAgeTicks: 50, out _), "empty DCL cache should miss");
 
-        cache.Record(3, casterIdx: 2, actionType: 1, abilityId: 99, timestampTicks: 100);
+        cache.Record(3, casterIdx: 2, actionType: 1, abilityId: 99, timestampTicks: 100, actionPayload: 71);
         Check(cache.TryGetLatest(3, nowTicks: 150, maxAgeTicks: 50, out var first), "fresh DCL cache entry should hit at max age");
-        Check(first.CasterIdx == 2 && first.ActionType == 1 && first.AbilityId == 99 && first.TimestampTicks == 100,
+        Check(first.CasterIdx == 2 && first.ActionType == 1 && first.AbilityId == 99 && first.TimestampTicks == 100 && first.ActionPayload == 71,
             "fresh DCL cache entry should preserve action context");
 
         cache.Record(3, casterIdx: 7, actionType: 4, abilityId: 101, timestampTicks: 140);
@@ -2332,6 +2495,2153 @@ internal static class Program
         cache.Record(64, casterIdx: 1, actionType: 1, abilityId: 1, timestampTicks: 200);
         Check(!cache.TryGetLatest(-1, nowTicks: 200, maxAgeTicks: 50, out _), "negative DCL target index should miss");
         Check(!cache.TryGetLatest(64, nowTicks: 200, maxAgeTicks: 50, out _), "out-of-range DCL target index should miss");
+
+        cache.Record(4, casterIdx: 5, actionType: 0x0B, abilityId: 13, timestampTicks: 300,
+            returnRva: DclCalcProvenance.ForecastTraceReturnRva, battleState: 0x19);
+        Check(!cache.TryGetLatestConfirmedExecution(4, nowTicks: 300, maxAgeTicks: 50, out _),
+            "forecast provenance must never satisfy the confirmed-execution gate");
+        cache.Record(4, casterIdx: 5, actionType: 0x0B, abilityId: 13, timestampTicks: 301,
+            returnRva: DclCalcProvenance.OuterSweepReturnRva, battleState: DclCalcProvenance.ConfirmedExecutionBattleState);
+        Check(cache.TryGetLatestConfirmedExecution(4, nowTicks: 301, maxAgeTicks: 50, out var execution) &&
+              execution.Origin == DclCalcOrigin.OuterSweep && execution.IsConfirmedExecution,
+            "the LT28 outer-sweep/state-0x2A pair must satisfy the confirmed-execution gate");
+        cache.Record(4, casterIdx: 5, actionType: 1, abilityId: 0, timestampTicks: 302,
+            returnRva: DclCalcProvenance.NestedRendAttackReturnRva, battleState: DclCalcProvenance.ConfirmedExecutionBattleState);
+        Check(cache.TryGetLatestConfirmedExecution(4, nowTicks: 302, maxAgeTicks: 50, out var preservedOuter) &&
+              preservedOuter.AbilityId == 13 && preservedOuter.ActionType == 0x0B,
+            "a nested synthetic Rend Attack row must not overwrite the outer action identity");
+
+        var planCache = new DclStatusPlanCache();
+        var prepared = new DclPreparedStatusPlan(5, 0x0B, 13, 400,
+            [new DclStatusWrite("wall", 3, 0x20, true, 9, 12, false, false, 0)]);
+        planCache.Record(4, prepared);
+        Check(planCache.TryGet(4, 5, 0x0B, 13, 420, 50, out var cachedPlan) && cachedPlan.Writes.Count == 1,
+            "post-calc status decisions should be reusable at pre-clamp without a second roll");
+        planCache.Invalidate(4, 5, 0x0B, 13);
+        Check(!planCache.TryGet(4, 5, 0x0B, 13, 420, 50, out _),
+            "a consumed post-calc status plan should be invalidated");
+    }
+
+    private static void TestDclComputePointNumericPlan()
+    {
+        var damage = DclComputePointNumericPlan.Build(
+            12, 0, 0, 0, 0x05,
+            authoredHpDebit: 111,
+            authoredHpCredit: null,
+            authoredMpDebit: null,
+            authoredMpCredit: null,
+            forcedMiss: false,
+            controlResultFlags: true,
+            preserveResultFlagsMask: 0x0F);
+        Check(damage.HpDebit == 111 && damage.HpCredit == 0 && damage.MpDebit == 0 && damage.MpCredit == 0,
+            "compute-point damage plan should replace only the authored HP debit channel");
+        Check(damage.ResultFlags == 0x85 && damage.WriteHpDebit && !damage.WriteHpCredit &&
+              !damage.WriteMpDebit && !damage.WriteMpCredit && damage.WriteResultFlags,
+            "compute-point damage plan should preserve low flags and expose HP damage");
+
+        var healing = DclComputePointNumericPlan.Build(
+            0, 12, 0, 0, 0,
+            null, 222, null, null,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(healing.HpCredit == 222 && healing.ResultFlags == DclResultFlags.HpCredit && healing.WriteHpCredit,
+            "compute-point plan should author HP credit and its result flag");
+
+        var mpDebit = DclComputePointNumericPlan.Build(
+            0, 0, 12, 0, 0,
+            null, null, 333, null,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(mpDebit.MpDebit == 333 && mpDebit.ResultFlags == DclResultFlags.MpDebit && mpDebit.WriteMpDebit,
+            "compute-point plan should author MP debit and its result flag");
+
+        var mpCredit = DclComputePointNumericPlan.Build(
+            0, 0, 0, 12, 0,
+            null, null, null, 444,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(mpCredit.MpCredit == 444 && mpCredit.ResultFlags == DclResultFlags.MpCredit && mpCredit.WriteMpCredit,
+            "compute-point plan should author MP credit and its result flag");
+
+        var composite = DclComputePointNumericPlan.Build(
+            1, 2, 3, 4, 0x03,
+            10, 20, 30, 40,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(composite.ResultFlags == 0xF3 && composite.WriteHpDebit && composite.WriteHpCredit &&
+              composite.WriteMpDebit && composite.WriteMpCredit && composite.WriteResultFlags,
+            "compute-point plan should compose all four numeric channels atomically");
+
+        var preservedNatural = DclComputePointNumericPlan.Build(
+            4, 0, 0, 5, 0,
+            null, null, 6, null,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(preservedNatural.HpDebit == 4 && preservedNatural.MpDebit == 6 && preservedNatural.MpCredit == 5 &&
+              preservedNatural.ResultFlags == 0xB0 && !preservedNatural.WriteHpDebit &&
+              preservedNatural.WriteMpDebit && !preservedNatural.WriteMpCredit,
+            "an authored channel should retain unowned natural channels in value and flag composition");
+
+        var clamped = DclComputePointNumericPlan.Build(
+            0, 0, 0, 0, 0,
+            -1, short.MaxValue + 1, 99999, -99999,
+            forcedMiss: false, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(clamped.HpDebit == 0 && clamped.HpCredit == short.MaxValue &&
+              clamped.MpDebit == short.MaxValue && clamped.MpCredit == 0 && clamped.ResultFlags == 0x60,
+            "compute-point plan should clamp every authored channel before composing flags");
+
+        var miss = DclComputePointNumericPlan.Build(
+            12, 13, 14, 15, 0xA7,
+            100, 200, 300, 400,
+            forcedMiss: true, controlResultFlags: true, preserveResultFlagsMask: 0x0F);
+        Check(miss.HpDebit == 0 && miss.HpCredit == 0 && miss.MpDebit == 0 && miss.MpCredit == 0 &&
+              miss.ResultFlags == 0xA7 && miss.WriteHpDebit && miss.WriteHpCredit &&
+              miss.WriteMpDebit && miss.WriteMpCredit && !miss.WriteResultFlags,
+            "forced miss should zero every numeric channel while preserving the connected native flag for delivery");
+
+        var nativeFlags = DclComputePointNumericPlan.Build(
+            5, 0, 0, 0, 0x2A,
+            50, null, null, null,
+            forcedMiss: false, controlResultFlags: false, preserveResultFlagsMask: 0x0F);
+        Check(nativeFlags.HpDebit == 50 && nativeFlags.ResultFlags == 0x2A && !nativeFlags.WriteResultFlags,
+            "disabled result-flag control should leave the native byte untouched");
+    }
+
+    private static void TestDclComputePointCache(ItemCatalog catalog)
+    {
+        var cache = new DclComputePointCache();
+        var expected = new DclComputedNumericResult(
+            CasterIdx: 3,
+            ActionType: 0x0B,
+            AbilityId: 265,
+            ActionPayload: 0,
+            TimestampTicks: 100,
+            NaturalHpDebit: 122,
+            NaturalHpCredit: 0,
+            NaturalMpDebit: 0,
+            NaturalMpCredit: 0,
+            NaturalResultFlags: 0x80,
+            HpDebit: 4095,
+            HpCredit: 0,
+            MpDebit: 0,
+            MpCredit: 0,
+            ResultFlags: 0x80);
+        cache.Record(16, expected);
+        Check(cache.TryGet(16, 3, 0x0B, 265, 0, 150, 50, out var actual) && actual == expected,
+            "compute-point cache should preserve the exact natural and rewritten execution result");
+        Check(!cache.TryGet(16, 3, 0x0B, 266, 0, 150, 50, out _),
+            "compute-point cache must reject a different action identity");
+        Check(!cache.TryGet(16, 3, 0x0B, 265, 1, 150, 50, out _),
+            "compute-point cache must include the active action payload in its identity");
+        Check(!cache.TryGet(16, 3, 0x0B, 265, 0, 151, 50, out _),
+            "compute-point cache must expire after its bounded delivery window");
+        cache.Invalidate(16);
+        Check(!cache.TryGet(16, 3, 0x0B, 265, 0, 100, 50, out _),
+            "compute-point cache must retire a delivered result");
+
+        var valid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclComputePointNumericEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+        };
+        Check(RuntimeSettingsValidator.Validate(valid, catalog).Success,
+            "AI-facing compute-point writer should validate with a numeric DCL formula");
+
+        var noPipeline = new RuntimeSettings
+        {
+            DclComputePointNumericEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+        };
+        Check(!RuntimeSettingsValidator.Validate(noPipeline, catalog).Success,
+            "compute-point writer must fail closed without the DCL pipeline");
+
+        var staticForceConflict = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclComputePointNumericEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+            StagedBundleForceDmg = 4095,
+        };
+        Check(!RuntimeSettingsValidator.Validate(staticForceConflict, catalog).Success,
+            "the permanent writer must reject the LT35 static damage force surface");
+
+    }
+
+    private static void TestDclHitDecisionCache()
+    {
+        var cache = new DclHitDecisionCache();
+        var expected = new DclHitDecision(
+            Hit: false,
+            Pct: 50,
+            Roll: 12,
+            PhysicalOutcome: DclPhysicalOutcome.Defended,
+            AttackSkill: 13,
+            DefenseKind: DclDefenseKind.Block,
+            DefenseTarget: 10,
+            DefenseRoll: 8,
+            Multistrike: new DclMultistrikeAggregate(
+                StrikeCount: 3,
+                HitCount: 1,
+                CriticalCount: 0,
+                AttackMissCount: 1,
+                FumbleCount: 0,
+                EvadedCount: 0,
+                DefendedCount: 1,
+                ParryAttempts: 0,
+                BlockAttempts: 1,
+                TotalDebit: 0));
+
+        Check(
+            !cache.TryGetLatest(7, nowTicks: 100, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "empty DCL hit-decision cache should miss");
+
+        cache.Record(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, expected, nowTicks: 100);
+        Check(
+            cache.TryGetLatest(7, nowTicks: 150, ttlTicks: 50, out var actual, out int casterIdx, out int abilityId, out int actionType, out int actionPayload),
+            "fresh DCL hit-decision cache entry should hit at max age");
+        Check(actual == expected, "late DCL consumer should receive the cached hit decision");
+        Check(casterIdx == 2 && abilityId == 16 && actionType == 1 && actionPayload == 11,
+            "late DCL consumer should receive the cached action key");
+        Check(cache.TryMarkDefenseCommitted(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, out var committed) && committed == expected,
+            "the successful apply consumer should commit a cached finite defense exactly once");
+        Check(!cache.TryMarkDefenseCommitted(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, out _),
+            "a repeated apply callback must not spend the same finite defense twice");
+
+        Check(!cache.MarkConsumed(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, byOutcomeDelivery: true),
+            "outcome delivery alone must preserve the decision for a later pre-clamp consumer");
+        Check(cache.TryGetLatest(7, nowTicks: 150, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "the first half of the consumption handshake must leave the decision readable");
+        Check(cache.MarkConsumed(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, byOutcomeDelivery: false),
+            "pre-clamp should retire a decision already delivered by the selector");
+        Check(!cache.TryGetLatest(7, nowTicks: 150, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "a completed selector/pre-clamp handshake must retire the decision immediately");
+
+        cache.Record(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, expected, nowTicks: 200);
+        Check(!cache.MarkConsumed(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, byOutcomeDelivery: false),
+            "pre-clamp alone must preserve the decision for later outcome delivery");
+        Check(!cache.MarkConsumed(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, byOutcomeDelivery: false),
+            "duplicate pre-clamp delivery must be idempotent");
+        Check(cache.MarkConsumed(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, byOutcomeDelivery: true),
+            "selector should retire a decision already consumed by pre-clamp");
+
+        cache.Record(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 11, expected, nowTicks: 300);
+        Check(!cache.TryGet(7, casterIdx: 2, abilityId: 16, actionType: 1, actionPayload: 71, nowTicks: 300, ttlTicks: 50, out _),
+            "a different active weapon payload must not reuse the first hand's hit decision");
+
+        Check(
+            !cache.TryGetLatest(7, nowTicks: 351, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "expired DCL hit-decision cache entry should miss");
+        Check(
+            !cache.TryGetLatest(-1, nowTicks: 100, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "negative DCL hit-decision target index should miss");
+        Check(
+            !cache.TryGetLatest(64, nowTicks: 100, ttlTicks: 50, out _, out _, out _, out _, out _),
+            "out-of-range DCL hit-decision target index should miss");
+    }
+
+    private static void TestDclMagicEvade(ItemCatalog catalog)
+    {
+        Check(DclMagicEvade.EvadePercent(-5, 50) == 0,
+            "negative Magic Evade should clamp to zero");
+        Check(DclMagicEvade.EvadePercent(35, 50) == 35 && DclMagicEvade.HitChancePercent(35, 50) == 65,
+            "Magic Evade should convert directly into the complementary hit chance");
+        Check(DclMagicEvade.EvadePercent(80, 50) == 50 && DclMagicEvade.HitChancePercent(80, 50) == 50,
+            "stacked Magic Evade should respect the configured anti-immunity cap");
+
+        var valid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclHitChanceFormula = "100",
+            DclMagicEvadeEnabled = true,
+            DclMagicEvadeConditionFormula = "ability.formula == 8",
+            DclMagicEvadeFormula =
+                "max(targetSlot.right_shield.shieldMagicalEvasion, max(targetSlot.left_shield.shieldMagicalEvasion, targetSlot.accessory.accessoryMagicalEvasion))",
+            DclMagicEvadeCapPct = 50,
+            DclMissOutputControlEnabled = true,
+            DclMissSelectorOutcomeEnabled = true,
+            DclPreviewHitPctEnabled = true,
+            ItemTableEvadeZeroEnabled = true,
+            EvadeCopierOverrideEnabled = true,
+            EvadeCopierOverride46 = 0,
+            EvadeCopierOverride47 = 0,
+            EvadeCopierOverride48 = 0,
+            EvadeCopierOverride49 = 0,
+            EvadeCopierOverride4A = 0,
+            EvadeCopierOverride4B = 0,
+            EvadeCopierOverride4C = 0,
+            EvadeCopierOverride4D = 0,
+            EvadeCopierOverride4E = 0,
+            EquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "Accessory", Offset = 0x1E, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "Right Shield", Offset = 0x22, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "Left Shield", Offset = 0x26, Width = "UInt16" },
+            ],
+        };
+        var validReport = RuntimeSettingsValidator.Validate(valid, catalog);
+        Check(validReport.Success,
+            "offensive formula-0x08 Magic Evade with equipment-derived magnitude should pass validation: " +
+            string.Join(" | ", validReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+
+        var invalid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclHitChanceFormula = "100",
+            DclMagicEvadeEnabled = true,
+            DclMagicEvadeConditionFormula = "",
+            DclMagicEvadeFormula = "missingMagicEvade",
+            DclMagicEvadeCapPct = 101,
+            ItemTableEvadeZeroEnabled = true,
+            EvadeCopierOverrideEnabled = true,
+        };
+        var invalidReport = RuntimeSettingsValidator.Validate(invalid, catalog);
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclMagicEvadeCapPct" && f.Severity == "ERROR"),
+            "validator should reject a Magic Evade cap above 100");
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclMagicEvadeEnabled" && f.Severity == "ERROR"),
+            "validator should require clean authored-miss delivery and a non-empty applicability formula");
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclMagicEvadeFormula" && f.Message.Contains("missingMagicEvade")),
+            "validator should reject unknown variables in the Magic Evade formula");
+    }
+
+    private static void TestDclWeaponSkill(ItemCatalog catalog, AbilityCatalog abilityCatalog)
+    {
+        static string WeaponFamilyFormula(string slot) =>
+            $"if({slot}.itemId == 0 || {slot}.category_none, 0, " +
+            $"if({slot}.category_knife, 1, if({slot}.category_ninjablade, 2, " +
+            $"if({slot}.category_sword, 3, if({slot}.category_knightsword, 4, " +
+            $"if({slot}.category_fellsword, 5, if({slot}.category_katana, 6, " +
+            $"if({slot}.category_axe, 7, if({slot}.category_flail, 8, " +
+            $"if({slot}.category_rod, 9, if({slot}.category_staff, 10, " +
+            $"if({slot}.category_pole, 11, if({slot}.category_polearm, 12, " +
+            $"if({slot}.category_crossbow, 13, if({slot}.category_bow, 14, " +
+            $"if({slot}.category_gun, 15, if({slot}.category_book, 16, " +
+            $"if({slot}.category_instrument, 17, if({slot}.category_bag, 18, " +
+            $"if({slot}.category_cloth, 19, if({slot}.category_throwing, 20, " +
+            $"if({slot}.category_bomb, 21, -1))))))))))))))))))))))";
+
+        var settings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclHitChanceFormula = "100",
+            DclPreviewHitPctEnabled = true,
+            DclPhysicalContestEnabled = true,
+            DclPhysicalContestConditionFormula = "action.type == 1 && action.abilityId == 0",
+            DclAttackSkillFormula = "dcl.weaponSkill + dcl.zodiacHitModifier + dcl.pointBlank * const.dclPointBlankSkillModifier",
+            DclDodgeFormula = "dcl.dodge",
+            DclParryFormula = "if(dcl.isMissile, 0, mulDiv(dcl.targetWeaponSkill, 1, 2) + 3)",
+            DclBlockFormula = "const.dclBlockBase + mulDiv(tslot.rightshield.shieldPhysicalEvasion, 1, const.dclShieldEvadePctPerBlockPoint)",
+            DclDefenseAllowedFormula = "!dcl.facingBack",
+            DclDefenseModifierFormula = "mulDiv(50 - t.brave, 1, 20) + dcl.facingSide * const.dclFlankDefenseModifier",
+            DclParryUsesFormula = "tslot.rightweapon.itemId > 0 && tslot.rightweapon.itemId < 255",
+            DclBlockUsesFormula = "tslot.rightshield.isShield",
+            DclMissOutputControlEnabled = true,
+            DclMissSelectorOutcomeEnabled = true,
+            DclMissSuppressReactionsEnabled = true,
+            ItemTableEvadeZeroEnabled = true,
+            EvadeCopierOverrideEnabled = true,
+            EvadeCopierOverride46 = 0,
+            EvadeCopierOverride47 = 0,
+            EvadeCopierOverride48 = 0,
+            EvadeCopierOverride49 = 0,
+            EvadeCopierOverride4A = 0,
+            EvadeCopierOverride4B = 0,
+            EvadeCopierOverride4C = 0,
+            EvadeCopierOverride4D = 0,
+            EvadeCopierOverride4E = 0,
+            FormulaVariables = new Dictionary<string, int>
+            {
+                ["dclWeaponSkillCap"] = 16,
+                ["dclSwordMasterAbilityId"] = 481,
+                ["dclSwordMasterBonus"] = 2,
+                // Mechanism fixtures, not final balance decisions.
+                ["dclPaToStOffset"] = 4,
+                ["dclPenFloorPermille"] = 200,
+                ["dclCrossbowOvercapDamagePermille"] = 250,
+                ["dclGunOvercapPenetrationPermille"] = 250,
+                ["dclCrossbowDrPermille"] = 750,
+                ["dclGunDrPermille"] = 500,
+                ["dclGlobalScalePermille"] = 1000,
+                ["dclDodgeBase"] = 7,
+                ["dclEvadePctPerDodgePoint"] = 10,
+                ["dclWeightPerDodgePenalty"] = 10,
+                ["dclFlankDefenseModifier"] = -2,
+                ["dclPointBlankSkillModifier"] = -2,
+                ["dclBlockBase"] = 7,
+                ["dclShieldEvadePctPerBlockPoint"] = 10,
+            },
+            FormulaTables = new Dictionary<string, List<int>>
+            {
+                ["weaponSkillBaseByGrade"] = [5, 7, 9, 11, 13],
+                ["weaponSkillRatePermilleByGrade"] = [200, 320, 500, 720, 1000],
+                ["gurpsSw"] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
+                ["gurpsThr"] = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12, 13, 14, 14, 15, 16, 16, 17, 18, 18, 19, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 27],
+            },
+            FormulaMatrices = new Dictionary<string, List<List<int>>>
+            {
+                ["drMatrix"] =
+                [
+                    [9, 8, 3, 8],
+                    [2, 2, 2, 2],
+                    [0, 0, 0, 0],
+                ],
+            },
+            FormulaMaps = new Dictionary<string, Dictionary<string, int>>
+            {
+                ["weaponGradeByJobFamily"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["2850"] = 4, // Ninja (89) x Ninja Blade (2) => grade A.
+                    ["2861"] = 2, // Ninja (89) x Crossbow (13) => grade C mechanism fixture.
+                    ["2863"] = 3, // Ninja (89) x Gun (15) => grade B mechanism fixture.
+                },
+                ["equipmentWeightByItemId"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["11"] = 3,   // Ninja Blade mechanism fixture.
+                    ["71"] = 6,   // Romandan Pistol mechanism fixture.
+                    ["77"] = 4,   // Bowgun mechanism fixture.
+                    ["142"] = 5,  // Venetian Shield mechanism fixture.
+                    ["172"] = 26, // Leather Armor occupies the native heavy Armor class.
+                },
+            },
+            DclDerivedVariables =
+            [
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillInvestmentMilli", Formula = "2500 * max(0, a.jobLevel - 1) + mulDiv(250 * max(1, a.jobLevel), max(0, a.level - 1), 8)" },
+                new FormulaDerivedVariable
+                {
+                    Name = "dcl.hasSwordMaster",
+                    Formula = "a.supportAbilityId == const.dclSwordMasterAbilityId || " +
+                              "a.innateAbilityId1 == const.dclSwordMasterAbilityId || a.innateAbilityId2 == const.dclSwordMasterAbilityId || " +
+                              "a.innateAbilityId3 == const.dclSwordMasterAbilityId || a.innateAbilityId4 == const.dclSwordMasterAbilityId"
+                },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillBonus", Formula = "dcl.hasSwordMaster * const.dclSwordMasterBonus" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponFamily", Formula = WeaponFamilyFormula("aslot.rightweapon") },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponFamily", Formula = WeaponFamilyFormula("aslot.leftweapon") },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponGrade", Formula = "mapOr(weaponGradeByJobFamily, a.jobId * 32 + dcl.rightWeaponFamily, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponGrade", Formula = "mapOr(weaponGradeByJobFamily, a.jobId * 32 + dcl.leftWeaponFamily, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkillBase", Formula = "table(weaponSkillBaseByGrade, dcl.rightWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkillBase", Formula = "table(weaponSkillBaseByGrade, dcl.leftWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkillRatePermille", Formula = "table(weaponSkillRatePermilleByGrade, dcl.rightWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkillRatePermille", Formula = "table(weaponSkillRatePermilleByGrade, dcl.leftWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkillGrowth", Formula = "mulDiv(dcl.weaponSkillInvestmentMilli, dcl.rightWeaponSkillRatePermille, 1000000)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkillGrowth", Formula = "mulDiv(dcl.weaponSkillInvestmentMilli, dcl.leftWeaponSkillRatePermille, 1000000)" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkillRaw", Formula = "dcl.rightWeaponSkillBase + dcl.rightWeaponSkillGrowth + dcl.weaponSkillBonus" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkillRaw", Formula = "dcl.leftWeaponSkillBase + dcl.leftWeaponSkillGrowth + dcl.weaponSkillBonus" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkill", Formula = "min(const.dclWeaponSkillCap, dcl.rightWeaponSkillRaw)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkill", Formula = "min(const.dclWeaponSkillCap, dcl.leftWeaponSkillRaw)" },
+                new FormulaDerivedVariable { Name = "dcl.rightWeaponSkillExcess", Formula = "max(0, dcl.rightWeaponSkillRaw - const.dclWeaponSkillCap)" },
+                new FormulaDerivedVariable { Name = "dcl.leftWeaponSkillExcess", Formula = "max(0, dcl.leftWeaponSkillRaw - const.dclWeaponSkillCap)" },
+                new FormulaDerivedVariable { Name = "dcl.rightSkillPrimary", Formula = "aslot.rightweapon.category_crossbow || aslot.rightweapon.category_gun" },
+                new FormulaDerivedVariable { Name = "dcl.leftSkillPrimary", Formula = "aslot.leftweapon.category_crossbow || aslot.leftweapon.category_gun" },
+                new FormulaDerivedVariable { Name = "dcl.rightDamageInput", Formula = "if(dcl.rightSkillPrimary, dcl.rightWeaponSkill, a.rawPa)" },
+                new FormulaDerivedVariable { Name = "dcl.leftDamageInput", Formula = "if(dcl.leftSkillPrimary, dcl.leftWeaponSkill, a.rawPa)" },
+                new FormulaDerivedVariable { Name = "dcl.rightOvercapDamageUnits", Formula = "aslot.rightweapon.category_crossbow * dcl.rightWeaponSkillExcess" },
+                new FormulaDerivedVariable { Name = "dcl.leftOvercapDamageUnits", Formula = "aslot.leftweapon.category_crossbow * dcl.leftWeaponSkillExcess" },
+                new FormulaDerivedVariable { Name = "dcl.rightOvercapPenetrationUnits", Formula = "aslot.rightweapon.category_gun * dcl.rightWeaponSkillExcess" },
+                new FormulaDerivedVariable { Name = "dcl.leftOvercapPenetrationUnits", Formula = "aslot.leftweapon.category_gun * dcl.leftWeaponSkillExcess" },
+                // Compatibility aliases deliberately remain right-hand until the per-strike hand gate is proven.
+                new FormulaDerivedVariable { Name = "dcl.weaponFamily", Formula = "dcl.rightWeaponFamily" },
+                new FormulaDerivedVariable { Name = "dcl.weaponGrade", Formula = "dcl.rightWeaponGrade" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillBase", Formula = "dcl.rightWeaponSkillBase" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillRatePermille", Formula = "dcl.rightWeaponSkillRatePermille" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillGrowth", Formula = "dcl.rightWeaponSkillGrowth" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillRaw", Formula = "dcl.rightWeaponSkillRaw" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkill", Formula = "dcl.rightWeaponSkill" },
+                new FormulaDerivedVariable { Name = "dcl.weaponSkillExcess", Formula = "dcl.rightWeaponSkillExcess" },
+                // Modernized LT7 physical spine. Right-hand routing remains an explicit live-test gate.
+                new FormulaDerivedVariable { Name = "dcl.isCut", Formula = "aslot.rightweapon.category_sword || aslot.rightweapon.category_knightsword || aslot.rightweapon.category_katana || aslot.rightweapon.category_ninjablade || aslot.rightweapon.category_cloth" },
+                new FormulaDerivedVariable { Name = "dcl.isThrust", Formula = "aslot.rightweapon.category_knife || aslot.rightweapon.category_polearm" },
+                new FormulaDerivedVariable { Name = "dcl.isMissile", Formula = "aslot.rightweapon.category_bow || aslot.rightweapon.category_crossbow || aslot.rightweapon.category_gun" },
+                new FormulaDerivedVariable { Name = "dcl.typeIndex", Formula = "if(dcl.isCut, 0, if(dcl.isThrust, 1, if(dcl.isMissile, 3, 2)))" },
+                new FormulaDerivedVariable { Name = "dcl.woundNum", Formula = "if(dcl.isCut, 3, if(dcl.isThrust, 2, 1))" },
+                new FormulaDerivedVariable { Name = "dcl.woundDen", Formula = "if(dcl.isCut, 2, 1)" },
+                new FormulaDerivedVariable { Name = "armor.heavy", Formula = "tslot.body.category_armor" },
+                new FormulaDerivedVariable { Name = "armor.clothes", Formula = "tslot.body.category_clothing" },
+                new FormulaDerivedVariable { Name = "armor.robe", Formula = "tslot.body.category_robe" },
+                new FormulaDerivedVariable { Name = "armor.classIndex", Formula = "if(armor.heavy, 0, if(armor.clothes, 1, 2))" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacValid", Formula = "a.zodiac < 12 && t.zodiac < 12" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacDelta", Formula = "if(dcl.zodiacValid, abs(a.zodiac - t.zodiac), 0)" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacDistance", Formula = "if(dcl.zodiacValid, min(dcl.zodiacDelta, 12 - dcl.zodiacDelta), -1)" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacPermille", Formula = "if(dcl.zodiacDistance == 6, 1200, if(dcl.zodiacDistance == 3, 900, if(dcl.zodiacDistance == 0 || dcl.zodiacDistance == 4, 1100, 1000)))" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacHitModifier", Formula = "dcl.zodiacDistance == 6" },
+                new FormulaDerivedVariable { Name = "dcl.st", Formula = "dcl.rightDamageInput + const.dclPaToStOffset" },
+                new FormulaDerivedVariable { Name = "dcl.base", Formula = "if(dcl.isThrust, tableClamp(gurpsThr, dcl.st), tableClamp(gurpsSw, dcl.st))" },
+                new FormulaDerivedVariable { Name = "dcl.overcapRaw", Formula = "mulDiv(dcl.rightOvercapDamageUnits, const.dclCrossbowOvercapDamagePermille, 1000)" },
+                new FormulaDerivedVariable { Name = "dcl.wmod", Formula = "aslot.rightweapon.weaponPower" },
+                new FormulaDerivedVariable { Name = "dcl.gross", Formula = "dcl.base + dcl.wmod + dcl.overcapRaw" },
+                new FormulaDerivedVariable { Name = "dcl.dr", Formula = "matrixClamp(drMatrix, armor.classIndex, dcl.typeIndex)" },
+                new FormulaDerivedVariable { Name = "dcl.drPermille", Formula = "if(aslot.rightweapon.category_gun, const.dclGunDrPermille, if(aslot.rightweapon.category_crossbow, const.dclCrossbowDrPermille, 1000))" },
+                new FormulaDerivedVariable { Name = "dcl.skillPenetration", Formula = "mulDiv(dcl.rightOvercapPenetrationUnits, const.dclGunOvercapPenetrationPermille, 1000)" },
+                new FormulaDerivedVariable { Name = "dcl.effectiveDr", Formula = "max(0, mulDiv(dcl.dr, dcl.drPermille, 1000) - dcl.skillPenetration)" },
+                new FormulaDerivedVariable { Name = "dcl.penFloor", Formula = "mulDiv(dcl.gross, const.dclPenFloorPermille, 1000)" },
+                new FormulaDerivedVariable { Name = "dcl.penetrating", Formula = "max(dcl.penFloor, dcl.gross - dcl.effectiveDr)" },
+                new FormulaDerivedVariable { Name = "dcl.wounded", Formula = "mulDiv(dcl.penetrating, dcl.woundNum, max(1, dcl.woundDen))" },
+                new FormulaDerivedVariable { Name = "dcl.traitPermille", Formula = "if(dcl.rightSkillPrimary, 1000, 760 + mulDiv(a.brave, 590, 100))" },
+                new FormulaDerivedVariable { Name = "dcl.weaponModel", Formula = "max(1, mulDiv(mulDiv(mulDiv(dcl.wounded, dcl.traitPermille, 1000), dcl.zodiacPermille, 1000), const.dclGlobalScalePermille, 1000))" },
+                new FormulaDerivedVariable { Name = "dcl.weightHead", Formula = "mapOr(equipmentWeightByItemId, tslot.head.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightBody", Formula = "mapOr(equipmentWeightByItemId, tslot.body.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightAccessory", Formula = "mapOr(equipmentWeightByItemId, tslot.accessory.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightRightWeapon", Formula = "mapOr(equipmentWeightByItemId, tslot.rightweapon.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightRightShield", Formula = "mapOr(equipmentWeightByItemId, tslot.rightshield.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightLeftWeapon", Formula = "mapOr(equipmentWeightByItemId, tslot.leftweapon.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightLeftShield", Formula = "mapOr(equipmentWeightByItemId, tslot.leftshield.itemId, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.weightTotal", Formula = "dcl.weightHead + dcl.weightBody + dcl.weightAccessory + dcl.weightRightWeapon + dcl.weightRightShield + dcl.weightLeftWeapon + dcl.weightLeftShield" },
+                new FormulaDerivedVariable { Name = "dcl.movePenalty", Formula = "if(dcl.weightTotal <= 14, 0, if(dcl.weightTotal <= 28, 1, if(dcl.weightTotal <= 40, 2, 3)))" },
+                new FormulaDerivedVariable { Name = "dcl.dodgeWeightPenalty", Formula = "mulDiv(dcl.weightTotal, 1, const.dclWeightPerDodgePenalty)" },
+                new FormulaDerivedVariable { Name = "dcl.dodge", Formula = "max(3, const.dclDodgeBase + mulDiv(t.physEva, 1, const.dclEvadePctPerDodgePoint) + mulDiv(tslot.accessory.accessoryPhysicalEvasion, 1, const.dclEvadePctPerDodgePoint) - dcl.dodgeWeightPenalty)" },
+                new FormulaDerivedVariable { Name = "dcl.facingDx", Formula = "a.x - t.x" },
+                new FormulaDerivedVariable { Name = "dcl.facingDy", Formula = "a.y - t.y" },
+                new FormulaDerivedVariable { Name = "dcl.facingSeparated", Formula = "abs(dcl.facingDx) + abs(dcl.facingDy) > 0" },
+                new FormulaDerivedVariable { Name = "dcl.sourceDirection", Formula = "if(!dcl.facingSeparated, t.facing, if(abs(dcl.facingDx) > abs(dcl.facingDy), if(dcl.facingDx > 0, 3, 1), if(dcl.facingDy > 0, 2, 0)))" },
+                new FormulaDerivedVariable { Name = "dcl.oppositeFacing", Formula = "if(t.facing == 0, 2, if(t.facing == 1, 3, if(t.facing == 2, 0, 1)))" },
+                new FormulaDerivedVariable { Name = "dcl.facingFront", Formula = "dcl.sourceDirection == t.facing" },
+                new FormulaDerivedVariable { Name = "dcl.facingBack", Formula = "dcl.facingSeparated && dcl.sourceDirection == dcl.oppositeFacing" },
+                new FormulaDerivedVariable { Name = "dcl.facingSide", Formula = "dcl.facingSeparated && !dcl.facingFront && !dcl.facingBack" },
+                new FormulaDerivedVariable { Name = "dcl.gridDistance", Formula = "abs(dcl.facingDx) + abs(dcl.facingDy)" },
+                new FormulaDerivedVariable { Name = "dcl.pointBlank", Formula = "aslot.rightweapon.weaponRange == 2 && dcl.gridDistance == 1" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponSkillInvestmentMilli", Formula = "2500 * max(0, t.jobLevel - 1) + mulDiv(250 * max(1, t.jobLevel), max(0, t.level - 1), 8)" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponFamily", Formula = WeaponFamilyFormula("tslot.rightweapon") },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponGrade", Formula = "mapOr(weaponGradeByJobFamily, t.jobId * 32 + dcl.targetWeaponFamily, 0)" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponSkillBase", Formula = "table(weaponSkillBaseByGrade, dcl.targetWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponSkillRatePermille", Formula = "table(weaponSkillRatePermilleByGrade, dcl.targetWeaponGrade)" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponSkillGrowth", Formula = "mulDiv(dcl.targetWeaponSkillInvestmentMilli, dcl.targetWeaponSkillRatePermille, 1000000)" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeaponSkill", Formula = "min(const.dclWeaponSkillCap, dcl.targetWeaponSkillBase + dcl.targetWeaponSkillGrowth)" },
+            ],
+            DclDamageFormula = "if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, dcl.oldDebit)",
+            AttackerEquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "RightWeapon", Offset = 0x20, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "LeftWeapon", Offset = 0x24, Width = "UInt16" },
+            ],
+            EquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "Head", Offset = 0x1A, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "Body", Offset = 0x1C, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "Accessory", Offset = 0x1E, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "RightWeapon", Offset = 0x20, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "RightShield", Offset = 0x22, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "LeftWeapon", Offset = 0x24, Width = "UInt16" },
+                new EquipmentSlotProbe { Name = "LeftShield", Offset = 0x26, Width = "UInt16" },
+            ],
+        };
+
+        static byte[] TargetRaw(int zodiac = 6, int bodyId = 172, int rightShieldId = 0xFF,
+            int rightWeaponId = 19)
+        {
+            var raw = new byte[0x200];
+            raw[0x03] = 89;
+            raw[0x09] = (byte)(zodiac << 4);
+            raw[0x1C] = (byte)(bodyId & 0xFF);
+            raw[0x1D] = (byte)(bodyId >> 8);
+            raw[0x22] = (byte)(rightShieldId & 0xFF);
+            raw[0x23] = (byte)(rightShieldId >> 8);
+            raw[0x20] = (byte)(rightWeaponId & 0xFF);
+            raw[0x21] = (byte)(rightWeaponId >> 8);
+            raw[0x4B] = 10; // Fixture C-Ev percentage; equipment evade remains separate.
+            raw[0x4F] = 5;
+            raw[0x50] = 5;
+            raw[0x51] = 0; // Faces -Y.
+            int totalJpOffset = 0x11E + (89 - 0x4A) * 2;
+            raw[totalJpOffset] = 0xB8;
+            raw[totalJpOffset + 1] = 0x0B; // 3000 total JP, Job Level 8.
+            return raw;
+        }
+
+        var target = new UnitSnapshot((nint)0x5200, 0x80, 50, 300, 300, 2, true, 8, 6, 8, 4, 3, 70, 60,
+            TargetRaw(), 20, 20);
+
+        static UnitSnapshot Ninja(byte[] raw, nint ptr, int level = 99, int brave = 70)
+            => new(ptr, 0x80, level, 300, 300, 1, false, 12, 6, 10, 5, 4, brave, 60, raw, 20, 20);
+
+        static byte[] NinjaRaw(int weaponId, int totalJp, int supportAbilityId = 0, int innateAbilityId = 0,
+            int leftWeaponId = 0xFF, int x = 5, int y = 4)
+        {
+            var raw = new byte[0x200];
+            raw[0x03] = 89;
+            raw[0x09] = 0; // Aries.
+            raw[0x0A] = (byte)(innateAbilityId & 0xFF);
+            raw[0x0B] = (byte)(innateAbilityId >> 8);
+            raw[0x16] = (byte)(supportAbilityId & 0xFF);
+            raw[0x17] = (byte)(supportAbilityId >> 8);
+            raw[0x20] = (byte)(weaponId & 0xFF);
+            raw[0x21] = (byte)(weaponId >> 8);
+            raw[0x24] = (byte)(leftWeaponId & 0xFF);
+            raw[0x25] = (byte)(leftWeaponId >> 8);
+            raw[0x38] = 12;
+            raw[0x4F] = (byte)x;
+            raw[0x50] = (byte)y;
+            int totalJpOffset = 0x11E + (89 - 0x4A) * 2;
+            raw[totalJpOffset] = (byte)(totalJp & 0xFF);
+            raw[totalJpOffset + 1] = (byte)(totalJp >> 8);
+            return raw;
+        }
+
+        FormulaContext ContextFor(UnitSnapshot attacker, UnitSnapshot? defender = null)
+        {
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings, catalog, abilityCatalog, defender ?? target, attacker,
+                eventIndex: 1, eventSeed: 1, actionType: 1, abilityId: 0, oldDebit: 0, oldCredit: 0);
+            Check(FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string error),
+                $"Weapon Skill derived chain should evaluate: {error}");
+            return context;
+        }
+
+        static int Eval(FormulaContext context, string formula)
+        {
+            Check(FormulaExpression.TryEvaluate(formula, context, out int value, out string error),
+                $"Weapon Skill formula '{formula}' should evaluate: {error}");
+            return value;
+        }
+
+        var masteredWithSupport = ContextFor(Ninja(NinjaRaw(11, 3000, supportAbilityId: 481), (nint)0x5100));
+        Check(Eval(masteredWithSupport, "dcl.weaponFamily") == 2, "Ninja Blade should map to family 2");
+        Check(Eval(masteredWithSupport, "dcl.weaponGrade") == 4, "Ninja/Ninja Blade should resolve authored grade A");
+        Check(Eval(masteredWithSupport, "dcl.weaponSkillInvestmentMilli") == 42000,
+            "job-level 8 / character-level 99 investment should be 42000 milli-skill");
+        Check(Eval(masteredWithSupport, "dcl.weaponSkillRaw") == 57 &&
+              Eval(masteredWithSupport, "dcl.weaponSkill") == 16 &&
+              Eval(masteredWithSupport, "dcl.weaponSkillExcess") == 41,
+            "grade-A maximum mastery plus Sword Master should produce raw 57, capped 16, excess 41");
+
+        var mixedRanged = ContextFor(Ninja(
+            NinjaRaw(77, 3000, leftWeaponId: 71), (nint)0x5108));
+        Check(Eval(mixedRanged, "dcl.rightWeaponFamily") == 13 &&
+              Eval(mixedRanged, "dcl.leftWeaponFamily") == 15,
+            "mixed-family hands should independently resolve Crossbow and Gun");
+        Check(Eval(mixedRanged, "dcl.rightWeaponGrade") == 2 &&
+              Eval(mixedRanged, "dcl.leftWeaponGrade") == 3,
+            "each hand should independently resolve its job x family grade");
+        Check(Eval(mixedRanged, "dcl.rightDamageInput") == Eval(mixedRanged, "dcl.rightWeaponSkill") &&
+              Eval(mixedRanged, "dcl.leftDamageInput") == Eval(mixedRanged, "dcl.leftWeaponSkill"),
+            "Crossbow and Gun should both route capped Weapon Skill into the damage-input surface");
+        Check(Eval(mixedRanged, "dcl.rightOvercapDamageUnits") == Eval(mixedRanged, "dcl.rightWeaponSkillExcess") &&
+              Eval(mixedRanged, "dcl.rightOvercapPenetrationUnits") == 0,
+            "Crossbow should expose over-cap skill only on the raw-damage route");
+        Check(Eval(mixedRanged, "dcl.leftOvercapDamageUnits") == 0 &&
+              Eval(mixedRanged, "dcl.leftOvercapPenetrationUnits") == Eval(mixedRanged, "dcl.leftWeaponSkillExcess"),
+            "Gun should expose over-cap skill only on the penetration route");
+
+        var bladeDamage = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x5109));
+        Check(Eval(bladeDamage, "armor.classIndex") == 0 && Eval(bladeDamage, "dcl.weaponModel") == 30,
+            "Leather Armor is native Armor/heavy in the current three-class DCL and should yield 30 fixture blade damage");
+        Check(Eval(bladeDamage, settings.DclAttackSkillFormula) == 17,
+            "Best Zodiac should add one only to the attacker hit target");
+
+        var crossbowDamage = ContextFor(Ninja(NinjaRaw(77, 3000), (nint)0x510A));
+        Check(Eval(crossbowDamage, "dcl.rightWeaponSkillRaw") == 30 &&
+              Eval(crossbowDamage, "dcl.overcapRaw") == 3 &&
+              Eval(crossbowDamage, "dcl.effectiveDr") == 6 &&
+              Eval(crossbowDamage, "dcl.weaponModel") == 24,
+            "Crossbow should use capped skill, convert overcap to raw damage, partially divide DR, and ignore Brave");
+
+        var gunDamage = ContextFor(Ninja(NinjaRaw(71, 3000), (nint)0x510B));
+        Check(Eval(gunDamage, "dcl.rightWeaponSkillRaw") == 41 &&
+              Eval(gunDamage, "dcl.skillPenetration") == 6 &&
+              Eval(gunDamage, "dcl.effectiveDr") == 0 &&
+              Eval(gunDamage, "dcl.weaponModel") == 31,
+            "Gun should use capped skill and convert overcap to penetration after its family DR divisor");
+
+        var lowBraveBlade = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x510C, brave: 30));
+        var lowBraveCrossbow = ContextFor(Ninja(NinjaRaw(77, 3000), (nint)0x510D, brave: 30));
+        Check(Eval(lowBraveBlade, "dcl.weaponModel") == 24 &&
+              Eval(lowBraveCrossbow, "dcl.weaponModel") == Eval(crossbowDamage, "dcl.weaponModel"),
+            "Brave should scale ordinary physical weapons but remain neutral for skill-primary Crossbow/Gun");
+
+        var badZodiacTarget = target with { Ptr = (nint)0x5203, Raw = TargetRaw(zodiac: 3) };
+        var badZodiacBlade = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x510E), badZodiacTarget);
+        Check(Eval(badZodiacBlade, "dcl.zodiacPermille") == 900 &&
+              Eval(badZodiacBlade, "dcl.zodiacHitModifier") == 0 &&
+              Eval(badZodiacBlade, "dcl.weaponModel") == 22,
+            "square-sign Zodiac should reduce damage by ten percent without changing the hit target");
+
+        Check(Eval(bladeDamage, "dcl.weightTotal") == 26 &&
+              Eval(bladeDamage, "dcl.movePenalty") == 1 &&
+              Eval(bladeDamage, settings.DclDodgeFormula) == 6,
+            "heavy Armor weight should cross the first Move band and reduce the C-Ev Dodge fixture smoothly");
+        var lightTarget = target with { Ptr = (nint)0x5204, Raw = TargetRaw(bodyId: 0xFF) };
+        var lightDefense = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x510F), lightTarget);
+        Check(Eval(lightDefense, "dcl.weightTotal") == 0 &&
+              Eval(lightDefense, "dcl.movePenalty") == 0 &&
+              Eval(lightDefense, settings.DclDodgeFormula) == 8,
+            "an unweighted target should remain in the Move dead-zone and preserve baseline Dodge");
+        var bunkerTarget = target with { Ptr = (nint)0x5205, Raw = TargetRaw(rightShieldId: 142) };
+        var bunkerDefense = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x5111), bunkerTarget);
+        Check(Eval(bunkerDefense, "dcl.weightTotal") == 31 &&
+              Eval(bunkerDefense, "dcl.movePenalty") == 2 &&
+              Eval(bunkerDefense, settings.DclDodgeFormula) == 5,
+            "heavy Armor plus a heavy shield should cross the bunker Move band and continue the Dodge gradient");
+        Check(Eval(bladeDamage, settings.DclDefenseModifierFormula) == -1,
+            "Brave 70 should apply a shared -1 active-defense modifier after choosing Dodge/Parry/Block");
+        Check(Eval(bladeDamage, "dcl.facingFront") == 1 &&
+              Eval(bladeDamage, settings.DclDefenseAllowedFormula) == 1,
+            "an attacker north of a -Y-facing target should receive the full front defense");
+        var sideAttack = ContextFor(Ninja(NinjaRaw(11, 3000, x: 6, y: 5), (nint)0x5112));
+        Check(Eval(sideAttack, "dcl.facingSide") == 1 &&
+              Eval(sideAttack, settings.DclDefenseAllowedFormula) == 1 &&
+              Eval(sideAttack, settings.DclDefenseModifierFormula) == -3,
+            "a side attack should keep the defense roll and combine flank -2 with Brave -1");
+        var backAttack = ContextFor(Ninja(NinjaRaw(11, 3000, x: 5, y: 6), (nint)0x5113));
+        Check(Eval(backAttack, "dcl.facingBack") == 1 &&
+              Eval(backAttack, settings.DclDefenseAllowedFormula) == 0,
+            "an attacker south of a -Y-facing target should suppress the defense roll entirely");
+        var adjacentSpear = ContextFor(Ninja(NinjaRaw(100, 3000, x: 5, y: 4), (nint)0x5114));
+        var spacedSpear = ContextFor(Ninja(NinjaRaw(100, 3000, x: 5, y: 3), (nint)0x5115));
+        Check(Eval(adjacentSpear, "dcl.pointBlank") == 1 &&
+              Eval(adjacentSpear, settings.DclAttackSkillFormula) == 12,
+            "a reach-2 spear at distance 1 should pay the point-blank skill fixture");
+        Check(Eval(spacedSpear, "dcl.pointBlank") == 0 &&
+              Eval(spacedSpear, settings.DclAttackSkillFormula) == 14,
+            "the same reach-2 spear at distance 2 should attack without the point-blank penalty");
+        Check(Eval(bladeDamage, "dcl.targetWeaponSkill") == 10 &&
+              Eval(bladeDamage, settings.DclParryUsesFormula) == 1 &&
+              Eval(bladeDamage, settings.DclParryFormula) == 8,
+            "level-50 defender F-grade Sword should derive Parry 8 from Weapon Skill 10");
+        Check(Eval(bunkerDefense, settings.DclBlockUsesFormula) == 1 &&
+              Eval(bunkerDefense, settings.DclBlockFormula) == 12,
+            "Venetian Shield S-Ev 50 should derive Block 12 from the shield fixture curve");
+        Check(Eval(crossbowDamage, settings.DclParryFormula) == 0,
+            "Parry should be unavailable against missiles while shield Block remains eligible");
+
+        var masteredWithoutSupport = ContextFor(Ninja(NinjaRaw(11, 3000), (nint)0x5110));
+        Check(Eval(masteredWithoutSupport, "dcl.weaponSkillRaw") == 55 &&
+              Eval(masteredWithoutSupport, "dcl.weaponSkillExcess") == 39,
+            "removing Sword Master should remove exactly two raw skill");
+
+        var innateSwordMaster = ContextFor(Ninja(NinjaRaw(11, 3000, innateAbilityId: 481), (nint)0x5120));
+        Check(Eval(innateSwordMaster, "dcl.hasSwordMaster") == 1,
+            "Sword Master should work from a job innate slot as well as the equipped Support slot");
+
+        var offGrade = ContextFor(Ninja(NinjaRaw(19, 3000), (nint)0x5130));
+        Check(Eval(offGrade, "dcl.weaponFamily") == 3 && Eval(offGrade, "dcl.weaponGrade") == 0 &&
+              Eval(offGrade, "dcl.weaponSkillRaw") == 13,
+            "an unmapped max-level family should fall back to grade F and remain below the skill cap");
+
+        var levelOneDabbler = ContextFor(Ninja(NinjaRaw(11, 0), (nint)0x5140, level: 99));
+        Check(Eval(levelOneDabbler, "dcl.weaponSkillInvestmentMilli") == 3062 &&
+              Eval(levelOneDabbler, "dcl.weaponSkillRaw") == 16,
+            "job-level 1 should gate the level-99 contribution to one eighth");
+
+        var report = RuntimeSettingsValidator.Validate(settings, catalog);
+        Check(report.Success,
+            "Weapon Skill mechanism settings should pass validation: " +
+            string.Join(" | ", report.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+    }
+
+    private static void TestDclMagicPipeline(ItemCatalog catalog, AbilityCatalog abilityCatalog)
+    {
+        var settings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclDamageFormula = "if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, dcl.oldDebit))",
+            DclHealingFormula = "if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), dcl.oldCredit))",
+            DclPreviewAmountEnabled = true,
+            DclPreviewDamageFormula = "if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0))",
+            DclPreviewHealingFormula = "if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), 0))",
+            FormulaVariables = new Dictionary<string, int>
+            {
+                // Mechanism fixtures, not final balance decisions.
+                ["dclFaithLowPermille"] = 700,
+                ["dclFaithBandPermille"] = 600,
+                ["dclAffinityWeakPermille"] = 1300,
+                ["dclAffinityStrongPermille"] = 700,
+                ["dclAffinityHalvePermille"] = 500,
+                ["dclShellPermille"] = 500,
+                ["dclMagicScalePermille"] = 580,
+                ["dclMagicStackCapPermille"] = 2500,
+            },
+            DclDerivedVariables =
+            [
+                new FormulaDerivedVariable { Name = "dcl.isMagicBolt", Formula = "action.abilityId == 0 && (aslot.rightweapon.category_rod || aslot.rightweapon.category_staff)" },
+                new FormulaDerivedVariable { Name = "dcl.isMagicDamage", Formula = "ability.formula == 8 || dcl.isMagicBolt" },
+                new FormulaDerivedVariable { Name = "dcl.isMagicHeal", Formula = "ability.formula == 12" },
+                new FormulaDerivedVariable { Name = "dcl.elementFire", Formula = "ability.element_fire || (dcl.isMagicBolt && aslot.rightweapon.element_fire)" },
+                new FormulaDerivedVariable { Name = "dcl.elementIce", Formula = "ability.element_ice || (dcl.isMagicBolt && aslot.rightweapon.element_ice)" },
+                new FormulaDerivedVariable { Name = "dcl.elementLightning", Formula = "ability.element_lightning || (dcl.isMagicBolt && aslot.rightweapon.element_lightning)" },
+                new FormulaDerivedVariable { Name = "dcl.elementWind", Formula = "ability.element_wind || (dcl.isMagicBolt && aslot.rightweapon.element_wind)" },
+                new FormulaDerivedVariable { Name = "dcl.elementEarth", Formula = "ability.element_earth || (dcl.isMagicBolt && aslot.rightweapon.element_earth)" },
+                new FormulaDerivedVariable { Name = "dcl.elementWater", Formula = "ability.element_water || (dcl.isMagicBolt && aslot.rightweapon.element_water)" },
+                new FormulaDerivedVariable { Name = "dcl.elementHoly", Formula = "ability.element_holy || (dcl.isMagicBolt && aslot.rightweapon.element_holy)" },
+                new FormulaDerivedVariable { Name = "dcl.elementDark", Formula = "ability.element_dark || (dcl.isMagicBolt && aslot.rightweapon.element_dark)" },
+                new FormulaDerivedVariable { Name = "dcl.isSpiritual", Formula = "dcl.isMagicDamage && (dcl.elementHoly || dcl.elementDark)" },
+                new FormulaDerivedVariable { Name = "dcl.isElemental", Formula = "dcl.isMagicDamage && !dcl.isSpiritual && (dcl.elementFire || dcl.elementIce || dcl.elementLightning || dcl.elementWind || dcl.elementEarth || dcl.elementWater)" },
+                new FormulaDerivedVariable { Name = "dcl.targetAbsorb", Formula = "dcl.isElemental && ((dcl.elementFire && t.element.absorb.fire) || (dcl.elementIce && t.element.absorb.ice) || (dcl.elementLightning && t.element.absorb.lightning) || (dcl.elementWind && t.element.absorb.wind) || (dcl.elementEarth && t.element.absorb.earth) || (dcl.elementWater && t.element.absorb.water))" },
+                new FormulaDerivedVariable { Name = "dcl.targetNull", Formula = "dcl.isElemental && ((dcl.elementFire && t.element.null.fire) || (dcl.elementIce && t.element.null.ice) || (dcl.elementLightning && t.element.null.lightning) || (dcl.elementWind && t.element.null.wind) || (dcl.elementEarth && t.element.null.earth) || (dcl.elementWater && t.element.null.water))" },
+                new FormulaDerivedVariable { Name = "dcl.targetHalve", Formula = "dcl.isElemental && ((dcl.elementFire && t.element.halve.fire) || (dcl.elementIce && t.element.halve.ice) || (dcl.elementLightning && t.element.halve.lightning) || (dcl.elementWind && t.element.halve.wind) || (dcl.elementEarth && t.element.halve.earth) || (dcl.elementWater && t.element.halve.water))" },
+                new FormulaDerivedVariable { Name = "dcl.targetWeak", Formula = "dcl.isElemental && ((dcl.elementFire && (t.element.weak.fire || t.status.oil)) || (dcl.elementIce && t.element.weak.ice) || (dcl.elementLightning && t.element.weak.lightning) || (dcl.elementWind && t.element.weak.wind) || (dcl.elementEarth && t.element.weak.earth) || (dcl.elementWater && t.element.weak.water))" },
+                new FormulaDerivedVariable { Name = "dcl.targetStrong", Formula = "dcl.isElemental && ((dcl.elementFire && t.element.strengthen.fire) || (dcl.elementIce && t.element.strengthen.ice) || (dcl.elementLightning && t.element.strengthen.lightning) || (dcl.elementWind && t.element.strengthen.wind) || (dcl.elementEarth && t.element.strengthen.earth) || (dcl.elementWater && t.element.strengthen.water))" },
+                new FormulaDerivedVariable { Name = "dcl.elementPermille", Formula = "if(dcl.targetNull, 0, if(dcl.targetHalve, const.dclAffinityHalvePermille, if(dcl.targetWeak, const.dclAffinityWeakPermille, if(dcl.targetStrong, const.dclAffinityStrongPermille, 1000))))" },
+                new FormulaDerivedVariable { Name = "dcl.shellPermille", Formula = "if(dcl.isElemental && t.status.shell, const.dclShellPermille, 1000)" },
+                new FormulaDerivedVariable { Name = "dcl.casterFaithPermille", Formula = "const.dclFaithLowPermille + mulDiv(a.maxFaith, const.dclFaithBandPermille, 100)" },
+                new FormulaDerivedVariable { Name = "dcl.targetFaithPermille", Formula = "const.dclFaithLowPermille + mulDiv(t.maxFaith, const.dclFaithBandPermille, 100)" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacValid", Formula = "a.zodiac < 12 && t.zodiac < 12" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacDelta", Formula = "if(dcl.zodiacValid, abs(a.zodiac - t.zodiac), 0)" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacDistance", Formula = "if(dcl.zodiacValid, min(dcl.zodiacDelta, 12 - dcl.zodiacDelta), -1)" },
+                new FormulaDerivedVariable { Name = "dcl.zodiacPermille", Formula = "if(dcl.zodiacDistance == 6, 1200, if(dcl.zodiacDistance == 3, 900, if(dcl.zodiacDistance == 0 || dcl.zodiacDistance == 4, 1100, 1000)))" },
+                new FormulaDerivedVariable { Name = "dcl.faithCombinedPermille", Formula = "mulDiv(dcl.casterFaithPermille, dcl.targetFaithPermille, 1000)" },
+                new FormulaDerivedVariable { Name = "dcl.magicStackPermille", Formula = "min(const.dclMagicStackCapPermille, mulDiv(mulDiv(mulDiv(dcl.faithCombinedPermille, if(dcl.isElemental, dcl.elementPermille, 1000), 1000), dcl.shellPermille, 1000), dcl.zodiacPermille, 1000))" },
+                new FormulaDerivedVariable { Name = "dcl.spellPower", Formula = "if(dcl.isMagicBolt, aslot.rightweapon.weaponPower, ability.y)" },
+                new FormulaDerivedVariable { Name = "dcl.magicCore", Formula = "a.rawMa * dcl.spellPower" },
+                new FormulaDerivedVariable { Name = "dcl.magicAmount", Formula = "if(dcl.targetNull, 0, max(1, mulDiv(mulDiv(dcl.magicCore, dcl.magicStackPermille, 1000), const.dclMagicScalePermille, 1000)))" },
+                new FormulaDerivedVariable { Name = "dcl.magicAbsorbed", Formula = "dcl.isMagicDamage && dcl.targetAbsorb" },
+            ],
+            AttackerEquipmentSlots =
+            [
+                new EquipmentSlotProbe { Name = "RightWeapon", Offset = 0x20, Width = "UInt16" },
+            ],
+        };
+
+        static byte[] MagicRaw(int zodiac, int maxFaith, int rawMa, bool shell = false, bool undead = false,
+            bool absorbFire = false, bool nullFire = false, bool halveFire = false,
+            bool weakFire = false, bool strongFire = false, bool oil = false, int rightWeaponId = 0xFF)
+        {
+            var raw = new byte[0x200];
+            raw[0x09] = (byte)(zodiac << 4);
+            raw[0x2C] = (byte)maxFaith;
+            raw[0x39] = (byte)rawMa;
+            raw[0x20] = (byte)(rightWeaponId & 0xFF);
+            raw[0x21] = (byte)(rightWeaponId >> 8);
+            if (shell) raw[0x64] |= 0x10;
+            if (undead) raw[0x61] |= 0x10;
+            if (oil) raw[0x63] |= 0x80;
+            if (absorbFire) raw[0x52] |= 0x80;
+            if (nullFire) raw[0x53] |= 0x80;
+            if (halveFire) raw[0x54] |= 0x80;
+            if (weakFire) raw[0x55] |= 0x80;
+            if (strongFire) raw[0x56] |= 0x80;
+            return raw;
+        }
+
+        static UnitSnapshot Mage(byte[] raw, nint ptr, int faith = 60)
+            => new(ptr, 0x90, 50, 220, 220, 1, false, 4, 12, 8, 4, 3, 50, faith, raw, 120, 120);
+        static UnitSnapshot MagicTarget(byte[] raw, nint ptr, int faith = 60)
+            => new(ptr, 0x91, 50, 300, 300, 2, true, 8, 6, 8, 4, 3, 50, faith, raw, 80, 80);
+
+        FormulaContext ContextFor(int abilityId, UnitSnapshot target, int rightWeaponId = 0xFF)
+        {
+            var attacker = Mage(MagicRaw(zodiac: 0, maxFaith: 60, rawMa: 12, rightWeaponId: rightWeaponId), (nint)0x5300);
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings, catalog, abilityCatalog, target, attacker,
+                eventIndex: 1, eventSeed: 1, actionType: 1, abilityId: abilityId,
+                oldDebit: 77, oldCredit: 55);
+            Check(FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string error),
+                $"magic derived chain should evaluate: {error}");
+            return context;
+        }
+
+        static int Eval(FormulaContext context, string formula)
+        {
+            Check(FormulaExpression.TryEvaluate(formula, context, out int value, out string error),
+                $"magic formula '{formula}' should evaluate: {error}");
+            return value;
+        }
+
+        var neutral = MagicTarget(MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0), (nint)0x5400);
+        var fire = ContextFor(16, neutral);
+        Check(Eval(fire, "dcl.isMagicDamage") == 1 && Eval(fire, "dcl.isElemental") == 1 &&
+              Eval(fire, "dcl.magicAmount") == 131 && Eval(fire, settings.DclDamageFormula) == 131,
+            "Fire should use raw MA, spell Y, two centered Faith terms, Best Zodiac, and the 0.58 scale");
+
+        var flameRodBolt = ContextFor(0, neutral, rightWeaponId: 53);
+        Check(Eval(flameRodBolt, "dcl.isMagicBolt") == 1 &&
+              Eval(flameRodBolt, "dcl.elementFire") == 1 &&
+              Eval(flameRodBolt, "dcl.spellPower") == 3 &&
+              Eval(flameRodBolt, settings.DclDamageFormula) == 27,
+            "Flame Rod basic Attack should become the zero-MP MA/Faith Fire bolt floor");
+
+        var shellFire = ContextFor(16, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, shell: true), (nint)0x5401));
+        Check(Eval(shellFire, "dcl.shellPermille") == 500 && Eval(shellFire, "dcl.magicAmount") == 65,
+            "Shell should halve elemental magic only");
+
+        var weakFire = ContextFor(16, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, weakFire: true), (nint)0x5402));
+        Check(Eval(weakFire, "dcl.elementPermille") == 1300 && Eval(weakFire, "dcl.magicAmount") == 170,
+            "elemental weakness should use the bounded everyday affinity band");
+
+        var absorbedFire = ContextFor(16, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, absorbFire: true), (nint)0x5403));
+        Check(Eval(absorbedFire, settings.DclDamageFormula) == 0 &&
+              Eval(absorbedFire, settings.DclHealingFormula) == 131,
+            "elemental absorb should reroute the deterministic amount from HP debit to HP credit");
+
+        var nulledFire = ContextFor(16, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, nullFire: true), (nint)0x5404));
+        Check(Eval(nulledFire, "dcl.magicAmount") == 0 && Eval(nulledFire, settings.DclDamageFormula) == 0,
+            "designed-content nullification should produce zero rather than the magic minimum of one");
+
+        var holyVsShellAndFireAffinity = ContextFor(15, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, shell: true, absorbFire: true, weakFire: true),
+            (nint)0x5405));
+        Check(Eval(holyVsShellAndFireAffinity, "dcl.isSpiritual") == 1 &&
+              Eval(holyVsShellAndFireAffinity, "dcl.shellPermille") == 1000 &&
+              Eval(holyVsShellAndFireAffinity, "dcl.magicAmount") == 468,
+            "Holy/Dark should remain spiritual: Faith and Zodiac apply, elemental affinity and Shell do not");
+
+        var cure = ContextFor(1, neutral);
+        Check(Eval(cure, "dcl.isMagicHeal") == 1 &&
+              Eval(cure, settings.DclDamageFormula) == 77 &&
+              Eval(cure, settings.DclHealingFormula) == 131,
+            "Cure should share MA/Faith/Zodiac but preserve damage and bypass affinity/Shell");
+        var undeadCure = ContextFor(1, MagicTarget(
+            MagicRaw(zodiac: 6, maxFaith: 60, rawMa: 0, undead: true), (nint)0x5406));
+        int undeadDebit = Eval(undeadCure, settings.DclDamageFormula);
+        int undeadCredit = Eval(undeadCure, settings.DclHealingFormula);
+        Check(undeadDebit == 131 && undeadCredit == 0,
+            $"Undead should invert healing into damage on the same numeric spine (debit={undeadDebit}, credit={undeadCredit}, flag={Eval(undeadCure, "t.status.undead")})");
+
+        var report = RuntimeSettingsValidator.Validate(settings, catalog);
+        Check(report.Success,
+            "magic mechanism settings should pass validation: " +
+            string.Join(" | ", report.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+    }
+
+    private static void TestDclIntegratedScaffold(string root, ItemCatalog catalog, AbilityCatalog abilityCatalog)
+    {
+        string path = Path.Combine(root, "work", "1784094553-battle-runtime-settings.dcl-integration-scaffold.json");
+        Check(RuntimeSettings.TryLoad(path, out var settings, out string loadError),
+            $"integrated scaffold should load: {loadError}");
+        Check(settings.DclPipelineEnabled, "integrated scaffold should enable the DCL pipeline");
+        Check(!settings.ResultSelectorProbeEnabled,
+            "integrated scaffold should not inherit the physical profile's observe-only selector probe");
+        Check(settings.DclResultFlagsControlEnabled && settings.DclResultFlagsPreserveMask == 0x0F,
+            "integrated scaffold should rebuild numeric HP/MP result bits while preserving low effects");
+        Check(settings.DclDerivedVariables.Count(variable =>
+                variable.NormalizedName.Equals("dcl.zodiacPermille", StringComparison.OrdinalIgnoreCase)) == 1,
+            "strict composition should deduplicate the shared Zodiac derived chain");
+
+        static void PutU16(byte[] raw, int offset, int value)
+        {
+            raw[offset] = (byte)(value & 0xFF);
+            raw[offset + 1] = (byte)((value >> 8) & 0xFF);
+        }
+
+        static byte[] UnitRaw(int zodiac, int maxFaith, int rawPa, int rawMa, int rightWeaponId,
+            int bodyId = 0xFF, bool undead = false)
+        {
+            var raw = new byte[0x200];
+            raw[0x03] = 89; // Ninja; the mechanism profile contains its family-grade fixtures.
+            raw[0x09] = (byte)(zodiac << 4);
+            raw[0x2A] = 70;
+            raw[0x2C] = (byte)maxFaith;
+            raw[0x38] = (byte)rawPa;
+            raw[0x39] = (byte)rawMa;
+            PutU16(raw, 0x20, rightWeaponId);
+            PutU16(raw, 0x1C, bodyId);
+            PutU16(raw, 0x13C, 3000); // Ninja total JP -> job level 8.
+            if (undead) raw[0x61] |= 0x10;
+            return raw;
+        }
+
+        static UnitSnapshot Actor(byte[] raw, nint ptr, bool foe)
+            => new(ptr, foe ? 0x91 : 0x01, 50, 300, 300, foe ? 2 : 1, foe,
+                12, 12, 8, 4, 3, 70, 60, raw, 100, 100);
+
+        FormulaContext ContextFor(int abilityId, UnitSnapshot target, UnitSnapshot attacker)
+        {
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings, catalog, abilityCatalog, target, attacker,
+                eventIndex: 9, eventSeed: 99, actionType: 1, abilityId: abilityId,
+                oldDebit: 77, oldCredit: 55);
+            Check(FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string error),
+                $"integrated scaffold derived chain should evaluate for ability {abilityId}: {error}");
+            return context;
+        }
+
+        static int Eval(FormulaContext context, string formula)
+        {
+            Check(FormulaExpression.TryEvaluate(formula, context, out int value, out string error),
+                $"integrated formula '{formula}' should evaluate: {error}");
+            return value;
+        }
+
+        var physicalAttacker = Actor(UnitRaw(0, 60, 12, 12, rightWeaponId: 11), (nint)0x5500, foe: false);
+        var heavyTarget = Actor(UnitRaw(6, 60, 8, 6, rightWeaponId: 0xFF, bodyId: 172), (nint)0x5600, foe: true);
+        var attack = ContextFor(0, heavyTarget, physicalAttacker);
+        int weaponDamage = Eval(attack, "dcl.weaponModel");
+        Check(Eval(attack, "dcl.isMagicDamage") == 0 && weaponDamage > 0 &&
+              Eval(attack, settings.DclDamageFormula) == weaponDamage,
+            "integrated Attack should stay on the physical Weapon Skill/DR/wound route");
+
+        var mage = Actor(UnitRaw(0, 60, 4, 12, rightWeaponId: 0xFF), (nint)0x5501, foe: false);
+        var fire = ContextFor(16, heavyTarget, mage);
+        int magicDamage = Eval(fire, "dcl.magicAmount");
+        Check(Eval(fire, "dcl.isMagicDamage") == 1 && magicDamage > 0 &&
+              Eval(fire, settings.DclDamageFormula) == magicDamage,
+            "integrated Fire should use the magic/Faith/affinity route instead of physical armor");
+
+        var undeadTarget = Actor(
+            UnitRaw(6, 60, 8, 6, rightWeaponId: 0xFF, bodyId: 172, undead: true),
+            (nint)0x5601, foe: true);
+        var undeadCure = ContextFor(1, undeadTarget, mage);
+        int cureAmount = Eval(undeadCure, "dcl.magicAmount");
+        Check(Eval(undeadCure, settings.DclDamageFormula) == cureAmount &&
+              Eval(undeadCure, settings.DclHealingFormula) == 0,
+            "integrated Cure should preserve the Undead debit/credit inversion");
+
+        var barrage = ContextFor(358, heavyTarget, physicalAttacker);
+        Check(Eval(barrage, "dcl.isMagicDamage") == 0 && Eval(barrage, "dcl.isMagicHeal") == 0 &&
+              Eval(barrage, settings.DclDamageFormula) == 77,
+            "non-basic physical abilities should retain the native debit until their policy is authored");
+
+        Check(settings.DclComputePointNumericEnabled && settings.DclInstantKoControlEnabled &&
+              settings.DclInstantKoRules.Count == 1,
+            "integrated scaffold should enable the AI-facing writer and exactly one proven Death rule");
+        Check(settings.DclStatusForcedRoll == -1 && settings.DclHitForcedRoll == -1 &&
+              !settings.CalcEntryProbeEnabled && !settings.DclCalcProvenanceProbeEnabled &&
+              !settings.StagedBundleProbeEnabled,
+            "integrated Death policy must not retain forced rolls or probe-only switches");
+        var death = ContextFor(30, heavyTarget, mage);
+        var deathRule = settings.DclInstantKoRules.Single();
+        Check(deathRule.AbilityId == 30 && deathRule.ActionType == -1 &&
+              deathRule.ZeroDamageOnFailure && deathRule.NativeKoSuppressedByData,
+            "integrated Death rule should own the exact data-neutralized ability and zero resisted damage");
+        Check(deathRule.TryMatches(1, 30, death, out bool deathMatches, out string deathMatchError) && deathMatches,
+            $"integrated Death rule should match its action: {deathMatchError}");
+        int deathResistance = Eval(death, deathRule.ResistanceFormula);
+        var deathAssessment = new DclInstantKoAssessment(
+            deathRule.DisplayName, true, false, deathResistance, deathRule.ZeroDamageOnFailure);
+        Check(Eval(death, "dcl.isMagicDamage") == 0 && Eval(death, settings.DclDamageFormula) == 77 &&
+              deathResistance == 12 && deathAssessment.SuccessPermille == 260 &&
+              DclLifecycle.ComputeExpectedInstantKoDebit(300, 0, 0, deathAssessment) == 78,
+            "integrated Death should preserve its neutralized carrier, use inverse Faith, and expose exact expected lethal utility");
+        var deathResisted = new DclInstantKoDecision(
+            deathRule.DisplayName, true, false, deathResistance, 3, true, deathRule.ZeroDamageOnFailure);
+        var deathKills = new DclInstantKoDecision(
+            deathRule.DisplayName, true, false, deathResistance, 18, false, deathRule.ZeroDamageOnFailure);
+        Check(DclLifecycle.ComputeResolvedInstantKoDebit(300, 0, 77, deathResisted) == 0 &&
+              DclLifecycle.ComputeResolvedInstantKoDebit(300, 25, 77, deathKills) == 325,
+            "integrated Death should zero resistance and include same-hit HP credit in lethal delivery");
+
+        var report = RuntimeSettingsValidator.Validate(settings, catalog);
+        Check(report.Success,
+            "integrated scaffold settings should pass validation: " +
+            string.Join(" | ", report.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+    }
+
+    private static void TestDclResultFlags(ItemCatalog catalog)
+    {
+        Check(DclResultFlags.Compose(0x89, 0x0F, hpDebit: 40, hpCredit: 0, mpDebit: 10, mpCredit: 0) == 0xA9,
+            "partial HP/MP debit should preserve low effect bits and derive combined flag 0xA0");
+        Check(DclResultFlags.Compose(0xF8, 0x0F, hpDebit: 0, hpCredit: 0, mpDebit: 0, mpCredit: 0) == 0x08,
+            "zeroed staged channels should clear every stale numeric result bit");
+        Check(DclResultFlags.Compose(0, 0x0F, hpDebit: 1, hpCredit: 1, mpDebit: 1, mpCredit: 1) == 0xF0,
+            "all four nonzero staged channels should produce the full bitwise numeric bundle");
+        Check(DclResultFlags.Compose(0xFF, 0, hpDebit: 0, hpCredit: 0, mpDebit: 0, mpCredit: 0) == 0,
+            "a zero preserve mask should produce no result flags when every staged channel is zero");
+
+        Check(DclResultFlags.PrimaryPresentation(0xA0) == DclPrimaryResultPresentation.HpDamage,
+            "the native selector should prioritize HP damage for a partial-shield 0xA0 result");
+        Check(DclResultFlags.PrimaryPresentation(0x20) == DclPrimaryResultPresentation.MpDebit,
+            "the native selector should route an MP-debit-only result through its special branch");
+        Check(DclResultFlags.PrimaryPresentation(0x50) == DclPrimaryResultPresentation.Credit,
+            "the native selector should share one credit route for combined HP+MP credit 0x50");
+        Check(DclResultFlags.PrimaryPresentation(0x90) == DclPrimaryResultPresentation.HpDamage,
+            "native HP-damage plus MP-credit 0x90 should keep HP damage as primary presentation");
+
+        var valid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclDamageFormula = "dcl.oldDebit",
+            DclMpDebitFormula = "dcl.oldMpDebit",
+            DclResultFlagsControlEnabled = true,
+        };
+        Check(RuntimeSettingsValidator.Validate(valid, catalog).Success,
+            "result-flag ownership should validate with an explicit staged-channel formula");
+
+        var invalid = new RuntimeSettings
+        {
+            DclResultFlagsControlEnabled = true,
+            DclResultFlagsPreserveMask = 0x10,
+        };
+        var invalidReport = RuntimeSettingsValidator.Validate(invalid, catalog);
+        Check(invalidReport.Findings.Any(finding => finding.Scope == "DclResultFlagsPreserveMask"),
+            "validator should reject preserving numeric result bits");
+        Check(invalidReport.Findings.Any(finding => finding.Scope == "DclResultFlagsControlEnabled" &&
+              finding.Message.Contains("DclPipelineEnabled")),
+            "validator should require the DCL pre-clamp pipeline for result-flag ownership");
+    }
+
+    private static void TestDclStatusControl(ItemCatalog catalog, AbilityCatalog abilityCatalog)
+    {
+        Check(DclStatusContest.ResistChancePermille(2) == 0, "3d6 resistance below 3 should never pass");
+        Check(DclStatusContest.ResistChancePermille(3) == 4, "3d6 resistance 3 should pass only on triple ones");
+        Check(DclStatusContest.ResistChancePermille(10) == 500, "3d6 resistance 10 should pass exactly half the outcomes");
+        Check(DclStatusContest.ResistChancePermille(18) == 1000, "3d6 resistance 18 should always pass");
+        Check(DclStatusContest.Resists(10, 10), "3d6 resistance passes when roll equals target number");
+        Check(!DclStatusContest.Resists(11, 10), "3d6 resistance fails when roll exceeds target number");
+
+        var allOrNothing = DclStatusGroups.Resolve(DclStatusGroups.AllOrNothing, 2, resistance: 10, roll: 9);
+        Check(allOrNothing.Resisted && allOrNothing.SelectedIndex == -1,
+            "an all-or-nothing group should expose one shared resisted contest and select every member");
+        var randomOne = DclStatusGroups.Resolve(DclStatusGroups.RandomOne, 2, resistance: 8, roll: 12, selectedIndex: 1);
+        Check(!randomOne.Resisted && randomOne.SelectedIndex == 1,
+            "a random-one group should preserve one selected member and one shared failed-resistance result");
+        bool rejectedRandomSelection = false;
+        try
+        {
+            _ = DclStatusGroups.Resolve(DclStatusGroups.RandomOne, 2, resistance: 8, roll: 12, selectedIndex: 2);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            rejectedRandomSelection = true;
+        }
+        Check(rejectedRandomSelection, "random-one should reject a selected member outside the group");
+
+        static DclStatusWrite StatusWrite(int byteIndex, byte mask, bool add, bool resisted = false, bool immune = false) =>
+            new("packet-test", byteIndex, mask, add, 10, 9, resisted, immune, 0);
+
+        var packetAdd = DclStatusPacket.Compose(
+            new byte[] { 0x01, 0x04, 0, 0, 0 },
+            new byte[] { 0, 0x20, 0, 0, 0 },
+            0x80,
+            [StatusWrite(1, 0x20, add: true)]);
+        Check(packetAdd.Add.SequenceEqual(new byte[] { 0x01, 0x24, 0, 0, 0 }) &&
+              packetAdd.Remove.SequenceEqual(new byte[] { 0, 0, 0, 0, 0 }),
+            "a managed add should preserve unrelated packet bits and clear the same bit from remove");
+        Check(packetAdd.ResultFlags == 0x88,
+            "a nonempty status packet should set native result bit 0x08 without disturbing other flags");
+
+        var packetRemove = DclStatusPacket.Compose(
+            new byte[] { 0, 0x20, 0, 0, 0 },
+            new byte[] { 0x02, 0, 0, 0, 0 },
+            0,
+            [StatusWrite(1, 0x20, add: false)]);
+        Check(packetRemove.Add.SequenceEqual(new byte[5]) &&
+              packetRemove.Remove.SequenceEqual(new byte[] { 0x02, 0x20, 0, 0, 0 }),
+            "a managed remove should clear the same bit from add and preserve unrelated remove bits");
+
+        var packetResisted = DclStatusPacket.Compose(
+            new byte[] { 0, 0x20, 0, 0, 0 },
+            new byte[] { 0, 0x20, 0, 0, 0 },
+            0x08,
+            [StatusWrite(1, 0x20, add: true, resisted: true)]);
+        Check(packetResisted.Add.All(value => value == 0) && packetResisted.Remove.All(value => value == 0) &&
+              packetResisted.ResultFlags == 0,
+            "a resisted managed status should clear both owned packet bits and stale result bit 0x08");
+
+        var packetImmune = DclStatusPacket.Compose(
+            new byte[] { 0, 0, 0, 0, 0 },
+            new byte[] { 0, 0, 0x40, 0, 0 },
+            0x48,
+            [StatusWrite(2, 0x40, add: true, immune: true)]);
+        Check(packetImmune.Remove.All(value => value == 0) && packetImmune.ResultFlags == 0x40,
+            "an immune managed status should clear its owned packet bit while preserving unrelated result flags");
+
+        var retainedCarrierPacket = DclStatusPacket.Compose(
+            new byte[] { 0, 0, 0, 0x30, 0 },
+            new byte[5],
+            0x08,
+            [
+                StatusWrite(3, 0x20, add: true),
+                StatusWrite(3, 0x10, add: true, resisted: true),
+            ]);
+        Check(retainedCarrierPacket.Add[3] == 0x20 && retainedCarrierPacket.Remove[3] == 0 &&
+              retainedCarrierPacket.ResultFlags == 0x08,
+            "retained Kiyomori carrier bits should be independently replaced by the managed contest");
+
+        var failedCarrierPacket = DclStatusPacket.Compose(
+            new byte[] { 0, 0, 0, 0x20, 0 },
+            new byte[5],
+            0x08,
+            [new DclStatusWrite("failed-carrier", 3, 0x20, Add: true, Resistance: 0, Roll: -1,
+                Resisted: false, Immune: false, DurationTargetTurns: 0, FailClosed: true)]);
+        Check(failedCarrierPacket.Add.All(value => value == 0) &&
+              failedCarrierPacket.Remove.All(value => value == 0) &&
+              failedCarrierPacket.ResultFlags == 0,
+            "a retained-carrier evaluation failure must remove the inherited native bit fail-closed");
+
+        var notSelectedPacket = DclStatusPacket.Compose(
+            new byte[] { 0, 0, 0, 0, 0x11 },
+            new byte[5],
+            0x08,
+            [new DclStatusWrite("random-one loser", 4, 0x10, Add: true, Resistance: 10, Roll: 11,
+                Resisted: false, Immune: false, DurationTargetTurns: 0, NotSelected: true)]);
+        Check(notSelectedPacket.Add[4] == 0x01 && notSelectedPacket.Remove[4] == 0 &&
+              notSelectedPacket.ResultFlags == 0x08,
+            "a nonselected random-one member must clear only its inherited bit and preserve the selected packet bit");
+
+        bool rejectedPacketWidth = false;
+        try
+        {
+            _ = DclStatusPacket.Compose(new byte[4], new byte[5], 0, []);
+        }
+        catch (ArgumentException)
+        {
+            rejectedPacketWidth = true;
+        }
+        Check(rejectedPacketWidth, "status packet composition should reject an invalid native packet width");
+
+        static DclStatusDurationState DurationState(int turns, bool active, bool skip) => new()
+        {
+            TargetPtr = (nint)1,
+            TargetCharId = 1,
+            StatusByteIndex = 1,
+            StatusMask = 0x20,
+            RuleName = "test",
+            RemainingTargetTurns = turns,
+            WasActive = active,
+            SkipFirstFallingEdge = skip,
+        };
+
+        var oneTurn = DurationState(1, active: false, skip: false);
+        Check(DclStatusDurationTracker.Advance(oneTurn, false) == DclStatusDurationTransition.None,
+            "an inactive sample must not spend a target-turn duration");
+        Check(DclStatusDurationTracker.Advance(oneTurn, true) == DclStatusDurationTransition.None,
+            "the rising active edge must not spend a target-turn duration");
+        Check(DclStatusDurationTracker.Advance(oneTurn, false) == DclStatusDurationTransition.Expired,
+            "a one-turn status applied while inactive should expire on the next falling active edge");
+
+        var twoTurns = DurationState(2, active: false, skip: false);
+        DclStatusDurationTracker.Advance(twoTurns, true);
+        Check(DclStatusDurationTracker.Advance(twoTurns, false) == DclStatusDurationTransition.CountedTargetTurn &&
+              twoTurns.RemainingTargetTurns == 1,
+            "a multi-turn status should decrement once per completed target turn");
+        DclStatusDurationTracker.Advance(twoTurns, true);
+        Check(DclStatusDurationTracker.Advance(twoTurns, false) == DclStatusDurationTransition.Expired,
+            "a multi-turn status should expire on its final completed target turn");
+
+        var appliedDuringTurn = DurationState(1, active: true, skip: true);
+        Check(DclStatusDurationTracker.Advance(appliedDuringTurn, false) == DclStatusDurationTransition.SkippedApplicationTurn &&
+              appliedDuringTurn.RemainingTargetTurns == 1,
+            "a status applied during the target's active turn must not spend duration on that same turn");
+        DclStatusDurationTracker.Advance(appliedDuringTurn, true);
+        Check(DclStatusDurationTracker.Advance(appliedDuringTurn, false) == DclStatusDurationTransition.Expired,
+            "a status applied during an active turn should expire after the target completes its next turn");
+
+        var valid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusForcedRoll = 18,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Attack adds Blind",
+                    AbilityId = 0,
+                    ActionType = 1,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "absent",
+                    ResistanceFormula = "clamp(target.brave / 10, 0, 18)",
+                    DurationTargetTurns = 2,
+                },
+                new DclStatusRule
+                {
+                    Name = "Eye Drops removes Blind",
+                    AbilityId = 1,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "remove",
+                    NativeRiderPolicy = "absent",
+                },
+                new DclStatusRule
+                {
+                    Name = "Corruption adds Undead",
+                    AbilityId = 2,
+                    StatusByteIndex = 0,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "absent",
+                    ResistanceFormula = "clamp(18 - target.maxFaith / 10, 3, 18)",
+                    DurationTargetTurns = 2,
+                },
+            ],
+        };
+        var validReport = RuntimeSettingsValidator.Validate(valid, catalog);
+        Check(validReport.Success, "valid per-ability DCL status rules should pass validation");
+
+        var validRetainedCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Kiyomori Protect",
+                    AbilityId = 81,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "0",
+                },
+                new DclStatusRule
+                {
+                    Name = "Kiyomori Shell",
+                    AbilityId = 81,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "0",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validRetainedCarrier, catalog).Success,
+            "a complete statically approved Kiyomori carrier should pass validation");
+
+        IReadOnlyList<DclNativeStatusBit> wallBits = Array.Empty<DclNativeStatusBit>();
+        string wallOperation = "";
+        string wallMode = "";
+        Check(abilityCatalog.TryGet(13, out var wallAbility) &&
+              DclStatusConditionalProducer.TryDescribe(
+                  wallAbility,
+                  out wallBits,
+                  out wallOperation,
+                  out wallMode,
+                  out _),
+            "Wall should belong to the mapped formula-0x0B post-calc producer family");
+        Check(wallBits.ToHashSet().SetEquals([new DclNativeStatusBit(3, 0x20), new DclNativeStatusBit(3, 0x10)]) &&
+              wallOperation == "add" && wallMode == DclStatusGroups.AllOrNothing,
+            "Wall should require complete Protect/Shell all-or-nothing packet ownership");
+
+        var validPostCalcProducer = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Wall Protect",
+                    AbilityId = 13,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "replaced-post-calc",
+                    ResistanceFormula = "10",
+                    ContestGroup = "wall",
+                    ContestMode = "all-or-nothing",
+                },
+                new DclStatusRule
+                {
+                    Name = "Wall Shell",
+                    AbilityId = 13,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "replaced-post-calc",
+                    ResistanceFormula = "10",
+                    ContestGroup = "wall",
+                    ContestMode = "all-or-nothing",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validPostCalcProducer, catalog, abilityCatalog).Success,
+            "a complete catalog-verified Wall post-calc producer should pass validation");
+        Check(!RuntimeSettingsValidator.Validate(validPostCalcProducer, catalog).Success,
+            "post-calc production must fail closed when the ability catalog is unavailable");
+        validPostCalcProducer.DclStatusRules.RemoveAt(1);
+        Check(RuntimeSettingsValidator.Validate(validPostCalcProducer, catalog, abilityCatalog).Findings.Any(f =>
+              f.Scope == "DclStatusRules" && f.Severity == "ERROR" && f.Message.Contains("packet ownership mismatch")),
+            "post-calc production must reject an incomplete inherited packet");
+
+        IReadOnlyList<DclNativeStatusBit> songBits = Array.Empty<DclNativeStatusBit>();
+        string songOperation = "";
+        string songMode = "";
+        Check(abilityCatalog.TryGet(91, out var namelessSong) &&
+              DclStatusConditionalProducer.TryDescribe(
+                  namelessSong,
+                  out songBits,
+                  out songOperation,
+                  out songMode,
+                  out _),
+            "Nameless Song should reuse the mapped post-calc packet producer");
+        Check(songBits.ToHashSet().SetEquals([
+                  new DclNativeStatusBit(2, 0x20),
+                  new DclNativeStatusBit(3, 0x40),
+                  new DclNativeStatusBit(3, 0x20),
+                  new DclNativeStatusBit(3, 0x10),
+                  new DclNativeStatusBit(3, 0x08),
+              ]) && songOperation == "add" && songMode == DclStatusGroups.RandomOne,
+            "Nameless Song should require its complete five-status random-one packet");
+        var validPerformanceProducer = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules = songBits.Select((bit, index) => new DclStatusRule
+            {
+                Name = $"Nameless Song {index}",
+                AbilityId = 91,
+                StatusByteIndex = bit.ByteIndex,
+                StatusMask = bit.Mask,
+                Operation = "add",
+                NativeRiderPolicy = "replaced-post-calc",
+                ResistanceFormula = "0",
+                ContestGroup = "nameless-song",
+                ContestMode = "random-one",
+            }).ToList(),
+        };
+        Check(RuntimeSettingsValidator.Validate(validPerformanceProducer, catalog, abilityCatalog).Success,
+            "a complete catalog-verified Nameless Song producer should pass validation");
+        var awakeRaw = new byte[0x200];
+        var sleepingRaw = new byte[0x200];
+        sleepingRaw[0x65] = 0x10;
+        var awakePerformer = new UnitSnapshot((nint)0x7100, 1, 1, 1, 1, 0, false,
+            1, 1, 1, 1, 1, 50, 50, awakeRaw, 1, 1);
+        var sleepingPerformer = new UnitSnapshot((nint)0x7200, 1, 1, 1, 1, 0, false,
+            1, 1, 1, 1, 1, 50, 50, sleepingRaw, 1, 1);
+        Check(!DclStatusConditionalProducer.IsBlockedByNativeEligibility(namelessSong, awakePerformer) &&
+              DclStatusConditionalProducer.IsBlockedByNativeEligibility(namelessSong, sleepingPerformer),
+            "performance production must preserve the native caster-Sleep eligibility gate");
+
+        IReadOnlyList<DclNativeStatusBit> celestialBits = Array.Empty<DclNativeStatusBit>();
+        string celestialOperation = "";
+        string celestialMode = "";
+        Check(abilityCatalog.TryGet(173, out var celestialVoid) &&
+              celestialVoid.RandomFire != 0 &&
+              DclStatusConditionalProducer.IsRandomFireFormula(celestialVoid.Formula) &&
+              DclStatusConditionalProducer.TryDescribe(
+                  celestialVoid,
+                  out celestialBits,
+                  out celestialOperation,
+                  out celestialMode,
+                  out _),
+            "Celestial Void should use the mapped RandomFire post-calc producer");
+        Check(celestialBits.ToHashSet().SetEquals([
+                  new DclNativeStatusBit(1, 0x20),
+                  new DclNativeStatusBit(1, 0x10),
+                  new DclNativeStatusBit(1, 0x08),
+                  new DclNativeStatusBit(2, 0x02),
+                  new DclNativeStatusBit(3, 0x80),
+                  new DclNativeStatusBit(3, 0x04),
+                  new DclNativeStatusBit(4, 0x10),
+              ]) && celestialOperation == "add" && celestialMode == DclStatusGroups.RandomOne,
+            "Celestial Void should require its complete seven-status random-one packet");
+        var validRandomFireProducer = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules = celestialBits.Select((bit, index) => new DclStatusRule
+            {
+                Name = $"Celestial Void {index}",
+                AbilityId = 173,
+                StatusByteIndex = bit.ByteIndex,
+                StatusMask = bit.Mask,
+                Operation = "add",
+                NativeRiderPolicy = "replaced-post-calc",
+                ResistanceFormula = "0",
+                ContestGroup = "celestial-void",
+                ContestMode = "random-one",
+            }).ToList(),
+        };
+        Check(RuntimeSettingsValidator.Validate(validRandomFireProducer, catalog, abilityCatalog).Success,
+            "a complete catalog-verified Celestial Void producer should pass validation");
+        Check(abilityCatalog.TryGet(179, out var corporealVoid) &&
+              DclStatusConditionalProducer.IsRandomFireFormula(corporealVoid.Formula) &&
+              corporealVoid.RandomFire != 0,
+            "Corporeal Void should share the validated formula-0x1F RandomFire producer family");
+
+        var validFormula38Carrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Salve removes Darkness",
+                    AbilityId = 149,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "remove",
+                    NativeRiderPolicy = "retained-as-carrier",
+                },
+                new DclStatusRule
+                {
+                    Name = "Salve removes Silence",
+                    AbilityId = 149,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x08,
+                    Operation = "remove",
+                    NativeRiderPolicy = "retained-as-carrier",
+                },
+                new DclStatusRule
+                {
+                    Name = "Salve removes Poison",
+                    AbilityId = 149,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x80,
+                    Operation = "remove",
+                    NativeRiderPolicy = "retained-as-carrier",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validFormula38Carrier, catalog).Success,
+            "a complete formula-0x38 Salve remove carrier should pass validation");
+        validFormula38Carrier.DclStatusRules.RemoveAt(2);
+        Check(RuntimeSettingsValidator.Validate(validFormula38Carrier, catalog).Findings.Any(f =>
+              f.Scope == "DclStatusRules" && f.Severity == "ERROR" &&
+              f.Message.Contains("every inherited rider bit")),
+            "a formula-0x38 retained carrier should fail when one native remove bit is unowned");
+
+        var validNightmareCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Nightmare Sleep",
+                    AbilityId = 194,
+                    StatusByteIndex = 4,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "10",
+                    ContestGroup = "nightmare",
+                    ContestMode = "random-one",
+                },
+                new DclStatusRule
+                {
+                    Name = "Nightmare Death Sentence",
+                    AbilityId = 194,
+                    StatusByteIndex = 4,
+                    StatusMask = 0x01,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "10",
+                    ContestGroup = "nightmare",
+                    ContestMode = "random-one",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validNightmareCarrier, catalog).Success,
+            "a complete Nightmare random-one carrier should pass validation");
+        foreach (var rule in validNightmareCarrier.DclStatusRules)
+        {
+            rule.ContestMode = "independent";
+            rule.ContestGroup = "";
+        }
+        Check(RuntimeSettingsValidator.Validate(validNightmareCarrier, catalog).Findings.Any(f =>
+              f.Scope.StartsWith("DclStatusRules.") && f.Severity == "ERROR" &&
+              f.Message.Contains("requires ContestMode='random-one'")),
+            "Nightmare must reject independent per-bit rolls that change its one-of semantics");
+        foreach (var rule in validNightmareCarrier.DclStatusRules)
+        {
+            rule.ContestMode = "random-one";
+            rule.ContestGroup = "nightmare";
+        }
+        validNightmareCarrier.DclStatusRules.RemoveAt(1);
+        var incompleteNightmare = RuntimeSettingsValidator.Validate(validNightmareCarrier, catalog);
+        Check(incompleteNightmare.Findings.Any(f => f.Scope == "DclStatusRules" &&
+              f.Severity == "ERROR" && f.Message.Contains("every inherited rider bit")) &&
+              incompleteNightmare.Findings.Any(f => f.Scope.StartsWith("DclStatusRules.group.") &&
+              f.Severity == "ERROR" && f.Message.Contains("at least two")),
+            "Nightmare must reject an incomplete random-one group");
+
+        var validPoisonousFrogCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Poisonous Frog Frog",
+                    AbilityId = 346,
+                    StatusByteIndex = 2,
+                    StatusMask = 0x02,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "9",
+                    ContestGroup = "poisonous-frog",
+                    ContestMode = "all-or-nothing",
+                },
+                new DclStatusRule
+                {
+                    Name = "Poisonous Frog Poison",
+                    AbilityId = 346,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x80,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "9",
+                    ContestGroup = "poisonous-frog",
+                    ContestMode = "all-or-nothing",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validPoisonousFrogCarrier, catalog).Success,
+            "a complete Poisonous Frog all-or-nothing carrier should pass validation");
+
+        var validMuramasaCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Muramasa Confusion",
+                    AbilityId = 82,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "suppressed-by-data",
+                    ResistanceFormula = "10",
+                    ContestGroup = "muramasa",
+                    ContestMode = "random-one",
+                },
+                new DclStatusRule
+                {
+                    Name = "Muramasa Death Sentence",
+                    AbilityId = 82,
+                    StatusByteIndex = 4,
+                    StatusMask = 0x01,
+                    Operation = "add",
+                    NativeRiderPolicy = "suppressed-by-data",
+                    ResistanceFormula = "10",
+                    ContestGroup = "muramasa",
+                    ContestMode = "random-one",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validMuramasaCarrier, catalog).Success,
+            "a complete data-suppressed Muramasa random-one carrier should pass validation");
+        validMuramasaCarrier.DclStatusRules.RemoveAt(1);
+        Check(RuntimeSettingsValidator.Validate(validMuramasaCarrier, catalog).Findings.Any(f =>
+              f.Scope == "DclStatusRules" && f.Severity == "ERROR" &&
+              f.Message.Contains("every removed rider bit")),
+            "Muramasa must reject a grouped data carrier that does not replace every removed native bit");
+
+        var validSelfDestructCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "Self-Destruct victim Oil",
+                    AbilityId = 277,
+                    StatusByteIndex = 2,
+                    StatusMask = 0x80,
+                    Operation = "add",
+                    NativeRiderPolicy = "suppressed-by-data",
+                    ConditionFormula = "dcl.isSelf == 0",
+                    ResistanceFormula = "10",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validSelfDestructCarrier, catalog).Success,
+            "the exact victim-only Self-Destruct Oil carrier should pass validation");
+        validSelfDestructCarrier.DclStatusRules[0].ConditionFormula = "";
+        Check(RuntimeSettingsValidator.Validate(validSelfDestructCarrier, catalog).Findings.Any(f =>
+              f.Scope.StartsWith("DclStatusRules.") && f.Severity == "ERROR" &&
+              f.Message.Contains("dcl.isSelf == 0")),
+            "Self-Destruct must reject a rider rule that could leak Oil onto the caster result");
+
+        validRetainedCarrier.DclStatusRules.RemoveAt(1);
+        var incompleteCarrierReport = RuntimeSettingsValidator.Validate(validRetainedCarrier, catalog);
+        Check(incompleteCarrierReport.Findings.Any(f => f.Scope == "DclStatusRules" &&
+              f.Severity == "ERROR" && f.Message.Contains("every inherited rider bit")),
+            "a retained status-only carrier must own every inherited native rider bit");
+
+        var unsupportedCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "unapproved retained carrier",
+                    AbilityId = 13,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "0",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(unsupportedCarrier, catalog).Findings.Any(f =>
+              f.Scope.StartsWith("DclStatusRules.") && f.Severity == "ERROR" &&
+              f.Message.Contains("not approved for this ability")),
+            "retained-as-carrier should fail closed outside the statically mapped status-only allowlist");
+
+        validRetainedCarrier = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "conditional carrier is unsafe",
+                    AbilityId = 81,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ConditionFormula = "target.hp > 0",
+                    ResistanceFormula = "0",
+                },
+                new DclStatusRule
+                {
+                    Name = "Kiyomori Shell",
+                    AbilityId = 81,
+                    StatusByteIndex = 3,
+                    StatusMask = 0x10,
+                    Operation = "add",
+                    NativeRiderPolicy = "retained-as-carrier",
+                    ResistanceFormula = "0",
+                },
+            ],
+        };
+        Check(RuntimeSettingsValidator.Validate(validRetainedCarrier, catalog).Findings.Any(f =>
+              f.Scope.StartsWith("DclStatusRules.") && f.Severity == "ERROR" &&
+              f.Message.Contains("cannot use ConditionFormula")),
+            "retained carrier bits should reject conditional ownership gaps");
+
+        var duplicateOwner = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    Name = "owner-a",
+                    AbilityId = 80,
+                    ActionType = 1,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "add",
+                    NativeRiderPolicy = "suppressed-by-data",
+                    ResistanceFormula = "10",
+                },
+                new DclStatusRule
+                {
+                    Name = "owner-b",
+                    AbilityId = 80,
+                    ActionType = -1,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "remove",
+                    NativeRiderPolicy = "suppressed-by-data",
+                },
+            ],
+        };
+        var duplicateOwnerReport = RuntimeSettingsValidator.Validate(duplicateOwner, catalog);
+        Check(duplicateOwnerReport.Findings.Any(f => f.Scope.StartsWith("DclStatusRules.") &&
+              f.Severity == "ERROR" && f.Message.Contains("one packet bit has one owner")),
+            "validator should reject wildcard/exact overlap between two managed owners for the same native packet bit");
+
+        var invalid = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclStatusControlEnabled = true,
+            DclStatusForcedRoll = 2,
+            DclStatusRules =
+            [
+                new DclStatusRule
+                {
+                    AbilityId = -1,
+                    StatusByteIndex = 0,
+                    StatusMask = 3,
+                    Operation = "toggle",
+                    DurationTargetTurns = 100,
+                },
+                new DclStatusRule
+                {
+                    AbilityId = 191,
+                    StatusByteIndex = 1,
+                    StatusMask = 0x20,
+                    Operation = "remove",
+                    NativeRiderPolicy = "invalid",
+                    DurationTargetTurns = 1,
+                },
+            ],
+        };
+        var invalidReport = RuntimeSettingsValidator.Validate(invalid, catalog);
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclStatusForcedRoll" && f.Severity == "ERROR"),
+            "validator should reject a forced status roll outside 3..18");
+        Check(invalidReport.Findings.Count(f => f.Scope.StartsWith("DclStatusRules.") && f.Severity == "ERROR") >= 4,
+            "validator should reject wildcard, protected byte-0 masks, multi-bit masks, unsupported operation, and formula-less add rules");
+        Check(invalidReport.Findings.Count(f => f.Scope.StartsWith("DclStatusRules.") &&
+              f.Severity == "ERROR" && f.Message.Contains("DurationTargetTurns")) >= 2,
+            "validator should reject out-of-range durations and duration ownership on remove rules");
+
+        Check(DclLifecycle.ComputeLethalDebit(120, 0) == 120 &&
+              DclLifecycle.ComputeLethalDebit(120, 35) == 155,
+            "instant KO debit must cancel current HP plus any staged same-hit credit");
+        Check(DclLifecycle.WouldBeLethal(120, 35, 155) &&
+              !DclLifecycle.WouldBeLethal(120, 35, 154),
+            "instant KO lethality must use the native HP + credit - debit equation");
+        var certainKo = new DclInstantKoAssessment("certain", true, false, 2, true);
+        var halfKo = new DclInstantKoAssessment("half", true, false, 10, false);
+        var resistedKo = new DclInstantKoAssessment("resisted", true, false, 18, false);
+        var immuneKo = new DclInstantKoAssessment("immune", true, true, 0, false);
+        Check(certainKo.SuccessPermille == 1000 && halfKo.SuccessPermille == 500 &&
+              resistedKo.SuccessPermille == 0 && immuneKo.SuccessPermille == 0,
+            "instant KO AI assessment should derive exact success probability from the 3d6 resistance curve");
+        Check(DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, certainKo) == 150 &&
+              DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, halfKo) == 85 &&
+              DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, resistedKo) == 20 &&
+              DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, immuneKo) == 20,
+            "instant KO AI scoring should blend lethal and failure debit without sampling the execution roll");
+        var killDecision = new DclInstantKoDecision("kill", true, false, 2, 18, false, true);
+        var zeroFailureDecision = new DclInstantKoDecision("zero", true, false, 10, 10, true, true);
+        var keepFailureDecision = new DclInstantKoDecision("keep", true, false, 10, 10, true, false);
+        Check(DclLifecycle.ComputeResolvedInstantKoDebit(120, 30, 20, killDecision) == 150 &&
+              DclLifecycle.ComputeResolvedInstantKoDebit(120, 30, 20, zeroFailureDecision) == 0 &&
+              DclLifecycle.ComputeResolvedInstantKoDebit(120, 30, 20, keepFailureDecision) == 20,
+            "instant KO execution should share one lethal/resisted debit policy across compute point and fallback delivery");
+
+        var validInstantKo = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclComputePointNumericEnabled = true,
+            DclHitControlEnabled = true,
+            DclHitChanceFormula = "100",
+            ItemTableEvadeZeroEnabled = true,
+            EvadeCopierOverrideEnabled = true,
+            EvadeCopierOverride46 = 0,
+            EvadeCopierOverride47 = 0,
+            EvadeCopierOverride48 = 0,
+            EvadeCopierOverride49 = 0,
+            EvadeCopierOverride4A = 0,
+            EvadeCopierOverride4B = 0,
+            EvadeCopierOverride4C = 0,
+            EvadeCopierOverride4D = 0,
+            EvadeCopierOverride4E = 0,
+            DclMissOutputControlEnabled = true,
+            DclMissSelectorOutcomeEnabled = true,
+            DclInstantKoControlEnabled = true,
+            DclInstantKoRules =
+            [
+                new DclInstantKoRule
+                {
+                    Name = "Death",
+                    AbilityId = 30,
+                    ResistanceFormula = "clamp(18 - target.maxFaith / 10, 3, 18)",
+                    ZeroDamageOnFailure = true,
+                    NativeKoSuppressedByData = true,
+                },
+            ],
+        };
+        var validInstantKoReport = RuntimeSettingsValidator.Validate(validInstantKo, catalog);
+        Check(validInstantKoReport.Success,
+            "a data-neutralized instant-KO rule should compose with the AI-facing compute-point writer: " +
+            string.Join(" | ", validInstantKoReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+
+        var invalidInstantKo = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclInstantKoControlEnabled = true,
+            DclInstantKoRules =
+            [
+                new DclInstantKoRule { AbilityId = 30 },
+                new DclInstantKoRule { AbilityId = 30, NativeKoSuppressedByData = true, ResistanceFormula = "10" },
+            ],
+        };
+        var invalidInstantKoReport = RuntimeSettingsValidator.Validate(invalidInstantKo, catalog);
+        Check(invalidInstantKoReport.Findings.Any(f => f.Scope == "DclInstantKoControlEnabled" && f.Severity == "ERROR"),
+            "instant KO must reject configurations without authored connect/miss delivery");
+        Check(invalidInstantKoReport.Findings.Any(f => f.Scope.StartsWith("DclInstantKoRules.") &&
+              f.Severity == "ERROR" && f.Message.Contains("NativeKoSuppressedByData")),
+            "instant KO must reject a rule whose native KO rider was not acknowledged as data-neutralized");
+        Check(invalidInstantKoReport.Findings.Any(f => f.Scope.StartsWith("DclInstantKoRules.") &&
+              f.Severity == "ERROR" && f.Message.Contains("duplicate")),
+            "instant KO must reject duplicate ownership for the same ability/action pair");
+    }
+
+    private static void TestDclReactions(ItemCatalog catalog)
+    {
+        Check(DclReactions.DefaultChance("courage", 70, -1) == 70,
+            "Courage should use Brave as its default reaction chance");
+        Check(DclReactions.DefaultChance("caution", 70, -1) == 30,
+            "Caution should use inverse Brave as its default reaction chance");
+        Check(DclReactions.DefaultChance("neutral", 70, 55) == 55,
+            "Neutral should use its authored flat reaction chance");
+        Check(DclReactions.DefaultChance("neutral", 70, -1) == -1,
+            "Neutral without an authored flat chance or formula must be invalid");
+
+        var raw = new byte[0x200];
+        var unit = new UnitSnapshot((nint)1, 1, 1, 100, 100, 1, false, 5, 5, 5, 5, 5, 70, 60, raw, 0, 0);
+        var formulaRule = new DclReactionRule
+        {
+            AbilityId = 446,
+            Mode = "caution",
+            FlatChance = 5,
+            ConditionFormula = "reaction.sourceValid && reaction.incomingActionValid && reaction.incomingDefended",
+            ChanceFormula = "reaction.inverseBrave + reaction.flatChance + reaction.sourceValid + reaction.incomingAbilityId",
+        };
+        var reactionContext = new FormulaContext(unit, unit);
+        DclReactions.AddIncomingVariables(reactionContext, new DclReactionIncomingContext(
+            SourceValid: true,
+            ActionValid: true,
+            SourceIdx: 3,
+            TargetIdx: 7,
+            SourceCharId: 2,
+            ActionType: 1,
+            AbilityId: 4,
+            HitDecisionKnown: true,
+            Hit: false,
+            PhysicalOutcome: (int)DclPhysicalOutcome.Defended,
+            DefenseKind: (int)DclDefenseKind.Parry,
+            SourceTurnEpoch: 9,
+            TargetTurnEpoch: 5,
+            Origin: "smoke"));
+        Check(formulaRule.TryGetChance(70, reactionContext, out int formulaChance, out _) && formulaChance == 40,
+            "authored reaction curves should evaluate against the runtime reaction formula context");
+        Check(formulaRule.TryMatches(reactionContext, out bool reactionMatches, out _) && reactionMatches,
+            "reaction trigger conditions should evaluate against incoming action/outcome context");
+        reactionContext.Set("reaction.incomingDefended", 0);
+        Check(formulaRule.TryMatches(reactionContext, out reactionMatches, out _) && !reactionMatches,
+            "reaction trigger conditions should suppress ineligible incoming outcomes");
+        reactionContext.Set("reaction.incomingDefended", 1);
+        Check(reactionContext.GetVariable("reaction.sourceIdx") == 3 &&
+              reactionContext.GetVariable("reaction.targetIdx") == 7 &&
+              reactionContext.GetVariable("reaction.incomingActionType") == 1 &&
+              reactionContext.GetVariable("reaction.incomingAbilityId") == 4 &&
+              reactionContext.GetVariable("reaction.incomingHitKnown") == 1 &&
+              reactionContext.GetVariable("reaction.incomingMiss") == 1 &&
+              reactionContext.GetVariable("reaction.incomingDefended") == 1 &&
+              reactionContext.GetVariable("reaction.incomingDefenseKind") == (int)DclDefenseKind.Parry &&
+              reactionContext.GetVariable("reaction.sourceTurnEpoch") == 9 &&
+              reactionContext.GetVariable("reaction.targetTurnEpoch") == 5 &&
+              reactionContext.GetVariable("reaction.isSelfSource") == 0,
+            "reaction formula context should expose the incoming source and action identity");
+
+        var validSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclReactionTaxonomyEnabled = true,
+            DclReactionRules =
+            [
+                new DclReactionRule { Name = "Counter", AbilityId = 442, Mode = "courage" },
+                new DclReactionRule { Name = "Shirahadori", AbilityId = 451, Mode = "caution", VmInternalAvoidance = true },
+                new DclReactionRule { Name = "Mana Shield", AbilityId = 445, Mode = "neutral", FlatChance = 50 },
+                new DclReactionRule
+                {
+                    Name = "Authored curve",
+                    AbilityId = 446,
+                    Mode = "caution",
+                    FlatChance = 5,
+                    ConditionFormula = "reaction.sourceValid && reaction.incomingActionValid",
+                    ChanceFormula = "clamp(reaction.inverseBrave + reaction.flatChance + reaction.sourceValid, 0, 100)",
+                },
+            ],
+        };
+        var validReport = RuntimeSettingsValidator.Validate(validSettings, catalog);
+        Check(validReport.Success,
+            "valid exact reaction taxonomy rules should pass validation: " +
+            string.Join(" | ", validReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+        Check(validReport.Findings.Any(f => f.Scope.Contains("Shirahadori") && f.Message.Contains("VmInternalAvoidance")),
+            "VM-internal avoidance rules should retain an explicit live-validation warning");
+
+        var invalidSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = false,
+            DclReactionTaxonomyEnabled = true,
+            BraveOverrideEnabled = true,
+            ReactionChanceControlEnabled = true,
+            DclReactionRules =
+            [
+                new DclReactionRule { Name = "Missing neutral chance", AbilityId = 421, Mode = "neutral" },
+                new DclReactionRule { Name = "Duplicate invalid formula", AbilityId = 421, Mode = "surprise", ConditionFormula = "missingReactionCondition", ChanceFormula = "missingReactionValue" },
+            ],
+        };
+        var invalidReport = RuntimeSettingsValidator.Validate(invalidSettings, catalog);
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclReactionTaxonomyEnabled" && f.Severity == "ERROR" && f.Message.Contains("DclPipelineEnabled")),
+            "reaction taxonomy must require the shared DCL calc-entry pipeline");
+        Check(invalidReport.Findings.Count(f => f.Scope == "DclReactionTaxonomyEnabled" && f.Severity == "ERROR" &&
+              (f.Message.Contains("persistent Brave") || f.Message.Contains("global ReactionChanceControl"))) == 2,
+            "reaction taxonomy must reject persistent Brave and global reaction-chance controls");
+        Check(invalidReport.Findings.Any(f => f.Scope.StartsWith("DclReactionRules.") && f.Message.Contains("422..453")),
+            "reaction taxonomy must reject non-Reaction ability ids");
+        Check(invalidReport.Findings.Any(f => f.Scope.StartsWith("DclReactionRules.") && f.Message.Contains("duplicate")),
+            "reaction taxonomy must reject duplicate exact Reaction ownership");
+        Check(invalidReport.Findings.Any(f => f.Scope.StartsWith("DclReactionRules.") && f.Message.Contains("Mode must")),
+            "reaction taxonomy must reject unsupported modes");
+        Check(invalidReport.Findings.Any(f => f.Scope.StartsWith("DclReactionRules.") && f.Message.Contains("neutral reactions require")),
+            "reaction taxonomy must require a neutral chance");
+        Check(invalidReport.Findings.Any(f => f.Scope.EndsWith(".ChanceFormula") && f.Message.Contains("missingReactionValue")),
+            "reaction taxonomy must validate authored chance formulas against the reaction context");
+        Check(invalidReport.Findings.Any(f => f.Scope.EndsWith(".ConditionFormula") && f.Message.Contains("missingReactionCondition")),
+            "reaction taxonomy must validate trigger conditions against the reaction context");
+
+        var cadence = new DclReactionCadenceState();
+        Check(!cadence.Observe(targetCharId: 7, activeNow: false) && cadence.OwnTurnEpoch == 0,
+            "reaction cadence should initialize without inventing a turn edge");
+        Check(cadence.TryConsumeOwnTurnCycle(441) && !cadence.TryConsumeOwnTurnCycle(441),
+            "own-turn-cycle cadence should allow one reaction and reject a duplicate in the same cycle");
+        cadence.Observe(targetCharId: 7, activeNow: true);
+        Check(cadence.OwnTurnEpoch == 1 && cadence.TryConsumeOwnTurnCycle(441),
+            "the defender's next active-turn rising edge should refresh own-cycle reactions");
+
+        var firstAction = new DclReactionActionToken(3, 2, 9, 1, 0);
+        Check(cadence.CanConsumeAttackerAction(442, firstAction) &&
+              cadence.TryConsumeAttackerAction(442, firstAction) &&
+              !cadence.CanConsumeAttackerAction(442, firstAction) &&
+              !cadence.TryConsumeAttackerAction(442, firstAction),
+            "attacker-action cadence should reject duplicate targets/strikes from one action token");
+        Check(cadence.TryConsumeAttackerAction(442, firstAction with { SourceTurnEpoch = 10 }),
+            "a new source turn epoch should admit the next attacker action");
+        Check(!cadence.Observe(targetCharId: 8, activeNow: true) && cadence.OwnTurnEpoch == 0 &&
+              cadence.TryConsumeOwnTurnCycle(441),
+            "unit-slot reuse with a different character should reset reaction cadence state");
+
+        var hexWard = new DclHexWardCoordinator();
+        nint defenderPtr = (nint)0x3000;
+        var hexToken = new DclReactionActionToken(16, 0x44, 12, 1, 0);
+        var acceptedHex = hexWard.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+            eligible: true, chance: 30, roll: 29);
+        Check(acceptedHex.Accepted && acceptedHex.ShouldRequestProducer && !acceptedHex.Replayed,
+            "Hex Ward should reserve exactly one producer request when the Caution roll succeeds");
+        var replayedHex = hexWard.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+            eligible: true, chance: 30, roll: 0);
+        Check(replayedHex.Accepted && !replayedHex.ShouldRequestProducer && replayedHex.Replayed,
+            "duplicate Hex Ward gate callbacks for one attacker action must neither reroll nor restage");
+        Check(!hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 15, out _),
+            "Hex Ward commit must reject a source that differs from the reserved incoming attacker");
+        Check(hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out var committedHex) &&
+              committedHex.Phase == DclHexWardReservationPhase.Committed,
+            "the exact pass-2 actor/source pair should commit the accepted Hex Ward reservation");
+        Check(!hexWard.TryCommit(defenderPtr, defenderCharId: 0x55, sourceTableIndex: 16, out _),
+            "a duplicate pass-2 commit must not deliver Hex Ward twice");
+        var committedReplay = hexWard.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55, actionToken: hexToken,
+            eligible: true, chance: 100, roll: 0);
+        Check(committedReplay.Replayed && !committedReplay.ShouldRequestProducer &&
+              committedReplay.Reason == "already-committed",
+            "a late callback for the committed attacker token must not reopen the transaction");
+        var rejectedHex = hexWard.Evaluate(
+            defenderPtr, defenderTableIndex: 3, defenderCharId: 0x55,
+            hexToken with { SourceTurnEpoch = 13 }, eligible: true, chance: 30, roll: 30);
+        Check(!rejectedHex.Accepted && !rejectedHex.ShouldRequestProducer && rejectedHex.Reason == "chance-failed",
+            "Hex Ward should reject the inclusive chance boundary roll and retain that decision idempotently");
+    }
+
+    private static void TestDclPhysicalContest(ItemCatalog catalog)
+    {
+        var dodge = DclPhysicalContest.ChooseBestDefense(
+            dodge: 8, parry: 0, parryAvailable: false, block: 0, blockAvailable: false,
+            modifier: 0, defenseAllowed: true);
+        Check(dodge.Kind == DclDefenseKind.Dodge && dodge.Target == 8 && !dodge.Depletes,
+            "Dodge should be the non-depleting defense floor");
+
+        var guarded = DclPhysicalContest.ChooseBestDefense(
+            dodge: 8, parry: 11, parryAvailable: true, block: 11, blockAvailable: true,
+            modifier: -2, defenseAllowed: true);
+        Check(guarded.Kind == DclDefenseKind.Block && guarded.Target == 9 && guarded.Depletes,
+            "equal finite defenses should deterministically prefer Block and include the facing modifier");
+
+        var back = DclPhysicalContest.ChooseBestDefense(
+            dodge: 8, parry: 12, parryAvailable: true, block: 13, blockAvailable: true,
+            modifier: 0, defenseAllowed: false);
+        Check(back.Kind == DclDefenseKind.None,
+            "a back strike should be representable as no defense roll and no depletion");
+
+        Check(DclPhysicalContest.Resolve(12, 13, dodge, 18).Outcome == DclPhysicalOutcome.AttackMiss,
+            "an ordinary attack roll above skill should miss before defense");
+        Check(DclPhysicalContest.Resolve(12, 17, dodge, 18).Outcome == DclPhysicalOutcome.AttackFumble,
+            "a skill-12 natural 17 should fumble");
+        Check(DclPhysicalContest.Resolve(16, 6, guarded, 3).Outcome == DclPhysicalOutcome.CriticalHit,
+            "a skill-16 natural 6 should crit and bypass even a successful defense roll");
+        Check(DclPhysicalContest.Resolve(12, 10, guarded, 8).Outcome == DclPhysicalOutcome.Defended,
+            "a connected ordinary attack should be turned aside when defense rolls at or below target");
+        Check(DclPhysicalContest.Resolve(12, 10, guarded, 12).Outcome == DclPhysicalOutcome.Hit,
+            "a connected ordinary attack should land when the defense roll exceeds its target");
+
+        int openPct = DclPhysicalContest.HitChancePercent(12, back);
+        int dodgePct = DclPhysicalContest.HitChancePercent(12, dodge);
+        int guardedPct = DclPhysicalContest.HitChancePercent(12, guarded);
+        Check(openPct > dodgePct && dodgePct > guardedPct,
+            "exact forecast probability should fall monotonically from back strike to Dodge to stronger guard");
+        Check(dodgePct is >= 55 and <= 67,
+            "skill 12 against Dodge 8 should remain inside the DCL's attacker-favored baseline band");
+
+        var pool = new DclGuardPool();
+        pool.InitializeOrUpdate(targetCharId: 0x82, maxParryUses: 1, maxBlockUses: 2, activeNow: false);
+        Check(pool.ParryUses == 1 && pool.BlockUses == 2, "new guard pools should start full");
+        Check(pool.Spend(DclDefenseKind.Block) && pool.BlockUses == 1,
+            "Block use should spend exactly one finite charge");
+        Check(pool.Spend(DclDefenseKind.Parry) && pool.ParryUses == 0,
+            "Parry use should spend exactly one finite charge");
+        Check(!pool.ObserveActive(false), "inactive polling should not refresh guard");
+        Check(pool.ObserveActive(true) && pool.ParryUses == 1 && pool.BlockUses == 2,
+            "the defender's own active-turn rising edge should fully refresh finite guards");
+        Check(!pool.ObserveActive(true), "repeated active samples must not refresh guard twice");
+        pool.InitializeOrUpdate(targetCharId: 0x83, maxParryUses: 3, maxBlockUses: 4, activeNow: false);
+        Check(pool.ParryUses == 3 && pool.BlockUses == 4,
+            "character-id changes at a reused unit pointer should replace guard ownership");
+
+        var validSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclPhysicalContestEnabled = true,
+            DclPhysicalContestConditionFormula = "action.type == 1",
+            DclHitChanceFormula = "100",
+            DclPreviewHitPctEnabled = true,
+            DclMissOutputControlEnabled = true,
+            DclMissSelectorOutcomeEnabled = true,
+            DclMissSuppressReactionsEnabled = true,
+            ItemTableEvadeZeroEnabled = true,
+            EvadeCopierOverrideEnabled = true,
+            EvadeCopierOverride46 = 0,
+            EvadeCopierOverride47 = 0,
+            EvadeCopierOverride48 = 0,
+            EvadeCopierOverride49 = 0,
+            EvadeCopierOverride4A = 0,
+            EvadeCopierOverride4B = 0,
+            EvadeCopierOverride4C = 0,
+            EvadeCopierOverride4D = 0,
+            EvadeCopierOverride4E = 0,
+            DclAttackSkillFormula = "a.pa + ability.y",
+            DclDodgeFormula = "target.speed + guard.blockRemaining",
+            DclParryFormula = "target.pa + guard.parryRemaining",
+            DclBlockFormula = "target.pa + guard.blockMax",
+            DclDefenseAllowedFormula = "target.facing != 2",
+            DclDefenseModifierFormula = "if(target.facing == 1, -2, 0)",
+            DclParryUsesFormula = "max(1, target.move / 4)",
+            DclBlockUsesFormula = "2",
+        };
+        var validReport = RuntimeSettingsValidator.Validate(validSettings, catalog);
+        Check(validReport.Success,
+            "a complete physical contest profile should pass validation, including guard variables in formulas");
+
+        var invalidSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHitControlEnabled = true,
+            DclPhysicalContestEnabled = true,
+            DclPhysicalContestConditionFormula = "action.type == 1",
+            DclHitChanceFormula = "100",
+            DclAttackForcedRoll = 2,
+            DclDefenseForcedRoll = 19,
+            DclAttackSkillFormula = "missingPhysicalValue + 1",
+            DclDodgeFormula = "1",
+            DclParryFormula = "1",
+            DclBlockFormula = "1",
+            DclDefenseAllowedFormula = "1",
+            DclDefenseModifierFormula = "0",
+            DclParryUsesFormula = "1",
+            DclBlockUsesFormula = "1",
+        };
+        var invalidReport = RuntimeSettingsValidator.Validate(invalidSettings, catalog);
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclAttackForcedRoll" && f.Severity == "ERROR") &&
+              invalidReport.Findings.Any(f => f.Scope == "DclDefenseForcedRoll" && f.Severity == "ERROR"),
+            "validator should reject forced physical rolls outside 3..18");
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclAttackSkillFormula" && f.Message.Contains("missingPhysicalValue")),
+            "validator should validate every physical contest formula against the DCL hit context");
+        invalidSettings.DclAttackSkillFormula = "1";
+        invalidSettings.DclParryUsesFormula = "guard.parryMax";
+        var recursivePoolReport = RuntimeSettingsValidator.Validate(invalidSettings, catalog);
+        Check(recursivePoolReport.Findings.Any(f => f.Scope == "DclParryUsesFormula" && f.Message.Contains("guard.parryMax")),
+            "finite-guard capacity formulas must not recursively depend on guard state");
+        Check(invalidReport.Findings.Any(f => f.Scope == "DclPhysicalContestEnabled" && f.Message.Contains("misses")),
+            "validator should require authored miss delivery and reaction suppression for the physical contest");
     }
 
     private static void TestDclFormulaContextBuilder(
@@ -2364,7 +4674,9 @@ internal static class Program
             actionType: 2,
             abilityId: 1,
             oldDebit: 7,
-            oldCredit: 4);
+            oldCredit: 4,
+            oldMpDebit: 5,
+            oldMpCredit: 6);
 
         Check(FormulaExpression.TryEvaluate("a.pa * 2 + ability.y", context, out int mixed, out string mixedError),
             $"DCL unit/ability formula should evaluate: {mixedError}");
@@ -2373,10 +4685,104 @@ internal static class Program
         Check(FormulaExpression.TryEvaluate("dcl.oldDebit + dcl.oldCredit + action.type + action.abilityId + const.dclConst", context, out int dclVars, out string dclError),
             $"DCL plumbing formula should evaluate: {dclError}");
         Check(dclVars == 17, $"DCL plumbing formula expected 17, got {dclVars}");
+        Check(FormulaExpression.TryEvaluate("dcl.oldMpDebit + dcl.oldMpCredit", context, out int mpChannels, out string mpChannelError),
+            $"DCL staged MP channel inputs should evaluate: {mpChannelError}");
+        Check(mpChannels == 11, $"DCL staged MP channel inputs expected 11, got {mpChannels}");
 
         Check(FormulaExpression.TryEvaluate("targetSlot.body.itemId + attackerSlot.weapon.itemId", context, out int slots, out string slotError),
             $"DCL slot formula should evaluate: {slotError}");
         Check(slots == 191, $"DCL slot formula expected 191, got {slots}");
+
+        Check(FormulaExpression.TryEvaluate(
+                "target.x + target.y + target.facing + target.mapLevel + target.status.blind + " +
+                "target.status.master.blind + target.status.immune.sleep + target.element.absorb.fire + target.element.weak.holy",
+                context, out int stateSurface, out string stateError),
+            $"DCL geometry/status/element surface should evaluate: {stateError}");
+        Check(stateSurface == 16, $"DCL geometry/status/element surface expected 16, got {stateSurface}");
+        Check(FormulaExpression.TryEvaluate(
+                "target.status.effectiveByte1 + target.status.immunityByte4 + target.element.absorbMask + target.element.weakMask",
+                context, out int rawStateSurface, out string rawStateError),
+            $"DCL raw status/element masks should evaluate: {rawStateError}");
+        Check(rawStateSurface == 178, $"DCL raw status/element masks expected 178, got {rawStateSurface}");
+
+        var mixedWeaponRaw = (byte[])attacker.Raw.Clone();
+        mixedWeaponRaw[0x20] = 11; // Ninja Blade, right hand.
+        mixedWeaponRaw[0x21] = 0;
+        mixedWeaponRaw[0x24] = 71; // Romandan Pistol, left hand.
+        mixedWeaponRaw[0x25] = 0;
+        var mixedWeaponAttacker = attacker with { Raw = mixedWeaponRaw };
+        var leftWeaponContext = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings, itemCatalog, abilityCatalog, target, mixedWeaponAttacker,
+            eventIndex: 14, eventSeed: 347, actionType: 1, abilityId: 0,
+            oldDebit: 0, oldCredit: 0, actionPayload: 71);
+        Check(FormulaExpression.TryEvaluate(
+                "action.payloadId + action.weaponKnown * 100 + action.weaponMatchesRight * 1000 + " +
+                "action.weaponMatchesLeft * 10000 + action.weaponSideKnown * 100000 + " +
+                "action.weaponSide * 1000000 + action.weapon.category_gun * 10000000 + " +
+                "action.weapon.weaponFormula * 100000000",
+                leftWeaponContext, out int leftWeaponSurface, out string leftWeaponError),
+            $"DCL active-weapon payload surface should evaluate: {leftWeaponError}");
+        Check(leftWeaponSurface == 312110171,
+            $"DCL left active-weapon payload surface expected 312110171, got {leftWeaponSurface}");
+
+        var identicalWeaponRaw = (byte[])mixedWeaponRaw.Clone();
+        identicalWeaponRaw[0x24] = 11;
+        identicalWeaponRaw[0x25] = 0;
+        var identicalWeaponAttacker = attacker with { Raw = identicalWeaponRaw };
+        var identicalWeaponContext = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings, itemCatalog, abilityCatalog, target, identicalWeaponAttacker,
+            eventIndex: 15, eventSeed: 348, actionType: 1, abilityId: 0,
+            oldDebit: 0, oldCredit: 0, actionPayload: 11);
+        Check(FormulaExpression.TryEvaluate(
+                "action.weaponMatchesRight + action.weaponMatchesLeft * 10 + " +
+                "action.weaponSideKnown * 100 + action.weaponSide * 1000 + " +
+                "action.weapon.category_ninjablade * 10000",
+                identicalWeaponContext, out int identicalWeaponSurface, out string identicalWeaponError),
+            $"DCL identical-weapon payload surface should evaluate: {identicalWeaponError}");
+        Check(identicalWeaponSurface == 10011,
+            $"DCL identical weapons should retain exact weapon identity while leaving side ambiguous; got {identicalWeaponSurface}");
+
+        var progressionRaw = (byte[])target.Raw.Clone();
+        progressionRaw[0x03] = 0x4A; // Squire, JP array index 0
+        progressionRaw[0x0A] = 0xDD; // innate ability 477 (Dual Wield)
+        progressionRaw[0x0B] = 0x01;
+        progressionRaw[0x14] = 0xB7; // reaction ability 439 (Gil Snapper)
+        progressionRaw[0x15] = 0x01;
+        progressionRaw[0x16] = 0xC8; // support ability 456 (Equip Swords)
+        progressionRaw[0x17] = 0x01;
+        progressionRaw[0x18] = 0xE7; // movement ability 487 (Movement +2)
+        progressionRaw[0x19] = 0x01;
+        progressionRaw[0xF0] = 123;  // spendable JP
+        progressionRaw[0x11E] = 0xBC; // total JP 700 => job level 4
+        progressionRaw[0x11F] = 0x02;
+        var progressionTarget = target with { Raw = progressionRaw };
+        var progressionContext = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            settings, itemCatalog, abilityCatalog, progressionTarget, attacker,
+            eventIndex: 13, eventSeed: 346, actionType: 2, abilityId: 1, oldDebit: 0, oldCredit: 0);
+        Check(FormulaExpression.TryEvaluate(
+                "target.jobId + target.jobIndex + target.jobJp + target.jobTotalJp + target.jobLevel",
+                progressionContext, out int progressionSurface, out string progressionError),
+            $"DCL current-job progression surface should evaluate: {progressionError}");
+        Check(progressionSurface == 901,
+            $"DCL current-job progression surface expected 901, got {progressionSurface}");
+        Check(FormulaExpression.TryEvaluate(
+                "target.innateAbilityId1 + target.innateAbilityId2 + target.innateAbilityId3 + " +
+                "target.innateAbilityId4 + target.reactionAbilityId + target.supportAbilityId + " +
+                "target.movementAbilityId",
+                progressionContext, out int abilitySlotSurface, out string abilitySlotError),
+            $"DCL equipped/innate ability surface should evaluate: {abilitySlotError}");
+        Check(abilitySlotSurface == 1859,
+            $"DCL equipped/innate ability surface expected 1859, got {abilitySlotSurface}");
+
+        Check(FormulaRuntimeContextBuilder.JobLevelFromTotalJp(0) == 1 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(199) == 1 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(200) == 2 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(699) == 3 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(700) == 4 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(2999) == 7 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(3000) == 8 &&
+              FormulaRuntimeContextBuilder.JobLevelFromTotalJp(9999) == 8,
+            "job-level derivation should honor every total-JP threshold and cap at level 8");
 
         var derivedChain = new List<FormulaDerivedVariable>
         {
@@ -2920,6 +5326,44 @@ internal static class Program
             invalidReport.Findings.Any(finding => finding.Scope == "HookRegisterProbeMaxLogs" && finding.Severity == "ERROR"),
             "validator should report invalid hook register probe max logs");
 
+        var stagedChannelSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclHealingFormula = "dcl.oldCredit + a.ma",
+            DclMpDebitFormula = "dcl.oldMpDebit + 1",
+            DclMpCreditFormula = "dcl.oldMpCredit + 2",
+        };
+        var stagedChannelReport = RuntimeSettingsValidator.Validate(stagedChannelSettings, catalog);
+        Check(stagedChannelReport.Success,
+            "formula-owned HP-credit and MP debit/credit channels should pass validation without a damage formula");
+
+        stagedChannelSettings.DclHealingFormula = "missingHealingInput + 1";
+        stagedChannelSettings.DclMpDebitFormula = "missingMpDebitInput + 1";
+        stagedChannelSettings.DclMpCreditFormula = "missingMpCreditInput + 1";
+        var invalidStagedChannelReport = RuntimeSettingsValidator.Validate(stagedChannelSettings, catalog);
+        Check(invalidStagedChannelReport.Findings.Any(f => f.Scope == "DclHealingFormula" && f.Message.Contains("missingHealingInput")) &&
+              invalidStagedChannelReport.Findings.Any(f => f.Scope == "DclMpDebitFormula" && f.Message.Contains("missingMpDebitInput")) &&
+              invalidStagedChannelReport.Findings.Any(f => f.Scope == "DclMpCreditFormula" && f.Message.Contains("missingMpCreditInput")),
+            "validator should reject unknown inputs independently on every staged credit/MP formula");
+
+        var previewAmountSettings = new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclPreviewAmountEnabled = true,
+            DclPreviewDamageFormula = "a.pa + ability.y",
+            DclPreviewHealingFormula = "if(ability.formula == 12, a.ma + ability.y, 0)",
+        };
+        var previewAmountReport = RuntimeSettingsValidator.Validate(previewAmountSettings, catalog);
+        Check(previewAmountReport.Success,
+            "formula-driven DCL forecast damage/healing should validate independently of hit control");
+
+        previewAmountSettings.PreviewForecastPokeEnabled = true;
+        previewAmountSettings.DclPreviewDamageFormula = "missingPreviewInput";
+        var invalidPreviewAmountReport = RuntimeSettingsValidator.Validate(previewAmountSettings, catalog);
+        Check(invalidPreviewAmountReport.Findings.Any(f => f.Scope == "DclPreviewAmountEnabled" && f.Message.Contains("conflicts")) &&
+              invalidPreviewAmountReport.Findings.Any(f => f.Scope == "DclPreviewDamageFormula" && f.Message.Contains("missingPreviewInput")),
+            "validator should reject static forecast-writer conflicts and invalid preview formulas");
+
         var hitDivZeroSettings = new RuntimeSettings
         {
             DclPipelineEnabled = true,
@@ -2931,6 +5375,25 @@ internal static class Program
         Check(
             hitDivZeroReport.Findings.Any(finding => finding.Scope == "DclHitChanceFormula" && finding.Severity == "ERROR"),
             "hit formula dividing by dcl.oldDebit must fail validation under hit control (oldDebit=0 in the hit context)");
+
+        var previewWithoutHitControlReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPreviewHitPctEnabled = true,
+        }, catalog);
+        Check(
+            previewWithoutHitControlReport.Findings.Any(finding => finding.Scope == "DclPreviewHitPctEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("DclHitControlEnabled")),
+            "validator should require hit control under DCL forecast hit% parity");
+
+        var previewStaticConflictReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPreviewHitPctEnabled = true,
+            PreviewHitPctControlEnabled = true,
+            PreviewHitPctForcedValue = 75,
+            PreviewHitPctLogOnly = false,
+        }, catalog);
+        Check(
+            previewStaticConflictReport.Findings.Any(finding => finding.Scope == "DclPreviewHitPctEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("static PreviewHitPctForcedValue")),
+            "validator should reject dynamic DCL preview parity sharing the hook with a static forced percentage");
 
         var missOutputSettings = new RuntimeSettings
         {
@@ -2944,6 +5407,32 @@ internal static class Program
         Check(
             missOutputReport.Findings.Any(finding => finding.Scope == "DclMissKindValue" && finding.Severity == "ERROR"),
             "validator should reject DclMissKindValue outside 0..255");
+
+        var selectorNoOutputReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissSelectorOutcomeEnabled = true,
+        }, catalog);
+        Check(
+            selectorNoOutputReport.Findings.Any(finding => finding.Scope == "DclMissSelectorOutcomeEnabled" && finding.Severity == "ERROR"),
+            "validator should require miss output-control under selector outcome-control");
+
+        var reactionNoOutputReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissSuppressReactionsEnabled = true,
+        }, catalog);
+        Check(
+            reactionNoOutputReport.Findings.Any(finding => finding.Scope == "DclMissSuppressReactionsEnabled" && finding.Severity == "ERROR"),
+            "validator should require miss output-control under selective reaction suppression");
+
+        var reactionHookConflictReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMissOutputControlEnabled = true,
+            DclMissSuppressReactionsEnabled = true,
+            ReactionChanceControlEnabled = true,
+        }, catalog);
+        Check(
+            reactionHookConflictReport.Findings.Any(finding => finding.Scope == "ReactionChanceControlEnabled" && finding.Severity == "ERROR"),
+            "validator should reject global and DCL-selective reaction controls sharing the same hooks");
 
         // LT10-C miss presentation: rides the miss output-control path; glyph bit range-checked.
         var missPresNoOutputReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
@@ -2989,7 +5478,353 @@ internal static class Program
             counterPathBadReport.Findings.Any(finding => finding.Scope == "DclCounterPathProbeMaxLogs" && finding.Severity == "ERROR"),
             "validator should reject a negative DclCounterPathProbeMaxLogs");
 
-        // LT10-B status output-control: suppress + force are mutually exclusive, need the DCL pipeline.
+        // Reaction action-queue commit probe: observe-only, AOB-guarded, and bounded.
+        var reactionCommitBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionCommitProbeEnabled = true,
+            DclReactionCommitProbeRva = 0,
+            DclReactionCommitProbeExpectedBytes = "",
+            DclReactionCommitProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            reactionCommitBadReport.Findings.Any(finding => finding.Scope == "DclReactionCommitProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive DclReactionCommitProbeRva when the probe is enabled");
+        Check(
+            reactionCommitBadReport.Findings.Any(finding => finding.Scope == "DclReactionCommitProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the enabled reaction-commit probe");
+        Check(
+            reactionCommitBadReport.Findings.Any(finding => finding.Scope == "DclReactionCommitProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative DclReactionCommitProbeMaxLogs");
+
+        var reactionPreSelectorBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionPreSelectorProbeEnabled = true,
+            DclReactionPreSelectorProbeRva = 0,
+            DclReactionPreSelectorProbeExpectedBytes = "",
+            DclReactionPreSelectorProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            reactionPreSelectorBadReport.Findings.Any(finding => finding.Scope == "DclReactionPreSelectorProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive DclReactionPreSelectorProbeRva when enabled");
+        Check(
+            reactionPreSelectorBadReport.Findings.Any(finding => finding.Scope == "DclReactionPreSelectorProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the enabled reaction pre-selector probe");
+        Check(
+            reactionPreSelectorBadReport.Findings.Any(finding => finding.Scope == "DclReactionPreSelectorProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative DclReactionPreSelectorProbeMaxLogs");
+
+        var reactionProducerBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionProducerEnabled = true,
+            DclReactionProducerLogOnly = false,
+            DclReactionProducerCarrierId = -1,
+            DclReactionProducerUnitIndex = 21,
+            DclReactionProducerMaxWrites = 0,
+        }, catalog);
+        Check(
+            reactionProducerBadReport.Findings.Any(finding => finding.Scope == "DclReactionProducerEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("DclReactionPreSelectorProbeEnabled")),
+            "validator should require the guarded pre-selector hook for reaction production");
+        Check(
+            reactionProducerBadReport.Findings.Any(finding => finding.Scope == "DclReactionProducerCarrierId" && finding.Severity == "ERROR"),
+            "validator should reject a reaction producer carrier outside 422..453");
+        Check(
+            reactionProducerBadReport.Findings.Any(finding => finding.Scope == "DclReactionProducerUnitIndex" && finding.Severity == "ERROR"),
+            "validator should reject a reaction producer unit index outside 0..20");
+        Check(
+            reactionProducerBadReport.Findings.Any(finding => finding.Scope == "DclReactionProducerMaxWrites" && finding.Severity == "ERROR"),
+            "validator should reject an unbounded reaction producer write count");
+        Check(
+            reactionProducerBadReport.Findings.Any(finding => finding.Scope == "DclReactionProducerEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("DclReactionCommitProbeEnabled")),
+            "validator should require commit capture for live reaction production");
+
+        var reactionProducerLogOnlyReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionPreSelectorProbeEnabled = true,
+            DclReactionProducerEnabled = true,
+            DclReactionProducerLogOnly = true,
+            DclReactionProducerCarrierId = 443,
+            DclReactionProducerUnitIndex = 0,
+            DclReactionProducerMaxWrites = 1,
+        }, catalog);
+        Check(
+            !reactionProducerLogOnlyReport.Findings.Any(finding => finding.Severity == "ERROR"),
+            "valid log-only reaction producer settings should pass validation without a commit probe");
+
+        var reactionMaterializationBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionMaterializationProbeEnabled = true,
+            DclReactionMaterializationProbeRva = 0,
+            DclReactionMaterializationProbeExpectedBytes = "",
+            DclReactionMaterializationProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            reactionMaterializationBadReport.Findings.Any(finding => finding.Scope == "DclReactionMaterializationProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive reaction materialization probe RVA");
+        Check(
+            reactionMaterializationBadReport.Findings.Any(finding => finding.Scope == "DclReactionMaterializationProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the reaction materialization probe");
+        Check(
+            reactionMaterializationBadReport.Findings.Any(finding => finding.Scope == "DclReactionMaterializationProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative reaction materialization probe log cap");
+
+        var reactionOrderRewriteBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionOrderRewriteEnabled = true,
+            DclReactionOrderRewriteCarrierId = 454,
+            DclReactionOrderRewriteActionEnabled = true,
+            DclReactionOrderRewriteActionType = 256,
+            DclReactionOrderRewriteAbilityId = 512,
+            DclReactionOrderRewriteExpectedActionType = -2,
+            DclReactionOrderRewriteExpectedAbilityId = 512,
+            DclReactionOrderRewriteMaxWrites = 0,
+        }, catalog);
+        foreach (string scope in new[]
+        {
+            "DclReactionOrderRewriteEnabled",
+            "DclReactionOrderRewriteCarrierId",
+            "DclReactionOrderRewriteActionType",
+            "DclReactionOrderRewriteAbilityId",
+            "DclReactionOrderRewriteExpectedActionType",
+            "DclReactionOrderRewriteExpectedAbilityId",
+            "DclReactionOrderRewriteMaxWrites",
+        })
+        {
+            Check(
+                reactionOrderRewriteBadReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject invalid accepted-order rewrite scope {scope}");
+        }
+
+        var reactionOrderRewriteLiveReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionMaterializationProbeEnabled = true,
+            DclReactionOrderRewriteEnabled = true,
+            DclReactionOrderRewriteLogOnly = false,
+            DclReactionOrderRewriteCarrierId = 443,
+            DclReactionOrderRewriteActionEnabled = true,
+            DclReactionOrderRewriteActionType = 0x0B,
+            DclReactionOrderRewriteAbilityId = 0,
+            DclReactionOrderRewriteRetargetSource = true,
+            DclReactionOrderRewriteExpectedActionType = 0,
+            DclReactionOrderRewriteExpectedAbilityId = 443,
+            DclReactionOrderRewriteMaxWrites = 1,
+        }, catalog);
+        Check(
+            !reactionOrderRewriteLiveReport.Findings.Any(finding => finding.Severity == "ERROR"),
+            "valid guarded live accepted-order rewrite should pass validation");
+
+        var reactionOrderRewriteUnguardedLiveReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionMaterializationProbeEnabled = true,
+            DclReactionOrderRewriteEnabled = true,
+            DclReactionOrderRewriteLogOnly = false,
+            DclReactionOrderRewriteCarrierId = 443,
+            DclReactionOrderRewriteRetargetSource = true,
+            DclReactionOrderRewriteMaxWrites = 1,
+        }, catalog);
+        Check(
+            reactionOrderRewriteUnguardedLiveReport.Findings.Any(finding =>
+                finding.Scope == "DclReactionOrderRewriteEnabled" && finding.Severity == "ERROR" && finding.Message.Contains("exact expected")),
+            "validator should reject a live accepted-order rewrite without exact native-order guards");
+
+        var hexWardLogOnlyReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            DclReactionTaxonomyEnabled = true,
+            DclReactionRules = [new DclReactionRule { Name = "Hex Ward", AbilityId = 443, Mode = "caution" }],
+            DclReactionPreSelectorProbeEnabled = true,
+            DclReactionCommitProbeEnabled = true,
+            DclReactionMaterializationProbeEnabled = true,
+            DclReactionOrderRewriteEnabled = true,
+            DclReactionOrderRewriteLogOnly = true,
+            DclReactionOrderRewriteCarrierId = 443,
+            DclReactionOrderRewriteRetargetSource = true,
+            DclReactionOrderRewriteExpectedActionType = 1,
+            DclReactionOrderRewriteExpectedAbilityId = 0,
+            DclHexWardEnabled = true,
+            DclHexWardLogOnly = true,
+            DclHexWardEffect = "blind",
+            DclHexWardMaxWrites = 1,
+        }, catalog);
+        Check(!hexWardLogOnlyReport.Findings.Any(finding => finding.Severity == "ERROR"),
+            "the complete log-only Hex Ward producer/retarget/commit contract should pass validation: " +
+            string.Join(" | ", hexWardLogOnlyReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
+
+        var hexWardUnsafeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclHexWardEnabled = true,
+            DclHexWardLogOnly = false,
+            DclHexWardEffect = "unknown",
+            DclHexWardForcedRoll = 100,
+            DclHexWardBlindDurationTargetTurns = -1,
+            DclHexWardBraveDecrease = 0,
+            DclHexWardBraveFloor = 101,
+            DclHexWardMaxWrites = 0,
+        }, catalog);
+        foreach (string scope in new[]
+        {
+            "DclHexWardEnabled",
+            "DclHexWardEffect",
+            "DclHexWardForcedRoll",
+            "DclHexWardBlindDurationTargetTurns",
+            "DclHexWardBraveDecrease",
+            "DclHexWardBraveFloor",
+            "DclHexWardMaxWrites",
+        })
+        {
+            Check(hexWardUnsafeReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject unsafe Hex Ward scope {scope}");
+        }
+
+        var reactionEffectBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionEffectProbeEnabled = true,
+            DclReactionEffectProbeRva = 0,
+            DclReactionEffectProbeExpectedBytes = "",
+            DclReactionEffectProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            reactionEffectBadReport.Findings.Any(finding => finding.Scope == "DclReactionEffectProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive reaction effect probe RVA");
+        Check(
+            reactionEffectBadReport.Findings.Any(finding => finding.Scope == "DclReactionEffectProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the reaction effect probe");
+        Check(
+            reactionEffectBadReport.Findings.Any(finding => finding.Scope == "DclReactionEffectProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative reaction effect probe log cap");
+
+        var autoPotionConsumeBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclAutoPotionConsumeProbeEnabled = true,
+            DclAutoPotionConsumeProbeRva = 0,
+            DclAutoPotionConsumeProbeExpectedBytes = "",
+            DclAutoPotionConsumeProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            autoPotionConsumeBadReport.Findings.Any(finding => finding.Scope == "DclAutoPotionConsumeProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive DclAutoPotionConsumeProbeRva when enabled");
+        Check(
+            autoPotionConsumeBadReport.Findings.Any(finding => finding.Scope == "DclAutoPotionConsumeProbeExpectedBytes" && finding.Severity == "ERROR"),
+            "validator should require expected bytes for the enabled Auto-Potion consumption probe");
+        Check(
+            autoPotionConsumeBadReport.Findings.Any(finding => finding.Scope == "DclAutoPotionConsumeProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative DclAutoPotionConsumeProbeMaxLogs");
+
+        var weaponLofBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclWeaponLineOfFireProbeEnabled = true,
+            DclWeaponLineOfFireArcRva = 0,
+            DclWeaponLineOfFireDirectRva = 0,
+            DclWeaponLineOfFireExpectedBytes = "",
+            DclWeaponLineOfFireProbeMaxLogs = -1,
+        }, catalog);
+        foreach (string scope in new[]
+        {
+            "DclWeaponLineOfFireArcRva",
+            "DclWeaponLineOfFireDirectRva",
+            "DclWeaponLineOfFireProbeEnabled",
+            "DclWeaponLineOfFireExpectedBytes",
+            "DclWeaponLineOfFireProbeMaxLogs",
+        })
+        {
+            Check(
+                weaponLofBadReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject invalid weapon line-of-fire setting: {scope}");
+        }
+
+        var calcProvenanceBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclCalcProvenanceProbeEnabled = true,
+            CalcEntryProbeRva = 0,
+            DclCalcProvenanceProbeMaxLogs = -1,
+        }, catalog);
+        Check(
+            calcProvenanceBadReport.Findings.Any(finding => finding.Scope == "CalcEntryProbeRva" && finding.Severity == "ERROR"),
+            "validator should reject a non-positive CalcEntryProbeRva for calc provenance");
+        Check(
+            calcProvenanceBadReport.Findings.Any(finding => finding.Scope == "DclCalcProvenanceProbeMaxLogs" && finding.Severity == "ERROR"),
+            "validator should reject a negative DclCalcProvenanceProbeMaxLogs");
+
+        var reactionReplacementBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionActionReplacementEnabled = true,
+            DclReactionCommitProbeEnabled = false,
+            DclReactionActionReplacementCarrierId = 421,
+            DclReactionActionReplacementAbilityId = 512,
+            DclReactionActionReplacementMinTargetCount = 0,
+            DclReactionActionReplacementMaxWrites = 0,
+        }, catalog);
+        foreach (string scope in new[]
+        {
+            "DclReactionActionReplacementEnabled",
+            "DclReactionActionReplacementCarrierId",
+            "DclReactionActionReplacementAbilityId",
+            "DclReactionActionReplacementMinTargetCount",
+            "DclReactionActionReplacementMaxWrites",
+        })
+        {
+            Check(
+                reactionReplacementBadReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject invalid reaction replacement scope {scope}");
+        }
+
+        var reactionRetargetBadReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionRetargetEnabled = true,
+            DclReactionCommitProbeEnabled = false,
+            DclReactionRetargetCarrierId = 454,
+            DclReactionRetargetMaxWrites = 0,
+        }, catalog);
+        foreach (string scope in new[]
+        {
+            "DclReactionRetargetEnabled",
+            "DclReactionRetargetCarrierId",
+            "DclReactionRetargetMaxWrites",
+        })
+        {
+            Check(
+                reactionRetargetBadReport.Findings.Any(finding => finding.Scope == scope && finding.Severity == "ERROR"),
+                $"validator should reject invalid reaction retarget scope {scope}");
+        }
+
+        var reactionRetargetLogOnlyReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionCommitProbeEnabled = true,
+            DclReactionRetargetEnabled = true,
+            DclReactionRetargetLogOnly = true,
+            DclReactionRetargetCarrierId = 443,
+            DclReactionRetargetMaxWrites = 1,
+        }, catalog);
+        Check(
+            !reactionRetargetLogOnlyReport.Findings.Any(finding => finding.Severity == "ERROR"),
+            "valid log-only reaction retarget settings should pass validation");
+
+        var retiredReactionCommitWrites = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclReactionCommitProbeEnabled = true,
+            DclReactionActionReplacementEnabled = true,
+            DclReactionActionReplacementLogOnly = false,
+            DclReactionActionReplacementCarrierId = 442,
+            DclReactionActionReplacementAbilityId = 0,
+            DclReactionActionReplacementMinTargetCount = 1,
+            DclReactionActionReplacementMaxWrites = 1,
+            DclReactionRetargetEnabled = true,
+            DclReactionRetargetLogOnly = false,
+            DclReactionRetargetCarrierId = 443,
+            DclReactionRetargetMaxWrites = 1,
+        }, catalog);
+        Check(
+            retiredReactionCommitWrites.Findings.Any(finding =>
+                finding.Scope == "DclReactionActionReplacementEnabled" &&
+                finding.Severity == "ERROR" && finding.Message.Contains("retired")),
+            "validator should retire live action replacement at the pre-materialization commit");
+        Check(
+            retiredReactionCommitWrites.Findings.Any(finding =>
+                finding.Scope == "DclReactionRetargetEnabled" &&
+                finding.Severity == "ERROR" && finding.Message.Contains("retired")),
+            "validator should retire live retarget at the pre-materialization commit");
+
+        // LT13: the legacy staged-status write surface is reclassified as item/inventory authority.
+        // Suppress + force remain mutually exclusive, and every write mode is retired/blocked.
         var statusBothReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
         {
             DclPipelineEnabled = true,
@@ -3010,16 +5845,38 @@ internal static class Program
             statusNoPipelineReport.Findings.Any(finding => finding.Scope == "DclStatusOutputControl" && finding.Severity == "ERROR" && finding.Message.Contains("DclPipelineEnabled")),
             "validator should require the DCL pipeline for status output-control");
 
-        var statusProbeWarnReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        var retiredStatusWriteReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
         {
             DclPipelineEnabled = true,
             DclDamageFormula = "dcl.oldDebit",
             DclStatusSuppressEnabled = true,
         }, catalog);
-        Check(statusProbeWarnReport.Success, "status suppress alone (with pipeline) should validate");
         Check(
-            statusProbeWarnReport.Findings.Any(finding => finding.Scope == "DclStatusSuppressEnabled" && finding.Severity == "WARN"),
-            "validator should warn that the staged-status suppress encoding is unproven-live");
+            retiredStatusWriteReport.Findings.Any(finding =>
+                finding.Scope == "DclStatusOutputControl" &&
+                finding.Severity == "ERROR" &&
+                finding.Message.Contains("item/inventory")),
+            "validator should reject the retired staged-status write surface as item/inventory authority");
+
+        var retiredBundleAuxReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            StagedBundleProbeEnabled = true,
+            StagedBundleForceTargetCharId = 0x01,
+            StagedBundleForceAilment = 0x2B,
+            StagedBundleForceApplyMask = 0x08,
+        }, catalog);
+        Check(
+            retiredBundleAuxReport.Findings.Any(finding =>
+                finding.Scope == "StagedBundleForceAilment" &&
+                finding.Severity == "ERROR" &&
+                finding.Message.Contains("item/inventory")),
+            "validator should reject legacy +0x1A8 forcing");
+        Check(
+            retiredBundleAuxReport.Findings.Any(finding =>
+                finding.Scope == "StagedBundleForceApplyMask" &&
+                finding.Severity == "ERROR" &&
+                finding.Message.Contains("item/inventory")),
+            "validator should reject legacy +0x1D0 forcing");
 
         // Status output-control force/suppress field ranges: id word, raw value/offset, masks.
         var statusForceRangeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
@@ -3497,6 +6354,158 @@ internal static class Program
         raw[0x1BA] = (byte)activeMarker2;
         raw[0x1BB] = (byte)phaseMarker;
         return new UnitSnapshot(ptr, charId, 50, hp, 100, 0, false, 10, 8, 9, 4, 3, 70, 60, raw, 20, 30, 50);
+    }
+
+    private static void TestDclMpEconomy(ItemCatalog catalog)
+    {
+        var state = new DclMpTrickleState();
+        Check(!state.Observe(0x01, true), "attaching during an already-active turn must not grant MP");
+        Check(!state.Observe(0x01, true), "a held own-turn marker must not repeat MP trickle");
+        Check(!state.Observe(0x01, false), "falling edge must only arm the next own turn");
+        Check(state.Observe(0x01, true), "own-turn rising edge must grant exactly one MP trickle opportunity");
+        Check(!state.Observe(0x01, true), "same turn must not grant twice");
+        Check(!state.Observe(0x02, true), "pointer reuse by another character must reset without granting MP");
+
+        Check(DclMpEconomy.ClampCredit(3, 10, 20) == 3, "ordinary MP trickle should pass through");
+        Check(DclMpEconomy.ClampCredit(8, 17, 20) == 3, "MP trickle must clamp to MaxMP");
+        Check(DclMpEconomy.ClampCredit(-5, 10, 20) == 0, "negative MP trickle must clamp to zero");
+        Check(DclMpEconomy.ClampCredit(5, 20, 20) == 0, "full MP must receive no trickle");
+
+        var valid = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMpTrickleEnabled = true,
+            DclMpTrickleFormula = "if(t.status.ko, 0, max(1, t.ma / 4))",
+        }, catalog);
+        Check(valid.Success, "configured MP trickle formula should pass settings validation: " +
+            string.Join(" | ", valid.Findings.Where(finding => finding.Severity == "ERROR")));
+
+        var missingFormula = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclMpTrickleEnabled = true,
+        }, catalog);
+        Check(!missingFormula.Success && missingFormula.Findings.Any(finding => finding.Scope == "DclMpTrickleFormula"),
+            "enabled MP trickle without a formula must fail settings validation");
+    }
+
+    private static void TestDclMultistrike()
+    {
+        var blockSuccess = DclPhysicalContest.Resolve(
+            13, 10, new DclDefenseOption(DclDefenseKind.Block, 13, true), 12);
+        var parryFailure = DclPhysicalContest.Resolve(
+            13, 10, new DclDefenseOption(DclDefenseKind.Parry, 11, true), 12);
+        var critical = DclPhysicalContest.Resolve(
+            13, 4, new DclDefenseOption(DclDefenseKind.Dodge, 8, false), 8);
+        var aggregate = DclMultistrike.AggregatePhysical(
+            [blockSuccess, parryFailure, critical], normalDebit: 18, criticalDebit: 27);
+
+        Check(aggregate.StrikeCount == 3, "managed Pummel must preserve the authored strike count");
+        Check(aggregate.HitCount == 2 && aggregate.CriticalCount == 1,
+            "each landed strike, including criticals, must contribute independently");
+        Check(aggregate.DefendedCount == 1 && aggregate.AttackMissCount == 0,
+            "a successful finite defense must cancel only its own strike");
+        Check(aggregate.FumbleCount == 0,
+            "ordinary misses and defended strikes must not be reported as fumbles");
+        Check(aggregate.BlockAttempts == 1 && aggregate.ParryAttempts == 1,
+            "selected finite defenses must spend per attempted defense, including a failed Parry");
+        Check(aggregate.TotalDebit == 45 && aggregate.AnyHit,
+            "aggregate staged debit must sum only landed per-strike damage");
+
+        var allMiss = DclMultistrike.AggregatePhysical(
+            [DclPhysicalContest.Resolve(9, 14, new DclDefenseOption(DclDefenseKind.Dodge, 8, false), 10)],
+            normalDebit: 18,
+            criticalDebit: 27);
+        Check(!allMiss.AnyHit && allMiss.TotalDebit == 0 && allMiss.AttackMissCount == 1,
+            "an all-miss managed multistrike must stage zero HP debit");
+        Check(DclMultistrike.AnyHitChancePercent([50, 50, 50]) == 88,
+            "three independent 50% strike chances should report an 88% rounded any-hit chance");
+        Check(DclMultistrike.AnyHitChancePercent([]) == 0,
+            "an empty multistrike chance set must not report a hit chance");
+
+        int freshBlockPct = DclPhysicalContest.HitChancePercent(
+            13,
+            new DclDefenseOption(DclDefenseKind.Block, 12, true));
+        int naiveFreshBlockPct = DclMultistrike.AnyHitChancePercent(
+            [freshBlockPct, freshBlockPct, freshBlockPct]);
+        int finiteBlockPct = DclMultistrike.ExactPhysicalAnyHitChancePercent(
+            strikeCount: 3,
+            initialParryUses: 0,
+            initialBlockUses: 1,
+            (strikeIndex, parryRemaining, blockRemaining) => new DclPhysicalStrikeProfile(
+                AttackSkill: 13,
+                Defense: blockRemaining > 0
+                    ? new DclDefenseOption(DclDefenseKind.Block, 12, true)
+                    : new DclDefenseOption(DclDefenseKind.None, 0, false)));
+        Check(finiteBlockPct > naiveFreshBlockPct,
+            "exact multistrike forecast must account for a finite Block disappearing on defended no-hit branches");
+
+        int pummelProbePct = DclMultistrike.ExactPhysicalAnyHitChancePercent(
+            strikeCount: 3,
+            initialParryUses: 1,
+            initialBlockUses: 1,
+            (strikeIndex, parryRemaining, blockRemaining) => new DclPhysicalStrikeProfile(
+                AttackSkill: 12 - strikeIndex,
+                Defense: blockRemaining > 0
+                    ? new DclDefenseOption(DclDefenseKind.Block, 13, true)
+                    : parryRemaining > 0
+                        ? new DclDefenseOption(DclDefenseKind.Parry, 11, true)
+                        : new DclDefenseOption(DclDefenseKind.Dodge, 8, false)));
+        Check(pummelProbePct == 48,
+            $"deterministic Pummel probe should expose the exact nominal 48% any-hit forecast, got {pummelProbePct}%");
+
+        var variables = MakeFormulaContext();
+        FormulaRuntimeContextBuilder.AddDclMultistrikeVariables(variables, aggregate);
+        var strikeVars = FormulaVariables(variables);
+        CheckVar(strikeVars, "dcl.strike.count", 3);
+        CheckVar(strikeVars, "dcl.strike.hitCount", 2);
+        CheckVar(strikeVars, "dcl.strike.normalHitCount", 1);
+        CheckVar(strikeVars, "dcl.strike.criticalCount", 1);
+        CheckVar(strikeVars, "dcl.strike.evadedCount", 0);
+        CheckVar(strikeVars, "dcl.strike.defendedCount", 1);
+        CheckVar(strikeVars, "dcl.strike.parryAttempts", 1);
+        CheckVar(strikeVars, "dcl.strike.blockAttempts", 1);
+        CheckVar(strikeVars, "dcl.strike.anyHit", 1);
+
+        int targetEvadeEvaluations = 0;
+        int targetRolls = 0;
+        var perTarget = DclMagicMultistrike.Resolve(
+            strikeCount: 4,
+            DclMagicMultistrikeAvoidance.PerTarget,
+            magicEvadeCapPct: 50,
+            strikeIndex => { targetEvadeEvaluations++; return 60; },
+            strikeIndex => { targetRolls++; return 49; });
+        Check(targetEvadeEvaluations == 1 && targetRolls == 1,
+            "per-target Magic Evade must make one decision for the whole multistrike target");
+        Check(perTarget.Aggregate.HitCount == 4 && perTarget.Aggregate.EvadedCount == 0 && perTarget.AnyHitPct == 50,
+            "a successful capped per-target Magic Evade decision must admit every authored strike");
+
+        int[] rawEvade = [10, 20, 30];
+        int[] rolls = [95, 10, 75];
+        var perStrike = DclMagicMultistrike.Resolve(
+            strikeCount: 3,
+            DclMagicMultistrikeAvoidance.PerStrike,
+            magicEvadeCapPct: 50,
+            strikeIndex => rawEvade[strikeIndex],
+            strikeIndex => rolls[strikeIndex]);
+        Check(perStrike.Aggregate.HitCount == 1 && perStrike.Aggregate.EvadedCount == 2,
+            "per-strike Magic Evade must preserve independent landed/evaded counts");
+        Check(perStrike.AnyHitPct == 99,
+            $"90/80/70 strike chances should round to a 99% any-hit forecast, got {perStrike.AnyHitPct}%");
+        Check(perStrike.Strikes.Select(strike => strike.Roll).SequenceEqual(rolls),
+            "per-strike Magic Evade must preserve each roll for diagnostics");
+
+        Check(DclNativeRepeat.HasMoreRepeats(true, 6, 1) &&
+              DclNativeRepeat.HasMoreRepeats(true, 6, 5) &&
+              !DclNativeRepeat.HasMoreRepeats(true, 6, 6) &&
+              !DclNativeRepeat.HasMoreRepeats(false, 6, 1),
+            "RandomFire decision retention must last through every non-final native repeat only");
+        int[] truthPercentiles = [0, 4, 5, 9, 10, 19, 20, 29, 30, 49, 50, 69, 70, 79, 80, 89, 90, 94, 95, 99];
+        int[] truthCounts = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10];
+        Check(truthPercentiles.Select(DclNativeRepeat.TruthRepeatCountFromPercentile).SequenceEqual(truthCounts),
+            "Truth/Untruth percentile boundaries must match the native weighted repeat table");
+        Check(DclNativeRepeat.Formula5ERepeatCount(2) == 3 && DclNativeRepeat.Formula5ERepeatCount(5) == 6,
+            "formula 0x5E must use X+1 repeats for Tri attacks and Dark Whisper");
+        Check(DclNativeRepeat.BarrageRepeatCount == 4,
+            "formula 0x6A Barrage must use the native fixed four-repeat carrier");
     }
 
     private static void WriteUInt16(byte[] raw, int offset, int value)

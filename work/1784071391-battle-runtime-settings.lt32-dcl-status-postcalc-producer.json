@@ -1,0 +1,42 @@
+{
+  "_note": "LT32 execution-only post-calc status producer. Wall 13 retains its native data for forecast/AI, while the confirmed outer-sweep/state-0x2A execution replaces the complete Protect/Shell packet with one cached all-or-nothing DCL contest.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 200,
+  "DclStatusControlEnabled": true,
+  "DclStatusForcedRoll": 18,
+  "DclStatusMaxLogs": 200,
+  "DclStatusRules": [
+    {
+      "Name": "LT32 Wall Protect",
+      "AbilityId": 13,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt32-wall",
+      "ContestMode": "all-or-nothing"
+    },
+    {
+      "Name": "LT32 Wall Shell",
+      "AbilityId": 13,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt32-wall",
+      "ContestMode": "all-or-nothing"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "_note": "LT19 isolates the DCL small MP trickle. Native MaxMP remains the battle budget. On each +0x1B8 own-turn rising edge, Ramza (char id 0x01) receives exactly 3 MP, clamped at MaxMP. The formula returns zero for every other unit. No action-result DCL pipeline or other memory control is enabled.",
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "DclMpTrickleEnabled": true,
+  "DclMpTrickleFormula": "if(t.charId == 1 && !t.status.ko, 3, 0)",
+  "DclMpTrickleMaxLogs": 200,
+  "DryRunRewrites": false
+}

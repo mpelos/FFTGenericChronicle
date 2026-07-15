@@ -28,13 +28,16 @@ internal static class RuntimeSettingsValidator
 {
     private const int RawSize = 0x200;
 
-    public static SettingsValidationReport Validate(RuntimeSettings settings, ItemCatalog catalog)
+    public static SettingsValidationReport Validate(
+        RuntimeSettings settings,
+        ItemCatalog catalog,
+        AbilityCatalog? abilityCatalog = null)
     {
         var report = new SettingsValidationReport();
         report.Info("settings", settings.Describe());
         report.Info("catalog", catalog.Describe());
 
-        ValidateScalarRanges(settings, report);
+        ValidateScalarRanges(settings, abilityCatalog, report);
         ValidateTables(settings, report);
         ValidateMatrices(settings, report);
         ValidateMaps(settings, report);
@@ -49,7 +52,10 @@ internal static class RuntimeSettingsValidator
         return report;
     }
 
-    private static void ValidateScalarRanges(RuntimeSettings settings, SettingsValidationReport report)
+    private static void ValidateScalarRanges(
+        RuntimeSettings settings,
+        AbilityCatalog? abilityCatalog,
+        SettingsValidationReport report)
     {
         if (settings.MinDamageResponsePermille < 0)
             report.Error("DamageResponseClamp", "MinDamageResponsePermille must be nonnegative.");
@@ -81,13 +87,64 @@ internal static class RuntimeSettingsValidator
             report.Error("DclActionContextMaxAgeMs", "DclActionContextMaxAgeMs must be nonnegative.");
         else if (settings.DclActionContextMaxAgeMs > 60000)
             report.Warn("DclActionContextMaxAgeMs", "values above 60000 ms can reuse stale calc-entry action context.");
+        if (settings.DclComputePointCacheTtlMs <= 0)
+            report.Error("DclComputePointCacheTtlMs", "DclComputePointCacheTtlMs must be positive.");
+        else if (settings.DclComputePointCacheTtlMs > 60000)
+            report.Warn("DclComputePointCacheTtlMs", "values above 60000 ms can retain a stale execution result for pointer reuse.");
+        if (settings.DclComputePointNumericEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclComputePointNumericEnabled", "the compute-point writer requires DclPipelineEnabled and calc-entry action context.");
+            if (string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclHealingFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) &&
+                !settings.DclHitControlEnabled)
+                report.Error("DclComputePointNumericEnabled", "configure at least one HP/MP formula or authored hit control before enabling the AI-facing writer.");
+            if (settings.StagedBundleForceKind >= 0 || settings.StagedBundleForceDmg >= 0 || settings.StagedBundleForceResFlag >= 0)
+                report.Error("DclComputePointNumericEnabled", "the LT35 static staged-bundle force fields conflict with the permanent compute-point writer; leave them at -1.");
+            report.Warn("DclComputePointNumericEnabled", "publishes the final HP/MP result at the proven post-calc AI boundary and reuses the exact cached execution result at pre-clamp. Instant KO exposes expected lethal debit to AI, rolls once at confirmed execution, and delivers that cached outcome; representative action-family regression remains required.");
+        }
         if (settings.DclDecisionMaxLogs < 0)
             report.Error("DclDecisionMaxLogs", "DclDecisionMaxLogs must be nonnegative.");
-        if (settings.DclPipelineEnabled && string.IsNullOrWhiteSpace(settings.DclDamageFormula))
-            report.Warn("DclDamageFormula", "DclPipelineEnabled is on but DclDamageFormula is empty, so the DCL path will fall through to legacy pre-clamp behavior.");
+        if (settings.DclMpTrickleMaxLogs < 0)
+            report.Error("DclMpTrickleMaxLogs", "DclMpTrickleMaxLogs must be nonnegative.");
+        if (settings.DclMpTrickleEnabled)
+        {
+            if (string.IsNullOrWhiteSpace(settings.DclMpTrickleFormula))
+                report.Error("DclMpTrickleFormula", "DclMpTrickleEnabled requires an explicit per-own-turn credit formula.");
+            report.Warn("DclMpTrickleEnabled", "native MaxMP remains the per-battle budget; this poll-driven feature writes only a clamped credit on the unit +0x1B8 own-turn rising edge and requires a live gate.");
+        }
+        if (settings.DclResultFlagsPreserveMask is < 0 or > DclResultFlags.DefaultPreserveMask)
+            report.Error("DclResultFlagsPreserveMask", "the preserve mask must be within 0x00..0x0F; numeric result bits 0xF0 are derived from the final staged channels.");
+        if (settings.DclResultFlagsControlEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclResultFlagsControlEnabled", "result-flag ownership runs in the DCL pre-clamp transaction; enable DclPipelineEnabled.");
+            if (string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclHealingFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) &&
+                !settings.DclInstantKoControlEnabled)
+                report.Error("DclResultFlagsControlEnabled", "configure at least one staged HP/MP formula or instant-KO rule before taking result-flag ownership.");
+            report.Warn("DclResultFlagsControlEnabled", "rebuilds result byte +0x1E5 atomically from final HP debit/credit and MP debit/credit. The selector prioritizes HP damage, then MP debit, then low-bit effects, then HP/MP credit; combined 0x50 and 0x90 flags are native, while partial-shield 0xA0 remains live-gated for presentation.");
+        }
+        if (settings.DclPipelineEnabled && string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+            string.IsNullOrWhiteSpace(settings.DclHealingFormula) &&
+            string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) &&
+            string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) &&
+            !settings.DclStatusControlEnabled && !settings.DclInstantKoControlEnabled &&
+            !settings.DclPhysicalContestEnabled && !settings.DclMagicEvadeEnabled &&
+            !settings.DclReactionTaxonomyEnabled)
+            report.Warn("DclDamageFormula", "DclPipelineEnabled has no HP/MP outcome formula, status control, physical contest, or reaction taxonomy, so the DCL path falls through to legacy pre-clamp behavior.");
         if (settings.DclPipelineEnabled && settings.CalcEntryProbeRva <= 0)
             report.Error("CalcEntryProbeRva", "DclPipelineEnabled needs the calc-entry probe for action context; CalcEntryProbeRva must be positive.");
-        if (settings.DclPipelineEnabled && !string.IsNullOrWhiteSpace(settings.DclDamageFormula))
+        if (settings.DclPipelineEnabled &&
+            (!string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
+             !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
+             !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
+             !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) ||
+             settings.DclInstantKoControlEnabled))
         {
             // The pre-clamp stub runs the managed (DCL) callback FIRST, then plan/static writes:
             // any of these being armed would silently overwrite the DCL debit in the same hook fire.
@@ -130,6 +187,380 @@ internal static class RuntimeSettingsValidator
                 report.Error("CalcEntryProbeRva", "DclHitControlEnabled hooks calc-entry; CalcEntryProbeRva must be positive.");
             report.Warn("DclHitControlEnabled", "the hit-control decision callback runs managed code on the calc-entry hot path (fires at preview, charge and AI evaluation, not only execution) and forces the binary outcome by writing the target's evade input bytes.");
         }
+        if (settings.DclAttackForcedRoll != -1 && settings.DclAttackForcedRoll is < 3 or > 18)
+            report.Error("DclAttackForcedRoll", "DclAttackForcedRoll must be -1 (use the mod RNG) or a fixed 3d6 total within 3..18.");
+        if (settings.DclDefenseForcedRoll != -1 && settings.DclDefenseForcedRoll is < 3 or > 18)
+            report.Error("DclDefenseForcedRoll", "DclDefenseForcedRoll must be -1 (use the mod RNG) or a fixed 3d6 total within 3..18.");
+        if (settings.DclGuardMaxLogs < 0)
+            report.Error("DclGuardMaxLogs", "DclGuardMaxLogs must be nonnegative.");
+        if (settings.DclPhysicalContestEnabled)
+        {
+            if (!settings.DclHitControlEnabled)
+                report.Error("DclPhysicalContestEnabled", "the physical contest is a DCL hit-decision model; enable DclHitControlEnabled.");
+            if (!settings.DclMissOutputControlEnabled || !settings.DclMissSelectorOutcomeEnabled)
+                report.Error("DclPhysicalContestEnabled", "attack misses, fumbles, and successful defenses require DclMissOutputControlEnabled and DclMissSelectorOutcomeEnabled.");
+            if (!settings.DclMissSuppressReactionsEnabled)
+                report.Error("DclPhysicalContestEnabled", "authored physical misses and defenses must suppress native hit reactions; enable DclMissSuppressReactionsEnabled.");
+            if (settings.PreClampDamageRewriteLogOnly)
+                report.Error("DclPhysicalContestEnabled", "PreClampDamageRewriteLogOnly bypasses guard spending and authored miss delivery.");
+            if (string.IsNullOrWhiteSpace(settings.DclPhysicalContestConditionFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclAttackSkillFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclDodgeFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclParryFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclBlockFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclDefenseAllowedFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclDefenseModifierFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclParryUsesFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclBlockUsesFormula))
+                report.Error("DclPhysicalContestEnabled", "the applicability, attack, defense, facing-policy, and finite-guard formulas must all be present.");
+            if (!settings.DclPreviewHitPctEnabled)
+                report.Warn("DclPhysicalContestEnabled", "enable DclPreviewHitPctEnabled for exact two-roll forecast parity.");
+            report.Warn("DclPhysicalContestEnabled", "finite Parry/Block charges commit only in the successful apply window and fully refresh on the defender's +0x1B8 own-turn rising edge.");
+        }
+        if (settings.DclMagicEvadeCapPct is < 0 or > 100)
+            report.Error("DclMagicEvadeCapPct", "DclMagicEvadeCapPct must be within 0..100.");
+        if (settings.DclMagicEvadeEnabled)
+        {
+            if (!settings.DclHitControlEnabled)
+                report.Error("DclMagicEvadeEnabled", "Magic Evade is a DCL hit-decision model; enable DclHitControlEnabled.");
+            if (!settings.DclMissOutputControlEnabled || !settings.DclMissSelectorOutcomeEnabled)
+                report.Error("DclMagicEvadeEnabled", "evaded offensive magic requires DclMissOutputControlEnabled and DclMissSelectorOutcomeEnabled.");
+            if (settings.PreClampDamageRewriteLogOnly)
+                report.Error("DclMagicEvadeEnabled", "PreClampDamageRewriteLogOnly bypasses authored magic-evade delivery.");
+            if (string.IsNullOrWhiteSpace(settings.DclMagicEvadeConditionFormula) ||
+                string.IsNullOrWhiteSpace(settings.DclMagicEvadeFormula))
+                report.Error("DclMagicEvadeEnabled", "the offensive-magic applicability and Magic Evade formulas must both be present.");
+            if (!settings.DclPreviewHitPctEnabled)
+                report.Warn("DclMagicEvadeEnabled", "enable DclPreviewHitPctEnabled so each target shows the capped Magic Evade hit chance.");
+            report.Warn("DclMagicEvadeEnabled", "the applicability formula owns the DCL taxonomy and must exclude healing and status-only actions; formula 0x08 is the catalog's native magic-damage family.");
+        }
+        if (settings.DclPreviewHitPctEnabled)
+        {
+            if (!settings.DclHitControlEnabled)
+                report.Error("DclPreviewHitPctEnabled", "DCL forecast parity requires DclHitControlEnabled so calc-entry can produce and mirror the authored percentage.");
+            if (settings.PreviewHitPctControlEnabled && !settings.PreviewHitPctLogOnly && settings.PreviewHitPctForcedValue >= 0)
+                report.Error("DclPreviewHitPctEnabled", "cannot share the preview hook with a static PreviewHitPctForcedValue; use log-only observation or disable the static preview control.");
+            report.Warn("DclPreviewHitPctEnabled", "the forecast hit% is replaced with the percentage from the same cached DCL decision used for execution; this changes display only, not the roll.");
+        }
+        if (settings.DclPreviewAmountEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclPreviewAmountEnabled", "formula-driven forecast amounts require DclPipelineEnabled for calc-entry action context.");
+            if (string.IsNullOrWhiteSpace(settings.DclPreviewDamageFormula) &&
+                string.IsNullOrWhiteSpace(settings.DclPreviewHealingFormula))
+                report.Error("DclPreviewAmountEnabled", "configure at least one of DclPreviewDamageFormula or DclPreviewHealingFormula.");
+            if (settings.PreviewForecastPokeEnabled)
+                report.Error("DclPreviewAmountEnabled", "the static PreviewForecastPokeEnabled writer conflicts with formula-driven forecast amounts.");
+            if (settings.PreviewDamageControlEnabled && !settings.PreviewDamageLogOnly && settings.PreviewDamageForcedValue >= 0)
+                report.Error("DclPreviewAmountEnabled", "a static PreviewDamageForcedValue conflicts with formula-driven forecast amounts.");
+            report.Warn("DclPreviewAmountEnabled", "preview formulas run with dcl.oldDebit/oldCredit/oldMpDebit/oldMpCredit equal to zero; author them from intrinsic action/unit/equipment inputs.");
+        }
+        if (settings.DclStatusForcedRoll != -1 && settings.DclStatusForcedRoll is < 3 or > 18)
+            report.Error("DclStatusForcedRoll", "DclStatusForcedRoll must be -1 (use the mod RNG) or a fixed 3d6 total within 3..18.");
+        if (settings.DclStatusMaxLogs < 0)
+            report.Error("DclStatusMaxLogs", "DclStatusMaxLogs must be nonnegative.");
+        if (settings.DclStatusControlEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclStatusControlEnabled", "status control requires DclPipelineEnabled for action context and the successful apply hook.");
+            if (settings.DclStatusRules.Count == 0)
+                report.Error("DclStatusRules", "DclStatusControlEnabled requires at least one per-ability status rule.");
+            if (settings.PreClampDamageRewriteLogOnly)
+                report.Error("DclStatusControlEnabled", "PreClampDamageRewriteLogOnly bypasses the managed DCL callback, so authored statuses cannot commit.");
+
+            var seenStatusRules = new List<(int AbilityId, int ActionType, int ByteIndex, int Mask)>();
+            for (int i = 0; i < settings.DclStatusRules.Count; i++)
+            {
+                var rule = settings.DclStatusRules[i];
+                string scope = $"DclStatusRules.{RuleName(rule.Name, i + 1)}";
+                if (rule.AbilityId is < 0 or > 65535)
+                    report.Error(scope, "AbilityId must identify one exact action within 0..65535; wildcard status rules are not accepted.");
+                if (rule.ActionType is < -1 or > 255)
+                    report.Error(scope, "ActionType must be -1 (any) or a byte within 0..255.");
+                if (rule.StatusByteIndex is < 0 or > 4)
+                    report.Error(scope, "StatusByteIndex must be 0..4.");
+                else if (rule.StatusByteIndex == 0 && rule.StatusMask != 0x10)
+                    report.Error(scope, "Status byte 0 is lifecycle-sensitive: only the proven Undead mask 0x10 is accepted; Crystal, KO, Charging, Jumping, Defending, and Performing require dedicated ownership.");
+                if (rule.StatusMask is < 1 or > 255 || (rule.StatusMask & (rule.StatusMask - 1)) != 0)
+                    report.Error(scope, "StatusMask must contain exactly one native status bit (1,2,4,8,16,32,64,128).");
+                if (!rule.IsAdd && !rule.IsRemove)
+                    report.Error(scope, "Operation must be 'add' or 'remove'.");
+                if (!DclStatusGroups.IsSupportedMode(rule.ContestMode))
+                    report.Error(scope, "ContestMode must be 'independent', 'all-or-nothing', or 'random-one'.");
+                if (!rule.UsesSharedContest && !string.IsNullOrWhiteSpace(rule.ContestGroup))
+                    report.Error(scope, "ContestGroup must be empty when ContestMode is independent.");
+                if (rule.UsesSharedContest)
+                {
+                    bool approvedRetainedCarrier = rule.NativeRiderRetainedAsCarrier &&
+                                                   DclStatusNativeCarrier.TryGetRequiredBits(rule.AbilityId, out _);
+                    bool approvedSuppressedCarrier = rule.NativeRiderSuppressedByData &&
+                                                     DclStatusGroupedCarrier.TryGetSuppressedDataBits(rule.AbilityId, out _);
+                    bool approvedPostCalcProducer = rule.NativeRiderReplacedPostCalc &&
+                        abilityCatalog is not null &&
+                        abilityCatalog.TryGet(rule.AbilityId, out var producerAbility) &&
+                        DclStatusConditionalProducer.IsSupportedFormula(producerAbility.Formula);
+                    if (!approvedRetainedCarrier && !approvedSuppressedCarrier && !approvedPostCalcProducer)
+                        report.Error(scope, "shared status contests are restricted to statically mapped retained carriers, grouped data-suppressed damage carriers, or catalog-verified post-calc producers.");
+                    if (string.IsNullOrWhiteSpace(rule.ContestGroup))
+                        report.Error(scope, "shared status contests require a nonempty ContestGroup.");
+                    if (!rule.IsAdd)
+                        report.Error(scope, "shared status contests currently support add rules only.");
+                    if (!string.IsNullOrWhiteSpace(rule.ConditionFormula))
+                        report.Error(scope, "shared status contests cannot use ConditionFormula; every group member must be decided together.");
+                    if ((rule.ResistanceFormula ?? "").Contains("status.", StringComparison.OrdinalIgnoreCase))
+                        report.Error(scope, "a shared ResistanceFormula cannot reference status.* because one invariant contest is evaluated for the whole group.");
+                }
+                if (!rule.NativeRiderAbsent && !rule.NativeRiderSuppressedByData &&
+                    !rule.NativeRiderRetainedAsCarrier && !rule.NativeRiderReplacedPostCalc)
+                    report.Error(scope, "NativeRiderPolicy must be 'absent', 'suppressed-by-data', 'retained-as-carrier', or 'replaced-post-calc'; managed status authority is rejected until native ownership is explicit.");
+                if (rule.NativeRiderReplacedPostCalc)
+                {
+                    if (abilityCatalog is null || !abilityCatalog.Loaded)
+                        report.Error(scope, "replaced-post-calc requires the loaded ability catalog to verify formula family and complete native packet ownership.");
+                    else if (!abilityCatalog.TryGet(rule.AbilityId, out var producerAbility) ||
+                             !DclStatusConditionalProducer.IsSupportedFormula(producerAbility.Formula))
+                        report.Error(scope, "replaced-post-calc is restricted to the statically mapped conditional-producer formula families.");
+                    if (rule.ActionType != -1)
+                        report.Error(scope, "replaced-post-calc rules must use ActionType=-1 so every execution owns its native packet bit.");
+                }
+                if (rule.NativeRiderRetainedAsCarrier)
+                {
+                    if (!DclStatusNativeCarrier.TryGetRequiredBits(rule.AbilityId, out _))
+                        report.Error(scope, "retained-as-carrier is not approved for this ability; only statically mapped status-only carriers are accepted.");
+                    if (rule.ActionType != -1)
+                        report.Error(scope, "retained-as-carrier rules must use ActionType=-1 so every execution context owns the native packet bit.");
+                    if (!string.IsNullOrWhiteSpace(rule.ConditionFormula))
+                        report.Error(scope, "retained-as-carrier rules cannot use ConditionFormula; every inherited packet bit must be decided on every matching target.");
+                    string requiredMode = DclStatusNativeCarrier.RequiredContestMode(rule.AbilityId);
+                    if (rule.NormalizedContestMode != requiredMode)
+                        report.Error(scope, $"retained carrier ability {rule.AbilityId} requires ContestMode='{requiredMode}' for its native packet semantics.");
+                }
+                if (rule.NativeRiderSuppressedByData && rule.UsesSharedContest)
+                {
+                    if (!DclStatusGroupedCarrier.TryGetSuppressedDataBits(rule.AbilityId, out _))
+                        report.Error(scope, "grouped suppressed-by-data ownership is not approved for this ability.");
+                    if (rule.ActionType != -1)
+                        report.Error(scope, "grouped suppressed-by-data rules must use ActionType=-1 so every execution owns the removed native rider.");
+                    string requiredMode = DclStatusGroupedCarrier.RequiredContestMode(rule.AbilityId);
+                    if (rule.NormalizedContestMode != requiredMode)
+                        report.Error(scope, $"grouped data carrier ability {rule.AbilityId} requires ContestMode='{requiredMode}'.");
+                }
+                if (rule.NativeRiderSuppressedByData &&
+                    DclStatusConditionalCarrier.TryGetRequiredBit(rule.AbilityId, out var conditionalBit))
+                {
+                    if (rule.ActionType != -1)
+                        report.Error(scope, "conditional data carriers must use ActionType=-1 so every execution is classified by the required target condition.");
+                    if (rule.StatusByteIndex != conditionalBit.ByteIndex || rule.StatusMask != conditionalBit.Mask)
+                        report.Error(scope, $"conditional data carrier ability {rule.AbilityId} may own only byte {conditionalBit.ByteIndex}/0x{conditionalBit.Mask:X2}.");
+                    if (!rule.IsAdd)
+                        report.Error(scope, "the Self-Destruct conditional carrier owns an Oil add, not a remove.");
+                    if (!DclStatusConditionalCarrier.IsRequiredCondition(rule.AbilityId, rule.ConditionFormula))
+                        report.Error(scope, $"conditional data carrier ability {rule.AbilityId} requires ConditionFormula='{DclStatusConditionalCarrier.SelfDestructVictimCondition}' so the caster result never receives the victim-only rider.");
+                }
+                var ownership = (rule.AbilityId, rule.ActionType, rule.StatusByteIndex, rule.StatusMask);
+                bool overlapsExistingOwner = seenStatusRules.Any(existing =>
+                    existing.AbilityId == ownership.AbilityId &&
+                    existing.ByteIndex == ownership.StatusByteIndex &&
+                    existing.Mask == ownership.StatusMask &&
+                    (existing.ActionType == ownership.ActionType || existing.ActionType == -1 || ownership.ActionType == -1));
+                if (overlapsExistingOwner)
+                    report.Error(scope, "overlapping rules for the same ability/status bit are not accepted; one packet bit has one owner for every action type.");
+                else
+                    seenStatusRules.Add(ownership);
+                if (rule.DurationTargetTurns is < 0 or > 99)
+                    report.Error(scope, "DurationTargetTurns must be 0 (persistent/native removal only) or a target-turn count within 1..99.");
+                if (rule.IsAdd && string.IsNullOrWhiteSpace(rule.ResistanceFormula))
+                    report.Error(scope, "add rules require ResistanceFormula; its result is the target number for the 3d6 resistance roll.");
+                if (rule.IsRemove && !string.IsNullOrWhiteSpace(rule.ResistanceFormula))
+                    report.Warn(scope, "remove rules are connected cures and ignore ResistanceFormula.");
+                if (rule.IsRemove && rule.DurationTargetTurns != 0)
+                    report.Error(scope, "remove rules cannot own a duration; set DurationTargetTurns to 0.");
+            }
+
+            if (settings.DclStatusRules.Any(rule => rule.StatusByteIndex == 0 && rule.StatusMask == 0x10))
+                report.Warn("DclStatusRules", "status byte 0 is enabled only for Undead 0x10, whose durable/effective write is live-proven; all other byte-0 lifecycle bits remain blocked.");
+
+            foreach (var carrierGroup in settings.DclStatusRules
+                         .Where(rule => rule.NativeRiderRetainedAsCarrier)
+                         .GroupBy(rule => rule.AbilityId))
+            {
+                if (!DclStatusNativeCarrier.TryGetRequiredBits(carrierGroup.Key, out var requiredBits))
+                    continue;
+                var ownedBits = carrierGroup
+                    .Select(rule => new DclNativeStatusBit(rule.StatusByteIndex, (byte)rule.StatusMask))
+                    .ToHashSet();
+                var missing = requiredBits.Where(bit => !ownedBits.Contains(bit)).ToArray();
+                if (missing.Length > 0)
+                {
+                    string missingText = string.Join(", ", missing.Select(bit => $"byte {bit.ByteIndex}/0x{bit.Mask:X2}"));
+                    report.Error(
+                        "DclStatusRules",
+                        $"retained native carrier ability {carrierGroup.Key} lacks managed ownership for {missingText}; every inherited rider bit must be replaced in the packet.");
+                }
+
+                string requiredMode = DclStatusNativeCarrier.RequiredContestMode(carrierGroup.Key);
+                if (requiredMode != DclStatusGroups.Independent)
+                {
+                    var sharedRules = carrierGroup.Where(rule => rule.UsesSharedContest).ToArray();
+                    var groupNames = sharedRules.Select(rule => rule.NormalizedContestGroup).Distinct().ToArray();
+                    if (sharedRules.Length != carrierGroup.Count() || groupNames.Length != 1 || groupNames[0].Length == 0)
+                        report.Error(
+                            "DclStatusRules",
+                            $"retained native carrier ability {carrierGroup.Key} must place every inherited bit in one nonempty '{requiredMode}' ContestGroup.");
+                }
+            }
+
+            foreach (var sharedGroup in settings.DclStatusRules
+                         .Where(rule => rule.UsesSharedContest)
+                         .GroupBy(rule => (rule.AbilityId, rule.ActionType, rule.NormalizedContestGroup)))
+            {
+                var members = sharedGroup.ToArray();
+                string groupScope = $"DclStatusRules.group.{sharedGroup.Key.AbilityId}:{sharedGroup.Key.ActionType}:{sharedGroup.Key.NormalizedContestGroup}";
+                if (members.Length < 2)
+                    report.Error(groupScope, "a shared status contest requires at least two member bits.");
+                if (members.Select(rule => rule.NormalizedContestMode).Distinct().Count() != 1)
+                    report.Error(groupScope, "every shared contest member must use the same ContestMode.");
+                if (members.Select(rule => (rule.ResistanceFormula ?? "").Trim()).Distinct(StringComparer.Ordinal).Count() != 1)
+                    report.Error(groupScope, "every shared contest member must use the same ResistanceFormula because the group rolls once.");
+            }
+
+            foreach (var suppressedGroup in settings.DclStatusRules
+                         .Where(rule => rule.NativeRiderSuppressedByData && rule.UsesSharedContest)
+                         .GroupBy(rule => rule.AbilityId))
+            {
+                if (!DclStatusGroupedCarrier.TryGetSuppressedDataBits(suppressedGroup.Key, out var requiredBits))
+                    continue;
+                var ownedBits = suppressedGroup
+                    .Select(rule => new DclNativeStatusBit(rule.StatusByteIndex, (byte)rule.StatusMask))
+                    .ToHashSet();
+                var missing = requiredBits.Where(bit => !ownedBits.Contains(bit)).ToArray();
+                var groupNames = suppressedGroup.Select(rule => rule.NormalizedContestGroup).Distinct().ToArray();
+                if (missing.Length > 0)
+                {
+                    string missingText = string.Join(", ", missing.Select(bit => $"byte {bit.ByteIndex}/0x{bit.Mask:X2}"));
+                    report.Error(
+                        "DclStatusRules",
+                        $"grouped data carrier ability {suppressedGroup.Key} lacks managed ownership for {missingText}; every removed rider bit must be replaced.");
+                }
+                if (groupNames.Length != 1 || groupNames[0].Length == 0)
+                    report.Error(
+                        "DclStatusRules",
+                        $"grouped data carrier ability {suppressedGroup.Key} must place every removed rider bit in one nonempty ContestGroup.");
+            }
+
+            foreach (var conditionalGroup in settings.DclStatusRules
+                         .Where(rule => rule.NativeRiderSuppressedByData &&
+                                        DclStatusConditionalCarrier.TryGetRequiredBit(rule.AbilityId, out _))
+                         .GroupBy(rule => rule.AbilityId))
+            {
+                DclStatusConditionalCarrier.TryGetRequiredBit(conditionalGroup.Key, out var requiredBit);
+                if (conditionalGroup.Count() != 1 ||
+                    conditionalGroup.Single().StatusByteIndex != requiredBit.ByteIndex ||
+                    conditionalGroup.Single().StatusMask != requiredBit.Mask)
+                    report.Error("DclStatusRules", $"conditional data carrier ability {conditionalGroup.Key} requires exactly one managed byte {requiredBit.ByteIndex}/0x{requiredBit.Mask:X2} rule.");
+            }
+
+            foreach (var producerGroup in settings.DclStatusRules
+                         .Where(rule => rule.NativeRiderReplacedPostCalc)
+                         .GroupBy(rule => rule.AbilityId))
+            {
+                if (abilityCatalog is null || !abilityCatalog.Loaded ||
+                    !abilityCatalog.TryGet(producerGroup.Key, out var ability))
+                    continue;
+                var rules = producerGroup.ToArray();
+                if (!DclStatusConditionalProducer.TryValidateRules(ability, rules, out string producerError))
+                    report.Error("DclStatusRules", $"post-calc producer ability {producerGroup.Key}: {producerError}");
+
+                var matchingPolicies = settings.DclStatusRules
+                    .Where(rule => rule.AbilityId == producerGroup.Key)
+                    .Select(rule => rule.NativeRiderPolicy)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                if (matchingPolicies.Length != 1)
+                    report.Error("DclStatusRules", $"post-calc producer ability {producerGroup.Key} cannot mix native-rider policies.");
+            }
+
+            if (settings.DclStatusRules.Any(rule => rule.NativeRiderReplacedPostCalc) &&
+                settings.StagedBundleProbeRva != DclCalcProvenance.OuterSweepReturnRva)
+                report.Error("StagedBundleProbeRva", $"post-calc status production requires the proven outer-sweep completion RVA 0x{DclCalcProvenance.OuterSweepReturnRva:X}.");
+
+            report.Warn("DclStatusControlEnabled", "suppressed-by-data rules require the matching fail-closed action-data build; retained-as-carrier rules leave their approved rider intact; replaced-post-calc rules preserve native forecast/AI behavior but replace the complete execution packet at the proven outer-sweep boundary. Equipment immunity remains an automatic resist.");
+        }
+        if (settings.DclInstantKoControlEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclInstantKoControlEnabled", "instant KO requires DclPipelineEnabled and the pre-clamp staged-debit channel.");
+            if (!settings.DclHitControlEnabled || !settings.DclMissOutputControlEnabled || !settings.DclMissSelectorOutcomeEnabled)
+                report.Error("DclInstantKoControlEnabled", "instant KO requires authored connect/miss delivery through DclHitControlEnabled, DclMissOutputControlEnabled, and DclMissSelectorOutcomeEnabled.");
+            if (settings.PreClampDamageRewriteLogOnly)
+                report.Error("DclInstantKoControlEnabled", "PreClampDamageRewriteLogOnly prevents engine-owned lethal debit delivery.");
+            if (settings.DclInstantKoRules.Count == 0)
+                report.Error("DclInstantKoRules", "DclInstantKoControlEnabled requires at least one exact per-ability rule.");
+
+            var seenInstantKoRules = new HashSet<(int AbilityId, int ActionType)>();
+            for (int i = 0; i < settings.DclInstantKoRules.Count; i++)
+            {
+                var rule = settings.DclInstantKoRules[i];
+                string scope = $"DclInstantKoRules.{RuleName(rule.Name, i + 1)}";
+                if (rule.AbilityId is < 0 or > 65535)
+                    report.Error(scope, "AbilityId must identify one exact action within 0..65535.");
+                if (rule.ActionType is < -1 or > 255)
+                    report.Error(scope, "ActionType must be -1 (any) or a byte within 0..255.");
+                if (string.IsNullOrWhiteSpace(rule.ResistanceFormula))
+                    report.Error(scope, "ResistanceFormula is required and supplies the target number for the 3d6 resistance roll.");
+                if (!rule.NativeKoSuppressedByData)
+                    report.Error(scope, "NativeKoSuppressedByData must be true only after the ability's native KO/Crystal rider is removed in action data; otherwise a resisted DCL roll could still kill.");
+                if (!seenInstantKoRules.Add((rule.AbilityId, rule.ActionType)))
+                    report.Error(scope, "duplicate AbilityId/ActionType instant-KO ownership is not allowed.");
+            }
+
+            report.Warn("DclInstantKoControlEnabled", "successful rules deliver a lethal staged HP debit and let native HP apply own KO; resisted/immune rules never clear or set the Dead bit. Every owned ability requires a data-side native KO suppression before this switch is safe.");
+        }
+        if (settings.DclReactionMaxLogs < 0)
+            report.Error("DclReactionMaxLogs", "DclReactionMaxLogs must be nonnegative.");
+        if (settings.DclReactionTaxonomyEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclReactionTaxonomyEnabled", "reaction taxonomy requires DclPipelineEnabled and the shared calc-entry hook.");
+            if (settings.DclReactionRules.Count == 0)
+                report.Error("DclReactionRules", "DclReactionTaxonomyEnabled requires at least one exact Reaction ability rule.");
+            if (settings.DclReactionCalcExitRva <= 0)
+                report.Error("DclReactionCalcExitRva", "the computeActionResult exit RVA must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.DclReactionCalcExitExpectedBytes))
+                report.Error("DclReactionCalcExitExpectedBytes", "an expected-byte guard is required for the Brave restore tail.");
+            if (settings.BraveOverrideEnabled)
+                report.Error("DclReactionTaxonomyEnabled", "persistent BraveOverrideEnabled conflicts with scoped reaction-chance virtualization.");
+            if (settings.ReactionChanceControlEnabled)
+                report.Error("DclReactionTaxonomyEnabled", "global ReactionChanceControlEnabled would override taxonomy chances at the real-code reaction sites.");
+
+            var seenReactionIds = new HashSet<int>();
+            for (int i = 0; i < settings.DclReactionRules.Count; i++)
+            {
+                var rule = settings.DclReactionRules[i];
+                string scope = $"DclReactionRules.{RuleName(rule.Name, i + 1)}";
+                if (rule.AbilityId is < 422 or > 453)
+                    report.Error(scope, "AbilityId must be an exact native Reaction record within 422..453.");
+                if (!seenReactionIds.Add(rule.AbilityId))
+                    report.Error(scope, "duplicate Reaction ability ownership is not allowed.");
+                if (!DclReactions.IsSupportedMode(rule.Mode))
+                    report.Error(scope, "Mode must be courage, caution, or neutral.");
+                if (rule.FlatChance is < -1 or > 100)
+                    report.Error(scope, "FlatChance must be -1 (unused) or 0..100.");
+                if (rule.NormalizedMode == "neutral" && string.IsNullOrWhiteSpace(rule.ChanceFormula) && rule.FlatChance < 0)
+                    report.Error(scope, "neutral reactions require FlatChance 0..100 or ChanceFormula.");
+                if (rule.NormalizedMode is "courage" or "caution" && rule.FlatChance >= 0 && string.IsNullOrWhiteSpace(rule.ChanceFormula))
+                    report.Warn(scope, "FlatChance is ignored by the default courage/caution curve; use ChanceFormula to author a custom curve.");
+                if (!string.IsNullOrWhiteSpace(rule.ConditionFormula))
+                    report.Warn(scope,
+                        settings.DclHexWardEnabled && rule.AbilityId == 443
+                            ? "ConditionFormula is evaluated at Hex Ward's successful incoming-result commit because the native dispatcher has no carrier-443 branch. It reserves a producer request but does not consume cadence before pass-2 acceptance."
+                            : "ConditionFormula can suppress an existing native reaction evaluation by setting its chance to zero. It cannot create a new trigger window the native dispatcher never evaluates, and it does not consume cadence state.");
+                if (rule.VmInternalAvoidance)
+                    report.Warn(scope, "VmInternalAvoidance reads the exact Reaction id from the calc-entry order record and temporarily virtualizes defender Brave only inside computeActionResult, covering equipped or innate VM-owned avoidance such as Shirahadori. This path is Strong offline and requires a live vertical slice.");
+            }
+
+            report.Warn("DclReactionTaxonomyEnabled", "the four real-code reaction gates receive the exact evaluated Reaction id and an authored chance; VmInternalAvoidance rules additionally read the calc-entry order-record id, substitute defender Brave inside computeActionResult, and restore it at the guarded sole exit. Native effects and RNG remain engine-owned. The hybrid path is Strong offline and requires one live vertical slice before deployment.");
+        }
         if (settings.DclMissKindValue is < 0 or > 255)
             report.Error("DclMissKindValue", "DclMissKindValue must be within 0..255.");
         if (settings.DclMissOutputControlEnabled)
@@ -142,6 +573,19 @@ internal static class RuntimeSettingsValidator
                 report.Error("DclMissKindExpectedBytes", "Expected bytes are required for the result-kind commit hook.");
             report.Warn("DclMissOutputControlEnabled",
                 "installs a THIRD managed hook at the result-kind commit site (DclMissKindRva, default 0x205B38): the VM always connects (both outcomes get the all-zero evade stamp), the pre-clamp zeroes the staged debit on a cached MISS, and the hook flips the committed outcome-kind byte +0x1C0 to DclMissKindValue. The site is Strong (static disassembly 2026-07-04) but UNPROVEN live until LT9; the double AOB guard disables the whole feature on any byte mismatch.");
+            if (settings.DclMissSelectorOutcomeEnabled && string.IsNullOrWhiteSpace(settings.ResultSelectorProbeExpectedBytes))
+                report.Error("DclMissSelectorOutcomeEnabled", "the selector outcome hook requires ResultSelectorProbeExpectedBytes for its AOB guard.");
+            if (settings.DclMissSelectorOutcomeEnabled)
+                report.Warn("DclMissSelectorOutcomeEnabled", "a cached DCL miss is delivered through selector 0x205210 by forcing kind=miss and +0x1BE=0 (evade/no-damage branch).");
+            if (settings.DclMissSuppressReactionsEnabled)
+                report.Warn("DclMissSuppressReactionsEnabled", "the four real-code Brave-gate reaction rolls preserve their natural chance on DCL hits and force chance 0 on cached DCL misses.");
+        }
+        else
+        {
+            if (settings.DclMissSelectorOutcomeEnabled)
+                report.Error("DclMissSelectorOutcomeEnabled", "requires DclMissOutputControlEnabled.");
+            if (settings.DclMissSuppressReactionsEnabled)
+                report.Error("DclMissSuppressReactionsEnabled", "requires DclMissOutputControlEnabled.");
         }
         ValidateDclMissPresentation(settings, report);
         if (settings.HookRegisterProbeMaxLogs < 0)
@@ -184,12 +628,24 @@ internal static class RuntimeSettingsValidator
         }
         ValidateResultSelectorProbe(settings, report);
         ValidateDclCounterPathProbe(settings, report);
-        if (settings.PreviewHitPctControlEnabled)
+        ValidateDclReactionCommitProbe(settings, report);
+        ValidateDclReactionPreSelectorProbe(settings, report);
+        ValidateDclReactionMaterializationProbe(settings, report);
+        ValidateDclReactionOrderRewrite(settings, report);
+        ValidateDclHexWard(settings, report);
+        ValidateDclReactionEffectProbe(settings, report);
+        ValidateDclAutoPotionConsumeProbe(settings, report);
+        ValidateDclWeaponLineOfFireProbe(settings, report);
+        ValidateDclCalcProvenanceProbe(settings, report);
+        if (settings.PreviewHitPctControlEnabled || settings.DclPreviewHitPctEnabled)
         {
             if (settings.PreviewHitPctRva <= 0)
                 report.Error("PreviewHitPctRva", "PreviewHitPctRva must be positive.");
             if (string.IsNullOrWhiteSpace(settings.PreviewHitPctExpectedBytes))
                 report.Error("PreviewHitPctExpectedBytes", "Expected bytes are required for the preview hit% hook.");
+        }
+        if (settings.PreviewHitPctControlEnabled)
+        {
             if (settings.PreviewHitPctForcedValue is < -1 or > 0xFFFF)
                 report.Error("PreviewHitPctForcedValue", "Forced value must be -1 (observe) or 0..65535.");
             if (!settings.PreviewHitPctLogOnly && settings.PreviewHitPctForcedValue >= 0)
@@ -224,9 +680,13 @@ internal static class RuntimeSettingsValidator
             if (settings.StagedBundleForceResFlag is < -1 or > 0xFF)
                 report.Error("StagedBundleForceResFlag", "Force result flag must be -1 or a byte 0..255.");
             if (settings.StagedBundleForceAilment is < -1 or > 0xFFFF)
-                report.Error("StagedBundleForceAilment", "Force ailment must be -1 or a word 0..65535.");
+                report.Error("StagedBundleForceAilment", "Legacy auxiliary-word force must be -1 or a word 0..65535.");
             if (settings.StagedBundleForceDmg is < -1 or > 0xFFFF)
                 report.Error("StagedBundleForceDmg", "Force dmg must be -1 or a word 0..65535.");
+            if (settings.StagedBundleForceAilment >= 0)
+                report.Error("StagedBundleForceAilment", "+0x1A8 is an item/inventory side-effect id, not a staged status id; this legacy write is retired and blocked.");
+            if (settings.StagedBundleForceApplyMask >= 0)
+                report.Error("StagedBundleForceApplyMask", "+0x1D0 bit 0x08 gates the item/inventory side-effect path, not status application; this legacy write is retired and blocked.");
             if (settings.StagedBundleForceTargetCharId >= 0 &&
                 (settings.StagedBundleForceKind >= 0 || settings.StagedBundleForceAilment >= 0 ||
                  settings.StagedBundleForceApplyMask >= 0 || settings.StagedBundleForceDmg >= 0 ||
@@ -260,6 +720,8 @@ internal static class RuntimeSettingsValidator
                 report.Error("ReactionChanceForcedChance", "Forced chance must be -1 (observe) or 0..100.");
             if (settings.ReactionChanceForcedChance >= 0)
                 report.Warn("ReactionChanceControlEnabled", "reaction chance control overrides the Brave-gate on all 4 real-code roll sites; 0 suppresses every reaction (Blade Grasp/Hamedo/Counter...), 100 forces them.");
+            if (settings.DclMissSuppressReactionsEnabled)
+                report.Error("ReactionChanceControlEnabled", "cannot share the four reaction roll sites with DclMissSuppressReactionsEnabled; disable the global reaction chance control.");
         }
         if (settings.ItemTableEvadeZeroEnabled)
             report.Warn("ItemTableEvadeZeroEnabled", "zeroes weapon W-Ev + shield + accessory evade in the loaded item stat tables every poll (all items, both teams; sanity-gated on Venetian Shield bytes). Class evade (+0x4B) is job-derived and NOT covered — pair with CalcEntryEvadeStamp/EvadeOverride for full force-hit.");
@@ -298,7 +760,7 @@ internal static class RuntimeSettingsValidator
                      })
                 if (v is < -1 or > 0xFF)
                     report.Error($"EvadeCopierOverride{name}", "Evade byte must be -1 (leave) or 0..255.");
-            report.Warn("EvadeCopierOverrideEnabled", "airtight evade override detours the 3 equip/refresh copier tails (0x59F93C/0x285553/0x396757) and over-stamps the defender's evade bytes every refresh; all=0 forces HIT, one source high forces that avoid type. Retires the EvadeOverride poll.");
+            report.Warn("EvadeCopierOverrideEnabled", "airtight evade override detours the verified equip/refresh copier tails (0x2854DB/0x3966BF) and over-stamps the defender's evade bytes every refresh; all=0 forces HIT, one source high forces that avoid type. Retires the EvadeOverride poll.");
         }
         if (settings.PreviewForecastPokeEnabled)
         {
@@ -355,8 +817,15 @@ internal static class RuntimeSettingsValidator
                 report.Warn("PreClampManagedCallbackEnabled", "managed callback calls C# from the native pre-clamp hook; use only for a tightly guarded ABI proof until live-stable.");
                 if (settings.PreClampManagedCallbackForcedDebit < 0 &&
                     !settings.PreClampManagedCallbackActorFormulaEnabled &&
-                    !(settings.DclPipelineEnabled && !string.IsNullOrWhiteSpace(settings.DclDamageFormula)))
-                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit, PreClampManagedCallbackActorFormulaEnabled, or DclPipelineEnabled with DclDamageFormula.");
+                    !(settings.DclPipelineEnabled &&
+                      (!string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
+                       !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
+                       !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
+                       !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) || settings.DclStatusControlEnabled ||
+                       settings.DclInstantKoControlEnabled ||
+                       settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled || settings.DclPreviewAmountEnabled ||
+                       settings.DclReactionTaxonomyEnabled)))
+                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit, PreClampManagedCallbackActorFormulaEnabled, or a DCL HP/MP/status/KO/hit/reaction outcome.");
                 if (settings.PreClampManagedCallbackActorFormulaEnabled)
                     report.Warn("PreClampManagedCallbackActorFormulaEnabled", "actor formula resolves caster/action from the pre-clamp frame; use only in controlled captures until it is live-stable across action families.");
             }
@@ -541,8 +1010,8 @@ internal static class RuntimeSettingsValidator
                 "Confine blast radius with MaxWrites / TargetCharId / MatchEvadeType.");
     }
 
-    // OBSERVE-ONLY DCL counter-path probe: an ExecuteFirst hook at fn entry 0x30C798 (Strong-static
-    // candidate for the counter/reaction result-staging path that bypasses computeActionResult 0x309A44,
+    // OBSERVE-ONLY DCL counter-path probe: an ExecuteFirst hook at fn entry 0x30C700 (Strong-static
+    // candidate for the counter/reaction result-staging path that bypasses computeActionResult 0x3099AC,
     // per work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2). It logs [DCL-CTRPATH] with the
     // record ptr, target idx, result bytes and HP; it never writes engine memory.
     private static void ValidateDclCounterPathProbe(RuntimeSettings settings, SettingsValidationReport report)
@@ -556,13 +1025,273 @@ internal static class RuntimeSettingsValidator
             if (string.IsNullOrWhiteSpace(settings.DclCounterPathProbeExpectedBytes))
                 report.Error("DclCounterPathProbeExpectedBytes", "Expected bytes are required for the counter-path probe (they double as the AOB guard).");
             report.Warn("DclCounterPathProbeEnabled",
-                "observe-only RE probe at the Strong-static counter result-staging site (fn 0x30C798): logs [DCL-CTRPATH] record/targetIdx/e8/e9/hp per fire, no writes to game memory. Counter-specificity is a Hypothesis this test settles (also fires for normal actions => it is a shared commit). Use only for short controlled captures.");
+                "observe-only RE probe at the Strong-static counter result-staging site (fn 0x30C700): logs [DCL-CTRPATH] record/targetIdx/e8/e9/hp per fire, no writes to game memory. Counter-specificity is a Hypothesis this test settles (also fires for normal actions => it is a shared commit). Use only for short controlled captures.");
         }
     }
 
-    // STATUS OUTPUT-CONTROL (LT10-B): observe + rewrite the status the VM staged on a DCL-processed
-    // hit in the pre-clamp callback. Suppress and force are mutually exclusive; the staged encodings
-    // are Strong-static (the probe run refines them), so the write modes carry a WARN.
+    // Reaction action-queue commit probe/control. Pass 2 is the live-proven native Reaction commit;
+    // guarded static actor-construction boundaries also cover passes 0 and 1. Pass 1 carries ordinary
+    // actions, while pass 0 remains family-unclassified. Only pass 2 hosts controls.
+    private static void ValidateDclReactionCommitProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclReactionCommitProbeMaxLogs < 0)
+            report.Error("DclReactionCommitProbeMaxLogs", "DclReactionCommitProbeMaxLogs must be nonnegative.");
+        if (settings.DclReactionCommitProbeEnabled)
+        {
+            if (settings.DclReactionCommitProbeRva <= 0)
+                report.Error("DclReactionCommitProbeRva", "DclReactionCommitProbeRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.DclReactionCommitProbeExpectedBytes))
+                report.Error("DclReactionCommitProbeExpectedBytes", "Expected bytes are required for the reaction-commit probe (they double as the AOB guard).");
+            report.Warn("DclReactionCommitProbeEnabled",
+                settings.DclReactionActionReplacementEnabled || settings.DclReactionRetargetEnabled
+                    ? "guarded RE hooks cover the proven pass-2 native Reaction commit plus guarded pass-0/1 queue boundaries; only native Reaction ids with agreeing actor copies emit [DCL-REACTION-COMMIT], ordinary pass noise is tagged separately, and only pass 2 hosts the action-replacement/retarget controls."
+                    : "observe-only RE hooks cover the proven pass-2 native Reaction commit plus guarded pass-0/1 queue boundaries: native Reaction ids with agreeing actor copies emit [DCL-REACTION-COMMIT], ordinary pass noise is tagged separately, and no cadence or game memory is changed. Use only for a short controlled capture.");
+        }
+
+        if (settings.DclReactionActionReplacementEnabled)
+        {
+            if (!settings.DclReactionCommitProbeEnabled)
+                report.Error("DclReactionActionReplacementEnabled", "reaction action replacement requires DclReactionCommitProbeEnabled because it rides the guarded commit hook.");
+            if (settings.DclReactionActionReplacementCarrierId is < 422 or > 453)
+                report.Error("DclReactionActionReplacementCarrierId", "carrier id must be a native Reaction id in 422..453.");
+            if (settings.DclReactionActionReplacementAbilityId is < 0 or > 511)
+                report.Error("DclReactionActionReplacementAbilityId", "replacement action id must be within 0..511 (0 is Basic Attack).");
+            if (settings.DclReactionActionReplacementMinTargetCount is < 1 or > 8)
+                report.Error("DclReactionActionReplacementMinTargetCount", "minimum captured target count must be within 1..8.");
+            if (settings.DclReactionActionReplacementMaxWrites is < 1 or > 32)
+                report.Error("DclReactionActionReplacementMaxWrites", "maximum live replacement writes must be within 1..32.");
+            if (!settings.DclReactionActionReplacementLogOnly)
+                report.Error("DclReactionActionReplacementEnabled", "live replacement at the pass-2 commit is retired: carrier delivery overwrites actor+0x142 afterward. Use log-only until a post-materialization/pre-execution boundary is bound.");
+            if (settings.DclReactionActionReplacementLogOnly)
+                report.Warn("DclReactionActionReplacementEnabled",
+                    "reaction action replacement is LOG-ONLY: matching commits report would-write intent but actor+0x142 remains native.");
+        }
+
+        if (settings.DclReactionRetargetEnabled)
+        {
+            if (!settings.DclReactionCommitProbeEnabled)
+                report.Error("DclReactionRetargetEnabled", "reaction retarget requires DclReactionCommitProbeEnabled because it rides the guarded pass-2 commit hook.");
+            if (settings.DclReactionRetargetCarrierId is < 422 or > 453)
+                report.Error("DclReactionRetargetCarrierId", "retarget carrier id must be a native Reaction id in 422..453.");
+            if (settings.DclReactionRetargetMaxWrites is < 1 or > 32)
+                report.Error("DclReactionRetargetMaxWrites", "maximum live retarget writes must be within 1..32.");
+            if (!settings.DclReactionRetargetLogOnly)
+                report.Error("DclReactionRetargetEnabled", "live retarget at the pass-2 commit is retired: the target list can be empty/stale and carrier delivery overwrites it afterward. Use log-only until a post-materialization/pre-execution boundary is bound.");
+            if (settings.DclReactionRetargetLogOnly)
+                report.Warn("DclReactionRetargetEnabled",
+                    "reaction retarget is LOG-ONLY: a matching pass-2 commit reports the incoming source as the candidate target without changing actor+0x1A9/+0x1AA.");
+        }
+    }
+
+    private static void ValidateDclReactionPreSelectorProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclReactionPreSelectorProbeMaxLogs < 0)
+            report.Error("DclReactionPreSelectorProbeMaxLogs", "DclReactionPreSelectorProbeMaxLogs must be nonnegative.");
+        if (settings.DclReactionPreSelectorProbeEnabled)
+        {
+            if (settings.DclReactionPreSelectorProbeRva <= 0)
+                report.Error("DclReactionPreSelectorProbeRva", "DclReactionPreSelectorProbeRva must be positive.");
+            if (string.IsNullOrWhiteSpace(settings.DclReactionPreSelectorProbeExpectedBytes))
+                report.Error("DclReactionPreSelectorProbeExpectedBytes", "Expected bytes are required for the pass-2 pre-selector probe.");
+            report.Warn("DclReactionPreSelectorProbeEnabled",
+                settings.DclHexWardEnabled
+                    ? "pass-2 pre-selector probe/control snapshots all candidate words and consumes Hex Ward's successful-hit mailbox through a dynamic per-defender producer; Hex WardLogOnly controls whether carrier 443 is staged."
+                    : settings.DclReactionProducerEnabled
+                        ? "pass-2 pre-selector probe/control snapshots all candidate words and hosts the separately guarded reaction producer."
+                        : "observe-only pass-2 pre-selector probe: snapshots source/eval globals, incoming actor, and all 21 unit+0x1CE candidate words before native consumption. It never stages a carrier or mutates game memory.");
+        }
+
+        if (!settings.DclReactionProducerEnabled)
+            return;
+
+        if (!settings.DclReactionPreSelectorProbeEnabled)
+            report.Error("DclReactionProducerEnabled", "reaction producer requires DclReactionPreSelectorProbeEnabled because it rides the AOB-guarded pass-2 hook.");
+        if (settings.DclReactionProducerCarrierId is < 422 or > 453)
+            report.Error("DclReactionProducerCarrierId", "producer carrier id must be a native Reaction id in 422..453.");
+        if (settings.DclReactionProducerUnitIndex is < 0 or > 20)
+            report.Error("DclReactionProducerUnitIndex", "producer battle-unit index must be within 0..20.");
+        if (settings.DclReactionProducerMaxWrites is < 1 or > 32)
+            report.Error("DclReactionProducerMaxWrites", "maximum live producer writes must be within 1..32.");
+        if (!settings.DclReactionProducerLogOnly && !settings.DclReactionCommitProbeEnabled)
+            report.Error("DclReactionProducerEnabled", "live reaction production requires DclReactionCommitProbeEnabled so the resulting accepted queue pass is captured.");
+
+        report.Warn("DclReactionProducerEnabled",
+            settings.DclReactionProducerLogOnly
+                ? "reaction producer is LOG-ONLY: an active configured unit with an empty +0x1CE slot reports would-stage intent without mutation."
+                : "reaction producer is LIVE: it stages the configured carrier only into an active configured unit whose +0x1CE slot is empty. Keep MaxWrites=1 and require LT23 pass ownership before use.");
+    }
+
+    private static void ValidateDclReactionEffectProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclReactionEffectProbeMaxLogs < 0)
+            report.Error("DclReactionEffectProbeMaxLogs", "DclReactionEffectProbeMaxLogs must be nonnegative.");
+        if (!settings.DclReactionEffectProbeEnabled)
+            return;
+        if (settings.DclReactionEffectProbeRva <= 0)
+            report.Error("DclReactionEffectProbeRva", "DclReactionEffectProbeRva must be positive.");
+        if (string.IsNullOrWhiteSpace(settings.DclReactionEffectProbeExpectedBytes))
+            report.Error("DclReactionEffectProbeExpectedBytes", "Expected bytes are required for the state-0x2C reaction effect probe.");
+        report.Warn("DclReactionEffectProbeEnabled",
+            "observe-only state-0x2C probe after the VM execution workers: captures the executed actor, presentation/action ids, source, and target list before cleanup. It never applies an effect or consumes cadence.");
+    }
+
+    private static void ValidateDclHexWard(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclHexWardMaxLogs < 0)
+            report.Error("DclHexWardMaxLogs", "Hex Ward log cap must be nonnegative.");
+        if (!settings.DclHexWardEnabled)
+            return;
+
+        if (!settings.DclPipelineEnabled)
+            report.Error("DclHexWardEnabled", "Hex Ward requires DclPipelineEnabled for exact incoming hit/action identity.");
+        if (!settings.DclReactionTaxonomyEnabled)
+            report.Error("DclHexWardEnabled", "Hex Ward requires DclReactionTaxonomyEnabled for its managed Caution curve.");
+        var hexRules = (settings.DclReactionRules ?? []).Where(candidate => candidate.AbilityId == 443).ToArray();
+        var rule = hexRules.FirstOrDefault();
+        if (hexRules.Length != 1)
+            report.Error("DclHexWardEnabled", "Hex Ward requires exactly one DclReactionRules entry for carrier 443.");
+        else if (rule!.NormalizedMode != "caution")
+            report.Error("DclHexWardEnabled", "Hex Ward reaction 443 must use the caution (inverse-Brave) taxonomy.");
+
+        if (!settings.DclReactionPreSelectorProbeEnabled)
+            report.Error("DclHexWardEnabled", "Hex Ward requires the exact-byte-guarded pass-2 pre-selector producer boundary.");
+        if (!settings.DclReactionCommitProbeEnabled)
+            report.Error("DclHexWardEnabled", "Hex Ward requires pass-2 commit capture; cadence and effect delivery are forbidden before acceptance.");
+        if (settings.DclReactionProducerEnabled)
+            report.Error("DclHexWardEnabled", "disable the fixed-index reaction test producer; Hex Ward owns the dynamic per-defender producer on the same hook.");
+
+        if (!settings.DclReactionMaterializationProbeEnabled || !settings.DclReactionOrderRewriteEnabled)
+            report.Error("DclHexWardEnabled", "Hex Ward requires the guarded accepted-order rewrite boundary.");
+        else
+        {
+            if (settings.DclReactionOrderRewriteCarrierId != 443 ||
+                !settings.DclReactionOrderRewriteRetargetSource ||
+                settings.DclReactionOrderRewriteActionEnabled)
+                report.Error("DclHexWardEnabled", "Hex Ward order rewrite must target exact carrier 443, retarget to source, and preserve the native carrier action head.");
+            if (settings.DclReactionOrderRewriteExpectedActionType != 1 ||
+                settings.DclReactionOrderRewriteExpectedAbilityId != 0)
+                report.Error("DclHexWardEnabled", "Hex Ward live/order audit requires the proven generic-443 native head type=1, ability=0.");
+            if (!settings.DclHexWardLogOnly && settings.DclReactionOrderRewriteLogOnly)
+                report.Error("DclHexWardEnabled", "live Hex Ward requires live accepted-order source retargeting.");
+        }
+
+        if (settings.DclHexWardEffect is not ("blind" or "brave-down"))
+            report.Error("DclHexWardEffect", "Hex Ward effect must be 'blind' or 'brave-down'.");
+        if (settings.DclHexWardForcedRoll is < -1 or > 99)
+            report.Error("DclHexWardForcedRoll", "Hex Ward forced roll must be -1 (RNG) or 0..99.");
+        if (settings.DclHexWardBlindDurationTargetTurns is < 0 or > 99)
+            report.Error("DclHexWardBlindDurationTargetTurns", "Hex Ward Blind duration must be within 0..99 target turns.");
+        if (settings.DclHexWardBraveDecrease is < 1 or > 100)
+            report.Error("DclHexWardBraveDecrease", "Hex Ward Brave decrease must be within 1..100.");
+        if (settings.DclHexWardBraveFloor is < 0 or > 100)
+            report.Error("DclHexWardBraveFloor", "Hex Ward Brave floor must be within 0..100.");
+        if (settings.DclHexWardMaxWrites is < 1 or > 32)
+            report.Error("DclHexWardMaxWrites", "Hex Ward live producer writes must be bounded within 1..32.");
+
+        report.Warn("DclHexWardEnabled", settings.DclHexWardLogOnly
+            ? "Hex Ward is LOG-ONLY: the managed roll and exact dynamic producer intent are audited without staging carrier 443 or delivering an effect."
+            : "Hex Ward is LIVE and bounded: accepted managed Caution reservations stage carrier 443, retarget its accepted order to the source, then consume cadence and deliver one managed effect only at exact pass-2 commit.");
+    }
+
+    private static void ValidateDclReactionMaterializationProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclReactionMaterializationProbeMaxLogs < 0)
+            report.Error("DclReactionMaterializationProbeMaxLogs", "DclReactionMaterializationProbeMaxLogs must be nonnegative.");
+        if (!settings.DclReactionMaterializationProbeEnabled)
+            return;
+        if (settings.DclReactionMaterializationProbeRva <= 0)
+            report.Error("DclReactionMaterializationProbeRva", "DclReactionMaterializationProbeRva must be positive.");
+        if (string.IsNullOrWhiteSpace(settings.DclReactionMaterializationProbeExpectedBytes))
+            report.Error("DclReactionMaterializationProbeExpectedBytes", "Expected bytes are required for the accepted Reaction materialization probe.");
+        report.Warn("DclReactionMaterializationProbeEnabled",
+            settings.DclReactionOrderRewriteEnabled
+                ? "accepted pass-2 audit hook after carrier-specific order materialization and before actor construction: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0 around the separately validated guarded rewrite controller."
+                : "observe-only accepted pass-2 probe after carrier-specific order materialization and before actor construction: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0. It never changes the order or other game memory.");
+    }
+
+    private static void ValidateDclReactionOrderRewrite(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (!settings.DclReactionOrderRewriteEnabled)
+            return;
+
+        if (!settings.DclReactionMaterializationProbeEnabled)
+            report.Error("DclReactionOrderRewriteEnabled",
+                "accepted-order rewrite requires DclReactionMaterializationProbeEnabled because it shares that exact-byte-guarded boundary and audit ring.");
+        if (settings.DclReactionOrderRewriteCarrierId is < 422 or > 453)
+            report.Error("DclReactionOrderRewriteCarrierId", "carrier id must be a native Reaction id in 422..453.");
+        if (!settings.DclReactionOrderRewriteActionEnabled && !settings.DclReactionOrderRewriteRetargetSource)
+            report.Error("DclReactionOrderRewriteEnabled", "enable action replacement, source retargeting, or both.");
+        if (settings.DclReactionOrderRewriteActionEnabled)
+        {
+            if (settings.DclReactionOrderRewriteActionType is < 0 or > 255)
+                report.Error("DclReactionOrderRewriteActionType", "replacement action type must be within 0..255.");
+            if (settings.DclReactionOrderRewriteAbilityId is < 0 or > 511)
+                report.Error("DclReactionOrderRewriteAbilityId", "replacement ability id must be within 0..511.");
+        }
+        if (settings.DclReactionOrderRewriteExpectedActionType is < -1 or > 255)
+            report.Error("DclReactionOrderRewriteExpectedActionType", "expected native action type must be -1 (any) or 0..255.");
+        if (settings.DclReactionOrderRewriteExpectedAbilityId is < -1 or > 511)
+            report.Error("DclReactionOrderRewriteExpectedAbilityId", "expected native ability id must be -1 (any) or 0..511.");
+        if (!settings.DclReactionOrderRewriteLogOnly &&
+            (settings.DclReactionOrderRewriteExpectedActionType < 0 || settings.DclReactionOrderRewriteExpectedAbilityId < 0))
+            report.Error("DclReactionOrderRewriteEnabled",
+                "live accepted-order writes require exact expected native action type and ability id guards; -1 is allowed only in log-only mode.");
+        if (settings.DclReactionOrderRewriteMaxWrites is < 1 or > 32)
+            report.Error("DclReactionOrderRewriteMaxWrites", "maximum accepted-order writes must be within 1..32.");
+
+        report.Warn("DclReactionOrderRewriteEnabled",
+            settings.DclReactionOrderRewriteLogOnly
+                ? "accepted-order rewrite is LOG-ONLY: matching carrier orders are audited at the proven post-materialization/pre-actor boundary without changing game memory."
+                : "accepted-order rewrite is LIVE: exact carrier/original-order guards and the bounded write cap apply before actor construction; use only with a controlled fixture and matching effect probe.");
+    }
+
+    private static void ValidateDclAutoPotionConsumeProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclAutoPotionConsumeProbeMaxLogs < 0)
+            report.Error("DclAutoPotionConsumeProbeMaxLogs", "DclAutoPotionConsumeProbeMaxLogs must be nonnegative.");
+        if (!settings.DclAutoPotionConsumeProbeEnabled)
+            return;
+        if (settings.DclAutoPotionConsumeProbeRva <= 0)
+            report.Error("DclAutoPotionConsumeProbeRva", "DclAutoPotionConsumeProbeRva must be positive.");
+        if (string.IsNullOrWhiteSpace(settings.DclAutoPotionConsumeProbeExpectedBytes))
+            report.Error("DclAutoPotionConsumeProbeExpectedBytes", "Expected bytes are required for the Auto-Potion consumption probe.");
+        report.Warn("DclAutoPotionConsumeProbeEnabled",
+            "observe-only shared item-consumption probe: records native item/count operands and order context. It never changes inventory or reaction state.");
+    }
+
+    private static void ValidateDclWeaponLineOfFireProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclWeaponLineOfFireProbeMaxLogs < 0)
+            report.Error("DclWeaponLineOfFireProbeMaxLogs", "DclWeaponLineOfFireProbeMaxLogs must be nonnegative.");
+        if (!settings.DclWeaponLineOfFireProbeEnabled)
+            return;
+        if (settings.DclWeaponLineOfFireArcRva <= 0)
+            report.Error("DclWeaponLineOfFireArcRva", "DclWeaponLineOfFireArcRva must be positive.");
+        if (settings.DclWeaponLineOfFireDirectRva <= 0)
+            report.Error("DclWeaponLineOfFireDirectRva", "DclWeaponLineOfFireDirectRva must be positive.");
+        if (settings.DclWeaponLineOfFireArcRva == settings.DclWeaponLineOfFireDirectRva)
+            report.Error("DclWeaponLineOfFireProbeEnabled", "Arc and Direct line-of-fire probe RVAs must be distinct.");
+        if (string.IsNullOrWhiteSpace(settings.DclWeaponLineOfFireExpectedBytes))
+            report.Error("DclWeaponLineOfFireExpectedBytes", "Expected bytes are required for the weapon line-of-fire probe.");
+        report.Warn("DclWeaponLineOfFireProbeEnabled",
+            "observe-only post-resolver hooks: record Arc/Direct intended versus reached/intercepted unit indices. They never call a resolver or change targeting state.");
+    }
+
+    private static void ValidateDclCalcProvenanceProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclCalcProvenanceProbeMaxLogs < 0)
+            report.Error("DclCalcProvenanceProbeMaxLogs", "DclCalcProvenanceProbeMaxLogs must be nonnegative.");
+        if (!settings.DclCalcProvenanceProbeEnabled)
+            return;
+        if (settings.CalcEntryProbeRva <= 0)
+            report.Error("CalcEntryProbeRva", "The calc-provenance probe needs a positive CalcEntryProbeRva.");
+        report.Warn("DclCalcProvenanceProbeEnabled",
+            "observe-only calc-entry extension: captures caller/state provenance and never changes native state, formulas, outcomes, or DCL caches.");
+    }
+
+    // LEGACY STAGED-AUXILIARY probe/control. LT13 reclassified +0x1A8 as an item id and +0x1D0 bit
+    // 0x08 as the item/inventory side-effect gate. Observation remains useful; every legacy write
+    // mode is rejected because it can mutate item return/consumption behavior, not status output.
     private static void ValidateDclStatusOutputControl(RuntimeSettings settings, SettingsValidationReport report)
     {
         bool suppress = settings.DclStatusSuppressEnabled;
@@ -571,7 +1300,7 @@ internal static class RuntimeSettingsValidator
         bool anyForce = forceId || forceRaw;
 
         if (settings.DclStatusForceId is < -1 or > 0xFFFF)
-            report.Error("DclStatusForceId", "DclStatusForceId must be -1 (off) or a status id word 0..65535.");
+            report.Error("DclStatusForceId", "DclStatusForceId must be -1 (off) or a legacy auxiliary word 0..65535.");
         if (settings.DclStatusForceValue is < -1 or > 0xFF)
             report.Error("DclStatusForceValue", "DclStatusForceValue must be -1 (off) or a raw byte 0..255.");
         if (settings.DclStatusForceOffset is < 0 or > 0x1FF)
@@ -585,15 +1314,12 @@ internal static class RuntimeSettingsValidator
             report.Error("DclStatusOutputControl", "DclStatusSuppressEnabled and DclStatusForce* are mutually exclusive; a hit is either suppressed or forced, not both.");
 
         bool anyWriteMode = suppress || anyForce;
+        if (anyWriteMode)
+            report.Error("DclStatusOutputControl", "retired unsafe surface: +0x1A8/+0x1D0 control an item/inventory side effect, not status application. Use the durable status arrays (+0x1EF..+0x1F3 with +0x61..+0x65 mirrors) for status authority.");
         if (anyWriteMode && !settings.DclPipelineEnabled)
-            report.Error("DclStatusOutputControl", "status output-control runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
+            report.Error("DclStatusOutputControl", "the legacy staged-auxiliary callback runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
         if (settings.DclStatusStageProbeEnabled && !settings.DclPipelineEnabled)
-            report.Error("DclStatusStageProbeEnabled", "the staged-status probe runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
-
-        if (suppress)
-            report.Warn("DclStatusSuppressEnabled", "zeroes the staged ailment (+0x1A8) and clears the status bits on the apply-mask (+0x1D0) / result-flag (+0x1E5) on every DCL hit. The staged-status encoding is Strong-static (2026-07-04) and UNPROVEN live until LT10-B; run DclStatusStageProbeEnabled first to confirm the bytes.");
-        if (anyForce)
-            report.Warn("DclStatusForce", "writes an authored status into the staged fields (+0x1A8 id word / RAW DclStatusForceOffset byte) on every DCL hit. The encoding is Strong-static and UNPROVEN live until LT10-B; use the RAW offset/value lever to iterate without a rebuild.");
+            report.Error("DclStatusStageProbeEnabled", "the staged-auxiliary probe runs inside the DCL pre-clamp callback; enable DclPipelineEnabled.");
     }
 
     // DCL MISS PRESENTATION (LT10-C): render "Miss" instead of the "0" damage popup on a forced miss.
@@ -640,7 +1366,7 @@ internal static class RuntimeSettingsValidator
             report.Error("StatusPoke", "StatusPokeTargetCharId is set but neither StatusPokeMask nor StatusPokeValue supplies a bit mask.");
         if (settings.StatusPokeMaxWrites < 1 || settings.StatusPokeMaxWrites > 32)
             report.Error("StatusPokeMaxWrites", "StatusPokeMaxWrites must be within 1..32.");
-        report.Warn("StatusPoke", "one-shot guarded write to a unit's durable status master region (add = OR, remove = AND-NOT). Denuvo honors data writes but this status WRITE (vs observation) is UNPROVEN live until LT10-B; confine with StatusPokeMaxWrites.");
+        report.Info("StatusPoke", "one-shot guarded write to a unit's proven durable status master region (add = OR, remove = AND-NOT); confine with StatusPokeMaxWrites.");
     }
 
     // MOVE-WRITE POKE (LT10-B piggyback): one-shot write of the Move byte +0x42.
@@ -894,12 +1620,94 @@ internal static class RuntimeSettingsValidator
         foreach (var variable in settings.DclDerivedVariables)
             ValidateDerivedFormula(dclContext, variable, "DclDerivedVariables", report);
         ValidateFormula(settings.DclDamageFormula, dclContext, "DclDamageFormula", report, allowEmpty: true);
+        ValidateFormula(settings.DclHealingFormula, dclContext, "DclHealingFormula", report, allowEmpty: true);
+        ValidateFormula(settings.DclMpDebitFormula, dclContext, "DclMpDebitFormula", report, allowEmpty: true);
+        ValidateFormula(settings.DclMpCreditFormula, dclContext, "DclMpCreditFormula", report, allowEmpty: true);
+        ValidateFormula(settings.DclMpTrickleFormula, dclContext, "DclMpTrickleFormula", report, allowEmpty: true);
+        if (settings.DclPreviewAmountEnabled)
+        {
+            var previewContext = BuildDclHitFormulaContext(settings, catalog);
+            foreach (var variable in settings.DclDerivedVariables)
+                ValidateDerivedFormula(previewContext, variable, "DclDerivedVariables", report);
+            ValidateFormula(settings.DclPreviewDamageFormula, previewContext, "DclPreviewDamageFormula", report, allowEmpty: true);
+            ValidateFormula(settings.DclPreviewHealingFormula, previewContext, "DclPreviewHealingFormula", report, allowEmpty: true);
+        }
         if (settings.DclHitControlEnabled)
         {
             var hitContext = BuildDclHitFormulaContext(settings, catalog);
             foreach (var variable in settings.DclDerivedVariables)
                 ValidateDerivedFormula(hitContext, variable, "DclDerivedVariables", report);
-            ValidateFormula(settings.DclHitChanceFormula, hitContext, "DclHitChanceFormula", report, allowEmpty: true);
+            if (settings.DclPhysicalContestEnabled)
+            {
+                // Pool-capacity formulas establish the guard state and therefore cannot depend on
+                // guard.* themselves. The remaining guard surface becomes available only to the
+                // defense-value/policy formulas evaluated after pool initialization at runtime.
+                ValidateFormula(settings.DclPhysicalContestConditionFormula, hitContext, "DclPhysicalContestConditionFormula", report);
+                ValidateFormula(settings.DclAttackSkillFormula, hitContext, "DclAttackSkillFormula", report);
+                ValidateFormula(settings.DclParryUsesFormula, hitContext, "DclParryUsesFormula", report);
+                ValidateFormula(settings.DclBlockUsesFormula, hitContext, "DclBlockUsesFormula", report);
+                hitContext.Set("guard.parryRemaining", 1);
+                hitContext.Set("guard.parryMax", 1);
+                hitContext.Set("guard.blockRemaining", 1);
+                hitContext.Set("guard.blockMax", 1);
+                ValidateFormula(settings.DclDodgeFormula, hitContext, "DclDodgeFormula", report);
+                ValidateFormula(settings.DclParryFormula, hitContext, "DclParryFormula", report);
+                ValidateFormula(settings.DclBlockFormula, hitContext, "DclBlockFormula", report);
+                ValidateFormula(settings.DclDefenseAllowedFormula, hitContext, "DclDefenseAllowedFormula", report);
+                ValidateFormula(settings.DclDefenseModifierFormula, hitContext, "DclDefenseModifierFormula", report);
+                ValidateFormula(settings.DclHitChanceFormula, hitContext, "DclHitChanceFormula", report);
+            }
+            else
+            {
+                ValidateFormula(settings.DclHitChanceFormula, hitContext, "DclHitChanceFormula", report);
+            }
+            if (settings.DclMagicEvadeEnabled)
+            {
+                ValidateFormula(settings.DclMagicEvadeConditionFormula, hitContext, "DclMagicEvadeConditionFormula", report);
+                ValidateFormula(settings.DclMagicEvadeFormula, hitContext, "DclMagicEvadeFormula", report);
+            }
+        }
+        for (int i = 0; i < settings.DclStatusRules.Count; i++)
+        {
+            var rule = settings.DclStatusRules[i];
+            string scope = $"DclStatusRules.{RuleName(rule.Name, i + 1)}";
+            dclContext.Set("status.byteIndex", rule.StatusByteIndex);
+            dclContext.Set("status.mask", rule.StatusMask);
+            dclContext.Set("status.add", rule.IsAdd ? 1 : 0);
+            dclContext.Set("status.remove", rule.IsRemove ? 1 : 0);
+            ValidateFormula(rule.ConditionFormula, dclContext, $"{scope}.ConditionFormula", report, allowEmpty: true);
+            if (rule.IsAdd)
+                ValidateFormula(rule.ResistanceFormula, dclContext, $"{scope}.ResistanceFormula", report);
+        }
+        for (int i = 0; i < settings.DclInstantKoRules.Count; i++)
+        {
+            var rule = settings.DclInstantKoRules[i];
+            string scope = $"DclInstantKoRules.{RuleName(rule.Name, i + 1)}";
+            ValidateFormula(rule.ConditionFormula, dclContext, $"{scope}.ConditionFormula", report, allowEmpty: true);
+            ValidateFormula(rule.ResistanceFormula, dclContext, $"{scope}.ResistanceFormula", report);
+        }
+        for (int i = 0; i < settings.DclReactionRules.Count; i++)
+        {
+            var rule = settings.DclReactionRules[i];
+            string scope = $"DclReactionRules.{RuleName(rule.Name, i + 1)}";
+            DclReactions.AddRuleVariables(dclContext, rule.AbilityId, 70, rule.FlatChance, rule.NormalizedMode);
+            DclReactions.AddIncomingVariables(dclContext, new DclReactionIncomingContext(
+                SourceValid: true,
+                ActionValid: true,
+                SourceIdx: 3,
+                TargetIdx: 7,
+                SourceCharId: 2,
+                ActionType: 1,
+                AbilityId: 0,
+                HitDecisionKnown: true,
+                Hit: false,
+                PhysicalOutcome: (int)DclPhysicalOutcome.Defended,
+                DefenseKind: (int)DclDefenseKind.Block,
+                SourceTurnEpoch: 4,
+                TargetTurnEpoch: 6,
+                Origin: "validator"));
+            ValidateFormula(rule.ConditionFormula, dclContext, $"{scope}.ConditionFormula", report, allowEmpty: true);
+            ValidateFormula(rule.ChanceFormula, dclContext, $"{scope}.ChanceFormula", report, allowEmpty: true);
         }
         ValidateFormula(settings.MpRewriteConditionFormula, context, "MpRewriteConditionFormula", report, allowEmpty: true);
         ValidateFormula(settings.FinalMpChangeFormula, context, "FinalMpChangeFormula", report, allowEmpty: true);

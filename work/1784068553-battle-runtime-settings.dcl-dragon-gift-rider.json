@@ -1,0 +1,137 @@
+{
+  "_note": "Offline Dragon's Gift rider profile. Pair only with --dcl-support-status-rider-neuter 252: formula 0x5B preserves its Dragon/Hydra eligibility gate and paired target-heal/source-sacrifice transaction while DCL replaces the complete native Cancel packet.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Dragon's Gift Darkness",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Confusion",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 16,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Silence",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Oil",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 128,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Berserk",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Frog",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 2,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Poison",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 128,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Stop",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 2,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Sleep",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 16,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Don't Move",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Don't Act",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 4,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    }
+  ]
+}
+

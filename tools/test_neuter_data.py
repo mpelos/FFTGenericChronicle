@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import shutil
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
@@ -44,6 +45,10 @@ def main() -> int:
     check_ability_classification(damaging)
     check_sentinel_classification()
     check_override_sqlite(damaging)
+    check_dcl_instant_ko_neuter()
+    check_dcl_status_rider_neuter()
+    check_dcl_support_status_rider_neuter()
+    check_dcl_conditional_status_rider_neuter()
     check_nxd_round_trip()
     check_coverage_report()
 
@@ -156,6 +161,119 @@ def check_override_sqlite(damaging: set[int]) -> None:
         row = neuter_rows[ability_id]
         base_row = base_rows[ability_id]
         check(row[x_idx] == base_row[x_idx] and row[y_idx] == base_row[y_idx], f"{name} should keep inherited X/Y")
+
+
+def check_dcl_instant_ko_neuter() -> None:
+    with tempfile.TemporaryDirectory(prefix="gc_instant_ko_", ignore_cleanup_errors=True) as tmp:
+        candidate = Path(tmp) / "override.sqlite"
+        shutil.copyfile(neuter.NEUTER_OVERRIDE_SQLITE, candidate)
+        changed = neuter.apply_dcl_instant_ko_neuter(candidate)
+        columns = override_columns(candidate)
+        rows = read_override_rows(candidate)
+
+    check(changed == 9, f"expected nine data-neutralized instant-KO abilities, got {changed}")
+    for ability_id in neuter.DCL_INSTANT_KO_ABILITY_IDS:
+        row = rows[ability_id]
+        check(row[columns.index("Formula")] == 8, f"instant-KO ability {ability_id} must route through formula 0x08")
+        check(row[columns.index("X")] == 1 and row[columns.index("Y")] == 1,
+              f"instant-KO ability {ability_id} must retain a harmless X/Y placeholder")
+        check(row[columns.index("InflictStatus")] == 0,
+              f"instant-KO ability {ability_id} must remove the inherited native Dead rider")
+    check(314 not in neuter.DCL_INSTANT_KO_ABILITY_IDS,
+          "Bequeath Bacon/Crystal must remain outside the lethal-debit instant-KO route")
+
+    with tempfile.TemporaryDirectory(prefix="gc_instant_ko_one_", ignore_cleanup_errors=True) as tmp:
+        candidate = Path(tmp) / "override.sqlite"
+        shutil.copyfile(neuter.NEUTER_OVERRIDE_SQLITE, candidate)
+        base_rows = read_override_rows(candidate)
+        check(neuter.apply_dcl_instant_ko_neuter(candidate, [30]) == 1,
+              "a vertical slice must be able to neutralize Death without changing the other eight abilities")
+        selected_rows = read_override_rows(candidate)
+    check(selected_rows[137] == base_rows[137],
+          "selective Death neutralization must leave Magma Surge unchanged")
+
+
+def check_dcl_status_rider_neuter() -> None:
+    selected = [80, 82, 155, 200, 219, 284, 357]
+    with tempfile.TemporaryDirectory(prefix="gc_status_rider_", ignore_cleanup_errors=True) as tmp:
+        candidate = Path(tmp) / "override.sqlite"
+        shutil.copyfile(neuter.NEUTER_OVERRIDE_SQLITE, candidate)
+        before = read_override_rows(candidate)
+        changed = neuter.apply_dcl_status_rider_neuter(candidate, selected)
+        after = read_override_rows(candidate)
+        columns = override_columns(candidate)
+
+    check(changed == len(selected), "selective status-rider neutralization should report exact rows")
+    status_idx = columns.index("InflictStatus")
+    for ability_id in selected:
+        check(after[ability_id][status_idx] == 0,
+              f"status-rider ability {ability_id} must clear InflictStatus")
+        for idx, column in enumerate(columns):
+            if column == "InflictStatus":
+                continue
+            check(after[ability_id][idx] == before[ability_id][idx],
+                  f"status-rider ability {ability_id} changed unexpected column {column}")
+    check(after[202] == before[202], "unselected Bio status rider must remain unchanged")
+    check(187 not in neuter.DCL_STATUS_RIDER_ABILITY_IDS,
+          "status-only Petrify must not be accepted as an independent damage carrier")
+    check(210 not in neuter.DCL_STATUS_RIDER_ABILITY_IDS,
+          "Bioga instant KO must remain on the dedicated lethal-debit mechanism")
+    try:
+        neuter.apply_dcl_status_rider_neuter(neuter.NEUTER_OVERRIDE_SQLITE, [187])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("status-only ability 187 must fail closed in rider neutralization")
+
+
+def check_dcl_support_status_rider_neuter() -> None:
+    with tempfile.TemporaryDirectory(prefix="gc_support_status_rider_", ignore_cleanup_errors=True) as tmp:
+        candidate = Path(tmp) / "override.sqlite"
+        shutil.copyfile(neuter.NEUTER_OVERRIDE_SQLITE, candidate)
+        before = read_override_rows(candidate)
+        changed = neuter.apply_dcl_support_status_rider_neuter(candidate, [252])
+        after = read_override_rows(candidate)
+        columns = override_columns(candidate)
+
+    check(changed == 1, "Dragon's Gift support-rider neutralization should change one exact row")
+    status_idx = columns.index("InflictStatus")
+    check(after[252][status_idx] == 0, "Dragon's Gift must clear only InflictStatus")
+    for idx, column in enumerate(columns):
+        if column == "InflictStatus":
+            continue
+        check(after[252][idx] == before[252][idx],
+              f"Dragon's Gift support-rider neutralization changed unexpected column {column}")
+    try:
+        neuter.apply_dcl_support_status_rider_neuter(neuter.NEUTER_OVERRIDE_SQLITE, [277])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Self-Destruct must remain outside support-rider neutralization")
+
+
+def check_dcl_conditional_status_rider_neuter() -> None:
+    with tempfile.TemporaryDirectory(prefix="gc_conditional_status_rider_", ignore_cleanup_errors=True) as tmp:
+        candidate = Path(tmp) / "override.sqlite"
+        shutil.copyfile(neuter.NEUTER_OVERRIDE_SQLITE, candidate)
+        before = read_override_rows(candidate)
+        changed = neuter.apply_dcl_conditional_status_rider_neuter(candidate, [277])
+        after = read_override_rows(candidate)
+        columns = override_columns(candidate)
+
+    check(changed == 1, "Self-Destruct conditional rider neutralization should change one exact row")
+    status_idx = columns.index("InflictStatus")
+    check(after[277][status_idx] == 0, "Self-Destruct must clear only InflictStatus")
+    for idx, column in enumerate(columns):
+        if column == "InflictStatus":
+            continue
+        check(after[277][idx] == before[277][idx],
+              f"Self-Destruct conditional rider neutralization changed unexpected column {column}")
+    try:
+        neuter.apply_dcl_conditional_status_rider_neuter(neuter.NEUTER_OVERRIDE_SQLITE, [252])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Dragon's Gift must remain outside conditional-rider neutralization")
 
 
 def check_nxd_round_trip() -> None:

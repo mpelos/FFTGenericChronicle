@@ -1,0 +1,18 @@
+{
+  "_note": "LT29 log-only pass-2 reaction-producer vertical. Captures native candidates and reports would-stage carrier 443 for active unit index 0 only when +0x1CE is empty. It performs no game-memory writes.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 64,
+  "DclReactionPreSelectorProbeEnabled": true,
+  "DclReactionPreSelectorProbeRva": 2122665,
+  "DclReactionPreSelectorProbeExpectedBytes": "48 8D 4D D2 E8 86 CA 07 00",
+  "DclReactionPreSelectorProbeMaxLogs": 128,
+  "DclReactionProducerEnabled": true,
+  "DclReactionProducerLogOnly": true,
+  "DclReactionProducerCarrierId": 443,
+  "DclReactionProducerUnitIndex": 0,
+  "DclReactionProducerMaxWrites": 1
+}

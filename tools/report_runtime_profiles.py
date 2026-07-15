@@ -172,7 +172,7 @@ PROFILES: tuple[ProfileSpec, ...] = (
         "ko-hp-apply-probe",
         REPO / "work/battle-runtime-settings.ko-hp-apply-probe.json",
         "observe-only KO HP-apply lifecycle RE capture",
-        "Hook the 0x30A51C state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.",
+        "Hook the 0x30A484 state-apply path around pre-death status, HP clamp/write, and post-write lifecycle markers.",
         "no HP/MP rewrites",
         (
             "observe_only_death_capture",
@@ -437,8 +437,8 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("PreClampDamageRewriteForcedDebit must stay -1 in log-only capture")
         if int(settings.get("PreClampDamageRewriteForcedCredit", -1)) != -1:
             errors.append("PreClampDamageRewriteForcedCredit must stay -1 in log-only capture")
-        if int(settings.get("PreClampDamageRewriteRva", 0)) != 0x30A66F:
-            errors.append("PreClampDamageRewriteRva must be 0x30A66F")
+        if int(settings.get("PreClampDamageRewriteRva", 0)) not in {0x30A66F, 0x30A5D7}:
+            errors.append("PreClampDamageRewriteRva must match a supported executable build (0x30A66F or 0x30A5D7)")
         if str(settings.get("PreClampDamageRewriteExpectedBytes", "")).strip().upper() != "0F BF 45 06":
             errors.append("PreClampDamageRewriteExpectedBytes must match the debit read")
         if int(settings.get("PreClampPointerScanBytes", 0)) <= 0:
@@ -498,8 +498,8 @@ def invariant_errors(settings: dict[str, Any], invariant: str) -> list[str]:
             errors.append("PreClampDamageRewriteEnabled must be true")
         if truthy(settings, "PreClampDamageRewriteLogOnly"):
             errors.append("PreClampDamageRewriteLogOnly must be false")
-        if int(settings.get("PreClampDamageRewriteRva", 0)) != 0x30A66F:
-            errors.append("PreClampDamageRewriteRva must be 0x30A66F")
+        if int(settings.get("PreClampDamageRewriteRva", 0)) not in {0x30A66F, 0x30A5D7}:
+            errors.append("PreClampDamageRewriteRva must match a supported executable build (0x30A66F or 0x30A5D7)")
         if str(settings.get("PreClampDamageRewriteExpectedBytes", "")).strip().upper() != "0F BF 45 06":
             errors.append("PreClampDamageRewriteExpectedBytes must match the debit read")
         if int(settings.get("PreClampDamageRewriteTargetCharId", -1)) != 0x1E:

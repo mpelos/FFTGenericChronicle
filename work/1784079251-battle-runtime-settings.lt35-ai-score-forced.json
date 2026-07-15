@@ -1,0 +1,18 @@
+{
+  "_note": "LT35-B controlled AI-score probe. At the universal post-calc bundle boundary, make Ramza (char id 1) appear to receive lethal HP damage while logging identical calc provenance. No pre-clamp/DCL pipeline writes are enabled.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "UnitPollIntervalMs": 10,
+  "CalcEntryProbeEnabled": true,
+  "CalcEntryProbeRva": 3185068,
+  "DclCalcProvenanceProbeEnabled": true,
+  "DclCalcProvenanceProbeMaxLogs": 512,
+  "StagedBundleProbeEnabled": true,
+  "StagedBundleProbeRva": 2629394,
+  "StagedBundleForceTargetCharId": 1,
+  "StagedBundleForceKind": 0,
+  "StagedBundleForceAilment": -1,
+  "StagedBundleForceApplyMask": -1,
+  "StagedBundleForceDmg": 4095,
+  "StagedBundleForceResFlag": 128
+}

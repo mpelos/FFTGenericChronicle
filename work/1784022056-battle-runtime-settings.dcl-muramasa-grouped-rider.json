@@ -1,0 +1,41 @@
+{
+  "_note": "Offline Muramasa mechanism profile. Pair only with --dcl-status-rider-neuter 82: formula 0x20 keeps its native MA*Y HP result while DCL replaces the removed Confusion/Death Sentence random rider with one random-one contest.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Muramasa Confusion",
+      "AbilityId": 82,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "muramasa",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "Muramasa Death Sentence",
+      "AbilityId": 82,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 1,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "muramasa",
+      "ContestMode": "random-one"
+    }
+  ]
+}

@@ -41,11 +41,15 @@ public class Mod : ModBase
     private BattleContextResolver _contextResolver = null!;
     private readonly PendingActionTracker _pendingActionTracker = new();
     private readonly DclActionContextCache _dclActionCache = new();
+    private readonly DclComputePointCache _dclComputePointCache = new();
+    private readonly DclStatusPlanCache _dclStatusPlanCache = new();
     private DateTime _settingsLastWriteUtc = DateTime.MinValue;
     private string _catalogPath = "";
     private DateTime _catalogLastWriteUtc = DateTime.MinValue;
     private string _abilityCatalogPath = "";
     private DateTime _abilityCatalogLastWriteUtc = DateTime.MinValue;
+    private string _abilityMetadataPath = "";
+    private DateTime _abilityMetadataLastWriteUtc = DateTime.MinValue;
     private long _lastRuntimeReloadCheckTick;
 
     private const string BattleBasePtr = "0F B7 41 30 66 89 42 0C"; // movzx eax,[rcx+0x30]; rcx=unit (stable)
@@ -91,7 +95,7 @@ public class Mod : ModBase
     private const int SELECTOR_SLOT_SIZE = S_CONTEXT_STACK + (SELECTOR_CONTEXT_STACK_SLOTS * 8);
     private const int SELECTOR_BUFFER_SIZE = S_EVENTS + (SELECTOR_RING_SIZE * SELECTOR_SLOT_SIZE);
 
-    // Evade-INPUT probe/control buffer (hook at RVA 0x30F49C; rbx = target unit just before the VM roll).
+    // Evade-INPUT probe/control buffer (hook at RVA 0x30F404; rbx = target unit just before the VM roll).
     private const int EVADE_INPUT_RING_SIZE = 32;
     private const int EVADE_INPUT_RING_MASK = EVADE_INPUT_RING_SIZE - 1;
     private const int EI_COUNT = 0;          // dword header: total events
@@ -109,7 +113,7 @@ public class Mod : ModBase
     private const int EVADE_INPUT_SLOT_SIZE = 48;
     private const int EVADE_INPUT_BUFFER_SIZE = EI_EVENTS + (EVADE_INPUT_RING_SIZE * EVADE_INPUT_SLOT_SIZE);
 
-    // DCL COUNTER-PATH probe buffer (observe-only; hook at fn entry 0x30C798). At entry rcx = the
+    // DCL COUNTER-PATH probe buffer (observe-only; hook at fn entry 0x30C700). At entry rcx = the
     // staged result record (verified on disk: prologue cmp byte[rcx+1],0xFF then movzx eax,[rcx+0x1BC]).
     // The native shim only captures rcx into this ring; all field/HP reads happen in the managed drain
     // (safe try/catch), so the shim never touches game memory beyond reading the pointer register.
@@ -122,7 +126,153 @@ public class Mod : ModBase
     private const int CTRPATH_SLOT_SIZE = 16;
     private const int CTRPATH_BUFFER_SIZE = CP_EVENTS + (CTRPATH_RING_SIZE * CTRPATH_SLOT_SIZE);
 
-    // Roll-VERDICT probe/control buffer (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the single VM
+    // DCL REACTION-COMMIT probe/control buffer (hook at RVA 0x206421). This is the first
+    // instruction after the accepted-reaction queue path constructs its actor and stores the exact
+    // Reaction id at actor+0x18C/+0x142. The default shim is observe-only; the separately guarded,
+    // bounded action-replacement control may rewrite only actor+0x142. The poller formats evidence.
+    private const int REACTION_COMMIT_RING_SIZE = 32;
+    private const int REACTION_COMMIT_RING_MASK = REACTION_COMMIT_RING_SIZE - 1;
+    private const int RC_COUNT = 0;          // dword header: total fires
+    private const int RC_CONTROL_WRITES = 4; // dword header: bounded +0x142 replacement writes
+    private const int RC_RETARGET_WRITES = 8;// dword header: bounded target-list rewrites
+    private const int RC_EVENTS = 0x10;
+    private const int RC_SEQ = 0;            // dword (slot): sequence, written last
+    private const int RC_REACTION_ID = 4;    // dword: zero-extended ax at the boundary
+    private const int RC_REACTOR_INDEX = 8;  // dword: byte[rbx+8]
+    private const int RC_SOURCE_INDEX = 12;  // dword: incoming actor global
+    private const int RC_ACTOR = 16;         // qword: rbx reaction actor
+    private const int RC_ACTOR_ID_18C = 24;  // dword: dword[rbx+0x18C]
+    private const int RC_ACTOR_ID_142 = 28;  // dword: zero-extended word[rbx+0x142]
+    private const int RC_RECORD = 32;         // qword: qword[rbx+0x148]
+    private const int RC_TARGET_COUNT = 40;   // dword: zero-extended byte[rbx+0x1A9]
+    private const int RC_TARGET_BYTES = 48;   // qword: first eight target indices at actor+0x1AA
+    private const int RC_REPLACEMENT = 56;    // dword: 0 none, 1 would-write, 2 wrote
+    private const int RC_FINAL_ACTION_ID = 60;// dword: actual/candidate actor+0x142 id
+    private const int RC_QUEUE_PASS = 64;      // dword: native queue pass 0, 1, or 2
+    private const int RC_RETARGET = 68;        // dword: 0 none, 1 would-retarget, 2 retargeted
+    private const int RC_FINAL_TARGET = 72;    // dword: first target after control, or -1
+    private const int REACTION_COMMIT_SLOT_SIZE = 128;
+    private const int REACTION_COMMIT_BUFFER_SIZE = RC_EVENTS + (REACTION_COMMIT_RING_SIZE * REACTION_COMMIT_SLOT_SIZE);
+
+    // Pass-2 pre-selector snapshot/control. The default is observe-only and captures the exact
+    // candidate words before selector 0x282E38 consumes/clears unit+0x1CE. A separately guarded,
+    // bounded producer may stage one configured carrier into one configured active unit.
+    private const int REACTION_PRESELECT_RING_SIZE = 32;
+    private const int REACTION_PRESELECT_RING_MASK = REACTION_PRESELECT_RING_SIZE - 1;
+    private const int RPS_COUNT = 0;
+    private const int RPS_CONTROL_WRITES = 4;
+    private const int RPS_EVENTS = 0x10;
+    private const int RPS_SEQ = 0;
+    private const int RPS_SOURCE_INDEX = 4;
+    private const int RPS_EVAL_ID = 8;
+    private const int RPS_ACTOR = 16;
+    private const int RPS_ACTOR_INDEX = 24;
+    private const int RPS_ACTOR_ID_142 = 28;
+    private const int RPS_ACTOR_ID_18C = 32;
+    private const int RPS_ACTOR_RECORD = 40;
+    private const int RPS_RECORD_INDEX_1BC = 48;
+    private const int RPS_CANDIDATES = 56; // 21 words
+    private const int RPS_ACTIVE = 100;    // 21 unit-active bytes (+1)
+    private const int RPS_PRODUCER = 124;  // dword: 0 none, 1 would-stage, 2 staged
+    private const int REACTION_PRESELECT_SLOT_SIZE = 128;
+    private const int REACTION_PRESELECT_BUFFER_SIZE = RPS_EVENTS + (REACTION_PRESELECT_RING_SIZE * REACTION_PRESELECT_SLOT_SIZE);
+
+    // Dynamic Hex Ward producer mailbox. Gate callbacks reserve one byte per battle-table entry;
+    // the guarded pre-selector hook consumes each request exactly once. States: 0 idle, 1 requested,
+    // 2 staged, 3 blocked/capped, 4 would-stage (log-only).
+    private const int HWP_CONTROL_WRITES = 0;
+    private const int HWP_ATTEMPTS = 4;
+    private const int HWP_STATES = 0x10;
+    private const int HEX_WARD_PRODUCER_BUFFER_SIZE = HWP_STATES + 21;
+
+    // Accepted pass-2 materialization snapshot. At 0x2063BD the selector has returned a nonnegative
+    // reactor index in eax and left the carrier-specific 20-byte order at unit+0x1A0. The actor
+    // constructor has not run yet. The shim snapshots the complete order; it never writes game state.
+    private const int REACTION_MATERIALIZATION_RING_SIZE = 32;
+    private const int REACTION_MATERIALIZATION_RING_MASK = REACTION_MATERIALIZATION_RING_SIZE - 1;
+    private const int RM_COUNT = 0;
+    private const int RM_REWRITE_WRITE_COUNT = 4;
+    private const int RM_REWRITE_ATTEMPT_COUNT = 8;
+    private const int RM_EVENTS = 0x10;
+    private const int RM_SEQ = 0;
+    private const int RM_REACTOR_INDEX = 4;
+    private const int RM_REACTION_ID = 8;
+    private const int RM_SOURCE_INDEX = 12;
+    private const int RM_UNIT = 16;
+    private const int RM_ORDER = 24;
+    private const int RM_ORDER_00 = 32; // qword order+0x00..+0x07
+    private const int RM_ORDER_08 = 40; // qword order+0x08..+0x0F
+    private const int RM_ORDER_10 = 48; // dword order+0x10..+0x13
+    private const int RM_REWRITE_STATUS = 52;
+    private const int RM_ORIGINAL_HEAD = 56; // dword order+0x00..+0x03 before an optional rewrite
+    private const int REACTION_MATERIALIZATION_SLOT_SIZE = 64;
+    private const int REACTION_MATERIALIZATION_BUFFER_SIZE = RM_EVENTS + (REACTION_MATERIALIZATION_RING_SIZE * REACTION_MATERIALIZATION_SLOT_SIZE);
+
+    // State-0x2C Reaction effect-completion snapshot. At RVA 0x212C2E the current actor resolver has
+    // returned the executed reaction actor in rax, after the state-0x2B VM workers and before cleanup.
+    private const int REACTION_EFFECT_RING_SIZE = 32;
+    private const int REACTION_EFFECT_RING_MASK = REACTION_EFFECT_RING_SIZE - 1;
+    private const int RCE_COUNT = 0;
+    private const int RCE_EVENTS = 0x10;
+    private const int RCE_SEQ = 0;
+    private const int RCE_ACTOR = 8;
+    private const int RCE_ACTOR_INDEX = 16;
+    private const int RCE_REACTION_ID = 20;
+    private const int RCE_ACTION_ID = 24;
+    private const int RCE_SOURCE_INDEX = 28;
+    private const int RCE_TARGET_COUNT = 32;
+    private const int RCE_TARGET_BYTES = 40;
+    private const int RCE_BATTLE_STATE = 48;
+    private const int REACTION_EFFECT_SLOT_SIZE = 64;
+    private const int REACTION_EFFECT_BUFFER_SIZE = RCE_EVENTS + (REACTION_EFFECT_RING_SIZE * REACTION_EFFECT_SLOT_SIZE);
+
+    // Observe-only item inventory decrement probe at 0x2816B2. The site is shared by item use;
+    // action id 441 plus selected item 240..242 classifies the Auto-Potion case.
+    private const int AUTO_POTION_CONSUME_RING_SIZE = 32;
+    private const int AUTO_POTION_CONSUME_RING_MASK = AUTO_POTION_CONSUME_RING_SIZE - 1;
+    private const int APC_COUNT = 0;
+    private const int APC_EVENTS = 0x10;
+    private const int APC_SEQ = 0;
+    private const int APC_ITEM_ID = 4;
+    private const int APC_OLD_COUNT = 8;
+    private const int APC_DECREMENT = 12;
+    private const int APC_CONTEXT = 16;
+    private const int APC_CHAR_ID = 24;
+    private const int APC_CONTEXT_INDEX = 28;
+    private const int APC_ACTION_ID = 32;
+    private const int APC_SELECTED_ITEM_ID = 36;
+    private const int APC_FLAGS_1EE = 40;
+    private const int APC_MARKER_1BA = 44;
+    private const int APC_SOURCE_INDEX = 48;
+    private const int APC_BATTLE_STATE = 52;
+    private const int AUTO_POTION_CONSUME_SLOT_SIZE = 64;
+    private const int AUTO_POTION_CONSUME_BUFFER_SIZE = APC_EVENTS + (AUTO_POTION_CONSUME_RING_SIZE * AUTO_POTION_CONSUME_SLOT_SIZE);
+
+    // Observe-only post-resolver weapon line-of-fire events (Arc and Direct).
+    private const int WEAPON_LOF_RING_SIZE = 32;
+    private const int WEAPON_LOF_RING_MASK = WEAPON_LOF_RING_SIZE - 1;
+    private const int WLF_COUNT = 0;
+    private const int WLF_EVENTS = 0x10;
+    private const int WLF_SEQ = 0;
+    private const int WLF_KIND = 4;
+    private const int WLF_ACTOR_INDEX = 8;
+    private const int WLF_CANDIDATE_INDEX = 12;
+    private const int WLF_RESULT_INDEX = 16;
+    private const int WLF_COORDS_PTR = 24;
+    private const int WLF_COORD_0 = 32;
+    private const int WLF_COORD_1 = 36;
+    private const int WLF_COORD_2 = 40;
+    private const int WLF_SOURCE_INDEX = 44;
+    private const int WLF_BATTLE_STATE = 48;
+    private const int WLF_ACTOR_CHAR_ID = 52;
+    private const int WLF_ACTION_TYPE = 56;
+    private const int WLF_ABILITY_ID = 60;
+    private const int WLF_RIGHT_WEAPON = 64;
+    private const int WLF_LEFT_WEAPON = 68;
+    private const int WEAPON_LOF_SLOT_SIZE = 128;
+    private const int WEAPON_LOF_BUFFER_SIZE = WLF_EVENTS + (WEAPON_LOF_RING_SIZE * WEAPON_LOF_SLOT_SIZE);
+
+    // Roll-VERDICT probe/control buffer (hook at RVA 0x30F40F = "mov r10d,eax" right after the single VM
     // avoidance roll 0x30FA34 returns). eax IS the hit/miss verdict in REAL code (next: test eax,eax; je
     // miss). Forcing eax here overrides native evade+reactions (both virtualized inside the roll) WITHOUT
     // any data change; the original "mov r10d,eax" propagates our value to the second consumer. rbx = the
@@ -187,11 +337,14 @@ public class Mod : ModBase
     private const int PLAN_EXPECTED_HP = 64;
     private const int PLAN_EXPECTED_MAX_HP = 68;
     private const int PRECLAMP_BUFFER_SIZE = PRECLAMP_EVENT_BUFFER_SIZE + (PRECLAMP_PLAN_MAX_SLOTS * PRECLAMP_PLAN_SLOT_SIZE);
-    private const int PREVIEW_HITPCT_BUFFER_SIZE = 64;
+    private const int PREVIEW_HITPCT_TARGETS = 0x10;
+    private const int PREVIEW_HITPCT_TARGET_COUNT = 64;
+    private const int PREVIEW_HITPCT_BUFFER_SIZE = PREVIEW_HITPCT_TARGETS + (PREVIEW_HITPCT_TARGET_COUNT * sizeof(int));
     private const int PREVIEW_DAMAGE_BUFFER_SIZE = 320;
     private const int PREVIEW_SOURCE_BUFFER_SIZE = 320;
     private const int CALC_ENTRY_RING_SLOTS = 64;
-    private const int CALC_ENTRY_BUFFER_SIZE = 16 + (CALC_ENTRY_RING_SLOTS * 16); // [0] u32 count; 16B slots
+    private const int CALC_ENTRY_SLOT_SIZE = 48;
+    private const int CALC_ENTRY_BUFFER_SIZE = 16 + (CALC_ENTRY_RING_SLOTS * CALC_ENTRY_SLOT_SIZE); // [0] u32 count; 48B slots
     private const int LT3_ROLL_BUFFER_SIZE = 48;                                   // +16 magic slot, +32 status slot
     private const int STAGED_BUNDLE_HEADER = 28;                                   // [0]count [4]forceChar [8]kind [12]ail [16]mask [20]dmg [24]resFlag
     private const int STAGED_BUNDLE_RING_SLOTS = 64;
@@ -215,6 +368,24 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IReverseWrapper<DclMissKindCallback>? _dclMissKindWrapper;
     private Reloaded.Hooks.Definitions.IAsmHook? _dclMissKindHook;
     private volatile bool _dclMissKindHookActive;
+    private DclSelectorOutcomeCallback? _dclSelectorOutcomeCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclSelectorOutcomeCallback>? _dclSelectorOutcomeWrapper;
+    private volatile bool _dclSelectorOutcomeActive;
+    private DclReactionGateCallback? _dclReactionGateCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclReactionGateCallback>? _dclReactionGateWrapper;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _dclReactionGateHooks = new();
+    private DclReactionVirtualizeCallback? _dclReactionVirtualizeCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclReactionVirtualizeCallback>? _dclReactionVirtualizeWrapper;
+    private DclReactionRestoreCallback? _dclReactionRestoreCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclReactionRestoreCallback>? _dclReactionRestoreWrapper;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionRestoreHook;
+    private DclStatusProducerCallback? _dclStatusProducerCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclStatusProducerCallback>? _dclStatusProducerWrapper;
+    private volatile bool _dclStatusProducerHookActive;
+    private DclComputePointCallback? _dclComputePointCallback;
+    private Reloaded.Hooks.Definitions.IReverseWrapper<DclComputePointCallback>? _dclComputePointWrapper;
+    private volatile bool _dclComputePointHookActive;
+    [ThreadStatic] private static Stack<DclReactionVirtualizationFrame>? _dclReactionFrames;
     // True once the pre-clamp managed rewrite hook is live. Output-control MISS delivery needs BOTH
     // this and _dclMissKindHookActive: the kind hook renders "miss" but the pre-clamp hook is what
     // zeroes the staged debit. If only the kind hook installed, a rendered miss would deal full
@@ -226,6 +397,19 @@ public class Mod : ModBase
     private Reloaded.Hooks.Definitions.IAsmHook? _evadeInputProbeHook;
     private nint _dclCounterPathProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _dclCounterPathProbeHook;
+    private nint _dclReactionCommitProbeBuf;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _dclReactionCommitProbeHooks = new();
+    private nint _dclReactionPreSelectorProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionPreSelectorProbeHook;
+    private nint _dclHexWardProducerBuf;
+    private nint _dclReactionMaterializationProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionMaterializationProbeHook;
+    private nint _dclReactionEffectProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclReactionEffectProbeHook;
+    private nint _dclAutoPotionConsumeProbeBuf;
+    private Reloaded.Hooks.Definitions.IAsmHook? _dclAutoPotionConsumeProbeHook;
+    private nint _dclWeaponLineOfFireProbeBuf;
+    private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _dclWeaponLineOfFireProbeHooks = new();
     private readonly List<Reloaded.Hooks.Definitions.IAsmHook> _evadeCopierHooks = new();
     private nint _rollVerdictProbeBuf;
     private Reloaded.Hooks.Definitions.IAsmHook? _rollVerdictProbeHook;
@@ -306,8 +490,28 @@ public class Mod : ModBase
     private readonly object _dclHitStampedTargetGate = new();
     private readonly bool[] _dclHitStampedTargets = new bool[64];
     private readonly object _dclHitRngGate = new();
+    private readonly int[] _dclPreviewDebits = Enumerable.Repeat(-1, 64).ToArray();
+    private readonly int[] _dclPreviewCredits = Enumerable.Repeat(-1, 64).ToArray();
     private Random? _dclHitRng;
+    private readonly object _dclStatusRngGate = new();
+    private Random? _dclStatusRng;
+    private readonly object _dclStatusDurationGate = new();
+    private readonly Dictionary<(nint TargetPtr, int ByteIndex, byte Mask), DclStatusDurationState> _dclStatusDurations = new();
+    private readonly object _dclGuardGate = new();
+    private readonly Dictionary<nint, DclGuardPool> _dclGuardPools = new();
+    private readonly Dictionary<nint, DclMpTrickleState> _dclMpTrickleStates = new();
+    private readonly object _dclReactionCadenceGate = new();
+    private readonly Dictionary<nint, DclReactionCadenceState> _dclReactionCadenceStates = new();
+    private readonly DclHexWardCoordinator _dclHexWardCoordinator = new();
+    private readonly object _dclHexWardRngGate = new();
+    private Random? _dclHexWardRng;
     private int _dclHitLogCount;
+    private int _dclStatusLogCount;
+    private int _dclGuardLogCount;
+    private int _dclMpTrickleLogCount;
+    private int _dclSelectorOutcomeLogs;
+    private int _dclReactionGateLogs;
+    private int _dclReactionVirtualizationLogs;
     private long _dclHitFailCount;
     private long _dclMissKindFailCount;
     private long _lastDclMissKindFailLogged;
@@ -327,6 +531,19 @@ public class Mod : ModBase
     private int _lastEvadeInputProbeSequence;
     private int _dclCounterPathProbeLogs;
     private int _lastDclCounterPathProbeSequence;
+    private int _dclReactionCommitProbeLogs;
+    private int _lastDclReactionCommitProbeSequence;
+    private int _dclReactionPreSelectorProbeLogs;
+    private int _lastDclReactionPreSelectorProbeSequence;
+    private int _dclReactionMaterializationProbeLogs;
+    private int _lastDclReactionMaterializationProbeSequence;
+    private int _dclReactionEffectProbeLogs;
+    private int _lastDclReactionEffectProbeSequence;
+    private int _dclHexWardLogs;
+    private int _dclAutoPotionConsumeProbeLogs;
+    private int _lastDclAutoPotionConsumeProbeSequence;
+    private int _dclWeaponLineOfFireProbeLogs;
+    private int _lastDclWeaponLineOfFireProbeSequence;
     private int _rollVerdictProbeLogs;
     private int _lastRollVerdictProbeSequence;
     private int _evadeOverrideLogs;
@@ -365,6 +582,58 @@ public class Mod : ModBase
         true)]
     private delegate long DclMissKindCallback(long resultRecordPtr, long naturalKind);
 
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.r8,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclSelectorOutcomeCallback(long resultRecordPtr, long naturalKind, long naturalResultCode);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclReactionGateCallback(long defenderPtr, long naturalChance, long reactionAbilityId);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclReactionVirtualizeCallback(long orderRecordPtr, long targetIdx);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclReactionRestoreCallback();
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclStatusProducerCallback(long targetPtr, long targetIdx);
+
+    [Reloaded.Hooks.Definitions.X64.FunctionAttribute(
+        [
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rcx,
+            Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rdx,
+        ],
+        Reloaded.Hooks.Definitions.X64.FunctionAttribute.Register.rax,
+        true)]
+    private delegate long DclComputePointCallback(long targetPtr, long targetIdx);
+
     private static readonly int[] ActionBoundaryOffsets =
     [
         0x30, 0x31, 0x61, 0x63,
@@ -378,20 +647,20 @@ public class Mod : ModBase
     private static readonly (int Rva, string Name)[] CodeLandmarks =
     [
         (0x205210, "result-selector"),
-        (0x226D98, "battle-base-ptr"),
+        (0x226D20, "battle-base-ptr"),
         (0x2D7AC0, "target-cache-write-1c4"),
         (0x2D7AEC, "target-cache-init-1c4"),
         (0x2F2EC1, "ko-stack-outer"),
         (0x2F37A2, "ko-stack-mid"),
         (0x2F3884, "ko-stack-inner"),
-        (0x30A685, "damage-mult-2"),
-        (0x30A6D3, "ko-write-1f5"),
-        (0x30A908, "ko-write-61"),
-        (0x30A911, "ko-write-1ef"),
-        (0x30AAFC, "death-state-write-1bb"),
-        (0x30D42A, "ko-read-1ef"),
-        (0x30D432, "ko-mask-write-1ef"),
-        (0x30D43C, "ko-write-61-late"),
+        (0x30A5ED, "damage-mult-2"),
+        (0x30A63B, "ko-write-1f5"),
+        (0x30A870, "ko-write-61"),
+        (0x30A879, "ko-write-1ef"),
+        (0x30AA64, "death-state-write-1bb"),
+        (0x30D392, "ko-read-1ef"),
+        (0x30D39A, "ko-mask-write-1ef"),
+        (0x30D3A4, "ko-write-61-late"),
     ];
 
     public Mod(ModContext context)
@@ -430,6 +699,12 @@ public class Mod : ModBase
             InstallResultSelectorProbeIfEnabled(baseAddr);
             InstallEvadeInputProbeIfEnabled(baseAddr);
             InstallDclCounterPathProbeIfEnabled(baseAddr);
+            InstallDclReactionCommitProbeIfEnabled(baseAddr);
+            InstallDclReactionPreSelectorProbeIfEnabled(baseAddr);
+            InstallDclReactionMaterializationProbeIfEnabled(baseAddr);
+            InstallDclReactionEffectProbeIfEnabled(baseAddr);
+            InstallDclAutoPotionConsumeProbeIfEnabled(baseAddr);
+            InstallDclWeaponLineOfFireProbeIfEnabled(baseAddr);
             InstallEvadeCopierOverrideIfEnabled(baseAddr);
             InstallRollVerdictProbeIfEnabled(baseAddr);
             InstallPreviewHitPctControlIfEnabled(baseAddr);
@@ -438,6 +713,7 @@ public class Mod : ModBase
             InstallCalcEntryProbeIfEnabled(baseAddr);
             InstallMagicAccuracyControlIfEnabled(baseAddr);
             InstallStatusChanceControlIfEnabled(baseAddr);
+            InstallDclReactionGateIfEnabled(baseAddr);
             InstallReactionChanceControlIfEnabled(baseAddr);
             InstallEvadeRecordOverrideIfEnabled(baseAddr);
             InstallRollRngProbeIfEnabled(baseAddr);
@@ -533,15 +809,18 @@ public class Mod : ModBase
     // attack hit% at static buffer 0x1407832C0 (RVA 0x7832C0). Real code copies it there
     // from a live forecast object: at RVA 0x227FFA `movzx eax, word [rbp+0x2C]` loads the
     // computed %, and 0x228004 `mov word [0x7832C0], ax` stores it for the renderer. We hook
-    // 0x227FFE (`mov r10d, 2`, a clean non-RIP instruction between the load and the store):
+    // 0x227F86 (`mov r10d, 2`, a clean non-RIP instruction between the load and the store):
     // ExecuteFirst runs our asm, then the stolen `mov r10d,2`, then falls into the store. By
     // setting AX to a forced value first, the game's own store writes OUR value at copy time,
     // BEFORE the renderer reads the buffer -> the displayed % is deterministically ours, no
-    // race. Buffer records: [0]=fire count, [4]=last natural %, [8]=forced value (-1=logOnly),
-    // [12]=site RVA. Read it externally (addr printed at install) to verify without the screen.
+    // race. In DCL mode calc-entry mirrors the authored percentage into one native int per target;
+    // the hook derives targetIdx from the proven forecast-object relation (rbp = target+0x1BE) and
+    // copies that target's authored percentage into AX. This avoids a managed callback on the UI
+    // hot path. Buffer records: [0]=fire count, [4]=last natural %, [8]=displayed override
+    // (-1=none), [12]=site RVA, [16+targetIdx*4]=latest DCL percentage (-1=none).
     private void InstallPreviewHitPctControlIfEnabled(nint moduleBase)
     {
-        if (!_settings.PreviewHitPctControlEnabled)
+        if (!_settings.PreviewHitPctControlEnabled && !_settings.DclPreviewHitPctEnabled)
             return;
         if (_hooks is null)
         {
@@ -553,6 +832,8 @@ public class Mod : ModBase
         _previewHitPctBuf = Marshal.AllocHGlobal(PREVIEW_HITPCT_BUFFER_SIZE);
         for (int i = 0; i < PREVIEW_HITPCT_BUFFER_SIZE; i++)
             Marshal.WriteByte(_previewHitPctBuf, i, 0);
+        for (int targetIdx = 0; targetIdx < PREVIEW_HITPCT_TARGET_COUNT; targetIdx++)
+            Marshal.WriteInt32(_previewHitPctBuf, PREVIEW_HITPCT_TARGETS + (targetIdx * sizeof(int)), -1);
 
         nint address = moduleBase + _settings.PreviewHitPctRva;
         if (!ValidateExpectedBytes(address, _settings.PreviewHitPctExpectedBytes, out string byteError))
@@ -569,7 +850,7 @@ public class Mod : ModBase
             Line(
                 $"[PREVIEW-HITPCT-HOOK] rva=0x{_settings.PreviewHitPctRva:X} addr=0x{address:X} " +
                 $"buf=0x{_previewHitPctBuf:X} forced={FormatMaybeInt(_settings.PreviewHitPctForcedValue)} " +
-                $"logOnly={(_settings.PreviewHitPctLogOnly ? 1 : 0)}");
+                $"logOnly={(_settings.PreviewHitPctLogOnly ? 1 : 0)} dcl={(_settings.DclPreviewHitPctEnabled ? 1 : 0)}");
         }
         catch (Exception ex)
         {
@@ -583,9 +864,11 @@ public class Mod : ModBase
     {
         string buf = $"0{_previewHitPctBuf:X}h";
         bool force = _settings.PreviewHitPctForcedValue >= 0 && !_settings.PreviewHitPctLogOnly;
+        bool dcl = _settings.DclPreviewHitPctEnabled;
         int forced = Math.Clamp(_settings.PreviewHitPctForcedValue, 0, 0xFFFF);
-        string forcedRecord = force ? forced.ToString() : "0FFFFFFFFh";
+        string forcedRecord = force && !dcl ? forced.ToString() : "0FFFFFFFFh";
         string siteId = $"0{_settings.PreviewHitPctRva:X}h";
+        string forecastTableBase = $"0{(_moduleBase.ToInt64() + BattleUnitTableRva + 0x1BE):X}h";
 
         var asm = new List<string>
         {
@@ -605,13 +888,69 @@ public class Mod : ModBase
             $"mov dword [rax+8], {forcedRecord}",
             $"mov dword [rax+12], {siteId}",
             ".skip:",
+        };
+
+        if (dcl)
+        {
+            asm.AddRange(
+            [
+                // rbp is the forecast object and equals target unit +0x1BE. Convert it to the
+                // 0..63 battle-unit slot, rejecting non-table/misaligned pointers fail-open.
+                "mov rcx, rbp",
+                $"mov rax, {forecastTableBase}",
+                "sub rcx, rax",
+                $"cmp rcx, {PREVIEW_HITPCT_TARGET_COUNT * BattleUnitStride:X}h",
+                "jae .restore",
+                $"test rcx, {BattleUnitStride - 1:X}h",
+                "jnz .restore",
+                "shr rcx, 9", // BattleUnitStride == 0x200
+                $"mov rax, {buf}",
+                $"mov ecx, dword [rax+rcx*4+{PREVIEW_HITPCT_TARGETS}]",
+                "test ecx, ecx",
+                "js .restore",            // -1 means no authored percentage; keep natural AX
+                "cmp ecx, 100",
+                "jle .dcl_pct_ready",
+                "mov ecx, 100",
+                ".dcl_pct_ready:",
+                "mov word [rsp+16], cx",   // patch saved RAX; pop below restores it with DCL AX
+                "mov dword [rax+8], ecx",
+            ]);
+        }
+        else if (force)
+        {
+            asm.Add($"mov word [rsp+16], {forced}");
+        }
+
+        asm.AddRange(
+        [
+            ".restore:",
             "popfq",
             "pop rcx",
             "pop rax",
-        };
-        if (force)
-            asm.Add($"mov ax, {forced}");   // game's own store at 0x228004 now writes OUR value
+        ]);
         return asm.ToArray();
+    }
+
+    private void SetDclPreviewHitPct(int targetIdx, int pct)
+    {
+        if (!_settings.DclPreviewHitPctEnabled || _previewHitPctBuf == 0 || (uint)targetIdx >= PREVIEW_HITPCT_TARGET_COUNT)
+            return;
+
+        Marshal.WriteInt32(
+            _previewHitPctBuf,
+            PREVIEW_HITPCT_TARGETS + (targetIdx * sizeof(int)),
+            Math.Clamp(pct, 0, 100));
+    }
+
+    private void ClearDclPreviewHitPct(int targetIdx)
+    {
+        if (_previewHitPctBuf == 0 || (uint)targetIdx >= PREVIEW_HITPCT_TARGET_COUNT)
+            return;
+
+        Marshal.WriteInt32(
+            _previewHitPctBuf,
+            PREVIEW_HITPCT_TARGETS + (targetIdx * sizeof(int)),
+            -1);
     }
 
     // PREVIEW DAMAGE display control. The on-screen forecast DAMAGE number lives at static buffer
@@ -627,14 +966,14 @@ public class Mod : ModBase
     // per site i at 16+i*16: [+0]=fires [+4]=last natural [+8]=site RVA.
     private static readonly (int Rva, string Bytes)[] PreviewDamageBranchSites =
     {
-        (0x22802F, "E9 54 04 00 00"),
-        (0x228050, "E9 33 04 00 00"),
-        (0x22806E, "E9 15 04 00 00"),
-        (0x2280D7, "E9 AC 03 00 00"),
-        (0x228125, "E9 5E 03 00 00"),
-        (0x228195, "E9 EE 02 00 00"),
-        (0x2281E9, "E9 9A 02 00 00"),
-        (0x228316, "E9 6D 01 00 00"),
+        (0x227FB7, "E9 54 04 00 00"),
+        (0x227FD8, "E9 33 04 00 00"),
+        (0x227FF6, "E9 15 04 00 00"),
+        (0x22805F, "E9 AC 03 00 00"),
+        (0x2280AD, "E9 5E 03 00 00"),
+        (0x22811D, "E9 EE 02 00 00"),
+        (0x228171, "E9 9A 02 00 00"),
+        (0x22829E, "E9 6D 01 00 00"),
     };
 
     private void InstallPreviewDamageControlIfEnabled(nint moduleBase)
@@ -716,7 +1055,7 @@ public class Mod : ModBase
     // FORECAST DAMAGE SOURCE control — the COHERENT lever (number + HP-bar + apply all agree).
     // The forecast "object" (global 0x142FF3CF8) is just unit_table[idx]+0x1BE, so obj+0x6 == unit+0x1C4 ==
     // the staged HP-damage field. The preview NUMBER (formatter at 0x2284xx), the HP-bar ghost-depletion
-    // block, AND the apply path all read this one field; the pre-clamp hook (0x30A66F) rewrites it at
+    // block, AND the apply path all read this one field; the pre-clamp hook (0x30A5D7) rewrites it at
     // RESOLUTION. Painting the display number (0x7832BE) was cosmetic because it never touched +0x1C4 —
     // so the bar stayed natural. Controlling obj+0x6 at the finalizers that COMPUTE it makes number + bar
     // coherent (race-free: we write at the engine's own store, before any downstream read). The engine has
@@ -725,10 +1064,10 @@ public class Mod : ModBase
     // Buffer: [0]=total fires; per site i at 16+i*16: [+0]=fires [+4]=last natural [+8]=site RVA.
     private static readonly (int Rva, string Bytes, string Reg)[] PreviewForecastSourceSites =
     {
-        (0x30637E, "66 41 89 50 06", "dx"),   // mov [r8+6],dx  — confirmed live: MAGIC (Fire) finalizer
-        (0x307DC4, "66 41 89 52 06", "dx"),   // mov [r10+6],dx — (100-p1)(100-p2)*base/10000 path
-        (0x309664, "66 41 89 51 06", "cx"),   // mov [r9+6],cx  — product-clamped path
-        (0x308D8F, "66 89 41 06",    "ax"),   // mov [rcx+6],ax — Q15-scaled store (physical-attack candidate)
+        (0x3062E6, "66 41 89 50 06", "dx"),   // mov [r8+6],dx  — confirmed live: MAGIC (Fire) finalizer
+        (0x307D2C, "66 41 89 52 06", "dx"),   // mov [r10+6],dx — (100-p1)(100-p2)*base/10000 path
+        (0x3095CC, "66 41 89 51 06", "cx"),   // mov [r9+6],cx  — product-clamped path
+        (0x308CF7, "66 89 41 06",    "ax"),   // mov [rcx+6],ax — Q15-scaled store (physical-attack candidate)
     };
 
     private void InstallPreviewForecastSourceControlIfEnabled(nint moduleBase)
@@ -809,17 +1148,21 @@ public class Mod : ModBase
         return asm.ToArray();
     }
 
-    // CALC-ENTRY PROBE (LT3) — log-only ring on computeActionResult 0x309A44, the single real-code
+    // CALC-ENTRY PROBE (LT3) — log-only ring on computeActionResult 0x3099AC, the single real-code
     // entry the VM calls per (action, target) for forecast, execution and (hypothesis) AI evaluation.
     // rcx = the caster's 0x14-byte order record (@ caster+0x1A0: [0] caster slot idx, [1] type,
     // [2..3] ability id), dl = target unit index. One enemy turn with this probe answers the AI
     // same-calc question and gives the PREVIEW-time ability id.
     private void InstallCalcEntryProbeIfEnabled(nint moduleBase)
     {
-        bool probe = _settings.CalcEntryProbeEnabled || _settings.DclPipelineEnabled;
+        bool provenance = _settings.DclCalcProvenanceProbeEnabled;
+        bool captureProvenance = provenance || _settings.DclPipelineEnabled;
+        bool probe = _settings.CalcEntryProbeEnabled || _settings.DclPipelineEnabled || provenance;
         bool stamp = _settings.CalcEntryEvadeStampEnabled;
         bool hitControl = _settings.DclHitControlEnabled;
-        if (!probe && !stamp && !hitControl)
+        bool previewAmounts = _settings.DclPreviewAmountEnabled;
+        bool reactionTaxonomy = _settings.DclReactionTaxonomyEnabled;
+        if (!probe && !stamp && !hitControl && !reactionTaxonomy)
             return;
         if (_hooks is null)
         {
@@ -854,12 +1197,14 @@ public class Mod : ModBase
                 $"mov rax, {buf}",
                 "mov ebx, dword [rax]",       // ring write index (total count)
                 "and ebx, 0x3F",              // 64-slot ring; 32-bit op zero-extends rbx
-                "shl ebx, 4",                 // *16 bytes per slot
+                $"imul ebx, {CALC_ENTRY_SLOT_SIZE}", // *48 bytes per slot
                 "lea rsi, [rax + rbx + 16]",
                 "mov qword [rsi], rcx",       // order-record ptr
                 "mov dword [rsi+8], edx",     // target unit index (dl)
                 "mov ebx, dword [rcx]",       // casterIdx | type | abilityId  (captured at fire time)
                 "mov dword [rsi+12], ebx",
+                "movzx ebx, word [rcx+8]",    // exact action payload; type 1 uses this weapon item id
+                "mov dword [rsi+36], ebx",
                 // Publish AFTER the slot is fully written (x86 TSO keeps store order): a consumer
                 // that sees the new count never reads a torn/stale slot.
                 "add dword [rax], 1",
@@ -868,8 +1213,32 @@ public class Mod : ModBase
                 "pop rbx",
                 "pop rax",
             ]);
+            if (captureProvenance)
+            {
+                // These fields are captured synchronously on the game thread. At this point the
+                // saved return address is 0x20 bytes above rsp (rax/rbx/rsi/flags = four pushes).
+                // Caller return RVA plus fire-time battle state are runtime authority, not merely
+                // diagnostics: the confirmed outer execution pair gates post-calc status production.
+                asm.InsertRange(asm.Count - 5,
+                [
+                    "mov rbx, qword [rsp+20h]",
+                    "mov qword [rsi+16], rbx",
+                    $"mov rbx, 0{moduleBase + DCL_BATTLE_STATE_GLOBAL_RVA:X}h",
+                    "mov ebx, dword [rbx]",
+                    "mov dword [rsi+24], ebx",
+                    $"mov rbx, 0{moduleBase + CALC_TURN_OWNER_GLOBAL_RVA:X}h",
+                    "mov ebx, dword [rbx]",
+                    "mov dword [rsi+28], ebx",
+                    $"mov rbx, 0{moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA:X}h",
+                    "mov ebx, dword [rbx]",
+                    "mov dword [rsi+32], ebx",
+                    $"mov rbx, 0{moduleBase + _settings.PreviewForecastGlobalRva:X}h",
+                    "mov rbx, qword [rbx]",
+                    "mov qword [rsi+40], rbx",
+                ]);
+            }
         }
-        if (hitControl)
+        if (hitControl || previewAmounts)
         {
             _dclHitDecisionCallback = DclHitDecisionCallbackImpl;
             _dclHitDecisionWrapper = _hooks.CreateReverseWrapper(_dclHitDecisionCallback);
@@ -877,14 +1246,19 @@ public class Mod : ModBase
             {
                 Line("[DCL-HIT-SKIP] decision callback reverse wrapper unavailable");
                 hitControl = false;
+                previewAmounts = false;
             }
             else
             {
-                int seed = unchecked(Environment.TickCount ^ (int)Stopwatch.GetTimestamp());
-                lock (_dclHitRngGate)
-                    _dclHitRng = new Random(seed);
+                int seed = 0;
+                if (hitControl)
+                {
+                    seed = unchecked(Environment.TickCount ^ (int)Stopwatch.GetTimestamp());
+                    lock (_dclHitRngGate)
+                        _dclHitRng = new Random(seed);
+                }
                 asm.AddRange(BuildDclHitDecisionShimLines());
-                Line($"[DCL-HIT-INSTALL] seed={seed} forcedRoll={FormatMaybeInt(_settings.DclHitForcedRoll)} " +
+                Line($"[DCL-CALC-INSTALL] hit={(hitControl ? 1 : 0)} previewAmounts={(previewAmounts ? 1 : 0)} seed={seed} forcedRoll={FormatMaybeInt(_settings.DclHitForcedRoll)} " +
                      $"ttlMs={_settings.DclHitDecisionTtlMs} missClassEvade={Math.Clamp(_settings.DclMissClassEvadeValue, 0, 255)} " +
                      $"maxLogs={_settings.DclHitMaxLogs} formula={(string.IsNullOrWhiteSpace(_settings.DclHitChanceFormula) ? "off" : "on")}");
             }
@@ -896,11 +1270,17 @@ public class Mod : ModBase
         else if (stamp)
             Line("[DCL-HIT] CalcEntryEvadeStamp suppressed: the hit-control decision callback owns the target evade bytes at this site");
 
+        // Reaction virtualization must restore Brave at the sole function exit. Install that harmless
+        // empty-stack tail first; only append the entry writer after the restore hook is live.
+        reactionTaxonomy = reactionTaxonomy && TryInstallDclReactionRestoreHook(moduleBase);
+        if (reactionTaxonomy)
+            asm.AddRange(BuildDclReactionVirtualizeShimLines());
+
         try
         {
             _calcEntryHook = _hooks.CreateAsmHook(asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate();
-            Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} probe={(probe ? $"on buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}" : "off")} " +
-                 $"evadeStamp={(stamp && !hitControl ? "ON " + DescribeEvadeCopierOverride() : "off")} hitControl={(hitControl ? "ON" : "off")}");
+            Line($"[CALC-PROBE-HOOK] rva=0x{rva:X} addr=0x{address:X} probe={(probe ? $"on buf=0x{_calcEntryBuf:X} ring={CALC_ENTRY_RING_SLOTS}" : "off")} provenance={(provenance ? "ON" : "off")} " +
+                 $"evadeStamp={(stamp && !hitControl ? "ON " + DescribeEvadeCopierOverride() : "off")} hitControl={(hitControl ? "ON" : "off")} previewAmounts={(previewAmounts ? "ON" : "off")} reactionTaxonomy={(reactionTaxonomy ? "ON" : "off")}");
         }
         catch (Exception ex)
         {
@@ -910,7 +1290,7 @@ public class Mod : ModBase
     }
 
     // CALC-ENTRY EVADE STAMP — the per-attack input injection the engine doesn't have. ExecuteFirst
-    // at computeActionResult 0x309A44 (dl = target unit index): resolve the TARGET's unit struct and
+    // at computeActionResult 0x3099AC (dl = target unit index): resolve the TARGET's unit struct and
     // stamp the configured Family-1 evade bytes microseconds before the VM avoidance roll inside this
     // very call. Closes the residual leak seen in LT5-A (a VM-side/init writer the static RE cannot
     // see re-stamped shield evade once): no state edge can intervene between this stamp and the roll.
@@ -955,7 +1335,7 @@ public class Mod : ModBase
     }
 
     // DCL HIT-CONTROL DECISION SHIM — appended into the SAME calc-entry asm hook, AFTER the probe
-    // ring-write block (single hook at 0x309A44: deterministic internal order, no cross-hook
+    // ring-write block (single hook at 0x3099AC: deterministic internal order, no cross-hook
     // activation-order dependence; this codebase composes same-site logic by appending blocks into
     // one CreateAsmHook, exactly like probe+stamp did for LT5/LT7). At shim entry the registers
     // still hold the original call args — the probe block saves/restores all of its scratch — so
@@ -1009,9 +1389,203 @@ public class Mod : ModBase
         ];
     }
 
+    // VM-internal reaction avoidance (notably Shirahadori) does not reach the four hookable real-code
+    // gates. For explicitly marked VmInternalAvoidance rules only, read the exact Reaction id from the
+    // calc-entry order record, substitute defender Brave inside synchronous computeActionResult, and
+    // restore it at the sole function exit. This also covers innate/derived reactions. The four
+    // real-code reaction gates are handled separately with their exact native evaluation id.
+    private bool TryInstallDclReactionRestoreHook(nint moduleBase)
+    {
+        if (_hooks is null)
+            return false;
+        try
+        {
+            nint exitAddress = moduleBase + _settings.DclReactionCalcExitRva;
+            if (!ValidateExpectedBytes(exitAddress, _settings.DclReactionCalcExitExpectedBytes, out string byteError))
+            {
+                Line($"[DCL-REACTION-TAXONOMY-SKIP] exitRva=0x{_settings.DclReactionCalcExitRva:X} {byteError}");
+                return false;
+            }
+
+            _dclReactionVirtualizeCallback = DclReactionVirtualizeCallbackImpl;
+            _dclReactionVirtualizeWrapper = _hooks.CreateReverseWrapper(_dclReactionVirtualizeCallback);
+            _dclReactionRestoreCallback = DclReactionRestoreCallbackImpl;
+            _dclReactionRestoreWrapper = _hooks.CreateReverseWrapper(_dclReactionRestoreCallback);
+            if (_dclReactionVirtualizeWrapper is null || _dclReactionVirtualizeWrapper.WrapperPointer == 0 ||
+                _dclReactionRestoreWrapper is null || _dclReactionRestoreWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-REACTION-TAXONOMY-SKIP] reverse wrapper unavailable");
+                return false;
+            }
+
+            _dclReactionRestoreHook = _hooks.CreateAsmHook(
+                BuildDclReactionRestoreShimLines(), exitAddress, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line($"[DCL-REACTION-TAXONOMY-TAIL] rva=0x{_settings.DclReactionCalcExitRva:X} " +
+                 $"rules={_settings.DclReactionRules.Count} expected={_settings.DclReactionCalcExitExpectedBytes}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-REACTION-TAXONOMY-SKIP] {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    private string[] BuildDclReactionVirtualizeShimLines()
+    {
+        string callback = $"0{_dclReactionVirtualizeWrapper!.WrapperPointer:X}h";
+        return
+        [
+            "push rax", "push rcx", "push rdx", "push r8", "push r9", "push r10", "push r11", "pushfq",
+            "movzx edx, dl",
+            "sub rsp, 88h",
+            "movdqu [rsp+20h], xmm0", "movdqu [rsp+30h], xmm1", "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3", "movdqu [rsp+60h], xmm4", "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]", "movdqu xmm1, [rsp+30h]", "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]", "movdqu xmm4, [rsp+60h]", "movdqu xmm5, [rsp+70h]",
+            "add rsp, 88h",
+            "popfq", "pop r11", "pop r10", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+        ];
+    }
+
+    private string[] BuildDclReactionRestoreShimLines()
+    {
+        string callback = $"0{_dclReactionRestoreWrapper!.WrapperPointer:X}h";
+        return
+        [
+            // At RVA 0x309FA1 the function-body rsp is 16-aligned. Eight pushes keep it aligned;
+            // 0x80 provides shadow space plus six volatile XMM saves.
+            "use64",
+            "push rax", "push rcx", "push rdx", "push r8", "push r9", "push r10", "push r11", "pushfq",
+            "sub rsp, 80h",
+            "movdqu [rsp+20h], xmm0", "movdqu [rsp+30h], xmm1", "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3", "movdqu [rsp+60h], xmm4", "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]", "movdqu xmm1, [rsp+30h]", "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]", "movdqu xmm4, [rsp+60h]", "movdqu xmm5, [rsp+70h]",
+            "add rsp, 80h",
+            "popfq", "pop r11", "pop r10", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+        ];
+    }
+
+    private long DclReactionVirtualizeCallbackImpl(long orderRecordPtrRaw, long targetIdxRaw)
+    {
+        var frame = new DclReactionVirtualizationFrame(false, 0, 0, 0, -1);
+        try
+        {
+            nint orderRecordPtr = (nint)orderRecordPtrRaw;
+            if (orderRecordPtr == 0)
+                return 0;
+            int actionType = Marshal.ReadByte(orderRecordPtr + 1);
+            int reactionId = (ushort)Marshal.ReadInt16(orderRecordPtr + 2);
+            DclReactionRule? rule = (_settings.DclReactionRules ?? [])
+                .FirstOrDefault(candidate => candidate.AbilityId == reactionId && candidate.VmInternalAvoidance);
+            if (rule is null)
+                return 0;
+
+            int targetIdx = (int)targetIdxRaw & 0xFF;
+            if (targetIdx is < 0 or >= 64)
+                return 0;
+            nint unitPtr = _moduleBase + _settings.PreviewForecastUnitTableRva + targetIdx * 0x200;
+            if (!TryReadLiveUnitSnapshot(unitPtr, out var target, out _))
+                return 0;
+
+            long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+            long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, target.Hp, 0);
+            var context = BuildDclReactionFormulaContext(
+                target, targetIdx, eventIndex, eventSeed, out var incoming);
+            DclReactions.AddRuleVariables(context, reactionId, target.Brave, rule.FlatChance, rule.NormalizedMode);
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, _settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+            {
+                QueueDclDecisionLog(_settings,
+                    $"[DCL-REACTION-TAXONOMY-ERR] target=0x{target.CharId:X2} reaction={reactionId} " +
+                    $"rule={CleanDclLogValue(rule.DisplayName)} error={CleanDclLogValue(derivedError)}");
+                return 0;
+            }
+            if (!rule.TryMatches(context, out bool conditionMatched, out string conditionError))
+            {
+                QueueDclDecisionLog(_settings,
+                    $"[DCL-REACTION-TAXONOMY-ERR] target=0x{target.CharId:X2} reaction={reactionId} " +
+                    $"rule={CleanDclLogValue(rule.DisplayName)} error={CleanDclLogValue(conditionError)}");
+                return 0;
+            }
+            int chance = 0;
+            if (conditionMatched && !rule.TryGetChance(target.Brave, context, out chance, out string chanceError))
+            {
+                QueueDclDecisionLog(_settings,
+                    $"[DCL-REACTION-TAXONOMY-ERR] target=0x{target.CharId:X2} reaction={reactionId} " +
+                    $"rule={CleanDclLogValue(rule.DisplayName)} error={CleanDclLogValue(chanceError)}");
+                return 0;
+            }
+
+            byte originalBrave = (byte)Math.Clamp(target.Brave, 0, 255);
+            byte virtualChance = (byte)Math.Clamp(chance, 0, 100);
+            Marshal.WriteByte(unitPtr + 0x2B, virtualChance);
+            frame = new DclReactionVirtualizationFrame(true, unitPtr, originalBrave, virtualChance, reactionId);
+
+            if (_dclReactionVirtualizationLogs < Math.Clamp(_settings.DclReactionMaxLogs, 0, 100_000))
+            {
+                _dclReactionVirtualizationLogs++;
+                int equippedReactionId = target.ReadUInt16(0x14);
+                string source = equippedReactionId == reactionId ? "equipped" : "innate-or-derived";
+                QueueDclDecisionLog(_settings,
+                    $"[DCL-REACTION-TAXONOMY] target=0x{target.CharId:X2} reaction={reactionId} " +
+                    $"mode={rule.NormalizedMode} condition={(conditionMatched ? 1 : 0)} brave={originalBrave} " +
+                    $"chance={virtualChance} reactionType=0x{actionType:X2} " +
+                    $"incomingSource={incoming.SourceIdx} incomingType=0x{incoming.ActionType:X2} " +
+                    $"incomingAbility={incoming.AbilityId} sourceEpoch={incoming.SourceTurnEpoch} " +
+                    $"targetEpoch={incoming.TargetTurnEpoch} incomingOrigin={incoming.Origin} " +
+                    $"equipped={equippedReactionId} source={source} rule={CleanDclLogValue(rule.DisplayName)}");
+            }
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            QueueDclDecisionLog(_settings, $"[DCL-REACTION-TAXONOMY-ERR] {CleanDclLogValue(ex.Message)}");
+            return 0;
+        }
+        finally
+        {
+            (_dclReactionFrames ??= new Stack<DclReactionVirtualizationFrame>()).Push(frame);
+        }
+    }
+
+    private long DclReactionRestoreCallbackImpl()
+    {
+        try
+        {
+            if (_dclReactionFrames is null || _dclReactionFrames.Count == 0)
+                return 0;
+            DclReactionVirtualizationFrame frame = _dclReactionFrames.Pop();
+            if (!frame.Applied || frame.UnitPtr == 0)
+                return 0;
+            Marshal.WriteByte(frame.UnitPtr + 0x2B, frame.OriginalBrave);
+            if (_dclReactionVirtualizationLogs < Math.Clamp(_settings.DclReactionMaxLogs, 0, 100_000))
+            {
+                _dclReactionVirtualizationLogs++;
+                QueueDclDecisionLog(_settings,
+                    $"[DCL-REACTION-RESTORE] reaction={frame.ReactionAbilityId} " +
+                    $"chance={frame.VirtualChance} brave={frame.OriginalBrave}");
+            }
+            return 1;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     private int _calcEntrySeen;
+    private int _dclCalcProvenanceLogs;
     private const int CALC_ENTRY_LOG_PER_POLL = 12;
     private const int CALC_TURN_OWNER_GLOBAL_RVA = 0x7B0708;   // dword: current turn-owner unit index
+    private const int REACTION_EVAL_GLOBAL_RVA = 0x186AFF0;
+    private const int DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA = 0x186AFF4;
+    private const int DCL_BATTLE_STATE_GLOBAL_RVA = 0xC6B1CC;
     private void CaptureCalcEntryProbeEvents(long nowTick)
         => DrainCalcEntryProbeEvents(nowTick, emitLogs: true, ref _calcEntrySeen);
 
@@ -1047,16 +1621,48 @@ public class Mod : ModBase
 
             for (int n = start; n < count; n++)
             {
-                nint slot = _calcEntryBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * 16);
+                nint slot = _calcEntryBuf + 16 + ((n & (CALC_ENTRY_RING_SLOTS - 1)) * CALC_ENTRY_SLOT_SIZE);
                 long rec = Marshal.ReadInt64(slot);
                 int targetIdx = Marshal.ReadInt32(slot + 8) & 0xFF;
                 int packed = Marshal.ReadInt32(slot + 12);
                 int casterIdx = packed & 0xFF;
                 int type = (packed >> 8) & 0xFF;
                 int abilityId = (packed >> 16) & 0xFFFF;
-                _dclActionCache.Record(targetIdx, casterIdx, type, abilityId, nowTick);
+                long returnAddress = Marshal.ReadInt64(slot + 16);
+                long returnRva = returnAddress - _moduleBase.ToInt64();
+                int battleState = Marshal.ReadInt32(slot + 24);
+                int sourceIdx = Marshal.ReadInt32(slot + 32);
+                int actionPayload = Marshal.ReadInt32(slot + 36);
+                long forecastPtr = Marshal.ReadInt64(slot + 40);
+                _dclActionCache.Record(
+                    targetIdx,
+                    casterIdx,
+                    type,
+                    abilityId,
+                    nowTick,
+                    returnRva,
+                    battleState,
+                    sourceIdx,
+                    forecastPtr,
+                    actionPayload);
 
-                if (!emitLogs || logged >= CALC_ENTRY_LOG_PER_POLL)
+                if (!emitLogs)
+                    continue;
+
+                if (_settings.DclCalcProvenanceProbeEnabled &&
+                    _dclCalcProvenanceLogs < Math.Clamp(_settings.DclCalcProvenanceProbeMaxLogs, 0, 100_000))
+                {
+                    int fireTurnOwner = Marshal.ReadInt32(slot + 28);
+                    string origin = DclCalcProvenance.Name(DclCalcProvenance.Classify(returnRva));
+                    lines!.Add(
+                        $"[DCL-CALC-PROVENANCE] n={n} origin={origin} returnRva=0x{returnRva:X} " +
+                        $"battleState=0x{battleState:X} turnOwner={fireTurnOwner} sourceIdx={sourceIdx} " +
+                        $"forecastPtr=0x{forecastPtr:X} casterIdx={casterIdx} type=0x{type:X2} " +
+                        $"abilityId={abilityId} payload={actionPayload} targetIdx={targetIdx}");
+                    _dclCalcProvenanceLogs++;
+                }
+
+                if (logged >= CALC_ENTRY_LOG_PER_POLL)
                     continue;
 
                 long casterRel = rec - 0x1A0 - unitTable;
@@ -1065,7 +1671,7 @@ public class Mod : ModBase
                     ? Marshal.ReadByte((nint)(unitTable + casterSlot * 0x200 + 0x04))
                     : -1;
                 lines!.Add($"[CALC] n={n} rec=0x{rec:X} casterSlot={casterSlot} casterIdx={casterIdx} type=0x{type:X2} " +
-                           $"abilityId={abilityId} (0x{abilityId:X4}) targetIdx={targetIdx} casterTeam={casterTeam} turnOwner={turnOwner}");
+                           $"abilityId={abilityId} (0x{abilityId:X4}) payload={actionPayload} targetIdx={targetIdx} casterTeam={casterTeam} turnOwner={turnOwner}");
                 logged++;
             }
 
@@ -1100,7 +1706,7 @@ public class Mod : ModBase
         Flush();
     }
 
-    // MAGIC-ACCURACY control (LT3) — hook 0x304E2E (`mov ecx, 0x64`, just AFTER the natural chance
+    // MAGIC-ACCURACY control (LT3) — hook 0x304D96 (`mov ecx, 0x64`, just AFTER the natural chance
     // lands in edx at 0x304E2B and just BEFORE roll(100, edx) at 0x304E33). Captures the natural
     // Faith-scaled chance; optionally forces edx (100 = magic always-hits, 0 = always-misses).
     private void InstallMagicAccuracyControlIfEnabled(nint moduleBase)
@@ -1112,7 +1718,7 @@ public class Mod : ModBase
             _settings.MagicAccuracyForcedChance, "MAGICROLL", h => _magicAccuracyHook = h);
     }
 
-    // STATUS-CHANCE control (LT3) — hook 0x306633 (`lea ecx, [rbx+0x5C]`, AFTER `movzx edx,[g_7B07AC]`
+    // STATUS-CHANCE control (LT3) — hook 0x30659B (`lea ecx, [rbx+0x5C]`, AFTER `movzx edx,[g_7B07AC]`
     // at 0x30662C loads the natural staged status chance, BEFORE roll(100, edx) at 0x306636).
     // The LT2 data-poke of g_7B07AC was refuted (engine rewrites it at compute time); this hook fires
     // at compute time so the forced value is what the roll consumes.
@@ -1176,10 +1782,10 @@ public class Mod : ModBase
     }
 
     // ROLL-RNG PROBE (LT3b, log-only) — ring probe on the shared RNG `roll(ecx=range, edx=chance)`
-    // head 0x278EE0 (a Denuvo trampoline: `jmp` into the VM — the CALLERS are real code, so the
+    // head 0x278E68 (a Denuvo trampoline: `jmp` into the VM — the CALLERS are real code, so the
     // return address on the stack identifies every real roll site). Captures (retaddr, range, chance)
     // per call: one battle maps which of the 11 static callers actually fire for magic accuracy,
-    // status infliction, reactions, crits — replacing per-site guesswork (LT3a: 0x304E2E/0x306633
+    // status infliction, reactions, crits — replacing per-site guesswork (LT3a: 0x304D96/0x30659B
     // never fired for Fire/Blind).
     private void InstallRollRngProbeIfEnabled(nint moduleBase)
     {
@@ -1193,7 +1799,7 @@ public class Mod : ModBase
         }
         int rva = _settings.RollRngProbeRva;
         nint address = moduleBase + rva;
-        if (!ValidateExpectedBytes(address, "E9 0B F3 F4 0E", out string byteError))
+        if (!ValidateExpectedBytes(address, "E9 EB 38 98 0E", out string byteError))
         {
             Line($"[RNG-PROBE-SKIP] rva=0x{rva:X} {byteError}");
             Flush();
@@ -1277,18 +1883,22 @@ public class Mod : ModBase
         Flush();
     }
 
-    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window. Hook at the sweep post-call 0x281F8A: the VM's
-    // computeActionResult (0x309A44) has just staged the whole effect bundle onto the target, and the
+    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window. Hook at the sweep post-call 0x281F12: the VM's
+    // computeActionResult (0x3099AC) has just staged the whole effect bundle onto the target, and the
     // engine has NOT applied it yet. The target index (unit index) is still on the stack at
     // [rbp+rbx-0x28] (rbx = the sweep loop index; both rbp and rbx are callee-saved across the call).
-    // We log target+0x1C0 (evade kind) / +0x1C4 (staged dmg) / +0x1A8 (ailment) / +0x1D0 (apply mask)
-    // / +0x1E5 (result flag), and OPTIONALLY overwrite each (gated on the target charId) to prove
-    // OUTPUT control of status infliction and magic miss->hit without touching the VM roll.
+    // We log target+0x1C0 (evade kind) / +0x1C4 (staged dmg) / +0x1A8 (item-side-effect id) /
+    // +0x1D0 (side-effect gates) / +0x1E5 (result flag). LT13 retired writes to +0x1A8/+0x1D0:
+    // the native consumer returns the +0x1A8 item id to inventory when +0x1D0 bit 0x08 is set.
     // Buffer: [0]u32 ring count, [4]forceCharId, [8]forceKind, [12]forceAilment, [16]forceMask,
     // [20]forceDmg (each -1 = leave alone), then 16-byte ring slots.
     private void InstallStagedBundleProbeIfEnabled(nint moduleBase)
     {
-        if (!_settings.StagedBundleProbeEnabled)
+        bool bundleProbe = _settings.StagedBundleProbeEnabled;
+        bool numericWriter = _settings.DclPipelineEnabled && _settings.DclComputePointNumericEnabled;
+        bool statusProducer = _settings.DclStatusControlEnabled &&
+                              (_settings.DclStatusRules ?? []).Any(rule => rule.NativeRiderReplacedPostCalc);
+        if (!bundleProbe && !numericWriter && !statusProducer)
             return;
         if (_hooks is null)
         {
@@ -1296,7 +1906,9 @@ public class Mod : ModBase
             Flush();
             return;
         }
-        int rva = _settings.StagedBundleProbeRva;
+        int rva = statusProducer || numericWriter
+            ? checked((int)DclCalcProvenance.OuterSweepReturnRva)
+            : _settings.StagedBundleProbeRva;
         nint address = moduleBase + rva;
         if (!ValidateExpectedBytes(address, "48 FF C3 48 83 FB 15", out string byteError))
         {
@@ -1305,74 +1917,624 @@ public class Mod : ModBase
             return;
         }
 
-        _stagedBundleBuf = Marshal.AllocHGlobal(STAGED_BUNDLE_BUFFER_SIZE);
-        for (int i = 0; i < STAGED_BUNDLE_BUFFER_SIZE; i++)
-            Marshal.WriteByte(_stagedBundleBuf, i, 0);
-        Marshal.WriteInt32(_stagedBundleBuf + 4, _settings.StagedBundleForceTargetCharId);
-        Marshal.WriteInt32(_stagedBundleBuf + 8, _settings.StagedBundleForceKind);
-        Marshal.WriteInt32(_stagedBundleBuf + 12, _settings.StagedBundleForceAilment);
-        Marshal.WriteInt32(_stagedBundleBuf + 16, _settings.StagedBundleForceApplyMask);
-        Marshal.WriteInt32(_stagedBundleBuf + 20, _settings.StagedBundleForceDmg);
-        Marshal.WriteInt32(_stagedBundleBuf + 24, _settings.StagedBundleForceResFlag);
-
-        string buf = $"0{_stagedBundleBuf:X}h";
-        string[] asm =
+        var asm = new List<string> { "use64" };
+        if (numericWriter)
         {
-            "use64",
-            "push rax", "push rcx", "push rdx", "push r8", "push r9",
-            "pushfq",
-            "movzx eax, byte [rbp+rbx-0x28]",   // eax = target unit index (0xFF empties already skipped)
-            "cmp eax, 0x40",
-            "jae .done",                          // guard against a garbage index
-            "mov rdx, 0141853CE0h",
-            "mov rcx, rax",
-            "shl rcx, 9",                         // *0x200
-            "add rcx, rdx",                       // rcx = target unit ptr
-            $"mov r8, {buf}",
-            // ---- ring log ----
-            "mov edx, dword [r8]",
-            "add dword [r8], 1",
-            "and edx, 0x3F",
-            "shl edx, 4",
-            "add rdx, r8",
-            "add rdx, 28",                        // rdx = slot ptr (header = 28)
-            "mov byte [rdx], al",                 // targetIdx
-            "mov r9b, byte [rcx]",       "mov byte [rdx+1], r9b",       // target charId
-            "mov r9b, byte [rcx+0x1C0]", "mov byte [rdx+2], r9b",       // evade kind
-            "mov r9w, word [rcx+0x1C4]", "mov word [rdx+4], r9w",       // staged dmg
-            "mov r9w, word [rcx+0x1A8]", "mov word [rdx+6], r9w",       // ailment
-            "mov r9b, byte [rcx+0x1D0]", "mov byte [rdx+8], r9b",       // apply mask
-            "mov r9b, byte [rcx+0x1E5]", "mov byte [rdx+9], r9b",       // result flag
-            // ---- optional forcing, gated on charId ----
-            "mov r9d, dword [r8+4]",              // forceCharId
-            "cmp r9d, 0",
-            "jl .done",                           // -1 => observe only
-            "movzx eax, byte [rcx]",              // target charId
-            "cmp r9d, eax",
-            "jne .done",
-            "mov r9d, dword [r8+8]",  "cmp r9d, 0", "jl .noKind", "mov byte [rcx+0x1C0], r9b", ".noKind:",
-            "mov r9d, dword [r8+12]", "cmp r9d, 0", "jl .noAil",  "mov word [rcx+0x1A8], r9w", ".noAil:",
-            "mov r9d, dword [r8+16]", "cmp r9d, 0", "jl .noMask", "mov byte [rcx+0x1D0], r9b", ".noMask:",
-            "mov r9d, dword [r8+20]", "cmp r9d, 0", "jl .noDmg",  "mov word [rcx+0x1C4], r9w", ".noDmg:",
-            "mov r9d, dword [r8+24]", "cmp r9d, 0", "jl .noRes",  "mov byte [rcx+0x1E5], r9b", ".noRes:",
-            ".done:",
-            "popfq",
-            "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
-        };
+            _dclComputePointCallback = DclComputePointCallbackImpl;
+            _dclComputePointWrapper = _hooks.CreateReverseWrapper(_dclComputePointCallback);
+            if (_dclComputePointWrapper is null || _dclComputePointWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-COMPUTE-POINT-SKIP] reverse wrapper unavailable");
+                numericWriter = false;
+            }
+            else
+            {
+                asm.AddRange(BuildDclComputePointShimLines(moduleBase));
+            }
+        }
+        if (statusProducer)
+        {
+            _dclStatusProducerCallback = DclStatusProducerCallbackImpl;
+            _dclStatusProducerWrapper = _hooks.CreateReverseWrapper(_dclStatusProducerCallback);
+            if (_dclStatusProducerWrapper is null || _dclStatusProducerWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-STATUS-PRODUCER-SKIP] reverse wrapper unavailable");
+                statusProducer = false;
+            }
+            else
+            {
+                asm.AddRange(BuildDclStatusProducerShimLines(moduleBase));
+            }
+        }
+
+        if (bundleProbe)
+        {
+            _stagedBundleBuf = Marshal.AllocHGlobal(STAGED_BUNDLE_BUFFER_SIZE);
+            for (int i = 0; i < STAGED_BUNDLE_BUFFER_SIZE; i++)
+                Marshal.WriteByte(_stagedBundleBuf, i, 0);
+            Marshal.WriteInt32(_stagedBundleBuf + 4, _settings.StagedBundleForceTargetCharId);
+            Marshal.WriteInt32(_stagedBundleBuf + 8, _settings.StagedBundleForceKind);
+            // Hard block the two legacy fields even when the standalone validator was not run. They were
+            // once misclassified as status output, but are item/inventory authority.
+            Marshal.WriteInt32(_stagedBundleBuf + 12, -1);
+            Marshal.WriteInt32(_stagedBundleBuf + 16, -1);
+            Marshal.WriteInt32(_stagedBundleBuf + 20, _settings.StagedBundleForceDmg);
+            Marshal.WriteInt32(_stagedBundleBuf + 24, _settings.StagedBundleForceResFlag);
+            if (_settings.StagedBundleForceAilment >= 0 || _settings.StagedBundleForceApplyMask >= 0)
+                Line("[BUNDLE-AUX-WRITE-BLOCKED] +0x1A8/+0x1D0 are item/inventory fields, not status output");
+
+            string buf = $"0{_stagedBundleBuf:X}h";
+            asm.AddRange(
+            [
+                "push rax", "push rcx", "push rdx", "push r8", "push r9",
+                "pushfq",
+                "movzx eax, byte [rbp+rbx-0x28]",
+                "cmp eax, 0x40",
+                "jae .bundle_done",
+                $"mov rdx, 0{moduleBase + BattleUnitTableRva:X}h",
+                "mov rcx, rax",
+                "shl rcx, 9",
+                "add rcx, rdx",
+                $"mov r8, {buf}",
+                "mov edx, dword [r8]",
+                "add dword [r8], 1",
+                "and edx, 0x3F",
+                "shl edx, 4",
+                "add rdx, r8",
+                "add rdx, 28",
+                "mov byte [rdx], al",
+                "mov r9d, dword [r8+4]",
+                "cmp r9d, 0",
+                "jl .bundle_log",
+                "movzx eax, byte [rcx]",
+                "cmp r9d, eax",
+                "jne .bundle_log",
+                "mov r9d, dword [r8+8]",  "cmp r9d, 0", "jl .bundle_no_kind", "mov byte [rcx+0x1C0], r9b", ".bundle_no_kind:",
+                "mov r9d, dword [r8+12]", "cmp r9d, 0", "jl .bundle_no_ail",  "mov word [rcx+0x1A8], r9w", ".bundle_no_ail:",
+                "mov r9d, dword [r8+16]", "cmp r9d, 0", "jl .bundle_no_mask", "mov byte [rcx+0x1D0], r9b", ".bundle_no_mask:",
+                "mov r9d, dword [r8+20]", "cmp r9d, 0", "jl .bundle_no_dmg",  "mov word [rcx+0x1C4], r9w", ".bundle_no_dmg:",
+                "mov r9d, dword [r8+24]", "cmp r9d, 0", "jl .bundle_no_res",  "mov byte [rcx+0x1E5], r9b", ".bundle_no_res:",
+                ".bundle_log:",
+                "mov r9b, byte [rcx]",       "mov byte [rdx+1], r9b",
+                "mov r9b, byte [rcx+0x1C0]", "mov byte [rdx+2], r9b",
+                "mov r9w, word [rcx+0x1C4]", "mov word [rdx+4], r9w",
+                "mov r9w, word [rcx+0x1A8]", "mov word [rdx+6], r9w",
+                "mov r9b, byte [rcx+0x1D0]", "mov byte [rdx+8], r9b",
+                "mov r9b, byte [rcx+0x1E5]", "mov byte [rdx+9], r9b",
+                ".bundle_done:",
+                "popfq",
+                "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+            ]);
+        }
+
+        if (!bundleProbe && !numericWriter && !statusProducer)
+            return;
         try
         {
-            _stagedBundleHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
-            Line($"[BUNDLE-HOOK] rva=0x{rva:X} addr=0x{address:X} buf=0x{_stagedBundleBuf:X} " +
-                 $"forceChar={FormatMaybeInt(_settings.StagedBundleForceTargetCharId)} " +
-                 $"kind={FormatMaybeInt(_settings.StagedBundleForceKind)} ail={FormatMaybeInt(_settings.StagedBundleForceAilment)} " +
-                 $"mask={FormatMaybeInt(_settings.StagedBundleForceApplyMask)} dmg={FormatMaybeInt(_settings.StagedBundleForceDmg)} " +
-                 $"resFlag={FormatMaybeInt(_settings.StagedBundleForceResFlag)}");
+            _stagedBundleHook = _hooks.CreateAsmHook(asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate();
+            _dclComputePointHookActive = numericWriter;
+            _dclStatusProducerHookActive = statusProducer;
+            Line($"[POST-CALC-HOOK] rva=0x{rva:X} addr=0x{address:X} " +
+                 $"bundleProbe={(bundleProbe ? 1 : 0)} numericWriter={(numericWriter ? 1 : 0)} statusProducer={(statusProducer ? 1 : 0)}");
+            if (bundleProbe)
+                Line($"[BUNDLE-HOOK] buf=0x{_stagedBundleBuf:X} forceChar={FormatMaybeInt(_settings.StagedBundleForceTargetCharId)} " +
+                     $"kind={FormatMaybeInt(_settings.StagedBundleForceKind)} itemAux=blocked itemGate=blocked " +
+                     $"dmg={FormatMaybeInt(_settings.StagedBundleForceDmg)} resFlag={FormatMaybeInt(_settings.StagedBundleForceResFlag)}");
         }
         catch (Exception ex)
         {
-            Line($"[BUNDLE-FAILED] {ex.GetType().Name}: {ex.Message}");
+            _dclComputePointHookActive = false;
+            _dclStatusProducerHookActive = false;
+            Line($"[POST-CALC-FAILED] {ex.GetType().Name}: {ex.Message}");
         }
         Flush();
+    }
+
+    private string[] BuildDclComputePointShimLines(nint moduleBase)
+    {
+        string callback = $"0{_dclComputePointWrapper!.WrapperPointer:X}h";
+        return
+        [
+            "push rax", "push rcx", "push rdx", "push r8", "push r9", "push r10", "push r11", "pushfq",
+            "movzx edx, byte [rbp+rbx-0x28]",
+            "cmp edx, 0x40",
+            "jae .compute_point_done",
+            $"mov rcx, 0{moduleBase + BattleUnitTableRva:X}h",
+            "mov r8, rdx",
+            "shl r8, 9",
+            "add rcx, r8",
+            "sub rsp, 80h",
+            "movdqu [rsp+20h], xmm0", "movdqu [rsp+30h], xmm1", "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3", "movdqu [rsp+60h], xmm4", "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]", "movdqu xmm1, [rsp+30h]", "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]", "movdqu xmm4, [rsp+60h]", "movdqu xmm5, [rsp+70h]",
+            "add rsp, 80h",
+            ".compute_point_done:",
+            "popfq", "pop r11", "pop r10", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+        ];
+    }
+
+    private long DclComputePointCallbackImpl(long targetPtrRaw, long targetIdxRaw)
+    {
+        try
+        {
+            RuntimeSettings settings = _settings;
+            if (!settings.DclPipelineEnabled || !settings.DclComputePointNumericEnabled)
+                return 0;
+
+            int targetIdx = (int)(targetIdxRaw & 0xFF);
+            nint targetPtr = (nint)targetPtrRaw;
+            if ((uint)targetIdx >= 64 || targetPtr == 0)
+                return 0;
+
+            long nowTick = Stopwatch.GetTimestamp();
+            DrainCalcEntryProbeEventsForDcl(nowTick);
+            long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
+            if (!_dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out DclActionContext actionContext) ||
+                actionContext.Origin != DclCalcOrigin.OuterSweep ||
+                actionContext.BattleState is not (DclCalcProvenance.AiEvaluationBattleState or DclCalcProvenance.ConfirmedExecutionBattleState) ||
+                (uint)actionContext.CasterIdx >= 64)
+                return 0;
+
+            long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+            nint expectedTargetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+            if (targetPtr != expectedTargetPtr)
+                return 0;
+            nint casterPtr = (nint)(unitTable + (long)actionContext.CasterIdx * BattleUnitStride);
+            bool targetOk = TryReadLiveUnitSnapshot(targetPtr, out UnitSnapshot target, out string targetError);
+            bool casterOk = TryReadLiveUnitSnapshot(casterPtr, out UnitSnapshot attacker, out string casterError);
+            if (!targetOk || !casterOk)
+            {
+                QueueDclDecisionLog(settings,
+                    $"[DCL-COMPUTE-POINT-ERR] targetIdx={targetIdx} ability={actionContext.AbilityId} " +
+                    $"stage=snapshot targetError={CleanDclLogValue(targetError)} casterError={CleanDclLogValue(casterError)}");
+                return 0;
+            }
+
+            const int HpDebitOffset = 0x1C4;
+            const int HpCreditOffset = 0x1C6;
+            const int MpDebitOffset = 0x1C8;
+            const int MpCreditOffset = 0x1CA;
+            const int ResultFlagsOffset = 0x1E5;
+            int naturalDebit = target.ReadUInt16(HpDebitOffset);
+            int naturalCredit = target.ReadUInt16(HpCreditOffset);
+            int naturalMpDebit = target.ReadUInt16(MpDebitOffset);
+            int naturalMpCredit = target.ReadUInt16(MpCreditOffset);
+            byte naturalFlags = (byte)target.ReadByte(ResultFlagsOffset);
+
+            long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+            int syntheticCurrentHp = Math.Clamp(target.Hp - naturalDebit, 0, Math.Max(0, target.MaxHp));
+            long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, naturalDebit);
+            FormulaContext context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings,
+                _itemCatalog,
+                _abilityCatalog,
+                target,
+                attacker,
+                eventIndex,
+                eventSeed,
+                actionContext.ActionType,
+                actionContext.AbilityId,
+                naturalDebit,
+                naturalCredit,
+                naturalMpDebit,
+                naturalMpCredit,
+                actionContext.ActionPayload);
+
+            long hitTtlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+            DclHitDecision hitDecision = default;
+            bool hasHitDecision = settings.DclHitControlEnabled &&
+                _dclHitDecisionCache.TryGet(
+                    targetIdx,
+                    actionContext.CasterIdx,
+                    actionContext.AbilityId,
+                    actionContext.ActionType,
+                    actionContext.ActionPayload,
+                    nowTick,
+                    hitTtlTicks,
+                    out hitDecision);
+            if (hasHitDecision && hitDecision.Multistrike.StrikeCount > 0)
+                FormulaRuntimeContextBuilder.AddDclMultistrikeVariables(context, hitDecision.Multistrike);
+
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+            {
+                QueueDclDecisionLog(settings,
+                    $"[DCL-COMPUTE-POINT-ERR] target=0x{target.CharId:X2} ability={actionContext.AbilityId} " +
+                    $"stage=derived error={CleanDclLogValue(derivedError)}");
+                return 0;
+            }
+
+            bool forcedMiss = hasHitDecision && !hitDecision.Hit;
+            int? authoredDebit = null;
+            int? authoredCredit = null;
+            int? authoredMpDebit = null;
+            int? authoredMpCredit = null;
+            if (!forcedMiss)
+            {
+                if (!string.IsNullOrWhiteSpace(settings.DclDamageFormula))
+                {
+                    if (!FormulaExpression.TryEvaluate(settings.DclDamageFormula, context, out int value, out string debitError))
+                        return LogDclComputePointFormulaError(settings, target, actionContext, "hp-debit", debitError);
+                    authoredDebit = value;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.DclHealingFormula))
+                {
+                    if (!FormulaExpression.TryEvaluate(settings.DclHealingFormula, context, out int value, out string creditError))
+                        return LogDclComputePointFormulaError(settings, target, actionContext, "hp-credit", creditError);
+                    authoredCredit = value;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.DclMpDebitFormula))
+                {
+                    if (!FormulaExpression.TryEvaluate(settings.DclMpDebitFormula, context, out int value, out string mpDebitError))
+                        return LogDclComputePointFormulaError(settings, target, actionContext, "mp-debit", mpDebitError);
+                    authoredMpDebit = value;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.DclMpCreditFormula))
+                {
+                    if (!FormulaExpression.TryEvaluate(settings.DclMpCreditFormula, context, out int value, out string mpCreditError))
+                        return LogDclComputePointFormulaError(settings, target, actionContext, "mp-credit", mpCreditError);
+                    authoredMpCredit = value;
+                }
+
+                DclInstantKoAssessment instantKoAssessment = BuildDclInstantKoAssessment(
+                    settings,
+                    context,
+                    target,
+                    attacker,
+                    actionContext.ActionType,
+                    actionContext.AbilityId);
+                if (instantKoAssessment.Matched)
+                {
+                    int stagedCredit = Math.Clamp(authoredCredit ?? naturalCredit, 0, short.MaxValue);
+                    int failureDebit = instantKoAssessment.ZeroDamageOnFailure
+                        ? 0
+                        : Math.Clamp(authoredDebit ?? naturalDebit, 0, short.MaxValue);
+                    if (actionContext.BattleState == DclCalcProvenance.AiEvaluationBattleState)
+                    {
+                        authoredDebit = DclLifecycle.ComputeExpectedInstantKoDebit(
+                            target.Hp,
+                            stagedCredit,
+                            failureDebit,
+                            instantKoAssessment);
+                        QueueDclStatusLog(settings,
+                            $"[DCL-KO-COMPUTE] phase=ai-expected rule={CleanDclLogValue(instantKoAssessment.RuleName)} " +
+                            $"target=0x{target.CharId:X2} ability={actionContext.AbilityId} resistance={instantKoAssessment.Resistance} " +
+                            $"successPermille={instantKoAssessment.SuccessPermille} debit={authoredDebit} credit={stagedCredit}");
+                    }
+                    else
+                    {
+                        DclInstantKoDecision instantKoDecision = RollDclInstantKoDecision(settings, instantKoAssessment);
+                        authoredDebit = DclLifecycle.ComputeResolvedInstantKoDebit(
+                            target.Hp,
+                            stagedCredit,
+                            failureDebit,
+                            instantKoDecision);
+
+                        string koOutcome = instantKoDecision.Immune
+                            ? "immune"
+                            : instantKoDecision.Resisted ? "resisted" : "engine-owned-ko";
+                        QueueDclStatusLog(settings,
+                            $"[DCL-KO-COMPUTE] phase=execution rule={CleanDclLogValue(instantKoDecision.RuleName)} " +
+                            $"target=0x{target.CharId:X2} ability={actionContext.AbilityId} resistance={instantKoDecision.Resistance} " +
+                            $"roll={instantKoDecision.Roll} outcome={koOutcome} debit={authoredDebit ?? failureDebit} credit={stagedCredit}");
+                    }
+                }
+            }
+
+            DclComputePointNumericPlan numericPlan = DclComputePointNumericPlan.Build(
+                naturalDebit,
+                naturalCredit,
+                naturalMpDebit,
+                naturalMpCredit,
+                naturalFlags,
+                authoredDebit,
+                authoredCredit,
+                authoredMpDebit,
+                authoredMpCredit,
+                forcedMiss,
+                settings.DclResultFlagsControlEnabled,
+                settings.DclResultFlagsPreserveMask);
+            int debit = numericPlan.HpDebit;
+            int credit = numericPlan.HpCredit;
+            int mpDebit = numericPlan.MpDebit;
+            int mpCredit = numericPlan.MpCredit;
+            byte resultFlags = numericPlan.ResultFlags;
+            bool writeDebit = numericPlan.WriteHpDebit;
+            bool writeCredit = numericPlan.WriteHpCredit;
+            bool writeMpDebit = numericPlan.WriteMpDebit;
+            bool writeMpCredit = numericPlan.WriteMpCredit;
+            bool wroteDebit = false;
+            bool wroteCredit = false;
+            bool wroteMpDebit = false;
+            bool wroteMpCredit = false;
+            bool wroteFlags = false;
+            try
+            {
+                if (writeDebit) { Marshal.WriteInt16(targetPtr, HpDebitOffset, (short)debit); wroteDebit = true; }
+                if (writeCredit) { Marshal.WriteInt16(targetPtr, HpCreditOffset, (short)credit); wroteCredit = true; }
+                if (writeMpDebit) { Marshal.WriteInt16(targetPtr, MpDebitOffset, (short)mpDebit); wroteMpDebit = true; }
+                if (writeMpCredit) { Marshal.WriteInt16(targetPtr, MpCreditOffset, (short)mpCredit); wroteMpCredit = true; }
+                if (numericPlan.WriteResultFlags)
+                {
+                    Marshal.WriteByte(targetPtr, ResultFlagsOffset, resultFlags);
+                    wroteFlags = true;
+                }
+            }
+            catch (Exception writeError)
+            {
+                try { if (wroteDebit) Marshal.WriteInt16(targetPtr, HpDebitOffset, (short)naturalDebit); } catch { }
+                try { if (wroteCredit) Marshal.WriteInt16(targetPtr, HpCreditOffset, (short)naturalCredit); } catch { }
+                try { if (wroteMpDebit) Marshal.WriteInt16(targetPtr, MpDebitOffset, (short)naturalMpDebit); } catch { }
+                try { if (wroteMpCredit) Marshal.WriteInt16(targetPtr, MpCreditOffset, (short)naturalMpCredit); } catch { }
+                try { if (wroteFlags) Marshal.WriteByte(targetPtr, ResultFlagsOffset, naturalFlags); } catch { }
+                QueueDclDecisionLog(settings,
+                    $"[DCL-COMPUTE-POINT-ERR] target=0x{target.CharId:X2} ability={actionContext.AbilityId} " +
+                    $"stage=write error={CleanDclLogValue(writeError.Message)}");
+                return 0;
+            }
+
+            if (actionContext.IsConfirmedExecution)
+            {
+                _dclComputePointCache.Record(
+                    targetIdx,
+                    new DclComputedNumericResult(
+                        actionContext.CasterIdx,
+                        actionContext.ActionType,
+                        actionContext.AbilityId,
+                        actionContext.ActionPayload,
+                        nowTick,
+                        naturalDebit,
+                        naturalCredit,
+                        naturalMpDebit,
+                        naturalMpCredit,
+                        naturalFlags,
+                        debit,
+                        credit,
+                        mpDebit,
+                        mpCredit,
+                        resultFlags));
+            }
+
+            QueueDclDecisionLog(settings,
+                $"[DCL-COMPUTE-POINT] origin={DclCalcProvenance.Name(actionContext.Origin)} " +
+                $"battleState=0x{actionContext.BattleState:X} caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} " +
+                $"ability={actionContext.AbilityId} targetIdx={targetIdx} miss={(forcedMiss ? 1 : 0)} " +
+                $"hp={naturalDebit}/{naturalCredit}->{debit}/{credit} mp={naturalMpDebit}/{naturalMpCredit}->{mpDebit}/{mpCredit} " +
+                $"flags=0x{naturalFlags:X2}->0x{resultFlags:X2} cached={(actionContext.IsConfirmedExecution ? 1 : 0)}");
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            QueueDclDecisionLog(_settings,
+                $"[DCL-COMPUTE-POINT-ERR] stage=callback error={CleanDclLogValue(ex.Message)}");
+            return 0;
+        }
+    }
+
+    private long LogDclComputePointFormulaError(
+        RuntimeSettings settings,
+        UnitSnapshot target,
+        DclActionContext actionContext,
+        string channel,
+        string error)
+    {
+        QueueDclDecisionLog(settings,
+            $"[DCL-COMPUTE-POINT-ERR] target=0x{target.CharId:X2} ability={actionContext.AbilityId} " +
+            $"channel={channel} error={CleanDclLogValue(error)}");
+        return 0;
+    }
+
+    private string[] BuildDclStatusProducerShimLines(nint moduleBase)
+    {
+        string callback = $"0{_dclStatusProducerWrapper!.WrapperPointer:X}h";
+        return
+        [
+            "push rax", "push rcx", "push rdx", "push r8", "push r9", "push r10", "push r11", "pushfq",
+            "movzx edx, byte [rbp+rbx-0x28]",
+            "cmp edx, 0x40",
+            "jae .status_producer_done",
+            $"mov rcx, 0{moduleBase + BattleUnitTableRva:X}h",
+            "mov r8, rdx",
+            "shl r8, 9",
+            "add rcx, r8",
+            // At the outer caller's post-call boundary rsp is 16-byte aligned. Eight pushes and
+            // 0x80 bytes (shadow + xmm saves) preserve that alignment for the managed call.
+            "sub rsp, 80h",
+            "movdqu [rsp+20h], xmm0", "movdqu [rsp+30h], xmm1", "movdqu [rsp+40h], xmm2",
+            "movdqu [rsp+50h], xmm3", "movdqu [rsp+60h], xmm4", "movdqu [rsp+70h], xmm5",
+            $"mov r11, {callback}",
+            "call r11",
+            "movdqu xmm0, [rsp+20h]", "movdqu xmm1, [rsp+30h]", "movdqu xmm2, [rsp+40h]",
+            "movdqu xmm3, [rsp+50h]", "movdqu xmm4, [rsp+60h]", "movdqu xmm5, [rsp+70h]",
+            "add rsp, 80h",
+            ".status_producer_done:",
+            "popfq", "pop r11", "pop r10", "pop r9", "pop r8", "pop rdx", "pop rcx", "pop rax",
+        ];
+    }
+
+    private long DclStatusProducerCallbackImpl(long targetPtrRaw, long targetIdxRaw)
+    {
+        try
+        {
+            var settings = _settings;
+            if (!settings.DclStatusControlEnabled)
+                return 0;
+
+            int targetIdx = (int)(targetIdxRaw & 0xFF);
+            nint targetPtr = (nint)targetPtrRaw;
+            if ((uint)targetIdx >= 64 || targetPtr == 0)
+                return 0;
+
+            // The hook address proves outer-sweep provenance; the fire-time state independently
+            // excludes forecast and AI evaluation. Both signals must agree before any packet write.
+            int battleState = Marshal.ReadInt32(_moduleBase + DCL_BATTLE_STATE_GLOBAL_RVA);
+            if (battleState != DclCalcProvenance.ConfirmedExecutionBattleState)
+                return 0;
+
+            long nowTick = Stopwatch.GetTimestamp();
+            DrainCalcEntryProbeEventsForDcl(nowTick);
+            long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
+            if (!_dclActionCache.TryGetLatestConfirmedExecution(targetIdx, nowTick, maxAgeTicks, out var actionContext))
+                return 0;
+            if ((uint)actionContext.CasterIdx >= 64)
+                return 0;
+
+            var rules = (settings.DclStatusRules ?? [])
+                .Where(rule => rule.AbilityId == actionContext.AbilityId &&
+                               (rule.ActionType < 0 || rule.ActionType == actionContext.ActionType))
+                .ToArray();
+            if (rules.Length == 0 || rules.All(rule => !rule.NativeRiderReplacedPostCalc))
+                return 0;
+            string producerError = "ability catalog entry unavailable";
+            if (!_abilityCatalog.TryGet(actionContext.AbilityId, out var ability) ||
+                !DclStatusConditionalProducer.TryValidateRules(ability, rules, out producerError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-PRODUCER-ERR] ability={actionContext.AbilityId} targetIdx={targetIdx} " +
+                    $"stage=ownership error={CleanDclLogValue(producerError)}");
+                return 0;
+            }
+
+            long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+            nint expectedTargetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+            if (expectedTargetPtr != targetPtr)
+                return 0;
+            nint casterPtr = (nint)(unitTable + (long)actionContext.CasterIdx * BattleUnitStride);
+            bool targetOk = TryReadLiveUnitSnapshot(targetPtr, out var target, out string targetError);
+            bool casterOk = TryReadLiveUnitSnapshot(casterPtr, out var attacker, out string casterError);
+            if (!targetOk || !casterOk)
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-PRODUCER-ERR] ability={actionContext.AbilityId} targetIdx={targetIdx} " +
+                    $"stage=snapshot targetError={CleanDclLogValue(targetError)} casterError={CleanDclLogValue(casterError)}");
+                return 0;
+            }
+            if (DclStatusConditionalProducer.IsBlockedByNativeEligibility(ability, attacker))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-PRODUCER] ability={actionContext.AbilityId} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} targetIdx={targetIdx} outcome=native-ineligible reason=caster-sleep");
+                return 0;
+            }
+
+            const int HpDebitOffset = 0x1C4;
+            const int HpCreditOffset = 0x1C6;
+            const int MpDebitOffset = 0x1C8;
+            const int MpCreditOffset = 0x1CA;
+            const int StatusAddOffset = 0x1DB;
+            const int StatusRemoveOffset = 0x1E0;
+            const int ResultFlagsOffset = 0x1E5;
+            int oldDebit = target.ReadUInt16(HpDebitOffset);
+            int oldCredit = target.ReadUInt16(HpCreditOffset);
+            int oldMpDebit = target.ReadUInt16(MpDebitOffset);
+            int oldMpCredit = target.ReadUInt16(MpCreditOffset);
+            int oldFlags = target.ReadByte(ResultFlagsOffset);
+
+            long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+            int syntheticCurrentHp = Math.Clamp(target.Hp - Math.Max(0, oldDebit), 0, Math.Max(0, target.MaxHp));
+            long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, oldDebit);
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings,
+                _itemCatalog,
+                _abilityCatalog,
+                target,
+                attacker,
+                eventIndex,
+                eventSeed,
+                actionContext.ActionType,
+                actionContext.AbilityId,
+                oldDebit,
+                oldCredit,
+                oldMpDebit,
+                oldMpCredit,
+                actionContext.ActionPayload);
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context,
+                    settings.DclDerivedVariables,
+                    "DclDerivedVariables",
+                    out string derivedError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-PRODUCER-ERR] ability={actionContext.AbilityId} target=0x{target.CharId:X2} " +
+                    $"stage=derived error={CleanDclLogValue(derivedError)}");
+                return 0;
+            }
+
+            var plan = BuildDclStatusPlan(
+                settings,
+                context,
+                target,
+                attacker,
+                actionContext.ActionType,
+                actionContext.AbilityId);
+            if (plan.Count == 0)
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-PRODUCER-ERR] ability={actionContext.AbilityId} target=0x{target.CharId:X2} " +
+                    "stage=plan error=empty-owned-plan");
+                return 0;
+            }
+
+            // A separately authored hit/miss decision, when present, remains the outer delivery gate.
+            // Clearing every owned bit here prevents a native status result from surviving a DCL miss.
+            long hitTtlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+            bool suppressedByHit = settings.DclHitControlEnabled &&
+                _dclHitDecisionCache.TryGet(
+                    targetIdx,
+                    actionContext.CasterIdx,
+                    actionContext.AbilityId,
+                    actionContext.ActionType,
+                    actionContext.ActionPayload,
+                    nowTick,
+                    hitTtlTicks,
+                    out var hitDecision) &&
+                !hitDecision.Hit;
+            if (suppressedByHit)
+                plan = plan.Select(write => write with { FailClosed = true }).ToList();
+
+            var packet = StageDclStatusPacket(
+                targetPtr,
+                StatusAddOffset,
+                StatusRemoveOffset,
+                ResultFlagsOffset,
+                (byte)oldFlags,
+                plan);
+            bool carriesResult = packet.Add.Any(value => value != 0) || packet.Remove.Any(value => value != 0);
+            if (carriesResult)
+            {
+                _dclStatusPlanCache.Record(
+                    targetIdx,
+                    new DclPreparedStatusPlan(
+                        actionContext.CasterIdx,
+                        actionContext.ActionType,
+                        actionContext.AbilityId,
+                        nowTick,
+                        plan.ToArray()));
+            }
+            else
+            {
+                // A fully resisted/ineligible status-only action will not reach pre-clamp, so its
+                // decision must be logged here. Successful packets defer logging/duration ownership
+                // until the normal apply transaction consumes the cached plan.
+                LogCommittedDclStatusPacket(settings, targetPtr, target, actionContext, plan, packet);
+            }
+
+            QueueDclStatusLog(settings,
+                $"[DCL-STATUS-PRODUCER] ability={actionContext.AbilityId} caster=0x{attacker.CharId:X2} " +
+                $"target=0x{target.CharId:X2} targetIdx={targetIdx} origin={DclCalcProvenance.Name(actionContext.Origin)} " +
+                $"battleState=0x{actionContext.BattleState:X} writes={plan.Count} carriesResult={(carriesResult ? 1 : 0)} " +
+                $"suppressedByHit={(suppressedByHit ? 1 : 0)} flags=0x{oldFlags:X2}->0x{packet.ResultFlags:X2}");
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            QueueDclStatusLog(_settings,
+                $"[DCL-STATUS-PRODUCER-ERR] stage=callback error={CleanDclLogValue(ex.Message)}");
+            return 0;
+        }
     }
 
     private int _stagedBundleSeen;
@@ -1394,11 +2556,11 @@ public class Mod : ModBase
             int charId = Marshal.ReadByte(slot + 1);
             int kind = Marshal.ReadByte(slot + 2);
             int dmg = (ushort)Marshal.ReadInt16(slot + 4);
-            int ailment = (ushort)Marshal.ReadInt16(slot + 6);
+            int itemAux = (ushort)Marshal.ReadInt16(slot + 6);
             int mask = Marshal.ReadByte(slot + 8);
             int resFlag = Marshal.ReadByte(slot + 9);
             Line($"[BUNDLE] n={n} targetIdx={targetIdx} charId=0x{charId:X2} kind=0x{kind:X2} " +
-                 $"stagedDmg={dmg} ailment=0x{ailment:X4} applyMask=0x{mask:X2} resFlag=0x{resFlag:X2}");
+                 $"stagedDmg={dmg} itemAux=0x{itemAux:X4} sideEffectMask=0x{mask:X2} resFlag=0x{resFlag:X2}");
         }
         if (count - start > logged)
             Line($"[BUNDLE-BULK] +{count - start - logged} more this poll (total={count})");
@@ -1410,21 +2572,414 @@ public class Mod : ModBase
     private int _statusRollSeen;
     // REACTION CHANCE CONTROL — the 4 real-code Brave-gate roll sites (reaction trigger% = defender
     // Brave; canon Phase A: Blade Grasp / Hamedo / Arrow Guard / Catch / Counter...). Each site is
-    // `mov ecx,0x64; movzx edx,[def+0x2B]; call 0x278EE0` and arms the reaction when eax==0, so the
+    // `mov ecx,0x64; movzx edx,[def+0x2B]; call 0x278E68` and arms the reaction when eax==0, so the
     // trigger probability IS edx: forced 0 = reactions NEVER arm (suppress), 100 = ALWAYS (force).
     // The only combat roll in real code (LT3b) — hook the call sites and override edx.
-    private static readonly (int Rva, string Expected, string Tag)[] ReactionRollSites =
+    private static readonly (int Rva, string Expected, string Tag, string IdRegister)[] ReactionRollSites =
     {
-        (0x30BE86, "E8 55 D0 F6 FF", "R1"),
-        (0x30BEDC, "E8 FF CF F6 FF", "R2"),
-        (0x30BF32, "E8 A9 CF F6 FF", "R3"),
-        (0x30BF72, "E8 69 CF F6 FF", "R4"),
+        (0x30BDEE, "E8 75 D0 F6 FF", "R1", "r11d"),
+        (0x30BE44, "E8 1F D0 F6 FF", "R2", "ebx"),
+        (0x30BE9A, "E8 C9 CF F6 FF", "R3", "ebx"),
+        (0x30BEDA, "E8 89 CF F6 FF", "R4", "r11d"),
     };
+
+    // DCL-aware reaction gate. LT10 proved that a late authored miss still allowed Counter to arm.
+    // At all four real-code Brave-gate call sites RAX is the defender and EDX is the natural chance.
+    // Consult the same per-target hit decision made at calc-entry; a DCL miss forces chance 0 before
+    // the engine's native roll, while hits and cache misses preserve the natural value.
+    private void InstallDclReactionGateIfEnabled(nint moduleBase)
+    {
+        bool suppressMisses = _settings.DclMissSuppressReactionsEnabled && _settings.DclMissOutputControlEnabled;
+        bool taxonomy = _settings.DclReactionTaxonomyEnabled;
+        if (!suppressMisses && !taxonomy)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-REACTION-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            // This is one logical gate spread across four branches. Never leave a partially armed
+            // feature: a patch drift at only one site would make suppression reaction-dependent and
+            // therefore nondeterministic from the DCL's point of view.
+            foreach (var site in ReactionRollSites)
+            {
+                nint address = moduleBase + site.Rva;
+                if (!ValidateExpectedBytes(address, site.Expected, out string byteError))
+                {
+                    Line($"[DCL-REACTION-SKIP] site={site.Tag} rva=0x{site.Rva:X} {byteError} (all sites disabled)");
+                    Flush();
+                    return;
+                }
+            }
+
+            _dclReactionGateCallback = DclReactionGateCallbackImpl;
+            _dclReactionGateWrapper = _hooks.CreateReverseWrapper(_dclReactionGateCallback);
+            if (_dclReactionGateWrapper is null || _dclReactionGateWrapper.WrapperPointer == 0)
+            {
+                Line("[DCL-REACTION-SKIP] reverse wrapper unavailable");
+                Flush();
+                return;
+            }
+
+            foreach (var site in ReactionRollSites)
+            {
+                nint address = moduleBase + site.Rva;
+                _dclReactionGateHooks.Add(
+                    _hooks.CreateAsmHook(BuildDclReactionGateLines(site.IdRegister), address, AsmHookBehaviour.ExecuteFirst).Activate());
+                Line($"[DCL-REACTION-HOOK] site={site.Tag} rva=0x{site.Rva:X} idReg={site.IdRegister} " +
+                     $"taxonomy={(taxonomy ? 1 : 0)} suppressMisses={(suppressMisses ? 1 : 0)} expected={site.Expected}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-REACTION-FAILED] {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private string[] BuildDclReactionGateLines(string idRegister)
+    {
+        if (_dclReactionGateWrapper is null)
+            return [];
+
+        string callback = $"0{_dclReactionGateWrapper.WrapperPointer:X}h";
+        return
+        [
+            "use64",
+            // The native call is ABI-aligned here. Save every volatile register except RDX (the
+            // intentional output), plus flags. Seven pushes leave rsp+8 mod 16; 0x28 supplies the
+            // required 0x20 shadow space and restores call alignment.
+            "push rax",
+            "push rcx",
+            "push r8",
+            "push r9",
+            "push r10",
+            "push r11",
+            "pushfq",
+            "sub rsp, 28h",
+            "mov rcx, rax", // defender pointer; rdx already carries natural chance
+            $"mov r8d, {idRegister}", // exact reaction id saved by the enclosing native gate
+            $"mov rax, {callback}",
+            "call rax",
+            "add rsp, 28h",
+            "mov edx, eax",
+            "popfq",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            "pop rcx",
+            "pop rax",
+        ];
+    }
+
+    private long DclReactionGateCallbackImpl(long defenderPtrRaw, long naturalChanceRaw, long reactionAbilityIdRaw)
+    {
+        int chance = Math.Clamp((int)naturalChanceRaw, 0, 100);
+        try
+        {
+            nint defenderPtr = (nint)defenderPtrRaw;
+            if (!TryGetUnitTableIndex(defenderPtr, out int targetIdx, out _))
+                return chance;
+
+            int reactionAbilityId = (int)reactionAbilityIdRaw & 0xFFFF;
+            if (_settings.DclReactionTaxonomyEnabled)
+            {
+                DclReactionRule? rule = (_settings.DclReactionRules ?? [])
+                    .FirstOrDefault(candidate => candidate.AbilityId == reactionAbilityId);
+                if (rule is not null && TryReadLiveUnitSnapshot(defenderPtr, out var target, out _))
+                {
+                    long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+                    long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, target.Hp, 0);
+                    var context = BuildDclReactionFormulaContext(
+                        target, targetIdx, eventIndex, eventSeed, out var incoming);
+                    DclReactions.AddRuleVariables(
+                        context, reactionAbilityId, target.Brave, rule.FlatChance, rule.NormalizedMode);
+
+                    string error = "";
+                    bool conditionMatched = false;
+                    bool ok = FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                        context, _settings.DclDerivedVariables, "DclDerivedVariables", out error);
+                    if (ok)
+                    {
+                        ok = rule.TryMatches(context, out conditionMatched, out error);
+                        if (ok && !conditionMatched)
+                            chance = 0;
+                        else if (ok)
+                        {
+                            ok = rule.TryGetChance(target.Brave, context, out int authoredChance, out error);
+                            if (ok)
+                                chance = authoredChance;
+                        }
+                    }
+
+                    if (_dclReactionVirtualizationLogs < Math.Clamp(_settings.DclReactionMaxLogs, 0, 100_000))
+                    {
+                        _dclReactionVirtualizationLogs++;
+                        QueueDclDecisionLog(_settings, ok
+                            ? $"[DCL-REACTION-TAXONOMY-GATE] target=0x{target.CharId:X2} reaction={reactionAbilityId} " +
+                              $"mode={rule.NormalizedMode} condition={(conditionMatched ? 1 : 0)} brave={target.Brave} " +
+                              $"chance={Math.Clamp((int)naturalChanceRaw, 0, 100)}->{chance} " +
+                              $"incomingSource={incoming.SourceIdx} incomingType=0x{incoming.ActionType:X2} " +
+                              $"incomingAbility={incoming.AbilityId} sourceEpoch={incoming.SourceTurnEpoch} " +
+                              $"targetEpoch={incoming.TargetTurnEpoch} incomingOrigin={incoming.Origin} " +
+                              $"rule={CleanDclLogValue(rule.DisplayName)}"
+                            : $"[DCL-REACTION-TAXONOMY-ERR] target=0x{target.CharId:X2} reaction={reactionAbilityId} " +
+                              $"rule={CleanDclLogValue(rule.DisplayName)} error={CleanDclLogValue(error)}");
+                    }
+
+                }
+            }
+
+            if (!_settings.DclMissSuppressReactionsEnabled || !_settings.DclMissOutputControlEnabled)
+                return chance;
+
+            long nowTick = Stopwatch.GetTimestamp();
+            long ttlTicks = StopwatchTicksFromMilliseconds(_settings.DclHitDecisionTtlMs);
+            if (!_dclHitDecisionCache.TryGetLatest(
+                    targetIdx,
+                    nowTick,
+                    ttlTicks,
+                    out var decision,
+                    out int casterIdx,
+                    out int abilityId,
+                    out int actionType,
+                    out _) ||
+                decision.Hit)
+                return chance;
+
+            if (_dclReactionGateLogs < Math.Clamp(_settings.DclHitMaxLogs, 0, 100_000))
+            {
+                _dclReactionGateLogs++;
+                QueueDclHitLog(
+                    _settings,
+                    $"[DCL-REACTION-GATE] targetIdx={targetIdx} casterIdx={casterIdx} ability={abilityId} " +
+                    $"type=0x{actionType:X2} reaction={reactionAbilityId} chance={chance}->0 decision=miss");
+            }
+            return 0;
+        }
+        catch
+        {
+            return chance;
+        }
+    }
+
+    private long ResolveDclHexWardGate(
+        nint defenderPtr,
+        UnitSnapshot defender,
+        int defenderTableIndex,
+        DclReactionIncomingContext incoming,
+        bool ruleAccepted,
+        int chance,
+        string ruleReason)
+    {
+        bool structurallyEligible =
+            ruleAccepted &&
+            incoming.SourceValid && incoming.ActionValid &&
+            incoming.HitDecisionKnown && incoming.Hit &&
+            defenderTableIndex is >= 0 and <= 20 &&
+            incoming.SourceIdx is >= 0 and <= 20;
+        var token = new DclReactionActionToken(
+            incoming.SourceIdx,
+            incoming.SourceCharId,
+            incoming.SourceTurnEpoch,
+            incoming.ActionType,
+            incoming.AbilityId);
+        bool cadenceEligible;
+        lock (_dclReactionCadenceGate)
+            cadenceEligible = GetOrCreateDclReactionCadenceState(defender)
+                .CanConsumeAttackerAction(443, token);
+
+        bool eligible = structurallyEligible && cadenceEligible;
+        string reason = !ruleAccepted ? ruleReason
+            : !incoming.SourceValid ? "source-invalid"
+            : !incoming.ActionValid ? "action-invalid"
+            : !incoming.HitDecisionKnown ? "hit-unknown"
+            : !incoming.Hit ? "incoming-miss"
+            : defenderTableIndex is < 0 or > 20 ? "defender-index"
+            : incoming.SourceIdx is < 0 or > 20 ? "source-index"
+            : !cadenceEligible ? "cadence-consumed"
+            : "eligible";
+
+        int roll;
+        if (!eligible)
+        {
+            roll = 99;
+        }
+        else if (_settings.DclHexWardForcedRoll is >= 0 and <= 99)
+        {
+            roll = _settings.DclHexWardForcedRoll;
+        }
+        else
+        {
+            lock (_dclHexWardRngGate)
+                roll = (_dclHexWardRng ??= new Random()).Next(0, 100);
+        }
+
+        var decision = _dclHexWardCoordinator.Evaluate(
+            defenderPtr,
+            defenderTableIndex,
+            defender.CharId,
+            token,
+            eligible,
+            chance,
+            roll,
+            reason);
+        bool mailboxArmed = false;
+        if (decision.ShouldRequestProducer && _dclHexWardProducerBuf != 0)
+        {
+            Marshal.WriteByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex, 1);
+            mailboxArmed = true;
+        }
+
+        if (_dclHexWardLogs < Math.Clamp(_settings.DclHexWardMaxLogs, 0, 100_000))
+        {
+            _dclHexWardLogs++;
+            QueueDclDecisionLog(_settings,
+                $"[DCL-HEX-WARD-GATE] defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
+                $"sourceIdx={incoming.SourceIdx} sourceChar=0x{incoming.SourceCharId:X2} " +
+                $"actionType=0x{incoming.ActionType:X2} ability={incoming.AbilityId} sourceEpoch={incoming.SourceTurnEpoch} " +
+                $"hitKnown={(incoming.HitDecisionKnown ? 1 : 0)} hit={(incoming.Hit ? 1 : 0)} chance={decision.Reservation.Chance} " +
+                $"roll={decision.Reservation.Roll} accepted={(decision.Accepted ? 1 : 0)} replay={(decision.Replayed ? 1 : 0)} " +
+                $"mailbox={(mailboxArmed ? "armed" : decision.ShouldRequestProducer ? "missing" : "none")} reason={CleanDclLogValue(decision.Reason)}");
+        }
+
+        // The managed roll and dynamic producer own carrier 443. Returning zero prevents a second
+        // native roll/dispatch attempt while the later pass-2 hook consumes the reservation.
+        return 0;
+    }
+
+    private FormulaContext BuildDclReactionFormulaContext(
+        UnitSnapshot target,
+        int targetIdx,
+        long eventIndex,
+        long eventSeed,
+        out DclReactionIncomingContext incoming)
+    {
+        long nowTick = Stopwatch.GetTimestamp();
+        DrainCalcEntryProbeEventsForDcl(nowTick);
+
+        int sourceIdx = Marshal.ReadInt32(_moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA);
+        UnitSnapshot? source = null;
+        int sourceCharId = -1;
+        if ((uint)sourceIdx < 64)
+        {
+            nint sourcePtr = _moduleBase + _settings.PreviewForecastUnitTableRva + sourceIdx * 0x200;
+            if (TryReadLiveUnitSnapshot(sourcePtr, out var resolvedSource, out _))
+            {
+                source = resolvedSource;
+                sourceCharId = resolvedSource.CharId;
+            }
+        }
+
+        int actionType = -1;
+        int abilityId = -1;
+        int actionPayload = -1;
+        string origin = "none";
+        bool actionValid = false;
+        long maxAgeTicks = StopwatchTicksFromMilliseconds(_settings.DclActionContextMaxAgeMs);
+        if (source is not null &&
+            _dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out var cached) &&
+            cached.CasterIdx == sourceIdx)
+        {
+            actionType = cached.ActionType;
+            abilityId = cached.AbilityId;
+            actionPayload = cached.ActionPayload;
+            actionValid = actionType != 0xFF;
+            origin = "calc-cache";
+        }
+        else if (source is not null)
+        {
+            actionType = source.ReadByte(0x1A1);
+            abilityId = source.ReadUInt16(0x1A2);
+            actionPayload = source.ReadUInt16(0x1A8);
+            actionValid = actionType is >= 0 and < 0xFF && abilityId >= 0;
+            origin = "source-order-record";
+        }
+
+        bool hitDecisionKnown = false;
+        bool incomingHit = false;
+        int physicalOutcome = (int)DclPhysicalOutcome.Legacy;
+        int defenseKind = (int)DclDefenseKind.None;
+        long hitTtlTicks = StopwatchTicksFromMilliseconds(_settings.DclHitDecisionTtlMs);
+        if (source is not null &&
+            _dclHitDecisionCache.TryGetLatest(
+                targetIdx,
+                nowTick,
+                hitTtlTicks,
+                out var hitDecision,
+                out int hitCasterIdx,
+                out int hitAbilityId,
+                out int hitActionType,
+                out int hitActionPayload) &&
+            hitCasterIdx == sourceIdx &&
+            (!actionValid || (hitAbilityId == abilityId && hitActionType == actionType &&
+                              hitActionPayload == actionPayload)))
+        {
+            hitDecisionKnown = true;
+            incomingHit = hitDecision.Hit;
+            physicalOutcome = (int)hitDecision.PhysicalOutcome;
+            defenseKind = (int)hitDecision.DefenseKind;
+        }
+
+        long sourceTurnEpoch = -1;
+        long targetTurnEpoch;
+        lock (_dclReactionCadenceGate)
+        {
+            var targetCadence = GetOrCreateDclReactionCadenceState(target);
+            targetTurnEpoch = targetCadence.OwnTurnEpoch;
+            if (source is not null)
+                sourceTurnEpoch = GetOrCreateDclReactionCadenceState(source).OwnTurnEpoch;
+        }
+
+        incoming = new DclReactionIncomingContext(
+            source is not null,
+            actionValid,
+            sourceIdx,
+            targetIdx,
+            sourceCharId,
+            actionType,
+            abilityId,
+            hitDecisionKnown,
+            incomingHit,
+            physicalOutcome,
+            defenseKind,
+            sourceTurnEpoch,
+            targetTurnEpoch,
+            origin);
+
+        var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+            _settings,
+            _itemCatalog,
+            _abilityCatalog,
+            target,
+            source ?? target,
+            eventIndex,
+            eventSeed,
+            actionType,
+            abilityId,
+            oldDebit: 0,
+            oldCredit: 0,
+            actionPayload: actionPayload);
+        DclReactions.AddIncomingVariables(context, incoming);
+        return context;
+    }
 
     private void InstallReactionChanceControlIfEnabled(nint moduleBase)
     {
         if (!_settings.ReactionChanceControlEnabled)
             return;
+        if ((_settings.DclMissSuppressReactionsEnabled && _settings.DclMissOutputControlEnabled) ||
+            _settings.DclReactionTaxonomyEnabled)
+        {
+            Line("[REACTROLL-SKIP] DCL reaction gate/taxonomy owns the four reaction roll sites");
+            Flush();
+            return;
+        }
         _reactionRollBuf = Marshal.AllocHGlobal(64);
         for (int i = 0; i < 64; i++)
             Marshal.WriteByte(_reactionRollBuf, i, 0);
@@ -1446,9 +3001,9 @@ public class Mod : ModBase
     // eax is reloaded before every subsequent use in all 3 builders, so the clobber is free.
     private static readonly (int Rva, string Expected, string Tag)[] EvadeRecordStoreSites =
     {
-        (0x284BEC, "66 89 43 44", "B1+44"), (0x284C00, "66 89 43 46", "B1+46"), (0x284C28, "66 89 43 50", "B1+50"),
-        (0x3602D6, "66 89 43 44", "B2+44"), (0x3602EA, "66 89 43 46", "B2+46"), (0x360313, "66 89 43 50", "B2+50"),
-        (0x396468, "66 89 47 44", "B3+44"), (0x39647C, "66 89 47 46", "B3+46"), (0x3964A5, "66 89 47 50", "B3+50"),
+        (0x284B74, "66 89 43 44", "B1+44"), (0x284B88, "66 89 43 46", "B1+46"), (0x284BB0, "66 89 43 50", "B1+50"),
+        (0x36023E, "66 89 43 44", "B2+44"), (0x360252, "66 89 43 46", "B2+46"), (0x36027B, "66 89 43 50", "B2+50"),
+        (0x3963D0, "66 89 47 44", "B3+44"), (0x3963E4, "66 89 47 46", "B3+46"), (0x39640D, "66 89 47 50", "B3+50"),
     };
 
     private void InstallEvadeRecordOverrideIfEnabled(nint moduleBase)
@@ -1596,7 +3151,11 @@ public class Mod : ModBase
                 $"managedCallback={(IsPreClampManagedCallbackEnabled(_settings) ? 1 : 0)} " +
                 $"managedForcedDebit={FormatMaybeInt(_settings.PreClampManagedCallbackForcedDebit)} " +
                 $"managedActorFormula={(_settings.PreClampManagedCallbackActorFormulaEnabled ? 1 : 0)} " +
-                $"dclPipeline={(_settings.DclPipelineEnabled ? 1 : 0)} dclFormula={(string.IsNullOrWhiteSpace(_settings.DclDamageFormula) ? "off" : "on")}");
+                $"dclPipeline={(_settings.DclPipelineEnabled ? 1 : 0)} " +
+                $"dclHpDebit={(string.IsNullOrWhiteSpace(_settings.DclDamageFormula) ? "off" : "on")} " +
+                $"dclHpCredit={(string.IsNullOrWhiteSpace(_settings.DclHealingFormula) ? "off" : "on")} " +
+                $"dclMpDebit={(string.IsNullOrWhiteSpace(_settings.DclMpDebitFormula) ? "off" : "on")} " +
+                $"dclMpCredit={(string.IsNullOrWhiteSpace(_settings.DclMpCreditFormula) ? "off" : "on")}");
         }
         catch (Exception ex)
         {
@@ -1973,7 +3532,9 @@ public class Mod : ModBase
     // register/stack snapshot. The context snapshot is for no-HP outcomes where pre-clamp never fires.
     private void InstallResultSelectorProbeIfEnabled(nint moduleBase)
     {
-        if (!_settings.ResultSelectorProbeEnabled)
+        bool dclOutcomeControl = _settings.DclMissSelectorOutcomeEnabled &&
+                                 _settings.DclMissOutputControlEnabled;
+        if (!_settings.ResultSelectorProbeEnabled && !dclOutcomeControl)
             return;
         if (_hooks is null)
         {
@@ -1996,6 +3557,20 @@ public class Mod : ModBase
 
         try
         {
+            if (dclOutcomeControl)
+            {
+                _dclSelectorOutcomeCallback = DclSelectorOutcomeCallbackImpl;
+                _dclSelectorOutcomeWrapper = _hooks.CreateReverseWrapper(_dclSelectorOutcomeCallback);
+                if (_dclSelectorOutcomeWrapper is null || _dclSelectorOutcomeWrapper.WrapperPointer == 0)
+                {
+                    Line("[DCL-SELECTOR-SKIP] reverse wrapper unavailable; clean miss outcome disabled");
+                }
+                else
+                {
+                    _dclSelectorOutcomeActive = true;
+                }
+            }
+
             var asm = BuildResultSelectorProbeAsm();
             _resultSelectorProbeHook = _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
             Line(
@@ -2003,7 +3578,8 @@ public class Mod : ModBase
                 $"actorReg={_settings.ResultSelectorProbeActorRegister} recordUnitOffset=0x{ResultSelectorRecordUnitOffset:X} " +
                 $"dumpBytes={ResultSelectorRecordDumpBytes} ctxRegs={SELECTOR_CONTEXT_REG_COUNT} ctxStack={SELECTOR_CONTEXT_STACK_SLOTS} " +
                 $"maxLogs={_settings.ResultSelectorProbeMaxLogs} " +
-                $"expected={_settings.ResultSelectorProbeExpectedBytes} {DescribeSelectorControl()}");
+                $"expected={_settings.ResultSelectorProbeExpectedBytes} {DescribeSelectorControl()} " +
+                $"dclOutcome={(_dclSelectorOutcomeActive ? "ON" : "off")}");
         }
         catch (Exception ex)
         {
@@ -2099,6 +3675,13 @@ public class Mod : ModBase
         }
         asm.Add($"mov rax, {buf}");
 
+        // DCL outcome bridge: the render selector is the first proven switch that can author a
+        // coherent evade result (`+0x1BE=0`) rather than a zero-damage hit. The callback consults
+        // the calc-entry decision cache by target and returns -1 to keep vanilla, or a packed
+        // low-byte kind / next-byte result-code override. It runs before the legacy static selector
+        // control so the latter remains an explicit diagnostic override when configured.
+        asm.AddRange(BuildDclSelectorOutcomeLines());
+
         // OPTIONAL guarded control write: with r8 = record (non-null), rax = ring base, r9 = slot base,
         // force the evade-type (and/or result-code) so the engine renders the outcome we choose. Emits
         // nothing when control is disabled (pure observe). All immediates baked from settings.
@@ -2125,6 +3708,100 @@ public class Mod : ModBase
             "pop rax",
         ]);
         return asm.ToArray();
+    }
+
+    private string[] BuildDclSelectorOutcomeLines()
+    {
+        if (!_dclSelectorOutcomeActive || _dclSelectorOutcomeWrapper is null)
+            return [];
+
+        string callback = $"0{_dclSelectorOutcomeWrapper.WrapperPointer:X}h";
+        return
+        [
+            // At this point: r8=result record, r9=ring slot, original saved rcx (and therefore
+            // natural cl) is [rsp+24]. Preserve the two live scratch pointers across the managed call.
+            "push r9",
+            "push r8",
+            "sub rsp, 20h",
+            "mov rcx, r8",
+            "movzx edx, byte [rsp+72]", // saved natural cl: 24 + 16 pushes + 32 shadow
+            "movzx r8d, byte [rcx+0x1BE]",
+            $"mov rax, {callback}",
+            "call rax",
+            "add rsp, 20h",
+            "pop r8",
+            "pop r9",
+            "test rax, rax",
+            "js .dcl_selector_keep",
+            "mov byte [r8+0x1C0], al",
+            "mov byte [rsp+24], al",     // force the live cl argument too
+            "shr eax, 8",
+            "mov byte [r8+0x1BE], al",
+            ".dcl_selector_keep:",
+            $"mov rax, 0{_resultSelectorProbeBuf:X}h", // restore ring base for legacy control
+        ];
+    }
+
+    private long DclSelectorOutcomeCallbackImpl(long resultRecordPtrRaw, long naturalKindRaw, long naturalResultCodeRaw)
+    {
+        try
+        {
+            nint resultRecordPtr = (nint)resultRecordPtrRaw;
+            if (!TryGetUnitTableIndex(resultRecordPtr, out int targetIdx, out _))
+                return -1;
+
+            long nowTick = Stopwatch.GetTimestamp();
+            long ttlTicks = StopwatchTicksFromMilliseconds(_settings.DclHitDecisionTtlMs);
+            if (!_dclHitDecisionCache.TryGetLatest(
+                    targetIdx,
+                    nowTick,
+                    ttlTicks,
+                    out var decision,
+                    out int casterIdx,
+                    out int abilityId,
+                    out int actionType,
+                    out int actionPayload))
+                return -1;
+
+            // LT11 proved this selector receives the clean authored execution outcome while the
+            // older 0x205B38 kind hook did not fire at all. Treat either hook as the outcome side
+            // of the two-consumer handshake. This closes the live-decision leak after pre-clamp
+            // without assuming which hook runs first; duplicate outcome marks are idempotent.
+            if (!ShouldRetainDclHitDecisionForRandomFire(abilityId))
+                _dclHitDecisionCache.MarkConsumed(
+                    targetIdx, casterIdx, abilityId, actionType, actionPayload, byOutcomeDelivery: true);
+
+            if (decision.Hit)
+            {
+                if (_dclSelectorOutcomeLogs < Math.Clamp(_settings.DclHitMaxLogs, 0, 100_000))
+                {
+                    _dclSelectorOutcomeLogs++;
+                    QueueDclHitLog(
+                        _settings,
+                        $"[DCL-SELECTOR] targetIdx={targetIdx} casterIdx={casterIdx} ability={abilityId} " +
+                        $"type=0x{actionType:X2} naturalKind=0x{naturalKindRaw & 0xFF:X2} " +
+                        $"resultCode=0x{naturalResultCodeRaw & 0xFF:X2} decision=hit kept");
+                }
+                return -1;
+            }
+
+            int forcedKind = Math.Clamp(_settings.DclMissKindValue, 0, 255);
+            if (_dclSelectorOutcomeLogs < Math.Clamp(_settings.DclHitMaxLogs, 0, 100_000))
+            {
+                _dclSelectorOutcomeLogs++;
+                QueueDclHitLog(
+                    _settings,
+                    $"[DCL-SELECTOR] targetIdx={targetIdx} casterIdx={casterIdx} ability={abilityId} " +
+                    $"type=0x{actionType:X2} naturalKind=0x{naturalKindRaw & 0xFF:X2}->0x{forcedKind:X2} " +
+                    $"resultCode=0x{naturalResultCodeRaw & 0xFF:X2}->0x00 decision=miss");
+            }
+
+            return forcedKind; // packed result: kind in low byte, result-code 0 in next byte
+        }
+        catch
+        {
+            return -1;
+        }
     }
 
     // Builds the guarded control write injected into the selector hook. Register state at the
@@ -2219,7 +3896,7 @@ public class Mod : ModBase
             $"forceResult={Opt(_settings.ResultSelectorControlForceResultCode)})";
     }
 
-    // EVADE-INPUT probe/control. Hooks RVA 0x30F49C (the last real instruction before the single VM
+    // EVADE-INPUT probe/control. Hooks RVA 0x30F404 (the last real instruction before the single VM
     // avoidance roll 0x30FA34; the target unit is in rbx). Optionally writes the target's evade INPUT
     // bytes (+0x46/+0x47 weapon, +0x4A/+0x4E shield, +0x4B class) just before the VM reads them, so the
     // engine's native roll produces our pre-decided outcome (all 0 => guaranteed hit; one source = 100 =>
@@ -2403,8 +4080,8 @@ public class Mod : ModBase
     // (see ItemTableEvadeZero).
     private static readonly (int Rva, string Reg, string Expected, string Tag)[] EvadeCopierSites =
     {
-        (0x285553, "rbx", "4C 8D 5C 24 60 49 8B 5B 10", "B/0x285394"),   // weapon-parry tail (pre-epilogue)
-        (0x396757, "rsi", "48 8B D7 48 8B CE",          "C/0x3965B0"),   // weapon-parry twin (rsi callee-saved)
+        (0x2854DB, "rbx", "4C 8D 5C 24 60 49 8B 5B 10", "B/0x28531C"),   // weapon-parry tail (pre-epilogue)
+        (0x3966BF, "rsi", "48 8B D7 48 8B CE",          "C/0x396518"),   // weapon-parry twin (rsi callee-saved)
     };
 
     private void InstallEvadeCopierOverrideIfEnabled(nint moduleBase)
@@ -2552,13 +4229,13 @@ public class Mod : ModBase
 
     // ── DCL COUNTER-PATH probe (observe-only) ─────────────────────────────────────────────────────
     // RE 2026-07-04 (work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2). Counters/reactions
-    // bypass computeActionResult 0x309A44 (LT6-LT9: [DCL-MISS] reason=no-calc-entry on counter hits).
-    // The likely counter result-staging fn is 0x30C798: it reads target idx +0x1BC, applies staged HP
-    // via 0x30A51C, and emits result bytes +0x1E8/+0x1E9. Confidence: Strong (static) on structure;
+    // bypass computeActionResult 0x3099AC (LT6-LT9: [DCL-MISS] reason=no-calc-entry on counter hits).
+    // The likely counter result-staging fn is 0x30C700: it reads target idx +0x1BC, applies staged HP
+    // via 0x30A484, and emits result bytes +0x1E8/+0x1E9. Confidence: Strong (static) on structure;
     // Hypothesis on counter-specificity — this probe settles it live.
     //
-    // ENTRY ALIGNMENT: 0x30C798 is a FUNCTION ENTRY (standard prologue mov [rsp+8],rbx; push rdi;
-    // sub rsp,0x20 — same shape as calc-entry 0x309A44), so an ExecuteFirst asm hook runs our shim,
+    // ENTRY ALIGNMENT: 0x30C700 is a FUNCTION ENTRY (standard prologue mov [rsp+8],rbx; push rdi;
+    // sub rsp,0x20 — same shape as calc-entry 0x3099AC), so an ExecuteFirst asm hook runs our shim,
     // then the stolen prologue, then the body unchanged — the identical alignment the calc-entry probe
     // relies on. At entry RCX carries the result record: verified on disk the prologue is
     // `48 89 5C 24 08 57 48 83 EC 20 80 79 01 FF` = cmp byte[rcx+1],0xFF, immediately followed by
@@ -2603,7 +4280,7 @@ public class Mod : ModBase
         Flush();
     }
 
-    // ExecuteFirst at fn entry 0x30C798: rcx = result record. Save/restore rax, rbx, rsi and flags so
+    // ExecuteFirst at fn entry 0x30C700: rcx = result record. Save/restore rax, rbx, rsi and flags so
     // the original prologue runs unchanged after us. Pure ring-buffer capture of rcx; no game writes.
     private string[] BuildDclCounterPathProbeAsm()
     {
@@ -2701,6 +4378,1500 @@ public class Mod : ModBase
             Flush();
     }
 
+    // -- DCL REACTION-COMMIT probe/control -------------------------------------------------------
+    // The queue at 0x206344 has three actor-construction paths. Passes 0 and 2 create an actor in
+    // rbx; pass 1 reuses the actor in rdi. Each path mirrors its exact action id to +0x18C/+0x142
+    // before the guarded boundaries below. Pass 2 is the mapped real-code Reaction selector path;
+    // pass 1 is also used by ordinary queued actions and pass 0 remains family-unclassified. The
+    // default probe observes and tags all three, but the managed logger separates native Reaction
+    // ids from non-Reaction queue noise. The separately validated replacement control is
+    // deliberately restricted to pass 2.
+    private void InstallDclReactionCommitProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclReactionCommitProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-REACTION-COMMIT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclReactionCommitProbeBuf = Marshal.AllocHGlobal(REACTION_COMMIT_BUFFER_SIZE);
+        for (int i = 0; i < REACTION_COMMIT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclReactionCommitProbeBuf, i, 0);
+
+        var sites = new[]
+        {
+            (QueuePass: 2, Rva: _settings.DclReactionCommitProbeRva,
+                Expected: _settings.DclReactionCommitProbeExpectedBytes, ActorRegister: "rbx", AllowReplacement: true),
+            (QueuePass: 0, Rva: 0x2066AE,
+                Expected: "40 88 B3 D3 01 00 00", ActorRegister: "rbx", AllowReplacement: false),
+            (QueuePass: 1, Rva: 0x206743,
+                Expected: "40 88 B7 D3 01 00 00", ActorRegister: "rdi", AllowReplacement: false),
+        };
+
+        foreach (var site in sites)
+        {
+            nint address = moduleBase + site.Rva;
+            if (ValidateExpectedBytes(address, site.Expected, out string byteError))
+                continue;
+            Line($"[DCL-REACTION-COMMIT-SKIP] pass={site.QueuePass} rva=0x{site.Rva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        foreach (var site in sites)
+        {
+            nint address = moduleBase + site.Rva;
+            try
+            {
+                var asm = BuildDclReactionCommitProbeAsm(
+                    moduleBase, site.ActorRegister, site.QueuePass, site.AllowReplacement);
+                _dclReactionCommitProbeHooks.Add(
+                    _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate());
+                Line(
+                    $"[DCL-REACTION-COMMIT-HOOK] pass={site.QueuePass} rva=0x{site.Rva:X} addr=0x{address:X} " +
+                    $"actor={site.ActorRegister} maxLogs={_settings.DclReactionCommitProbeMaxLogs} expected={site.Expected} " +
+                    $"replacement={(site.AllowReplacement && _settings.DclReactionActionReplacementEnabled ? (_settings.DclReactionActionReplacementLogOnly ? "armed/log-only" : "blocked/retired-live-site") : "off")} " +
+                    $"retarget={(site.AllowReplacement && _settings.DclReactionRetargetEnabled ? (_settings.DclReactionRetargetLogOnly ? "armed/log-only" : "blocked/retired-live-site") : "off")} " +
+                    "(guarded commit probe/control)");
+            }
+            catch (Exception ex)
+            {
+                Line($"[DCL-REACTION-COMMIT-FAILED] pass={site.QueuePass} rva=0x{site.Rva:X} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        Flush();
+    }
+
+    private string[] BuildDclReactionCommitProbeAsm(
+        nint moduleBase, string actorRegister, int queuePass, bool allowReplacement)
+    {
+        System.Diagnostics.Debug.Assert(REACTION_COMMIT_SLOT_SIZE == 128, "shim shift assumes 128-byte slots");
+        System.Diagnostics.Debug.Assert(actorRegister is "rbx" or "rdi", "unsupported reaction actor register");
+        string buf = $"0{_dclReactionCommitProbeBuf:X}h";
+        string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+        var asm = new List<string>
+        {
+            "use64",
+            "push rax",
+            "push rcx",
+            "push rdx",
+            "push rsi",
+            "pushfq",
+            $"mov rax, {buf}",
+            $"mov edx, dword [rax+{RC_COUNT}]",
+            "add edx, 1",
+            $"mov dword [rax+{RC_COUNT}], edx",
+            $"and edx, {REACTION_COMMIT_RING_MASK}",
+            "shl edx, 7",
+            $"lea rsi, [rax + rdx + {RC_EVENTS}]",
+            $"mov dword [rsi+{RC_SEQ}], 0",
+            $"movzx eax, word [{actorRegister}+142h]",
+            $"mov dword [rsi+{RC_REACTION_ID}], eax",
+            $"movzx eax, byte [{actorRegister}+8]",
+            $"mov dword [rsi+{RC_REACTOR_INDEX}], eax",
+            $"mov rax, {sourceIndex}",
+            "mov eax, dword [rax]",
+            $"mov dword [rsi+{RC_SOURCE_INDEX}], eax",
+            $"mov qword [rsi+{RC_ACTOR}], {actorRegister}",
+            $"mov eax, dword [{actorRegister}+18Ch]",
+            $"mov dword [rsi+{RC_ACTOR_ID_18C}], eax",
+            $"movzx eax, word [{actorRegister}+142h]",
+            $"mov dword [rsi+{RC_ACTOR_ID_142}], eax",
+            $"mov rax, qword [{actorRegister}+148h]",
+            $"mov qword [rsi+{RC_RECORD}], rax",
+            $"movzx eax, byte [{actorRegister}+1A9h]",
+            $"mov dword [rsi+{RC_TARGET_COUNT}], eax",
+            $"mov rax, qword [{actorRegister}+1AAh]",
+            $"mov qword [rsi+{RC_TARGET_BYTES}], rax",
+            $"mov dword [rsi+{RC_REPLACEMENT}], 0",
+            $"mov dword [rsi+{RC_RETARGET}], 0",
+            $"mov dword [rsi+{RC_FINAL_TARGET}], -1",
+            $"cmp dword [rsi+{RC_TARGET_COUNT}], 0",
+            "je .reaction_capture_no_target",
+            $"movzx eax, byte [{actorRegister}+1AAh]",
+            $"mov dword [rsi+{RC_FINAL_TARGET}], eax",
+            ".reaction_capture_no_target:",
+            $"movzx eax, word [{actorRegister}+142h]",
+            $"mov dword [rsi+{RC_FINAL_ACTION_ID}], eax",
+            $"mov dword [rsi+{RC_QUEUE_PASS}], {queuePass}",
+        };
+
+        if (allowReplacement && _settings.DclReactionActionReplacementEnabled &&
+            _settings.DclReactionActionReplacementLogOnly)
+        {
+            int carrierId = _settings.DclReactionActionReplacementCarrierId;
+            int actionId = _settings.DclReactionActionReplacementAbilityId;
+            int minTargets = Math.Clamp(_settings.DclReactionActionReplacementMinTargetCount, 1, 8);
+            int maxWrites = Math.Clamp(_settings.DclReactionActionReplacementMaxWrites, 1, 32);
+
+            asm.AddRange(
+            [
+                $"cmp dword [rsi+{RC_REACTION_ID}], {carrierId}",
+                "jne .reaction_replacement_done",
+                $"cmp dword [rsi+{RC_TARGET_COUNT}], {minTargets}",
+                "jl .reaction_replacement_done",
+            ]);
+            if (_settings.DclReactionActionReplacementLogOnly)
+            {
+                asm.Add($"mov dword [rsi+{RC_REPLACEMENT}], 1");
+                asm.Add($"mov dword [rsi+{RC_FINAL_ACTION_ID}], {actionId}");
+            }
+            else
+            {
+                asm.AddRange(
+                [
+                    $"mov rax, {buf}",
+                    $"mov eax, dword [rax+{RC_CONTROL_WRITES}]",
+                    $"cmp eax, {maxWrites}",
+                    "jae .reaction_replacement_done",
+                    $"mov word [{actorRegister}+142h], {actionId}",
+                    $"mov dword [rsi+{RC_REPLACEMENT}], 2",
+                    $"mov dword [rsi+{RC_FINAL_ACTION_ID}], {actionId}",
+                    $"mov rax, {buf}",
+                    $"add dword [rax+{RC_CONTROL_WRITES}], 1",
+                ]);
+            }
+            asm.Add(".reaction_replacement_done:");
+        }
+
+        if (allowReplacement && _settings.DclReactionRetargetEnabled &&
+            _settings.DclReactionRetargetLogOnly)
+        {
+            int carrierId = _settings.DclReactionRetargetCarrierId;
+            int maxWrites = Math.Clamp(_settings.DclReactionRetargetMaxWrites, 1, 32);
+            asm.AddRange(
+            [
+                $"cmp dword [rsi+{RC_REACTION_ID}], {carrierId}",
+                "jne .reaction_retarget_done",
+                $"cmp dword [rsi+{RC_TARGET_COUNT}], 1",
+                "jl .reaction_retarget_done",
+                $"cmp dword [rsi+{RC_SOURCE_INDEX}], 0",
+                "jl .reaction_retarget_done",
+                $"cmp dword [rsi+{RC_SOURCE_INDEX}], 20",
+                "jg .reaction_retarget_done",
+            ]);
+            if (_settings.DclReactionRetargetLogOnly)
+            {
+                asm.AddRange(
+                [
+                    $"mov dword [rsi+{RC_RETARGET}], 1",
+                    $"mov eax, dword [rsi+{RC_SOURCE_INDEX}]",
+                    $"mov dword [rsi+{RC_FINAL_TARGET}], eax",
+                ]);
+            }
+            else
+            {
+                asm.AddRange(
+                [
+                    $"mov rax, {buf}",
+                    $"mov eax, dword [rax+{RC_RETARGET_WRITES}]",
+                    $"cmp eax, {maxWrites}",
+                    "jae .reaction_retarget_done",
+                    $"mov eax, dword [rsi+{RC_SOURCE_INDEX}]",
+                    $"mov byte [{actorRegister}+1A9h], 1",
+                    $"mov byte [{actorRegister}+1AAh], al",
+                    $"mov dword [rsi+{RC_RETARGET}], 2",
+                    $"mov dword [rsi+{RC_FINAL_TARGET}], eax",
+                    $"mov rax, {buf}",
+                    $"add dword [rax+{RC_RETARGET_WRITES}], 1",
+                ]);
+            }
+            asm.Add(".reaction_retarget_done:");
+        }
+
+        asm.AddRange(
+        [
+            $"mov rax, {buf}",
+            $"mov eax, dword [rax+{RC_COUNT}]",
+            $"mov dword [rsi+{RC_SEQ}], eax",
+            "popfq",
+            "pop rsi",
+            "pop rdx",
+            "pop rcx",
+            "pop rax",
+        ]);
+        return asm.ToArray();
+    }
+
+    private void CaptureDclReactionCommitProbeEvents(long nowTick)
+    {
+        if (_dclReactionCommitProbeBuf == 0 || !_settings.DclReactionCommitProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclReactionCommitProbeBuf, RC_COUNT);
+        if (count == _lastDclReactionCommitProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclReactionCommitProbeSequence + 1;
+        if (count - _lastDclReactionCommitProbeSequence > REACTION_COMMIT_RING_SIZE)
+        {
+            int lost = count - _lastDclReactionCommitProbeSequence - REACTION_COMMIT_RING_SIZE;
+            Line($"[DCL-REACTION-COMMIT-LOST last={_lastDclReactionCommitProbeSequence} current={count} lost={lost}]");
+            start = count - REACTION_COMMIT_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclReactionCommitProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = RC_EVENTS + ((sequence & REACTION_COMMIT_RING_MASK) * REACTION_COMMIT_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            bool shouldLog = _dclReactionCommitProbeLogs < maxLogs;
+
+            int reactionId = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_REACTION_ID);
+            int reactorIndex = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_REACTOR_INDEX);
+            int sourceIndex = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_SOURCE_INDEX);
+            nint actor = Marshal.ReadIntPtr(_dclReactionCommitProbeBuf, slot + RC_ACTOR);
+            int actorId18C = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_ACTOR_ID_18C);
+            int actorId142 = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_ACTOR_ID_142);
+            nint record = Marshal.ReadIntPtr(_dclReactionCommitProbeBuf, slot + RC_RECORD);
+            int targetCount = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_TARGET_COUNT);
+            byte[] targetBytes = new byte[8];
+            Marshal.Copy(_dclReactionCommitProbeBuf + slot + RC_TARGET_BYTES, targetBytes, 0, targetBytes.Length);
+            string targets = string.Join(",", targetBytes.Take(Math.Clamp(targetCount, 0, targetBytes.Length)));
+            int replacement = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_REPLACEMENT);
+            int finalActionId = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_FINAL_ACTION_ID);
+            int queuePass = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_QUEUE_PASS);
+            int retarget = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_RETARGET);
+            int finalTarget = Marshal.ReadInt32(_dclReactionCommitProbeBuf, slot + RC_FINAL_TARGET);
+            bool idsAgree = reactionId == actorId18C && reactionId == actorId142;
+            bool nativeReactionId = reactionId is >= 422 and <= 453;
+            string replacementText = replacement switch
+            {
+                2 => $"wrote:{finalActionId}",
+                1 => $"would-write:{finalActionId}",
+                _ => "none",
+            };
+
+            string eventTag = nativeReactionId && idsAgree
+                ? "DCL-REACTION-COMMIT"
+                : "DCL-REACTION-COMMIT-NOISE";
+            string noiseReason = !nativeReactionId
+                ? "non-reaction-id"
+                : !idsAgree
+                    ? "id-disagreement"
+                    : "none";
+
+            ProcessDclHexWardCommit(queuePass, reactionId, idsAgree, actor, sourceIndex);
+            if (shouldLog)
+            {
+                Line(
+                    $"[{eventTag}] event={sequence} pass={queuePass} actor=0x{actor:X} reactorIdx={reactorIndex} " +
+                    $"sourceIdx={sourceIndex} reactionId={reactionId} actor18C={actorId18C} actor142={actorId142} " +
+                    $"idsAgree={idsAgree} record=0x{record:X} targetCount={targetCount} targets=[{targets}] " +
+                    $"replacement={replacementText} retarget={(retarget == 2 ? "wrote" : retarget == 1 ? "would-write" : "none")}:" +
+                    $"{finalTarget} noiseReason={noiseReason} now={nowTick}");
+                _dclReactionCommitProbeLogs++;
+            }
+            consumedThrough = sequence;
+            needsFlush |= shouldLog;
+        }
+
+        _lastDclReactionCommitProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
+    private void ProcessDclHexWardCommit(
+        int queuePass,
+        int reactionId,
+        bool idsAgree,
+        nint actor,
+        int sourceIndex)
+    {
+        if (!_settings.DclHexWardEnabled || _settings.DclHexWardLogOnly ||
+            queuePass != 2 || reactionId != 443 || !idsAgree || actor == 0 ||
+            sourceIndex is < 0 or > 20 || _dclHexWardProducerBuf == 0)
+            return;
+        if (!TryGetUnitTableIndex(actor, out int defenderTableIndex, out _) || defenderTableIndex is < 0 or > 20)
+            return;
+        if (Marshal.ReadByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex) != 2)
+            return; // only the dynamic producer's exact staged request may deliver the managed effect.
+        if (!TryReadLiveUnitSnapshot(actor, out var defender, out _))
+            return;
+        if (!_dclHexWardCoordinator.TryCommit(actor, defender.CharId, sourceIndex, out var reservation))
+            return;
+
+        Marshal.WriteByte(_dclHexWardProducerBuf, HWP_STATES + defenderTableIndex, 0);
+        bool cadenceCommitted;
+        lock (_dclReactionCadenceGate)
+            cadenceCommitted = GetOrCreateDclReactionCadenceState(defender)
+                .TryConsumeAttackerAction(443, reservation.ActionToken);
+
+        string outcome = cadenceCommitted
+            ? ApplyDclHexWardEffect(sourceIndex)
+            : "duplicate-cadence";
+        if (_dclHexWardLogs < Math.Clamp(_settings.DclHexWardMaxLogs, 0, 100_000))
+        {
+            _dclHexWardLogs++;
+            QueueDclDecisionLog(_settings,
+                $"[DCL-HEX-WARD-COMMIT] defender=0x{defender.CharId:X2} defenderTableIdx={defenderTableIndex} " +
+                $"sourceIdx={sourceIndex} actionType=0x{reservation.ActionToken.ActionType:X2} " +
+                $"ability={reservation.ActionToken.AbilityId} sourceEpoch={reservation.ActionToken.SourceTurnEpoch} " +
+                $"cadence={(cadenceCommitted ? "consumed" : "duplicate")} effect={CleanDclLogValue(_settings.DclHexWardEffect)} " +
+                $"outcome={CleanDclLogValue(outcome)}");
+        }
+    }
+
+    private string ApplyDclHexWardEffect(int sourceIndex)
+    {
+        nint sourcePtr = _moduleBase + _settings.PreviewForecastUnitTableRva + sourceIndex * BattleUnitStride;
+        if (!TryReadLiveUnitSnapshot(sourcePtr, out var source, out _))
+            return "source-invalid";
+
+        if (_settings.DclHexWardEffect == "brave-down")
+        {
+            int oldBrave = source.ReadByte(0x2B);
+            int nextBrave = Math.Max(Math.Clamp(_settings.DclHexWardBraveFloor, 0, 100),
+                oldBrave - Math.Clamp(_settings.DclHexWardBraveDecrease, 1, 100));
+            if (nextBrave == oldBrave)
+                return $"brave-floor:{oldBrave}";
+            Marshal.WriteByte(sourcePtr, 0x2B, (byte)nextBrave);
+            return $"brave:{oldBrave}->{nextBrave}";
+        }
+
+        const int byteIndex = 1;
+        const byte mask = 0x20; // Blind/Darkness
+        int immunityOffset = 0x5C + byteIndex;
+        if ((source.ReadByte(immunityOffset) & mask) != 0)
+            return "blind-immune";
+
+        int masterOffset = 0x1EF + byteIndex;
+        int effectiveOffset = 0x61 + byteIndex;
+        byte oldMaster = (byte)source.ReadByte(masterOffset);
+        byte oldEffective = (byte)source.ReadByte(effectiveOffset);
+        byte newMaster = (byte)(oldMaster | mask);
+        byte newEffective = (byte)(oldEffective | mask);
+        bool existedBefore = ((oldMaster | oldEffective) & mask) != 0;
+        try
+        {
+            Marshal.WriteByte(sourcePtr, masterOffset, newMaster);
+            Marshal.WriteByte(sourcePtr, effectiveOffset, newEffective);
+        }
+        catch
+        {
+            try { Marshal.WriteByte(sourcePtr, masterOffset, oldMaster); } catch { }
+            try { Marshal.WriteByte(sourcePtr, effectiveOffset, oldEffective); } catch { }
+            return "blind-write-failed";
+        }
+
+        RecordDclDirectStatusDuration(
+            sourcePtr,
+            source,
+            byteIndex,
+            mask,
+            "Hex Ward Blind",
+            _settings.DclHexWardBlindDurationTargetTurns,
+            existedBefore);
+        return existedBefore ? "blind-refresh-or-existing" : "blind-added";
+    }
+
+    // -- DCL pass-2 PRE-SELECTOR probe/control -------------------------------------------------
+    // At 0x2063A9 the queue is about to call selector 0x282E38. The selector consumes/clears the
+    // exact candidate word at unit+0x1CE, so the shim snapshots all 21 words before original code.
+    private void InstallDclReactionPreSelectorProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclReactionPreSelectorProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-REACTION-PRESELECT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclReactionPreSelectorProbeBuf = Marshal.AllocHGlobal(REACTION_PRESELECT_BUFFER_SIZE);
+        for (int i = 0; i < REACTION_PRESELECT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclReactionPreSelectorProbeBuf, i, 0);
+        if (_settings.DclHexWardEnabled)
+        {
+            _dclHexWardProducerBuf = Marshal.AllocHGlobal(HEX_WARD_PRODUCER_BUFFER_SIZE);
+            for (int i = 0; i < HEX_WARD_PRODUCER_BUFFER_SIZE; i++)
+                Marshal.WriteByte(_dclHexWardProducerBuf, i, 0);
+        }
+
+        nint address = moduleBase + _settings.DclReactionPreSelectorProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.DclReactionPreSelectorProbeExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-REACTION-PRESELECT-SKIP] rva=0x{_settings.DclReactionPreSelectorProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            string buf = $"0{_dclReactionPreSelectorProbeBuf:X}h";
+            string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+            string evalId = $"0{(moduleBase + REACTION_EVAL_GLOBAL_RVA):X}h";
+            string unitTable = $"0{(moduleBase + BattleUnitTableRva):X}h";
+            string[] asm =
+            [
+                "use64",
+                "push rax",
+                "push rcx",
+                "push rdx",
+                "push rsi",
+                "push r8",
+                "pushfq",
+                $"mov rax, {buf}",
+                $"mov edx, dword [rax+{RPS_COUNT}]",
+                "add edx, 1",
+                $"mov dword [rax+{RPS_COUNT}], edx",
+                $"and edx, {REACTION_PRESELECT_RING_MASK}",
+                "shl edx, 7",
+                $"lea rsi, [rax + rdx + {RPS_EVENTS}]",
+                $"mov dword [rsi+{RPS_SEQ}], 0",
+                $"mov dword [rsi+{RPS_PRODUCER}], 0",
+                $"mov rax, {sourceIndex}",
+                "mov eax, dword [rax]",
+                $"mov dword [rsi+{RPS_SOURCE_INDEX}], eax",
+                $"mov rax, {evalId}",
+                "movzx eax, word [rax]",
+                $"mov dword [rsi+{RPS_EVAL_ID}], eax",
+                $"mov qword [rsi+{RPS_ACTOR}], rdi",
+                "movzx eax, byte [rdi+8]",
+                $"mov dword [rsi+{RPS_ACTOR_INDEX}], eax",
+                "movzx eax, word [rdi+142h]",
+                $"mov dword [rsi+{RPS_ACTOR_ID_142}], eax",
+                "mov eax, dword [rdi+18Ch]",
+                $"mov dword [rsi+{RPS_ACTOR_ID_18C}], eax",
+                "mov rax, qword [rdi+148h]",
+                $"mov qword [rsi+{RPS_ACTOR_RECORD}], rax",
+                $"mov dword [rsi+{RPS_RECORD_INDEX_1BC}], -1",
+                "test rax, rax",
+                "jz .reaction_preselect_no_record",
+                "movzx eax, byte [rax+1BCh]",
+                $"mov dword [rsi+{RPS_RECORD_INDEX_1BC}], eax",
+                ".reaction_preselect_no_record:",
+                $"mov r8, {unitTable}",
+                "xor edx, edx",
+                ".reaction_preselect_unit_loop:",
+                "movzx eax, word [r8+1CEh]",
+                $"mov word [rsi+rdx*2+{RPS_CANDIDATES}], ax",
+                "movzx ecx, byte [r8+1]",
+                $"mov byte [rsi+rdx+{RPS_ACTIVE}], cl",
+                $"add r8, {BattleUnitStride:X}h",
+                "add edx, 1",
+                "cmp edx, 21",
+                "jl .reaction_preselect_unit_loop",
+            ];
+
+            if (_settings.DclHexWardEnabled && _dclHexWardProducerBuf != 0)
+            {
+                string hexBuf = $"0{_dclHexWardProducerBuf:X}h";
+                int maxWrites = Math.Clamp(_settings.DclHexWardMaxWrites, 1, 32);
+                var hexAsm = new List<string>();
+                for (int unitIndex = 0; unitIndex < 21; unitIndex++)
+                {
+                    string done = $".hex_ward_producer_{unitIndex}_done";
+                    int unitOffset = BattleUnitStride * unitIndex;
+                    hexAsm.AddRange(
+                    [
+                        $"mov rax, {hexBuf}",
+                        $"cmp byte [rax+{HWP_STATES + unitIndex}], 1",
+                        $"jne {done}",
+                        $"mov byte [rax+{HWP_STATES + unitIndex}], 3",
+                        $"add dword [rax+{HWP_ATTEMPTS}], 1",
+                        $"mov r8, {unitTable}",
+                        $"add r8, {unitOffset:X}h",
+                        "cmp byte [r8+1], 0FFh",
+                        $"je {done}",
+                        "cmp word [r8+30h], 0",
+                        $"je {done}",
+                        "test byte [r8+61h], 20h",
+                        $"jne {done}",
+                        "cmp word [r8+1CEh], 0",
+                        $"jne {done}",
+                    ]);
+                    if (_settings.DclHexWardLogOnly)
+                    {
+                        hexAsm.AddRange(
+                        [
+                            $"mov rax, {hexBuf}",
+                            $"mov byte [rax+{HWP_STATES + unitIndex}], 4",
+                            $"mov dword [rsi+{RPS_PRODUCER}], 3",
+                        ]);
+                    }
+                    else
+                    {
+                        hexAsm.AddRange(
+                        [
+                            $"mov rax, {hexBuf}",
+                            $"mov ecx, dword [rax+{HWP_CONTROL_WRITES}]",
+                            $"cmp ecx, {maxWrites}",
+                            $"jae {done}",
+                            "mov word [r8+1CEh], 443",
+                            $"mov byte [rax+{HWP_STATES + unitIndex}], 2",
+                            $"add dword [rax+{HWP_CONTROL_WRITES}], 1",
+                            $"mov dword [rsi+{RPS_PRODUCER}], 4",
+                        ]);
+                    }
+                    hexAsm.Add(done + ":");
+                }
+                asm = asm.Concat(hexAsm).ToArray();
+            }
+
+            if (_settings.DclReactionProducerEnabled)
+            {
+                int unitIndex = Math.Clamp(_settings.DclReactionProducerUnitIndex, 0, 20);
+                int carrierId = Math.Clamp(_settings.DclReactionProducerCarrierId, 422, 453);
+                int unitOffset = BattleUnitStride * unitIndex;
+                int maxWrites = Math.Clamp(_settings.DclReactionProducerMaxWrites, 1, 32);
+                asm = asm.Concat(
+                [
+                    $"mov r8, {unitTable}",
+                    $"add r8, {unitOffset:X}h",
+                    "cmp byte [r8+1], 0FFh",
+                    "je .reaction_producer_done",
+                    "cmp word [r8+1CEh], 0",
+                    "jne .reaction_producer_done",
+                ]).ToArray();
+                if (_settings.DclReactionProducerLogOnly)
+                {
+                    asm = asm.Concat(
+                    [
+                        $"mov dword [rsi+{RPS_PRODUCER}], 1",
+                    ]).ToArray();
+                }
+                else
+                {
+                    asm = asm.Concat(
+                    [
+                        $"mov rax, {buf}",
+                        $"mov eax, dword [rax+{RPS_CONTROL_WRITES}]",
+                        $"cmp eax, {maxWrites}",
+                        "jae .reaction_producer_done",
+                        $"mov word [r8+1CEh], {carrierId}",
+                        $"mov dword [rsi+{RPS_PRODUCER}], 2",
+                        $"mov rax, {buf}",
+                        $"add dword [rax+{RPS_CONTROL_WRITES}], 1",
+                    ]).ToArray();
+                }
+                asm = asm.Concat([".reaction_producer_done:"]).ToArray();
+            }
+
+            asm = asm.Concat(
+            [
+                $"mov rax, {buf}",
+                $"mov eax, dword [rax+{RPS_COUNT}]",
+                $"mov dword [rsi+{RPS_SEQ}], eax",
+                "popfq",
+                "pop r8",
+                "pop rsi",
+                "pop rdx",
+                "pop rcx",
+                "pop rax",
+            ]).ToArray();
+            _dclReactionPreSelectorProbeHook = _hooks.CreateAsmHook(
+                asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[DCL-REACTION-PRESELECT-HOOK] rva=0x{_settings.DclReactionPreSelectorProbeRva:X} " +
+                $"addr=0x{address:X} maxLogs={_settings.DclReactionPreSelectorProbeMaxLogs} " +
+                $"expected={_settings.DclReactionPreSelectorProbeExpectedBytes} " +
+                $"producer={(_settings.DclReactionProducerEnabled ? (_settings.DclReactionProducerLogOnly ? "log-only" : "live") : "off")} " +
+                $"hexWard={(_settings.DclHexWardEnabled ? (_settings.DclHexWardLogOnly ? "log-only" : "live") : "off")}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-REACTION-PRESELECT-FAILED] rva=0x{_settings.DclReactionPreSelectorProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private void CaptureDclReactionPreSelectorProbeEvents(long nowTick)
+    {
+        if (_dclReactionPreSelectorProbeBuf == 0 || !_settings.DclReactionPreSelectorProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, RPS_COUNT);
+        if (count == _lastDclReactionPreSelectorProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclReactionPreSelectorProbeSequence + 1;
+        if (count - _lastDclReactionPreSelectorProbeSequence > REACTION_PRESELECT_RING_SIZE)
+        {
+            int lost = count - _lastDclReactionPreSelectorProbeSequence - REACTION_PRESELECT_RING_SIZE;
+            Line($"[DCL-REACTION-PRESELECT-LOST last={_lastDclReactionPreSelectorProbeSequence} current={count} lost={lost}]");
+            start = count - REACTION_PRESELECT_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclReactionPreSelectorProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = RPS_EVENTS + ((sequence & REACTION_PRESELECT_RING_MASK) * REACTION_PRESELECT_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            if (_dclReactionPreSelectorProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            int sourceIndex = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_SOURCE_INDEX);
+            int evalReactionId = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_EVAL_ID);
+            nint actor = Marshal.ReadIntPtr(_dclReactionPreSelectorProbeBuf, slot + RPS_ACTOR);
+            int actorIndex = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_ACTOR_INDEX);
+            int actorId142 = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_ACTOR_ID_142);
+            int actorId18C = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_ACTOR_ID_18C);
+            nint actorRecord = Marshal.ReadIntPtr(_dclReactionPreSelectorProbeBuf, slot + RPS_ACTOR_RECORD);
+            int recordIndex = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_RECORD_INDEX_1BC);
+            int producer = Marshal.ReadInt32(_dclReactionPreSelectorProbeBuf, slot + RPS_PRODUCER);
+            byte[] active = new byte[21];
+            Marshal.Copy(_dclReactionPreSelectorProbeBuf + slot + RPS_ACTIVE, active, 0, active.Length);
+            var candidates = new List<string>();
+            for (int unitIndex = 0; unitIndex < 21; unitIndex++)
+            {
+                int candidate = Marshal.ReadInt16(
+                    _dclReactionPreSelectorProbeBuf, slot + RPS_CANDIDATES + unitIndex * 2) & 0xFFFF;
+                if (candidate != 0)
+                    candidates.Add($"{unitIndex}:{candidate}:active={active[unitIndex] != 0xFF}");
+            }
+            var hexStates = new List<string>();
+            if (_dclHexWardProducerBuf != 0)
+            {
+                for (int unitIndex = 0; unitIndex < 21; unitIndex++)
+                {
+                    int state = Marshal.ReadByte(_dclHexWardProducerBuf, HWP_STATES + unitIndex);
+                    if (state != 0)
+                        hexStates.Add($"{unitIndex}:{state}");
+                }
+            }
+
+            string producerText = producer switch
+            {
+                4 => "hex-staged",
+                3 => "hex-would-stage",
+                2 => "staged",
+                1 => "would-stage",
+                _ => "none",
+            };
+
+            Line(
+                $"[DCL-REACTION-PRESELECT] event={sequence} sourceIdx={sourceIndex} evalReactionId={evalReactionId} " +
+                $"actor=0x{actor:X} actorIdx={actorIndex} actor142={actorId142} actor18C={actorId18C} " +
+                $"record=0x{actorRecord:X} recordIdx={recordIndex} candidates=[{string.Join(",", candidates)}] " +
+                $"producer={producerText}:unit={_settings.DclReactionProducerUnitIndex}:carrier={_settings.DclReactionProducerCarrierId} " +
+                $"hexStates=[{string.Join(",", hexStates)}] now={nowTick}");
+            _dclReactionPreSelectorProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclReactionPreSelectorProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
+    // -- DCL Reaction post-selector materialization probe/controller ---------------------------
+    // ExecuteFirst at 0x2063BD. The preceding cmp/je has accepted a nonnegative selector result,
+    // so eax is the reactor index and word[rbp-0x2E] is the exact Reaction id. Native carrier code
+    // has finalized unit+0x1A0, while the actor constructor at 0x2063CA has not run yet.
+    private void InstallDclReactionMaterializationProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclReactionMaterializationProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-REACTION-MATERIALIZED-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclReactionMaterializationProbeBuf = Marshal.AllocHGlobal(REACTION_MATERIALIZATION_BUFFER_SIZE);
+        for (int i = 0; i < REACTION_MATERIALIZATION_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclReactionMaterializationProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.DclReactionMaterializationProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.DclReactionMaterializationProbeExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-REACTION-MATERIALIZED-SKIP] rva=0x{_settings.DclReactionMaterializationProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Debug.Assert(REACTION_MATERIALIZATION_SLOT_SIZE == 64, "shim shift assumes 64-byte slots");
+            string buf = $"0{_dclReactionMaterializationProbeBuf:X}h";
+            string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+            string unitTable = $"0{(moduleBase + BattleUnitTableRva):X}h";
+            var asm = new List<string>
+            {
+                "use64",
+                "push rax",
+                "push rbx",
+                "push rcx",
+                "push rdx",
+                "push rdi",
+                "push rsi",
+                "push r8",
+                "push r9",
+                "pushfq",
+                "mov r9d, eax",
+                $"mov rax, {buf}",
+                $"mov ebx, dword [rax+{RM_COUNT}]",
+                "add ebx, 1",
+                $"mov dword [rax+{RM_COUNT}], ebx",
+                $"and ebx, {REACTION_MATERIALIZATION_RING_MASK}",
+                "shl ebx, 6",
+                $"lea rsi, [rax + rbx + {RM_EVENTS}]",
+                $"mov dword [rsi+{RM_SEQ}], 0",
+                $"mov dword [rsi+{RM_REACTOR_INDEX}], r9d",
+                "movzx ecx, word [rbp-2Eh]",
+                $"mov dword [rsi+{RM_REACTION_ID}], ecx",
+                $"mov rdx, {sourceIndex}",
+                "mov ecx, dword [rdx]",
+                $"mov dword [rsi+{RM_SOURCE_INDEX}], ecx",
+                $"mov rdx, {unitTable}",
+                "mov ecx, r9d",
+                "shl rcx, 9",
+                "add rdx, rcx",
+                $"mov qword [rsi+{RM_UNIT}], rdx",
+                "lea rcx, [rdx+1A0h]",
+                $"mov qword [rsi+{RM_ORDER}], rcx",
+                "mov r8d, dword [rcx]",
+                $"mov dword [rsi+{RM_ORIGINAL_HEAD}], r8d",
+                $"mov dword [rsi+{RM_REWRITE_STATUS}], 0",
+            };
+
+            if (_settings.DclReactionOrderRewriteEnabled)
+            {
+                int carrierId = _settings.DclReactionOrderRewriteCarrierId;
+                int maxWrites = Math.Clamp(_settings.DclReactionOrderRewriteMaxWrites, 1, 32);
+                asm.AddRange(
+                [
+                    $"cmp word [rbp-2Eh], {carrierId}",
+                    "jne .reaction_order_rewrite_done",
+                    $"add dword [rax+{RM_REWRITE_ATTEMPT_COUNT}], 1",
+                    "cmp r9d, 0",
+                    "jl .reaction_order_rewrite_bad_index",
+                    "cmp r9d, 20",
+                    "jg .reaction_order_rewrite_bad_index",
+                ]);
+
+                if (_settings.DclReactionOrderRewriteExpectedActionType >= 0)
+                {
+                    asm.Add($"cmp byte [rcx+1], {_settings.DclReactionOrderRewriteExpectedActionType}");
+                    asm.Add("jne .reaction_order_rewrite_bad_original");
+                }
+                if (_settings.DclReactionOrderRewriteExpectedAbilityId >= 0)
+                {
+                    asm.Add($"cmp word [rcx+2], {_settings.DclReactionOrderRewriteExpectedAbilityId}");
+                    asm.Add("jne .reaction_order_rewrite_bad_original");
+                }
+                if (_settings.DclReactionOrderRewriteRetargetSource)
+                {
+                    asm.AddRange(
+                    [
+                        $"mov edx, dword [rsi+{RM_SOURCE_INDEX}]",
+                        "cmp edx, 0",
+                        "jl .reaction_order_rewrite_bad_source",
+                        "cmp edx, 20",
+                        "jg .reaction_order_rewrite_bad_source",
+                    ]);
+                }
+
+                asm.AddRange(
+                [
+                    $"mov ebx, dword [rax+{RM_REWRITE_WRITE_COUNT}]",
+                    $"cmp ebx, {maxWrites}",
+                    "jge .reaction_order_rewrite_capped",
+                ]);
+
+                if (_settings.DclReactionOrderRewriteLogOnly)
+                {
+                    asm.Add($"mov dword [rsi+{RM_REWRITE_STATUS}], 1");
+                    asm.Add("jmp .reaction_order_rewrite_done");
+                }
+                else
+                {
+                    if (_settings.DclReactionOrderRewriteActionEnabled)
+                    {
+                        asm.Add($"mov byte [rcx+1], {_settings.DclReactionOrderRewriteActionType}");
+                        asm.Add($"mov word [rcx+2], {_settings.DclReactionOrderRewriteAbilityId}");
+                    }
+                    if (_settings.DclReactionOrderRewriteRetargetSource)
+                    {
+                        asm.AddRange(
+                        [
+                            "mov byte [rcx+0Ah], 5",
+                            "mov byte [rcx+0Bh], dl",
+                            $"mov rdi, {unitTable}",
+                            "mov ebx, edx",
+                            "shl rbx, 9",
+                            "add rdi, rbx",
+                            "movzx ebx, byte [rdi+4Fh]",
+                            "mov word [rcx+0Ch], bx",
+                            "movzx ebx, byte [rdi+51h]",
+                            "shr ebx, 7",
+                            "mov word [rcx+0Eh], bx",
+                            "movzx ebx, byte [rdi+50h]",
+                            "mov word [rcx+10h], bx",
+                        ]);
+                    }
+                    asm.AddRange(
+                    [
+                        $"add dword [rax+{RM_REWRITE_WRITE_COUNT}], 1",
+                        $"mov dword [rsi+{RM_REWRITE_STATUS}], 2",
+                        "jmp .reaction_order_rewrite_done",
+                    ]);
+                }
+
+                asm.AddRange(
+                [
+                    ".reaction_order_rewrite_bad_index:",
+                    $"mov dword [rsi+{RM_REWRITE_STATUS}], 3",
+                    "jmp .reaction_order_rewrite_done",
+                    ".reaction_order_rewrite_bad_original:",
+                    $"mov dword [rsi+{RM_REWRITE_STATUS}], 4",
+                    "jmp .reaction_order_rewrite_done",
+                    ".reaction_order_rewrite_bad_source:",
+                    $"mov dword [rsi+{RM_REWRITE_STATUS}], 5",
+                    "jmp .reaction_order_rewrite_done",
+                    ".reaction_order_rewrite_capped:",
+                    $"mov dword [rsi+{RM_REWRITE_STATUS}], 6",
+                    ".reaction_order_rewrite_done:",
+                ]);
+            }
+
+            asm.AddRange(
+            [
+                "mov rbx, qword [rcx]",
+                $"mov qword [rsi+{RM_ORDER_00}], rbx",
+                "mov rbx, qword [rcx+8]",
+                $"mov qword [rsi+{RM_ORDER_08}], rbx",
+                "mov ebx, dword [rcx+10h]",
+                $"mov dword [rsi+{RM_ORDER_10}], ebx",
+                $"mov ebx, dword [rax+{RM_COUNT}]",
+                $"mov dword [rsi+{RM_SEQ}], ebx",
+                "popfq",
+                "pop r9",
+                "pop r8",
+                "pop rsi",
+                "pop rdi",
+                "pop rdx",
+                "pop rcx",
+                "pop rbx",
+                "pop rax",
+            ]);
+
+            _dclReactionMaterializationProbeHook = _hooks.CreateAsmHook(
+                asm.ToArray(), address, AsmHookBehaviour.ExecuteFirst).Activate();
+            string rewriteMode = !_settings.DclReactionOrderRewriteEnabled
+                ? "off"
+                : _settings.DclReactionOrderRewriteLogOnly ? "armed/log-only" : "armed/live";
+            Line(
+                $"[DCL-REACTION-MATERIALIZED-HOOK] rva=0x{_settings.DclReactionMaterializationProbeRva:X} " +
+                $"addr=0x{address:X} maxLogs={_settings.DclReactionMaterializationProbeMaxLogs} " +
+                $"expected={_settings.DclReactionMaterializationProbeExpectedBytes} rewrite={rewriteMode} " +
+                $"carrier={_settings.DclReactionOrderRewriteCarrierId} action={_settings.DclReactionOrderRewriteActionEnabled}:" +
+                $"{_settings.DclReactionOrderRewriteActionType}/{_settings.DclReactionOrderRewriteAbilityId} " +
+                $"retargetSource={_settings.DclReactionOrderRewriteRetargetSource} maxWrites={_settings.DclReactionOrderRewriteMaxWrites}");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-REACTION-MATERIALIZED-FAILED] rva=0x{_settings.DclReactionMaterializationProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private void CaptureDclReactionMaterializationProbeEvents(long nowTick)
+    {
+        if (_dclReactionMaterializationProbeBuf == 0 || !_settings.DclReactionMaterializationProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, RM_COUNT);
+        if (count == _lastDclReactionMaterializationProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclReactionMaterializationProbeSequence + 1;
+        if (count - _lastDclReactionMaterializationProbeSequence > REACTION_MATERIALIZATION_RING_SIZE)
+        {
+            int lost = count - _lastDclReactionMaterializationProbeSequence - REACTION_MATERIALIZATION_RING_SIZE;
+            Line($"[DCL-REACTION-MATERIALIZED-LOST last={_lastDclReactionMaterializationProbeSequence} current={count} lost={lost}]");
+            start = count - REACTION_MATERIALIZATION_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclReactionMaterializationProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = RM_EVENTS + ((sequence & REACTION_MATERIALIZATION_RING_MASK) * REACTION_MATERIALIZATION_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            if (_dclReactionMaterializationProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            int reactorIndex = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_REACTOR_INDEX);
+            int reactionId = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_REACTION_ID);
+            int sourceIndex = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_SOURCE_INDEX);
+            int rewriteStatus = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_REWRITE_STATUS);
+            int originalHead = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, slot + RM_ORIGINAL_HEAD);
+            int originalActionType = (originalHead >> 8) & 0xFF;
+            int originalActionId = (originalHead >> 16) & 0xFFFF;
+            int rewriteWrites = Marshal.ReadInt32(_dclReactionMaterializationProbeBuf, RM_REWRITE_WRITE_COUNT);
+            nint unit = Marshal.ReadIntPtr(_dclReactionMaterializationProbeBuf, slot + RM_UNIT);
+            nint order = Marshal.ReadIntPtr(_dclReactionMaterializationProbeBuf, slot + RM_ORDER);
+            byte[] rawOrder = new byte[20];
+            Marshal.Copy(_dclReactionMaterializationProbeBuf + slot + RM_ORDER_00, rawOrder, 0, rawOrder.Length);
+
+            int casterIndex = rawOrder[0];
+            int actionType = rawOrder[1];
+            int actionId = BitConverter.ToUInt16(rawOrder, 2);
+            int itemId = BitConverter.ToUInt16(rawOrder, 8);
+            int targetMode = rawOrder[0xA];
+            int targetIndex = rawOrder[0xB];
+            int targetX = BitConverter.ToUInt16(rawOrder, 0xC);
+            int targetLayer = BitConverter.ToUInt16(rawOrder, 0xE);
+            int targetY = BitConverter.ToUInt16(rawOrder, 0x10);
+            string rawHex = Convert.ToHexString(rawOrder);
+            string rewrite = rewriteStatus switch
+            {
+                1 => "would-write",
+                2 => "wrote",
+                3 => "blocked-index",
+                4 => "blocked-original",
+                5 => "blocked-source",
+                6 => "capped",
+                _ => "none",
+            };
+
+            Line(
+                $"[DCL-REACTION-MATERIALIZED] event={sequence} reactorIdx={reactorIndex} sourceIdx={sourceIndex} " +
+                $"reactionId={reactionId} unit=0x{unit:X} order=0x{order:X} casterIdx={casterIndex} " +
+                $"actionType={actionType} actionId={actionId} itemId={itemId} targetMode={targetMode} " +
+                $"targetIdx={targetIndex} target=({targetX},{targetLayer},{targetY}) raw={rawHex} " +
+                $"rewrite={rewrite} originalActionType={originalActionType} originalActionId={originalActionId} " +
+                $"rewriteWrites={rewriteWrites} now={nowTick}");
+            _dclReactionMaterializationProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclReactionMaterializationProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
+    // -- DCL Reaction effect-completion probe (observe-only) ----------------------------------
+    // State 0x2C begins only after the state-0x2B VM execution workers. At 0x212C2E the current
+    // actor resolver has just returned the executed actor in rax; cleanup has not yet begun.
+    private void InstallDclReactionEffectProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclReactionEffectProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-REACTION-EFFECT-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclReactionEffectProbeBuf = Marshal.AllocHGlobal(REACTION_EFFECT_BUFFER_SIZE);
+        for (int i = 0; i < REACTION_EFFECT_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclReactionEffectProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.DclReactionEffectProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.DclReactionEffectProbeExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-REACTION-EFFECT-SKIP] rva=0x{_settings.DclReactionEffectProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            string buf = $"0{_dclReactionEffectProbeBuf:X}h";
+            string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+            string battleState = $"0{(moduleBase + DCL_BATTLE_STATE_GLOBAL_RVA):X}h";
+            string[] asm =
+            [
+                "use64",
+                "push rax",
+                "push rcx",
+                "push rdx",
+                "push rsi",
+                "push r8",
+                "pushfq",
+                $"mov rax, {buf}",
+                $"mov edx, dword [rax+{RCE_COUNT}]",
+                "add edx, 1",
+                $"mov dword [rax+{RCE_COUNT}], edx",
+                $"and edx, {REACTION_EFFECT_RING_MASK}",
+                "shl edx, 6",
+                $"lea rsi, [rax + rdx + {RCE_EVENTS}]",
+                $"mov dword [rsi+{RCE_SEQ}], 0",
+                $"mov qword [rsi+{RCE_ACTOR}], 0",
+                $"mov dword [rsi+{RCE_ACTOR_INDEX}], -1",
+                $"mov dword [rsi+{RCE_REACTION_ID}], -1",
+                $"mov dword [rsi+{RCE_ACTION_ID}], -1",
+                $"mov dword [rsi+{RCE_TARGET_COUNT}], 0",
+                $"mov qword [rsi+{RCE_TARGET_BYTES}], 0",
+                "mov r8, qword [rsp+40]",
+                "test r8, r8",
+                "jz .reaction_effect_no_actor",
+                $"mov qword [rsi+{RCE_ACTOR}], r8",
+                "movzx eax, byte [r8+8]",
+                $"mov dword [rsi+{RCE_ACTOR_INDEX}], eax",
+                "mov eax, dword [r8+18Ch]",
+                $"mov dword [rsi+{RCE_REACTION_ID}], eax",
+                "movzx eax, word [r8+142h]",
+                $"mov dword [rsi+{RCE_ACTION_ID}], eax",
+                "movzx eax, byte [r8+1A9h]",
+                $"mov dword [rsi+{RCE_TARGET_COUNT}], eax",
+                "mov rax, qword [r8+1AAh]",
+                $"mov qword [rsi+{RCE_TARGET_BYTES}], rax",
+                ".reaction_effect_no_actor:",
+                $"mov rax, {sourceIndex}",
+                "mov eax, dword [rax]",
+                $"mov dword [rsi+{RCE_SOURCE_INDEX}], eax",
+                $"mov rax, {battleState}",
+                "mov eax, dword [rax]",
+                $"mov dword [rsi+{RCE_BATTLE_STATE}], eax",
+                $"mov rax, {buf}",
+                $"mov eax, dword [rax+{RCE_COUNT}]",
+                $"mov dword [rsi+{RCE_SEQ}], eax",
+                "popfq",
+                "pop r8",
+                "pop rsi",
+                "pop rdx",
+                "pop rcx",
+                "pop rax",
+            ];
+            _dclReactionEffectProbeHook = _hooks.CreateAsmHook(
+                asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[DCL-REACTION-EFFECT-HOOK] rva=0x{_settings.DclReactionEffectProbeRva:X} " +
+                $"addr=0x{address:X} maxLogs={_settings.DclReactionEffectProbeMaxLogs} " +
+                $"expected={_settings.DclReactionEffectProbeExpectedBytes} (observe-only)");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-REACTION-EFFECT-FAILED] rva=0x{_settings.DclReactionEffectProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private void CaptureDclReactionEffectProbeEvents(long nowTick)
+    {
+        if (_dclReactionEffectProbeBuf == 0 || !_settings.DclReactionEffectProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclReactionEffectProbeBuf, RCE_COUNT);
+        if (count == _lastDclReactionEffectProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclReactionEffectProbeSequence + 1;
+        if (count - _lastDclReactionEffectProbeSequence > REACTION_EFFECT_RING_SIZE)
+        {
+            int lost = count - _lastDclReactionEffectProbeSequence - REACTION_EFFECT_RING_SIZE;
+            Line($"[DCL-REACTION-EFFECT-LOST last={_lastDclReactionEffectProbeSequence} current={count} lost={lost}]");
+            start = count - REACTION_EFFECT_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclReactionEffectProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = RCE_EVENTS + ((sequence & REACTION_EFFECT_RING_MASK) * REACTION_EFFECT_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            if (_dclReactionEffectProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            nint actor = Marshal.ReadIntPtr(_dclReactionEffectProbeBuf, slot + RCE_ACTOR);
+            int actorIndex = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_ACTOR_INDEX);
+            int reactionId = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_REACTION_ID);
+            int actionId = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_ACTION_ID);
+            int sourceIndex = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_SOURCE_INDEX);
+            int targetCount = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_TARGET_COUNT);
+            int battleState = Marshal.ReadInt32(_dclReactionEffectProbeBuf, slot + RCE_BATTLE_STATE);
+            byte[] targetBytes = new byte[8];
+            Marshal.Copy(_dclReactionEffectProbeBuf + slot + RCE_TARGET_BYTES, targetBytes, 0, targetBytes.Length);
+            string targets = string.Join(",", targetBytes.Take(Math.Clamp(targetCount, 0, targetBytes.Length)));
+
+            Line(
+                $"[DCL-REACTION-EFFECT] event={sequence} state=0x{battleState:X} actor=0x{actor:X} " +
+                $"actorIdx={actorIndex} sourceIdx={sourceIndex} reactionId={reactionId} actionId={actionId} " +
+                $"targetCount={targetCount} targets=[{targets}] now={nowTick}");
+            _dclReactionEffectProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclReactionEffectProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
+    // -- DCL Auto-Potion inventory-consumption probe (observe-only) ----------------------------
+    // At 0x2816B2 the shared item-consumption path is about to subtract BL from the inventory
+    // count held in AL. This records native operands and order context before original code runs.
+    private void InstallDclAutoPotionConsumeProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclAutoPotionConsumeProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-AUTOPOTION-CONSUME-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclAutoPotionConsumeProbeBuf = Marshal.AllocHGlobal(AUTO_POTION_CONSUME_BUFFER_SIZE);
+        for (int i = 0; i < AUTO_POTION_CONSUME_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclAutoPotionConsumeProbeBuf, i, 0);
+
+        nint address = moduleBase + _settings.DclAutoPotionConsumeProbeRva;
+        if (!ValidateExpectedBytes(address, _settings.DclAutoPotionConsumeProbeExpectedBytes, out string byteError))
+        {
+            Line($"[DCL-AUTOPOTION-CONSUME-SKIP] rva=0x{_settings.DclAutoPotionConsumeProbeRva:X} {byteError}");
+            Flush();
+            return;
+        }
+
+        try
+        {
+            string buf = $"0{_dclAutoPotionConsumeProbeBuf:X}h";
+            string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+            string battleState = $"0{(moduleBase + DCL_BATTLE_STATE_GLOBAL_RVA):X}h";
+            string[] asm =
+            [
+                "use64",
+                "push rax",
+                "push rcx",
+                "push rdx",
+                "push r8",
+                "push r9",
+                "pushfq",
+                "movzx r8d, al",
+                "movzx r9d, bl",
+                $"mov rax, {buf}",
+                $"mov edx, dword [rax+{APC_COUNT}]",
+                "add edx, 1",
+                $"mov dword [rax+{APC_COUNT}], edx",
+                $"and edx, {AUTO_POTION_CONSUME_RING_MASK}",
+                "shl edx, 6",
+                $"lea rcx, [rax + rdx + {APC_EVENTS}]",
+                $"mov dword [rcx+{APC_SEQ}], 0",
+                $"mov dword [rcx+{APC_ITEM_ID}], r13d",
+                $"mov dword [rcx+{APC_OLD_COUNT}], r8d",
+                $"mov dword [rcx+{APC_DECREMENT}], r9d",
+                $"mov qword [rcx+{APC_CONTEXT}], rsi",
+                "movzx eax, word [rsi]",
+                $"mov dword [rcx+{APC_CHAR_ID}], eax",
+                "movzx eax, byte [rsi+8]",
+                $"mov dword [rcx+{APC_CONTEXT_INDEX}], eax",
+                "movzx eax, word [rsi+1A2h]",
+                $"mov dword [rcx+{APC_ACTION_ID}], eax",
+                "movzx eax, word [rsi+1A8h]",
+                $"mov dword [rcx+{APC_SELECTED_ITEM_ID}], eax",
+                "movzx eax, byte [rsi+1EEh]",
+                $"mov dword [rcx+{APC_FLAGS_1EE}], eax",
+                "movzx eax, byte [rsi+1BAh]",
+                $"mov dword [rcx+{APC_MARKER_1BA}], eax",
+                $"mov rax, {sourceIndex}",
+                "mov eax, dword [rax]",
+                $"mov dword [rcx+{APC_SOURCE_INDEX}], eax",
+                $"mov rax, {battleState}",
+                "mov eax, dword [rax]",
+                $"mov dword [rcx+{APC_BATTLE_STATE}], eax",
+                $"mov rax, {buf}",
+                $"mov eax, dword [rax+{APC_COUNT}]",
+                $"mov dword [rcx+{APC_SEQ}], eax",
+                "popfq",
+                "pop r9",
+                "pop r8",
+                "pop rdx",
+                "pop rcx",
+                "pop rax",
+            ];
+            _dclAutoPotionConsumeProbeHook = _hooks.CreateAsmHook(
+                asm, address, AsmHookBehaviour.ExecuteFirst).Activate();
+            Line(
+                $"[DCL-AUTOPOTION-CONSUME-HOOK] rva=0x{_settings.DclAutoPotionConsumeProbeRva:X} " +
+                $"addr=0x{address:X} maxLogs={_settings.DclAutoPotionConsumeProbeMaxLogs} " +
+                $"expected={_settings.DclAutoPotionConsumeProbeExpectedBytes} (observe-only)");
+        }
+        catch (Exception ex)
+        {
+            Line($"[DCL-AUTOPOTION-CONSUME-FAILED] rva=0x{_settings.DclAutoPotionConsumeProbeRva:X} {ex.GetType().Name}: {ex.Message}");
+        }
+        Flush();
+    }
+
+    private void CaptureDclAutoPotionConsumeProbeEvents(long nowTick)
+    {
+        if (_dclAutoPotionConsumeProbeBuf == 0 || !_settings.DclAutoPotionConsumeProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, APC_COUNT);
+        if (count == _lastDclAutoPotionConsumeProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclAutoPotionConsumeProbeSequence + 1;
+        if (count - _lastDclAutoPotionConsumeProbeSequence > AUTO_POTION_CONSUME_RING_SIZE)
+        {
+            int lost = count - _lastDclAutoPotionConsumeProbeSequence - AUTO_POTION_CONSUME_RING_SIZE;
+            Line($"[DCL-AUTOPOTION-CONSUME-LOST last={_lastDclAutoPotionConsumeProbeSequence} current={count} lost={lost}]");
+            start = count - AUTO_POTION_CONSUME_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclAutoPotionConsumeProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = APC_EVENTS + ((sequence & AUTO_POTION_CONSUME_RING_MASK) * AUTO_POTION_CONSUME_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            if (_dclAutoPotionConsumeProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            int itemId = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_ITEM_ID);
+            int oldCount = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_OLD_COUNT);
+            int decrement = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_DECREMENT);
+            nint context = Marshal.ReadIntPtr(_dclAutoPotionConsumeProbeBuf, slot + APC_CONTEXT);
+            int charId = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_CHAR_ID);
+            int contextIndex = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_CONTEXT_INDEX);
+            int actionId = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_ACTION_ID);
+            int selectedItemId = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_SELECTED_ITEM_ID);
+            int flags1EE = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_FLAGS_1EE);
+            int marker1BA = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_MARKER_1BA);
+            int sourceIndex = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_SOURCE_INDEX);
+            int battleState = Marshal.ReadInt32(_dclAutoPotionConsumeProbeBuf, slot + APC_BATTLE_STATE);
+            bool autoPotion = actionId == 441 && itemId == selectedItemId && itemId is >= 240 and <= 242;
+
+            Line(
+                $"[DCL-AUTOPOTION-CONSUME] event={sequence} itemId={itemId} inventory={oldCount}->{oldCount - decrement} " +
+                $"decrement={decrement} context=0x{context:X} charId={charId} contextIdx={contextIndex} " +
+                $"actionId={actionId} selectedItemId={selectedItemId} flags1EE=0x{flags1EE:X2} marker1BA=0x{marker1BA:X2} " +
+                $"sourceIdx={sourceIndex} battleState={battleState} autoPotion={autoPotion} now={nowTick}");
+            _dclAutoPotionConsumeProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclAutoPotionConsumeProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
+    // -- DCL native weapon line-of-fire result probe (observe-only) ----------------------------
+    // These sites run immediately after the native Arc/Direct resolver returns and before the
+    // evaluator compares EAX (reached/intercepted unit) with ESI (intended candidate).
+    private void InstallDclWeaponLineOfFireProbeIfEnabled(nint moduleBase)
+    {
+        if (!_settings.DclWeaponLineOfFireProbeEnabled)
+            return;
+        if (_hooks is null)
+        {
+            Line("[DCL-WEAPON-LOF-SKIP] no IReloadedHooks");
+            Flush();
+            return;
+        }
+
+        _dclWeaponLineOfFireProbeBuf = Marshal.AllocHGlobal(WEAPON_LOF_BUFFER_SIZE);
+        for (int i = 0; i < WEAPON_LOF_BUFFER_SIZE; i++)
+            Marshal.WriteByte(_dclWeaponLineOfFireProbeBuf, i, 0);
+
+        var sites = new[]
+        {
+            (Kind: 1, Name: "Arc", Rva: _settings.DclWeaponLineOfFireArcRva),
+            (Kind: 2, Name: "Direct", Rva: _settings.DclWeaponLineOfFireDirectRva),
+        };
+        foreach (var site in sites)
+        {
+            nint address = moduleBase + site.Rva;
+            if (!ValidateExpectedBytes(address, _settings.DclWeaponLineOfFireExpectedBytes, out string byteError))
+            {
+                Line($"[DCL-WEAPON-LOF-SKIP] kind={site.Name} rva=0x{site.Rva:X} {byteError}");
+                continue;
+            }
+
+            try
+            {
+                string buf = $"0{_dclWeaponLineOfFireProbeBuf:X}h";
+                string sourceIndex = $"0{(moduleBase + DCL_REACTION_SOURCE_INDEX_GLOBAL_RVA):X}h";
+                string battleState = $"0{(moduleBase + DCL_BATTLE_STATE_GLOBAL_RVA):X}h";
+                string unitTable = $"0{(moduleBase + BattleUnitTableRva):X}h";
+                string[] asm =
+                [
+                    "use64",
+                    "push rax",
+                    "push rcx",
+                    "push rdx",
+                    "push r8",
+                    "push r9",
+                    "pushfq",
+                    "mov r8d, eax",
+                    "mov r9d, esi",
+                    $"mov rax, {buf}",
+                    $"mov edx, dword [rax+{WLF_COUNT}]",
+                    "add edx, 1",
+                    $"mov dword [rax+{WLF_COUNT}], edx",
+                    $"and edx, {WEAPON_LOF_RING_MASK}",
+                    "shl edx, 7",
+                    $"lea rcx, [rax + rdx + {WLF_EVENTS}]",
+                    $"mov dword [rcx+{WLF_SEQ}], 0",
+                    $"mov dword [rcx+{WLF_KIND}], {site.Kind}",
+                    "movzx eax, byte [rbp-28h]",
+                    $"mov dword [rcx+{WLF_ACTOR_INDEX}], eax",
+                    $"mov dword [rcx+{WLF_CANDIDATE_INDEX}], r9d",
+                    $"mov dword [rcx+{WLF_RESULT_INDEX}], r8d",
+                    "mov rdx, qword [rbp-30h]",
+                    $"mov qword [rcx+{WLF_COORDS_PTR}], rdx",
+                    $"mov dword [rcx+{WLF_COORD_0}], -1",
+                    $"mov dword [rcx+{WLF_COORD_1}], -1",
+                    $"mov dword [rcx+{WLF_COORD_2}], -1",
+                    "test rdx, rdx",
+                    "jz .weapon_lof_no_coords",
+                    "movsx r8d, word [rdx]",
+                    $"mov dword [rcx+{WLF_COORD_0}], r8d",
+                    "movsx r8d, word [rdx+2]",
+                    $"mov dword [rcx+{WLF_COORD_1}], r8d",
+                    "movsx r8d, word [rdx+4]",
+                    $"mov dword [rcx+{WLF_COORD_2}], r8d",
+                    ".weapon_lof_no_coords:",
+                    $"mov rdx, {unitTable}",
+                    "shl rax, 9",
+                    "add rdx, rax",
+                    "movzx eax, word [rdx]",
+                    $"mov dword [rcx+{WLF_ACTOR_CHAR_ID}], eax",
+                    "movzx eax, byte [rdx+1A1h]",
+                    $"mov dword [rcx+{WLF_ACTION_TYPE}], eax",
+                    "movzx eax, word [rdx+1A2h]",
+                    $"mov dword [rcx+{WLF_ABILITY_ID}], eax",
+                    "movzx eax, word [rdx+20h]",
+                    $"mov dword [rcx+{WLF_RIGHT_WEAPON}], eax",
+                    "movzx eax, word [rdx+24h]",
+                    $"mov dword [rcx+{WLF_LEFT_WEAPON}], eax",
+                    $"mov rax, {sourceIndex}",
+                    "mov eax, dword [rax]",
+                    $"mov dword [rcx+{WLF_SOURCE_INDEX}], eax",
+                    $"mov rax, {battleState}",
+                    "mov eax, dword [rax]",
+                    $"mov dword [rcx+{WLF_BATTLE_STATE}], eax",
+                    $"mov rax, {buf}",
+                    $"mov eax, dword [rax+{WLF_COUNT}]",
+                    $"mov dword [rcx+{WLF_SEQ}], eax",
+                    "popfq",
+                    "pop r9",
+                    "pop r8",
+                    "pop rdx",
+                    "pop rcx",
+                    "pop rax",
+                ];
+                _dclWeaponLineOfFireProbeHooks.Add(
+                    _hooks.CreateAsmHook(asm, address, AsmHookBehaviour.ExecuteFirst).Activate());
+                Line(
+                    $"[DCL-WEAPON-LOF-HOOK] kind={site.Name} rva=0x{site.Rva:X} addr=0x{address:X} " +
+                    $"maxLogs={_settings.DclWeaponLineOfFireProbeMaxLogs} " +
+                    $"expected={_settings.DclWeaponLineOfFireExpectedBytes} (observe-only)");
+            }
+            catch (Exception ex)
+            {
+                Line($"[DCL-WEAPON-LOF-FAILED] kind={site.Name} rva=0x{site.Rva:X} {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+        Flush();
+    }
+
+    private void CaptureDclWeaponLineOfFireProbeEvents(long nowTick)
+    {
+        if (_dclWeaponLineOfFireProbeBuf == 0 || !_settings.DclWeaponLineOfFireProbeEnabled)
+            return;
+
+        int count = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, WLF_COUNT);
+        if (count == _lastDclWeaponLineOfFireProbeSequence)
+            return;
+
+        bool needsFlush = false;
+        int start = _lastDclWeaponLineOfFireProbeSequence + 1;
+        if (count - _lastDclWeaponLineOfFireProbeSequence > WEAPON_LOF_RING_SIZE)
+        {
+            int lost = count - _lastDclWeaponLineOfFireProbeSequence - WEAPON_LOF_RING_SIZE;
+            Line($"[DCL-WEAPON-LOF-LOST last={_lastDclWeaponLineOfFireProbeSequence} current={count} lost={lost}]");
+            start = count - WEAPON_LOF_RING_SIZE + 1;
+            needsFlush = true;
+        }
+
+        int maxLogs = Math.Clamp(_settings.DclWeaponLineOfFireProbeMaxLogs, 0, 100_000);
+        int consumedThrough = start - 1;
+        for (int sequence = start; sequence <= count; sequence++)
+        {
+            int slot = WLF_EVENTS + ((sequence & WEAPON_LOF_RING_MASK) * WEAPON_LOF_SLOT_SIZE);
+            int recordedSequence = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_SEQ);
+            if (recordedSequence != sequence)
+                break;
+            if (_dclWeaponLineOfFireProbeLogs >= maxLogs)
+            {
+                consumedThrough = sequence;
+                continue;
+            }
+
+            int kind = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_KIND);
+            int actorIndex = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_ACTOR_INDEX);
+            int candidateIndex = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_CANDIDATE_INDEX);
+            int resultIndex = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_RESULT_INDEX);
+            nint coordsPtr = Marshal.ReadIntPtr(_dclWeaponLineOfFireProbeBuf, slot + WLF_COORDS_PTR);
+            int coord0 = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_COORD_0);
+            int coord1 = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_COORD_1);
+            int coord2 = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_COORD_2);
+            int sourceIndex = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_SOURCE_INDEX);
+            int battleState = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_BATTLE_STATE);
+            int actorCharId = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_ACTOR_CHAR_ID);
+            int actionType = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_ACTION_TYPE);
+            int abilityId = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_ABILITY_ID);
+            int rightWeapon = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_RIGHT_WEAPON);
+            int leftWeapon = Marshal.ReadInt32(_dclWeaponLineOfFireProbeBuf, slot + WLF_LEFT_WEAPON);
+            bool included = candidateIndex >= 0 && resultIndex == candidateIndex;
+            string kindName = kind == 1 ? "Arc" : kind == 2 ? "Direct" : $"Unknown({kind})";
+
+            Line(
+                $"[DCL-WEAPON-LOF] event={sequence} kind={kindName} actorIdx={actorIndex} actorId={actorCharId} " +
+                $"candidateIdx={candidateIndex} resultIdx={resultIndex} included={included} " +
+                $"coords=0x{coordsPtr:X}[{coord0},{coord1},{coord2}] actionType={actionType} abilityId={abilityId} " +
+                $"weapons={rightWeapon}/{leftWeapon} sourceIdx={sourceIndex} battleState={battleState} now={nowTick}");
+            _dclWeaponLineOfFireProbeLogs++;
+            consumedThrough = sequence;
+            needsFlush = true;
+        }
+
+        _lastDclWeaponLineOfFireProbeSequence = consumedThrough;
+        if (needsFlush)
+            Flush();
+    }
+
     private void InstallRollVerdictProbeIfEnabled(nint moduleBase)
     {
         if (!_settings.RollVerdictProbeEnabled)
@@ -2745,7 +5916,7 @@ public class Mod : ModBase
     {
         string buf = $"0{_rollVerdictProbeBuf:X}h";
 
-        // ExecuteFirst at 0x30F4A7 ("mov r10d,eax"). At entry: eax = native verdict, rbx = acting unit.
+        // ExecuteFirst at 0x30F40F ("mov r10d,eax"). At entry: eax = native verdict, rbx = acting unit.
         // We deliberately do NOT push/pop rax: we save the native verdict in r8d, optionally override it,
         // and write the final verdict back to eax at exit so the stolen "mov r10d,eax" propagates it. Only
         // rcx/r8/r9 and flags are saved.
@@ -3015,7 +6186,12 @@ public class Mod : ModBase
                 return -1;
 
             if (settings.DclPipelineEnabled &&
-                !string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+                (!string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
+                 !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
+                 !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
+                 !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) ||
+                 settings.DclStatusControlEnabled || settings.DclInstantKoControlEnabled ||
+                 settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled) &&
                 TryEvaluateDclPreClampDamage(targetPtr, hookStackPtr, settings, targetId, oldDebit, oldCredit, out int dclDebit))
                 return dclDebit;
 
@@ -3082,9 +6258,9 @@ public class Mod : ModBase
         }
 
         long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
-        if (!_dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out var actionContext))
+        if (!_dclActionCache.TryGetLatestConfirmedExecution(targetIdx, nowTick, maxAgeTicks, out var actionContext))
         {
-            QueueDclCacheMiss(settings, "no-calc-entry", targetIdx, targetId, nowTick);
+            QueueDclCacheMiss(settings, "no-confirmed-execution-calc", targetIdx, targetId, nowTick);
             return false;
         }
 
@@ -3113,6 +6289,41 @@ public class Mod : ModBase
             return false;
         }
 
+        const int StagedHpCreditOffset = 0x1C6;
+        const int StagedMpDebitOffset = 0x1C8;
+        const int StagedMpCreditOffset = 0x1CA;
+        const int StagedStatusAddOffset = 0x1DB;
+        const int StagedStatusRemoveOffset = 0x1E0;
+        const int ResultFlagsOffset = 0x1E5;
+        int oldMpDebit = Math.Max(0, target.ReadUInt16(StagedMpDebitOffset));
+        int oldMpCredit = Math.Max(0, target.ReadUInt16(StagedMpCreditOffset));
+        int oldResultFlags = Math.Max(0, target.ReadByte(ResultFlagsOffset));
+        long computePointTtlTicks = StopwatchTicksFromMilliseconds(settings.DclComputePointCacheTtlMs);
+        DclComputedNumericResult computePointResult = default;
+        bool hasComputePointResult = settings.DclComputePointNumericEnabled &&
+            _dclComputePointCache.TryGet(
+                targetIdx,
+                actionContext.CasterIdx,
+                actionContext.ActionType,
+                actionContext.AbilityId,
+                actionContext.ActionPayload,
+                nowTick,
+                computePointTtlTicks,
+                out computePointResult);
+        if (settings.DclComputePointNumericEnabled && !hasComputePointResult)
+        {
+            // The staged record may already contain either a native result (writer failed open) or
+            // a DCL result whose cache expired. Never evaluate formulas against that ambiguous value
+            // a second time; leaving the current record untouched is the safe fail-open behavior.
+            QueueDclCacheMiss(settings, "no-compute-point-result", targetIdx, targetId, nowTick);
+            return false;
+        }
+        int naturalDebit = hasComputePointResult ? computePointResult.NaturalHpDebit : oldDebit;
+        int naturalCredit = hasComputePointResult ? computePointResult.NaturalHpCredit : oldCredit;
+        int naturalMpDebit = hasComputePointResult ? computePointResult.NaturalMpDebit : oldMpDebit;
+        int naturalMpCredit = hasComputePointResult ? computePointResult.NaturalMpCredit : oldMpCredit;
+        int naturalResultFlags = hasComputePointResult ? computePointResult.NaturalResultFlags : oldResultFlags;
+
         // STATUS OUTPUT-CONTROL (LT10-B): observe the status the VM staged on THIS hit, in the same
         // compute->apply window where the HP/MP debit writes are proven safe same-hit
         // (docs/modding/04-engine-memory-model.md §2.3; inventory §1.9). The OBSERVE half runs here on
@@ -3123,7 +6334,20 @@ public class Mod : ModBase
         // the computed plan is only applied on a COMMITTED outcome — inside the forced-miss branch and on
         // the normal path after the formula succeeds. Failures are swallowed so a bad offset never
         // disturbs the damage path.
-        var statusPlan = ObserveStagedStatus(settings, targetPtr, target, attacker, actionContext, oldDebit);
+        var statusPlan = ObserveStagedStatus(settings, targetPtr, target, attacker, actionContext, naturalDebit);
+
+        long hitTtlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
+        DclHitDecision cachedHitDecision = default;
+        bool hasHitDecision = settings.DclHitControlEnabled &&
+            _dclHitDecisionCache.TryGet(
+                targetIdx,
+                actionContext.CasterIdx,
+                actionContext.AbilityId,
+                actionContext.ActionType,
+                actionContext.ActionPayload,
+                nowTick,
+                hitTtlTicks,
+                out cachedHitDecision);
 
         // OUTPUT-CONTROL MISS: when output-control is armed (both the pre-clamp and kind hooks are
         // live) the VM always connects (the decision callback stamps all-zero evade for BOTH
@@ -3135,26 +6359,20 @@ public class Mod : ModBase
         // LT8 input-control class-evade stamp.
         if (settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive)
         {
-            long hitTtlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
-            if (_dclHitDecisionCache.TryGet(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, nowTick, hitTtlTicks, out var hitDecision) &&
-                !hitDecision.Hit)
+            if (hasHitDecision && !cachedHitDecision.Hit)
             {
                 dclDebit = 0;
                 // MP CHANNEL COVERAGE (LT9): the return value only rewrites the staged HP-debit
                 // (word[rbp+6] == unit+0x1C4). A forced miss must also cancel the staged MP-debit
                 // word[unit+0x1C8] (docs/modding/04-engine-memory-model.md §2.3, Strong/static-proven:
-                // apply at 0x30A51C computes newMP = clamp(MP + [+0x1CA] - [+0x1C8])). LT9 leaked here:
+                // apply at 0x30A5F9..0x30A634 computes newMP = clamp(MP + [+0x1CA] - [+0x1C8])). LT9 leaked here:
                 // vs a Mana-Shield target the HP debit was already 0 (damage redirected to MP), so the
                 // HP-only zero left the full vanilla MP debit intact and the target still lost 201 MP.
                 // The unit base is targetPtr (guards read HP at targetPtr+0x30); zero the MP-debit word
                 // in-place so the downstream MP-apply subtracts nothing. Gated identically (both hooks
                 // active + DclMissOutputControlEnabled) so it only fires when a miss is being authored.
-                const int StagedMpDebitOffset = 0x1C8;
-                int mpDebit = 0;
                 bool mpDebitZeroed = false;
-                try { mpDebit = (ushort)Marshal.ReadInt16(targetPtr, StagedMpDebitOffset); }
-                catch { mpDebit = 0; }
-                if (mpDebit > 0)
+                if (oldMpDebit > 0)
                 {
                     try
                     {
@@ -3162,6 +6380,26 @@ public class Mod : ModBase
                         mpDebitZeroed = true;
                     }
                     catch { /* leave MP untouched on write failure; HP zero already applied */ }
+                }
+                bool hpCreditZeroed = false;
+                if (oldCredit > 0)
+                {
+                    try
+                    {
+                        Marshal.WriteInt16(targetPtr, StagedHpCreditOffset, 0);
+                        hpCreditZeroed = true;
+                    }
+                    catch { /* leave credit untouched on write failure */ }
+                }
+                bool mpCreditZeroed = false;
+                if (oldMpCredit > 0)
+                {
+                    try
+                    {
+                        Marshal.WriteInt16(targetPtr, StagedMpCreditOffset, 0);
+                        mpCreditZeroed = true;
+                    }
+                    catch { /* leave credit untouched on write failure */ }
                 }
 
                 // MISS PRESENTATION (LT10-C): render "Miss" instead of the "0" damage popup. record+0x1D8
@@ -3238,12 +6476,24 @@ public class Mod : ModBase
                 string missAbilityName = _abilityCatalog.TryGet(actionContext.AbilityId, out var missAbility)
                     ? missAbility.Name
                     : "unknown";
-                string mpClause = mpDebitZeroed ? $" mpDebit={mpDebit}->0" : "";
+                string hpCreditClause = hpCreditZeroed ? $" hpCredit={oldCredit}->0" : "";
+                string mpClause = mpDebitZeroed ? $" mpDebit={oldMpDebit}->0" : "";
+                string mpCreditClause = mpCreditZeroed ? $" mpCredit={oldMpCredit}->0" : "";
+                string strikeClause = cachedHitDecision.Multistrike.StrikeCount > 1
+                    ? $" strikes={cachedHitDecision.Multistrike.StrikeCount} hits={cachedHitDecision.Multistrike.HitCount} " +
+                      $"crits={cachedHitDecision.Multistrike.CriticalCount} misses={cachedHitDecision.Multistrike.AttackMissCount} " +
+                      $"fumbles={cachedHitDecision.Multistrike.FumbleCount} defended={cachedHitDecision.Multistrike.DefendedCount}"
+                    : "";
                 QueueDclDecisionLog(
                     settings,
                     $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
-                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={oldDebit}{mpClause}{presClause} outcome=forced-miss");
-                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
+                    $"ability={CleanDclLogValue(missAbilityName)} actionType=0x{actionContext.ActionType:X2} result=0 debit=0 oldDebit={naturalDebit}" +
+                    $"{hpCreditClause}{mpClause}{mpCreditClause}{strikeClause}{presClause} outcome=forced-miss computePoint={(hasComputePointResult ? 1 : 0)}");
+                CommitDclGuardUse(settings, targetIdx, targetPtr, target, actionContext);
+                if (!ShouldRetainDclHitDecisionForRandomFire(actionContext.AbilityId))
+                    _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload, byOutcomeDelivery: false);
+                if (hasComputePointResult)
+                    _dclComputePointCache.Invalidate(targetIdx);
                 return true;
             }
         }
@@ -3258,8 +6508,8 @@ public class Mod : ModBase
         }
 
         long eventIndex = Interlocked.Increment(ref _probeEventIndex);
-        int syntheticCurrentHp = Math.Clamp(target.Hp - Math.Max(0, oldDebit), 0, Math.Max(0, target.MaxHp));
-        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, oldDebit);
+        int syntheticCurrentHp = Math.Clamp(target.Hp - Math.Max(0, naturalDebit), 0, Math.Max(0, target.MaxHp));
+        long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, syntheticCurrentHp, naturalDebit);
         var itemCatalog = _itemCatalog;
         var abilityCatalog = _abilityCatalog;
         var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
@@ -3272,8 +6522,14 @@ public class Mod : ModBase
             eventSeed,
             actionContext.ActionType,
             actionContext.AbilityId,
-            oldDebit,
-            oldCredit);
+            naturalDebit,
+            naturalCredit,
+            naturalMpDebit,
+            naturalMpCredit,
+            actionContext.ActionPayload);
+
+        if (hasHitDecision && cachedHitDecision.Multistrike.StrikeCount > 0)
+            FormulaRuntimeContextBuilder.AddDclMultistrikeVariables(context, cachedHitDecision.Multistrike);
 
         if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
         {
@@ -3284,46 +6540,812 @@ public class Mod : ModBase
             return false;
         }
 
-        if (!FormulaExpression.TryEvaluate(settings.DclDamageFormula, context, out int formulaDebit, out string error))
+        bool hasPreparedStatusPlan = _dclStatusPlanCache.TryGet(
+            targetIdx,
+            actionContext.CasterIdx,
+            actionContext.ActionType,
+            actionContext.AbilityId,
+            nowTick,
+            maxAgeTicks,
+            out var preparedStatusPlan);
+        var dclStatusPlan = hasPreparedStatusPlan
+            ? preparedStatusPlan.Writes.ToList()
+            : BuildDclStatusPlan(
+                settings,
+                context,
+                target,
+                attacker,
+                actionContext.ActionType,
+                actionContext.AbilityId);
+        var instantKoDecision = hasComputePointResult
+            ? default
+            : BuildDclInstantKoDecision(
+                settings,
+                context,
+                target,
+                attacker,
+                actionContext.ActionType,
+                actionContext.AbilityId);
+
+        int formulaDebit = hasComputePointResult ? computePointResult.HpDebit : naturalDebit;
+        if (!hasComputePointResult && !string.IsNullOrWhiteSpace(settings.DclDamageFormula) &&
+            !FormulaExpression.TryEvaluate(settings.DclDamageFormula, context, out formulaDebit, out string error))
         {
             QueueDclDecisionLog(
                 settings,
                 $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
-                $"actionType=0x{actionContext.ActionType:X2} oldDebit={oldDebit} error={CleanDclLogValue(error)}");
+                $"actionType=0x{actionContext.ActionType:X2} oldDebit={naturalDebit} error={CleanDclLogValue(error)}");
             return false;
         }
 
+        int formulaCredit = hasComputePointResult ? computePointResult.HpCredit : naturalCredit;
+        if (!hasComputePointResult && !string.IsNullOrWhiteSpace(settings.DclHealingFormula) &&
+            !FormulaExpression.TryEvaluate(settings.DclHealingFormula, context, out formulaCredit, out string healingError))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
+                $"actionType=0x{actionContext.ActionType:X2} oldCredit={naturalCredit} error={CleanDclLogValue(healingError)}");
+            return false;
+        }
+
+        int formulaMpDebit = hasComputePointResult ? computePointResult.MpDebit : naturalMpDebit;
+        if (!hasComputePointResult && !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) &&
+            !FormulaExpression.TryEvaluate(settings.DclMpDebitFormula, context, out formulaMpDebit, out string mpDebitError))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
+                $"actionType=0x{actionContext.ActionType:X2} oldMpDebit={naturalMpDebit} error={CleanDclLogValue(mpDebitError)}");
+            return false;
+        }
+
+        int formulaMpCredit = hasComputePointResult ? computePointResult.MpCredit : naturalMpCredit;
+        if (!hasComputePointResult && !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) &&
+            !FormulaExpression.TryEvaluate(settings.DclMpCreditFormula, context, out formulaMpCredit, out string mpCreditError))
+        {
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
+                $"actionType=0x{actionContext.ActionType:X2} oldMpCredit={naturalMpCredit} error={CleanDclLogValue(mpCreditError)}");
+            return false;
+        }
+
+        if (instantKoDecision.Matched)
+        {
+            formulaDebit = DclLifecycle.ComputeResolvedInstantKoDebit(
+                target.Hp,
+                formulaCredit,
+                formulaDebit,
+                instantKoDecision);
+            if (instantKoDecision.Kills && !DclLifecycle.WouldBeLethal(target.Hp, formulaCredit, formulaDebit))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-KO-ERR] rule={CleanDclLogValue(instantKoDecision.RuleName)} target=0x{target.CharId:X2} " +
+                    $"ability={actionContext.AbilityId} stage=lethal-debit hp={target.Hp} credit={formulaCredit} debit={formulaDebit}");
+                return false;
+            }
+
+            string koOutcome = instantKoDecision.Immune ? "immune" : instantKoDecision.Resisted ? "resisted" : "engine-owned-ko";
+            QueueDclStatusLog(settings,
+                $"[DCL-KO] rule={CleanDclLogValue(instantKoDecision.RuleName)} target=0x{target.CharId:X2} " +
+                $"ability={actionContext.AbilityId} resistance={instantKoDecision.Resistance} roll={instantKoDecision.Roll} " +
+                $"outcome={koOutcome} debit={formulaDebit} credit={formulaCredit}");
+        }
+
         dclDebit = Math.Clamp(formulaDebit, 0, short.MaxValue);
-        // Committed normal path: the rewritten debit is now the return value, past every fail-open
-        // return, so apply the staged-status write plan here (never before, or a formula failure would
-        // fail-open with staged bytes already mutated).
+        int dclCredit = Math.Clamp(formulaCredit, 0, short.MaxValue);
+        int dclMpDebit = Math.Clamp(formulaMpDebit, 0, short.MaxValue);
+        int dclMpCredit = Math.Clamp(formulaMpCredit, 0, short.MaxValue);
+        byte dclResultFlags = DclResultFlags.Compose(
+            naturalResultFlags,
+            settings.DclResultFlagsPreserveMask,
+            dclDebit,
+            dclCredit,
+            dclMpDebit,
+            dclMpCredit);
+        bool wroteCredit = false;
+        bool wroteMpDebit = false;
+        bool wroteMpCredit = false;
+        bool wroteResultFlags = false;
+        byte committedResultFlags = settings.DclResultFlagsControlEnabled
+            ? dclResultFlags
+            : (byte)oldResultFlags;
+        DclStatusPacketPlan? committedStatusPacket = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(settings.DclHealingFormula))
+            {
+                Marshal.WriteInt16(targetPtr, StagedHpCreditOffset, (short)dclCredit);
+                wroteCredit = true;
+            }
+            if (!string.IsNullOrWhiteSpace(settings.DclMpDebitFormula))
+            {
+                Marshal.WriteInt16(targetPtr, StagedMpDebitOffset, (short)dclMpDebit);
+                wroteMpDebit = true;
+            }
+            if (!string.IsNullOrWhiteSpace(settings.DclMpCreditFormula))
+            {
+                Marshal.WriteInt16(targetPtr, StagedMpCreditOffset, (short)dclMpCredit);
+                wroteMpCredit = true;
+            }
+            if (settings.DclResultFlagsControlEnabled)
+            {
+                // Write the presentation/effect-kind byte last. If this final write fails, roll all
+                // earlier numeric channels back so the callback remains an atomic fail-open unit.
+                Marshal.WriteByte(targetPtr, ResultFlagsOffset, dclResultFlags);
+                wroteResultFlags = true;
+            }
+            if (dclStatusPlan.Count > 0)
+            {
+                // The native status packet is consumed later in this same ordinary apply routine.
+                // Stage it inside the numeric transaction so no formula result can commit without
+                // its authored rider (or vice versa). The helper rolls its own partial writes back;
+                // an exception then reaches this catch and rolls the numeric channels back too.
+                committedStatusPacket = StageDclStatusPacket(
+                    targetPtr,
+                    StagedStatusAddOffset,
+                    StagedStatusRemoveOffset,
+                    ResultFlagsOffset,
+                    committedResultFlags,
+                    dclStatusPlan);
+                committedResultFlags = committedStatusPacket.Value.ResultFlags;
+            }
+        }
+        catch (Exception writeError)
+        {
+            // Preserve fail-open semantics even if an exceptionally rare later channel write
+            // fails after an earlier one succeeded.
+            try { if (wroteCredit) Marshal.WriteInt16(targetPtr, StagedHpCreditOffset, (short)oldCredit); } catch { }
+            try { if (wroteMpDebit) Marshal.WriteInt16(targetPtr, StagedMpDebitOffset, (short)oldMpDebit); } catch { }
+            try { if (wroteMpCredit) Marshal.WriteInt16(targetPtr, StagedMpCreditOffset, (short)oldMpCredit); } catch { }
+            try { if (wroteResultFlags) Marshal.WriteByte(targetPtr, ResultFlagsOffset, (byte)oldResultFlags); } catch { }
+            QueueDclDecisionLog(
+                settings,
+                $"[DCL-ERR] target=0x{target.CharId:X2} caster=0x{attacker.CharId:X2} abilityId={actionContext.AbilityId} " +
+                $"actionType=0x{actionContext.ActionType:X2} staged-write={CleanDclLogValue(writeError.Message)}");
+            return false;
+        }
+        // Committed normal path: numeric channels and the native status packet are now one staged
+        // transaction, past every fail-open return. The game's later validator/committer remains the
+        // authority for durable/effective status state and native side effects.
+        ReserveDclHexWardFromCommittedHit(
+            targetPtr,
+            targetIdx,
+            target,
+            attacker,
+            actionContext,
+            context,
+            dclDebit,
+            dclCredit,
+            hasHitDecision ? cachedHitDecision : default,
+            hasHitDecision);
+        CommitDclGuardUse(settings, targetIdx, targetPtr, target, actionContext);
         ApplyStagedStatusWrites(settings, targetPtr, statusPlan, target, actionContext);
+        if (committedStatusPacket is { } statusPacket)
+            LogCommittedDclStatusPacket(settings, targetPtr, target, actionContext, dclStatusPlan, statusPacket);
+        if (hasPreparedStatusPlan)
+            _dclStatusPlanCache.Invalidate(
+                targetIdx,
+                actionContext.CasterIdx,
+                actionContext.ActionType,
+                actionContext.AbilityId);
         string abilityName = abilityCatalog.TryGet(actionContext.AbilityId, out var ability)
             ? ability.Name
             : "unknown";
+        string committedStrikeClause = hasHitDecision && cachedHitDecision.Multistrike.StrikeCount > 1
+            ? $" strikes={cachedHitDecision.Multistrike.StrikeCount} hits={cachedHitDecision.Multistrike.HitCount} " +
+              $"crits={cachedHitDecision.Multistrike.CriticalCount} misses={cachedHitDecision.Multistrike.AttackMissCount} " +
+              $"fumbles={cachedHitDecision.Multistrike.FumbleCount} defended={cachedHitDecision.Multistrike.DefendedCount}"
+            : "";
         QueueDclDecisionLog(
             settings,
             $"[DCL] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
-            $"ability={CleanDclLogValue(abilityName)} actionType=0x{actionContext.ActionType:X2} result={formulaDebit} debit={dclDebit} oldDebit={oldDebit}");
+            $"ability={CleanDclLogValue(abilityName)} actionType=0x{actionContext.ActionType:X2} " +
+            $"result={formulaDebit} debit={dclDebit} oldDebit={naturalDebit} credit={dclCredit} oldCredit={naturalCredit} " +
+            $"mpDebit={dclMpDebit} oldMpDebit={naturalMpDebit} mpCredit={dclMpCredit} oldMpCredit={naturalMpCredit} " +
+            $"flags=0x{naturalResultFlags:X2}->0x{committedResultFlags:X2} computePoint={(hasComputePointResult ? 1 : 0)}" +
+            committedStrikeClause);
         // Retire the decision symmetrically with misses. Under armed output-control the kind hook
         // (0x205B38) is a second consumer of this same HIT and may fire before OR after this
         // pre-clamp path, so this side only MARKS consumed (damage side) and whoever completes the
         // pair retires the entry — otherwise the kind callback would find no decision and log
         // decision=none, breaking the LT9 per-swing 1:1 verification. When output-control is not
         // armed there is no second consumer, so plain invalidate keeps LT8 semantics unchanged.
-        if (settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive)
-            _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: false);
-        else
-            _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType);
+        if (!ShouldRetainDclHitDecisionForRandomFire(actionContext.AbilityId))
+        {
+            if (settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive)
+                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload, byOutcomeDelivery: false);
+            else
+                _dclHitDecisionCache.Invalidate(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload);
+        }
+        if (hasComputePointResult)
+            _dclComputePointCache.Invalidate(targetIdx);
         return true;
     }
 
-    // Staged-status offsets on the target unit struct, in the pre-clamp compute->apply window
-    // (docs/modding/04-engine-memory-model.md §2.3):
-    //   +0x1A8 = staged ailment id (word)      +0x1D0 = apply-mask (byte; inventory §1.9: bit 8 = status)
-    //   +0x1C0 = effect/evade kind (byte)      +0x1E5 = result-kind flag (byte; 0x08 = status effect)
-    private const int StagedAilmentOffset = 0x1A8;   // word
-    private const int StagedApplyMaskOffset = 0x1D0;  // byte
+    private void ReserveDclHexWardFromCommittedHit(
+        nint defenderPtr,
+        int defenderTableIndex,
+        UnitSnapshot defender,
+        UnitSnapshot source,
+        DclActionContext actionContext,
+        FormulaContext context,
+        int hpDebit,
+        int hpCredit,
+        DclHitDecision hitDecision,
+        bool hasHitDecision)
+    {
+        if (!_settings.DclHexWardEnabled || _dclHexWardProducerBuf == 0 ||
+            defenderTableIndex is < 0 or > 20 ||
+            actionContext.CasterIdx is < 0 or > 20 ||
+            actionContext.CasterIdx == defenderTableIndex ||
+            defender.ReadUInt16(0x14) != 443 ||
+            defender.Hp + hpCredit - hpDebit <= 0)
+            return;
+
+        DclReactionRule? rule = (_settings.DclReactionRules ?? [])
+            .FirstOrDefault(candidate => candidate.AbilityId == 443);
+        if (rule is null)
+            return;
+
+        long sourceTurnEpoch;
+        long targetTurnEpoch;
+        lock (_dclReactionCadenceGate)
+        {
+            sourceTurnEpoch = GetOrCreateDclReactionCadenceState(source).OwnTurnEpoch;
+            targetTurnEpoch = GetOrCreateDclReactionCadenceState(defender).OwnTurnEpoch;
+        }
+        var incoming = new DclReactionIncomingContext(
+            SourceValid: true,
+            ActionValid: actionContext.ActionType is >= 0 and < 0xFF && actionContext.AbilityId >= 0,
+            SourceIdx: actionContext.CasterIdx,
+            TargetIdx: defenderTableIndex,
+            SourceCharId: source.CharId,
+            ActionType: actionContext.ActionType,
+            AbilityId: actionContext.AbilityId,
+            HitDecisionKnown: true,
+            Hit: true,
+            PhysicalOutcome: hasHitDecision ? (int)hitDecision.PhysicalOutcome : (int)DclPhysicalOutcome.Legacy,
+            DefenseKind: hasHitDecision ? (int)hitDecision.DefenseKind : (int)DclDefenseKind.None,
+            SourceTurnEpoch: sourceTurnEpoch,
+            TargetTurnEpoch: targetTurnEpoch,
+            Origin: "committed-preclamp");
+        DclReactions.AddIncomingVariables(context, incoming);
+        DclReactions.AddRuleVariables(context, 443, defender.Brave, rule.FlatChance, rule.NormalizedMode);
+
+        bool ok = rule.TryMatches(context, out bool conditionMatched, out string error);
+        int chance = 0;
+        if (ok && conditionMatched)
+            ok = rule.TryGetChance(defender.Brave, context, out chance, out error);
+        ResolveDclHexWardGate(
+            defenderPtr,
+            defender,
+            defenderTableIndex,
+            incoming,
+            ruleAccepted: ok && conditionMatched,
+            chance: chance,
+            ruleReason: ok ? conditionMatched ? "eligible" : "rule-condition" : "rule-error");
+    }
+
+    private bool ShouldRetainDclHitDecisionForRandomFire(int abilityId)
+    {
+        try
+        {
+            if (_moduleBase == 0 || !_abilityCatalog.TryGet(abilityId, out var ability) || ability.RandomFire == 0)
+                return false;
+            int repeatCount = Marshal.ReadByte(_moduleBase + DclNativeRepeat.RepeatCountRva);
+            int repeatIndex = Marshal.ReadByte(_moduleBase + DclNativeRepeat.RepeatIndexRva);
+            return DclNativeRepeat.HasMoreRepeats(true, repeatCount, repeatIndex);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void CommitDclGuardUse(
+        RuntimeSettings settings,
+        int targetIdx,
+        nint targetPtr,
+        UnitSnapshot target,
+        DclActionContext actionContext)
+    {
+        if (!settings.DclPhysicalContestEnabled ||
+            !_dclHitDecisionCache.TryMarkDefenseCommitted(
+                targetIdx,
+                actionContext.CasterIdx,
+                actionContext.AbilityId,
+                actionContext.ActionType,
+                actionContext.ActionPayload,
+                out var decision))
+            return;
+
+        int parryAttempts = decision.Multistrike.StrikeCount > 1
+            ? decision.Multistrike.ParryAttempts
+            : decision.DefenseKind == DclDefenseKind.Parry ? 1 : 0;
+        int blockAttempts = decision.Multistrike.StrikeCount > 1
+            ? decision.Multistrike.BlockAttempts
+            : decision.DefenseKind == DclDefenseKind.Block ? 1 : 0;
+        if (parryAttempts == 0 && blockAttempts == 0)
+            return;
+
+        int parrySpent = 0;
+        int blockSpent = 0;
+        int parryRemaining = -1;
+        int blockRemaining = -1;
+        lock (_dclGuardGate)
+        {
+            if (_dclGuardPools.TryGetValue(targetPtr, out var pool) && pool.TargetCharId == target.CharId)
+            {
+                for (int i = 0; i < parryAttempts; i++)
+                    if (pool.Spend(DclDefenseKind.Parry))
+                        parrySpent++;
+                for (int i = 0; i < blockAttempts; i++)
+                    if (pool.Spend(DclDefenseKind.Block))
+                        blockSpent++;
+                parryRemaining = pool.ParryUses;
+                blockRemaining = pool.BlockUses;
+            }
+        }
+
+        QueueDclGuardLog(settings,
+            $"[DCL-GUARD] target=0x{target.CharId:X2} ability={actionContext.AbilityId} " +
+            $"parry={parrySpent}/{parryAttempts} block={blockSpent}/{blockAttempts} " +
+            $"outcome={(parrySpent == parryAttempts && blockSpent == blockAttempts ? "spent" : "stale-no-charge")} " +
+            $"parryRemaining={parryRemaining} blockRemaining={blockRemaining}");
+    }
+
+    private List<DclStatusWrite> BuildDclStatusPlan(
+        RuntimeSettings settings,
+        FormulaContext context,
+        UnitSnapshot target,
+        UnitSnapshot attacker,
+        int actionType,
+        int abilityId)
+    {
+        var plan = new List<DclStatusWrite>();
+        if (!settings.DclStatusControlEnabled)
+            return plan;
+
+        var sharedMembers = new Dictionary<string, DclStatusRule[]>(StringComparer.Ordinal);
+        var sharedDecisions = new Dictionary<string, (DclStatusGroupDecision Decision, string Error)>(StringComparer.Ordinal);
+        foreach (var group in (settings.DclStatusRules ?? [])
+                     .Where(rule => rule.UsesSharedContest &&
+                                    rule.AbilityId == abilityId &&
+                                    (rule.ActionType < 0 || rule.ActionType == actionType))
+                     .GroupBy(rule => rule.NormalizedContestGroup, StringComparer.Ordinal))
+        {
+            var members = group.ToArray();
+            sharedMembers[group.Key] = members;
+            var first = members[0];
+            string[] modes = members.Select(member => member.NormalizedContestMode).Distinct().ToArray();
+            string[] resistanceFormulas = members
+                .Select(member => (member.ResistanceFormula ?? "").Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            string configError = members.Length < 2
+                ? "a shared status contest requires at least two members"
+                : modes.Length != 1
+                    ? "shared status contest members disagree on ContestMode"
+                    : resistanceFormulas.Length != 1
+                        ? "shared status contest members disagree on ResistanceFormula"
+                        : "";
+            if (configError.Length > 0)
+            {
+                sharedDecisions[group.Key] = (default, configError);
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-ERR] group={CleanDclLogValue(group.Key)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=shared-config error={CleanDclLogValue(configError)}");
+                continue;
+            }
+            context.Set("status.byteIndex", first.StatusByteIndex);
+            context.Set("status.mask", first.StatusMask);
+            context.Set("status.add", first.IsAdd ? 1 : 0);
+            context.Set("status.remove", first.IsRemove ? 1 : 0);
+
+            if (!FormulaExpression.TryEvaluate(first.ResistanceFormula, context, out int resistance, out string resistanceError))
+            {
+                sharedDecisions[group.Key] = (default, resistanceError);
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-ERR] group={CleanDclLogValue(group.Key)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=shared-resistance error={CleanDclLogValue(resistanceError)}");
+                continue;
+            }
+
+            try
+            {
+                int roll;
+                int selectedIndex = -1;
+                lock (_dclStatusRngGate)
+                {
+                    var rng = _dclStatusRng ??= new Random();
+                    roll = settings.DclStatusForcedRoll is >= 3 and <= 18
+                        ? settings.DclStatusForcedRoll
+                        : DclStatusContest.Roll3D6(rng);
+                    if (first.NormalizedContestMode == DclStatusGroups.RandomOne)
+                        selectedIndex = rng.Next(members.Length);
+                }
+
+                sharedDecisions[group.Key] = (
+                    DclStatusGroups.Resolve(first.NormalizedContestMode, members.Length, resistance, roll, selectedIndex),
+                    "");
+            }
+            catch (Exception ex)
+            {
+                sharedDecisions[group.Key] = (default, ex.Message);
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-ERR] group={CleanDclLogValue(group.Key)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=shared-contest error={CleanDclLogValue(ex.Message)}");
+            }
+        }
+
+        foreach (var rule in settings.DclStatusRules ?? [])
+        {
+            bool packetOwnerOwnsThisAction =
+                (rule.NativeRiderRetainedAsCarrier || rule.NativeRiderReplacedPostCalc) &&
+                rule.AbilityId == abilityId &&
+                (rule.ActionType < 0 || rule.ActionType == actionType);
+            context.Set("status.byteIndex", rule.StatusByteIndex);
+            context.Set("status.mask", rule.StatusMask);
+            context.Set("status.add", rule.IsAdd ? 1 : 0);
+            context.Set("status.remove", rule.IsRemove ? 1 : 0);
+
+            if (!rule.TryMatches(actionType, abilityId, context, out bool matches, out string matchError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-ERR] rule={CleanDclLogValue(rule.DisplayName)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=match error={CleanDclLogValue(matchError)}");
+                if (packetOwnerOwnsThisAction)
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, (byte)rule.StatusMask,
+                        Add: rule.IsAdd, Resistance: 0, Roll: -1, Resisted: false, Immune: false,
+                        DurationTargetTurns: 0, FailClosed: true));
+                continue;
+            }
+            if (!matches)
+            {
+                if (packetOwnerOwnsThisAction)
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, (byte)rule.StatusMask,
+                        Add: rule.IsAdd, Resistance: 0, Roll: -1, Resisted: false, Immune: false,
+                        DurationTargetTurns: 0, FailClosed: true));
+                continue;
+            }
+
+            byte mask = (byte)(rule.StatusMask & 0xFF);
+            if (rule.IsRemove)
+            {
+                plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask, Add: false,
+                    Resistance: 0, Roll: -1, Resisted: false, Immune: false, DurationTargetTurns: 0));
+                continue;
+            }
+
+            if (rule.UsesSharedContest)
+            {
+                if (!sharedDecisions.TryGetValue(rule.NormalizedContestGroup, out var shared) ||
+                    !string.IsNullOrEmpty(shared.Error))
+                {
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask,
+                        Add: true, Resistance: 0, Roll: -1, Resisted: false, Immune: false,
+                        DurationTargetTurns: 0, FailClosed: true));
+                    continue;
+                }
+
+                if (!sharedMembers.TryGetValue(rule.NormalizedContestGroup, out var members))
+                {
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask,
+                        Add: true, Resistance: 0, Roll: -1, Resisted: false, Immune: false,
+                        DurationTargetTurns: 0, FailClosed: true));
+                    continue;
+                }
+                int memberIndex = Array.IndexOf(members, rule);
+                bool notSelected = shared.Decision.SelectedIndex >= 0 &&
+                                   shared.Decision.SelectedIndex != memberIndex;
+                if (notSelected)
+                {
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask,
+                        Add: true, Resistance: shared.Decision.Resistance, Roll: shared.Decision.Roll,
+                        Resisted: false, Immune: false, DurationTargetTurns: 0, NotSelected: true));
+                    continue;
+                }
+
+                bool sharedImmune = (target.ReadByte(0x5C + rule.StatusByteIndex) & mask) != 0;
+                plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask,
+                    Add: true, Resistance: shared.Decision.Resistance, Roll: shared.Decision.Roll,
+                    Resisted: shared.Decision.Resisted || sharedImmune, Immune: sharedImmune,
+                    DurationTargetTurns: rule.DurationTargetTurns));
+                continue;
+            }
+
+            bool immune = (target.ReadByte(0x5C + rule.StatusByteIndex) & mask) != 0;
+            if (immune)
+            {
+                plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask, Add: true,
+                    Resistance: 0, Roll: -1, Resisted: true, Immune: true, DurationTargetTurns: rule.DurationTargetTurns));
+                continue;
+            }
+
+            if (!FormulaExpression.TryEvaluate(rule.ResistanceFormula, context, out int resistance, out string resistanceError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS-ERR] rule={CleanDclLogValue(rule.DisplayName)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=resistance error={CleanDclLogValue(resistanceError)}");
+                if (packetOwnerOwnsThisAction)
+                    plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask,
+                        Add: true, Resistance: 0, Roll: -1, Resisted: false, Immune: false,
+                        DurationTargetTurns: 0, FailClosed: true));
+                continue;
+            }
+
+            int roll;
+            if (settings.DclStatusForcedRoll is >= 3 and <= 18)
+            {
+                roll = settings.DclStatusForcedRoll;
+            }
+            else
+            {
+                lock (_dclStatusRngGate)
+                    roll = DclStatusContest.Roll3D6(_dclStatusRng ??= new Random());
+            }
+
+            plan.Add(new DclStatusWrite(rule.DisplayName, rule.StatusByteIndex, mask, Add: true,
+                Resistance: resistance, Roll: roll, Resisted: DclStatusContest.Resists(roll, resistance), Immune: false,
+                DurationTargetTurns: rule.DurationTargetTurns));
+        }
+
+        return plan;
+    }
+
+    private DclInstantKoDecision BuildDclInstantKoDecision(
+        RuntimeSettings settings,
+        FormulaContext context,
+        UnitSnapshot target,
+        UnitSnapshot attacker,
+        int actionType,
+        int abilityId)
+        => RollDclInstantKoDecision(
+            settings,
+            BuildDclInstantKoAssessment(settings, context, target, attacker, actionType, abilityId));
+
+    private DclInstantKoAssessment BuildDclInstantKoAssessment(
+        RuntimeSettings settings,
+        FormulaContext context,
+        UnitSnapshot target,
+        UnitSnapshot attacker,
+        int actionType,
+        int abilityId)
+    {
+        if (!settings.DclInstantKoControlEnabled)
+            return default;
+
+        foreach (var rule in settings.DclInstantKoRules ?? [])
+        {
+            if (!rule.TryMatches(actionType, abilityId, context, out bool matches, out string matchError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-KO-ERR] rule={CleanDclLogValue(rule.DisplayName)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=match error={CleanDclLogValue(matchError)}");
+                continue;
+            }
+            if (!matches)
+                continue;
+
+            bool immune = (target.ReadByte(0x5C) & 0x20) != 0;
+            if (immune)
+                return new DclInstantKoAssessment(rule.DisplayName, true, true, 0, rule.ZeroDamageOnFailure);
+
+            if (!FormulaExpression.TryEvaluate(rule.ResistanceFormula, context, out int resistance, out string resistanceError))
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-KO-ERR] rule={CleanDclLogValue(rule.DisplayName)} caster=0x{attacker.CharId:X2} " +
+                    $"target=0x{target.CharId:X2} ability={abilityId} stage=resistance error={CleanDclLogValue(resistanceError)}");
+                continue;
+            }
+
+            return new DclInstantKoAssessment(
+                rule.DisplayName,
+                Matched: true,
+                Immune: false,
+                Resistance: resistance,
+                ZeroDamageOnFailure: rule.ZeroDamageOnFailure);
+        }
+
+        return default;
+    }
+
+    private DclInstantKoDecision RollDclInstantKoDecision(
+        RuntimeSettings settings,
+        DclInstantKoAssessment assessment)
+    {
+        if (!assessment.Matched)
+            return default;
+        if (assessment.Immune)
+            return new DclInstantKoDecision(
+                assessment.RuleName, true, true, assessment.Resistance, -1, true, assessment.ZeroDamageOnFailure);
+
+        int roll;
+        if (settings.DclStatusForcedRoll is >= 3 and <= 18)
+        {
+            roll = settings.DclStatusForcedRoll;
+        }
+        else
+        {
+            lock (_dclStatusRngGate)
+                roll = DclStatusContest.Roll3D6(_dclStatusRng ??= new Random());
+        }
+
+        return new DclInstantKoDecision(
+            assessment.RuleName,
+            Matched: true,
+            Immune: false,
+            Resistance: assessment.Resistance,
+            Roll: roll,
+            Resisted: DclStatusContest.Resists(roll, assessment.Resistance),
+            ZeroDamageOnFailure: assessment.ZeroDamageOnFailure);
+    }
+
+    private static DclStatusPacketPlan StageDclStatusPacket(
+        nint targetPtr,
+        int addOffset,
+        int removeOffset,
+        int resultFlagsOffset,
+        byte baseResultFlags,
+        IReadOnlyList<DclStatusWrite> plan)
+    {
+        byte[] oldAdd = new byte[DclStatusPacket.Width];
+        byte[] oldRemove = new byte[DclStatusPacket.Width];
+        for (int i = 0; i < DclStatusPacket.Width; i++)
+        {
+            oldAdd[i] = Marshal.ReadByte(targetPtr, addOffset + i);
+            oldRemove[i] = Marshal.ReadByte(targetPtr, removeOffset + i);
+        }
+
+        var packet = DclStatusPacket.Compose(oldAdd, oldRemove, baseResultFlags, plan);
+        int addWrites = 0;
+        int removeWrites = 0;
+        bool wroteFlags = false;
+        try
+        {
+            for (int i = 0; i < DclStatusPacket.Width; i++)
+            {
+                Marshal.WriteByte(targetPtr, addOffset + i, packet.Add[i]);
+                addWrites++;
+            }
+            for (int i = 0; i < DclStatusPacket.Width; i++)
+            {
+                Marshal.WriteByte(targetPtr, removeOffset + i, packet.Remove[i]);
+                removeWrites++;
+            }
+            Marshal.WriteByte(targetPtr, resultFlagsOffset, packet.ResultFlags);
+            wroteFlags = true;
+            return packet;
+        }
+        catch
+        {
+            // Restore only locations reached by this helper. The caller owns rollback of numeric
+            // channels and of any result-flag value that preceded packet staging.
+            try { if (wroteFlags) Marshal.WriteByte(targetPtr, resultFlagsOffset, baseResultFlags); } catch { }
+            for (int i = 0; i < removeWrites; i++)
+                try { Marshal.WriteByte(targetPtr, removeOffset + i, oldRemove[i]); } catch { }
+            for (int i = 0; i < addWrites; i++)
+                try { Marshal.WriteByte(targetPtr, addOffset + i, oldAdd[i]); } catch { }
+            throw;
+        }
+    }
+
+    private void LogCommittedDclStatusPacket(
+        RuntimeSettings settings,
+        nint targetPtr,
+        UnitSnapshot target,
+        DclActionContext actionContext,
+        IReadOnlyList<DclStatusWrite> plan,
+        DclStatusPacketPlan packet)
+    {
+        foreach (var write in plan)
+        {
+            string outcome = write.FailClosed ? "fail-closed" : write.NotSelected ? "not-selected" : write.Immune ? "immune" : write.Resisted ? "resisted" : write.Add ? "packet-add-staged" : "packet-remove-staged";
+            if (write.Immune || write.Resisted || write.FailClosed || write.NotSelected)
+            {
+                QueueDclStatusLog(settings,
+                    $"[DCL-STATUS] rule={CleanDclLogValue(write.RuleName)} target=0x{target.CharId:X2} " +
+                    $"ability={actionContext.AbilityId} byte={write.StatusByteIndex} mask=0x{write.StatusMask:X2} " +
+                    $"resistance={write.Resistance} roll={write.Roll} outcome={outcome} " +
+                    $"packetAdd=0x{packet.Add[write.StatusByteIndex]:X2} packetRemove=0x{packet.Remove[write.StatusByteIndex]:X2} " +
+                    $"flags=0x{packet.ResultFlags:X2}");
+                continue;
+            }
+
+            UpdateDclStatusDurationOwnership(targetPtr, target, write);
+            QueueDclStatusLog(settings,
+                $"[DCL-STATUS] rule={CleanDclLogValue(write.RuleName)} target=0x{target.CharId:X2} " +
+                $"ability={actionContext.AbilityId} byte={write.StatusByteIndex} mask=0x{write.StatusMask:X2} " +
+                $"resistance={write.Resistance} roll={write.Roll} outcome={outcome} " +
+                $"packetAdd=0x{packet.Add[write.StatusByteIndex]:X2} packetRemove=0x{packet.Remove[write.StatusByteIndex]:X2} " +
+                $"flags=0x{packet.ResultFlags:X2}");
+        }
+    }
+
+    private void QueueDclStatusLog(RuntimeSettings settings, string line)
+    {
+        lock (_dclDecisionLogGate)
+        {
+            if (_dclStatusLogCount >= Math.Clamp(settings.DclStatusMaxLogs, 0, 100_000))
+                return;
+            _dclStatusLogCount++;
+            _dclDecisionLogQueue.Enqueue(line);
+        }
+    }
+
+    private void UpdateDclStatusDurationOwnership(nint targetPtr, UnitSnapshot target, DclStatusWrite write)
+    {
+        var key = (targetPtr, write.StatusByteIndex, write.StatusMask);
+        lock (_dclStatusDurationGate)
+        {
+            if (!write.Add || write.DurationTargetTurns <= 0)
+            {
+                _dclStatusDurations.Remove(key);
+                return;
+            }
+
+            bool activeNow = target.ReadByte(0x1B8) == 1;
+            if (!_dclStatusDurations.ContainsKey(key))
+            {
+                int oldMaster = target.ReadByte(0x1EF + write.StatusByteIndex);
+                int oldEffective = target.ReadByte(0x61 + write.StatusByteIndex);
+                if (((oldMaster | oldEffective) & write.StatusMask) != 0)
+                    return;
+            }
+
+            _dclStatusDurations[key] = new DclStatusDurationState
+            {
+                TargetPtr = targetPtr,
+                TargetCharId = target.CharId,
+                StatusByteIndex = write.StatusByteIndex,
+                StatusMask = write.StatusMask,
+                RuleName = write.RuleName,
+                RemainingTargetTurns = write.DurationTargetTurns,
+                WasActive = activeNow,
+                SkipFirstFallingEdge = activeNow,
+            };
+        }
+    }
+
+    private void RecordDclDirectStatusDuration(
+        nint targetPtr,
+        UnitSnapshot target,
+        int statusByteIndex,
+        byte statusMask,
+        string ruleName,
+        int durationTargetTurns,
+        bool existedBefore)
+    {
+        if (durationTargetTurns <= 0)
+            return;
+        var key = (targetPtr, statusByteIndex, statusMask);
+        lock (_dclStatusDurationGate)
+        {
+            // Refresh only a duration already owned by DCL. Never adopt and later clear a status
+            // that predated this direct transaction and may belong to equipment or another action.
+            if (existedBefore && !_dclStatusDurations.ContainsKey(key))
+                return;
+            bool activeNow = target.ReadByte(0x1B8) == 1;
+            _dclStatusDurations[key] = new DclStatusDurationState
+            {
+                TargetPtr = targetPtr,
+                TargetCharId = target.CharId,
+                StatusByteIndex = statusByteIndex,
+                StatusMask = statusMask,
+                RuleName = ruleName,
+                RemainingTargetTurns = durationTargetTurns,
+                WasActive = activeNow,
+                SkipFirstFallingEdge = activeNow,
+            };
+        }
+    }
+
+    // Legacy staged-auxiliary offsets in the pre-clamp compute→apply window. +0x1A8 carries an item
+    // id and +0x1D0 bit 0x08 gates its item/inventory consumer; neither carries status authority.
+    private const int StagedAuxItemIdOffset = 0x1A8;      // word; item/inventory side-effect id
+    private const int StagedSideEffectMaskOffset = 0x1D0; // byte; bit 0x08 gates item-side-effect consumer
     private const int StagedKindOffset = 0x1C0;       // byte
     private const int StagedResultFlagOffset = 0x1E5; // byte
     private int _dclStatusStageLogs;
@@ -3358,12 +7380,9 @@ public class Mod : ModBase
         public string Detail { get; init; } = "";
     }
 
-    // LT10-B status output-control OBSERVE phase. Reads the staged status bytes on every DCL-processed
-    // hit, emits the log-only probe line, and COMPUTES (but does not perform) the suppress/force write
-    // plan from the pristine bytes. Suppress and force are mutually exclusive (validator ERRORs on
-    // both). Encoding of the staged field is only Strong-static, so the raw offset/value lever lets the
-    // live session iterate the exact byte without a rebuild. All memory access is guarded; a read
-    // failure yields an empty (no-write) plan.
+    // Legacy observe phase. Existing profiles still deserialize the old status-named settings, but
+    // LT13 reclassifies +0x1A8/+0x1D0 as item/inventory authority. Observation remains useful; every
+    // write request is logged and converted to an empty plan before any memory mutation is possible.
     private StagedStatusPlan ObserveStagedStatus(
         RuntimeSettings settings,
         nint targetPtr,
@@ -3380,8 +7399,8 @@ public class Mod : ModBase
 
         try
         {
-            int oldAilment = (ushort)Marshal.ReadInt16(targetPtr, StagedAilmentOffset);
-            int oldApplyMask = Marshal.ReadByte(targetPtr, StagedApplyMaskOffset);
+            int oldItemAux = (ushort)Marshal.ReadInt16(targetPtr, StagedAuxItemIdOffset);
+            int oldSideEffectMask = Marshal.ReadByte(targetPtr, StagedSideEffectMaskOffset);
             int oldKind = Marshal.ReadByte(targetPtr, StagedKindOffset);
             int oldResultFlag = Marshal.ReadByte(targetPtr, StagedResultFlagOffset);
 
@@ -3393,79 +7412,42 @@ public class Mod : ModBase
                     _dclStatusStageLogs++;
                     QueueDclDecisionLog(
                         settings,
-                        $"[DCL-STATUS] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} " +
+                        $"[DCL-STAGED-AUX] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} " +
                         $"abilityId={actionContext.AbilityId} actionType=0x{actionContext.ActionType:X2} oldDebit={oldDebit} " +
-                        $"ail(+0x1A8)=0x{oldAilment:X4} mask(+0x1D0)=0x{oldApplyMask:X2} " +
+                        $"itemAux(+0x1A8)=0x{oldItemAux:X4} sideEffectMask(+0x1D0)=0x{oldSideEffectMask:X2} " +
                         $"kind(+0x1C0)=0x{oldKind:X2} resFlag(+0x1E5)=0x{oldResultFlag:X2}");
                 }
             }
 
-            // SUPPRESS: zero the staged ailment word and clear the status bits on the apply-mask +
-            // result-flag, so a proc that landed does not apply this hit. Compute ALL new values first;
-            // the writes are performed later (transactionally) on the committed outcome path.
-            if (settings.DclStatusSuppressEnabled)
+            bool retiredWriteRequested =
+                settings.DclStatusSuppressEnabled ||
+                settings.DclStatusForceId >= 0 ||
+                settings.DclStatusForceValue >= 0;
+            if (retiredWriteRequested)
             {
-                int clearMask = settings.DclStatusSuppressMask & 0xFF;
-                int newApplyMask = oldApplyMask & ~clearMask;
-                int newResultFlag = oldResultFlag & ~(settings.DclStatusResultFlagStatusBit & 0xFF);
-                var writes = new List<StagedStatusWrite>();
-                if (oldAilment != 0)
-                    writes.Add(new StagedStatusWrite(StagedAilmentOffset, 2, oldAilment, 0));
-                if (newApplyMask != oldApplyMask)
-                    writes.Add(new StagedStatusWrite(StagedApplyMaskOffset, 1, oldApplyMask, newApplyMask));
-                if (newResultFlag != oldResultFlag)
-                    writes.Add(new StagedStatusWrite(StagedResultFlagOffset, 1, oldResultFlag, newResultFlag));
-                return new StagedStatusPlan
+                int max = Math.Clamp(settings.DclDecisionMaxLogs, 0, 100_000);
+                if (max > 0 && _dclStatusForceLogs < max)
                 {
-                    Mode = "suppress",
-                    Writes = writes,
-                    Detail = $"ail=0x{oldAilment:X4}->0x0000 mask=0x{oldApplyMask:X2}->0x{newApplyMask:X2} resFlag=0x{oldResultFlag:X2}->0x{newResultFlag:X2}",
-                };
+                    _dclStatusForceLogs++;
+                    QueueDclDecisionLog(
+                        settings,
+                        $"[DCL-STAGED-AUX-WRITE-BLOCKED] target=0x{target.CharId:X2} abilityId={actionContext.AbilityId} " +
+                        "+0x1A8/+0x1D0 are item/inventory fields; use durable status arrays");
+                }
             }
-
-            // FORCE: write an authored status. DclStatusForceId (>=0) writes the id WORD to the staged
-            // ailment field +0x1A8 and OR-sets the status bits on the mask/result-flag so the effect
-            // applies; DclStatusForceValue (>=0) additionally writes a RAW byte to DclStatusForceOffset
-            // (the encoding-agnostic escape hatch the live test uses to iterate the exact byte). All new
-            // values are computed here; the writes are deferred to the committed outcome path.
-            bool forced = false;
-            string detail = "";
-            var forceWrites = new List<StagedStatusWrite>();
-            if (settings.DclStatusForceId >= 0)
-            {
-                int forcedId = settings.DclStatusForceId & 0xFFFF;
-                int setMask = settings.DclStatusSuppressMask & 0xFF;   // same status bit family
-                int newApplyMask = oldApplyMask | setMask;
-                int newResultFlag = oldResultFlag | (settings.DclStatusResultFlagStatusBit & 0xFF);
-                forceWrites.Add(new StagedStatusWrite(StagedAilmentOffset, 2, oldAilment, forcedId));
-                if (newApplyMask != oldApplyMask)
-                    forceWrites.Add(new StagedStatusWrite(StagedApplyMaskOffset, 1, oldApplyMask, newApplyMask));
-                if (newResultFlag != oldResultFlag)
-                    forceWrites.Add(new StagedStatusWrite(StagedResultFlagOffset, 1, oldResultFlag, newResultFlag));
-                detail += $"ail=0x{oldAilment:X4}->0x{forcedId:X4} mask=0x{oldApplyMask:X2}->0x{newApplyMask:X2} resFlag=0x{oldResultFlag:X2}->0x{newResultFlag:X2}";
-                forced = true;
-            }
-            if (settings.DclStatusForceValue >= 0 && settings.DclStatusForceOffset >= 0)
-            {
-                int off = settings.DclStatusForceOffset;
-                int old = Marshal.ReadByte(targetPtr, off);
-                int newRaw = settings.DclStatusForceValue & 0xFF;
-                forceWrites.Add(new StagedStatusWrite(off, 1, old, newRaw));
-                detail += $"{(detail.Length > 0 ? " " : "")}raw[+0x{off:X}]=0x{old:X2}->0x{newRaw:X2}";
-                forced = true;
-            }
-            if (forced)
-                return new StagedStatusPlan { Mode = "force", Writes = forceWrites, Detail = detail };
         }
         catch
         {
-            // leave the staged status untouched on any read failure
+            // leave the staged auxiliary bundle untouched on any read failure
         }
 
         return new StagedStatusPlan();
     }
 
-    // LT10-B status output-control WRITE phase. Performs the plan computed by ObserveStagedStatus, but
+    // Compatibility write phase. ObserveStagedStatus always returns an empty plan, so this cannot
+    // mutate the retired +0x1A8/+0x1D0 surface. The method remains temporarily to avoid perturbing
+    // the proven pre-clamp call structure while replacement status authority lands. It performs a
+    // non-empty plan transactionally, but no runtime path can construct one.
     // only on a committed outcome path (past every fail-open return). Transactional/best-effort: each
     // write's success is tracked; on a mid-sequence exception the already-written bytes are restored
     // from their captured originals; the log clause is built from what actually succeeded so it never
@@ -3593,7 +7575,7 @@ public class Mod : ModBase
             ? ""
             : value.Replace('|', '/').Replace('\r', ' ').Replace('\n', ' ').Trim();
 
-    // DCL HIT CONTROL — the managed decision callback invoked from the calc-entry shim (0x309A44),
+    // DCL HIT CONTROL — the managed decision callback invoked from the calc-entry shim (0x3099AC),
     // BEFORE the VM's avoidance roll inside the same call. Computes the authored hit% from the full
     // (attacker, target, equipment, ability) context, rolls the mod's own RNG, and forces the
     // binary outcome by stamping the TARGET's Family-1 evade input bytes (the inputs the VM honors):
@@ -3611,6 +7593,7 @@ public class Mod : ModBase
         if ((uint)targetIdx >= 64)
             return;
 
+        ClearDclPreviewHitPct(targetIdx);
         lock (_dclHitStampedTargetGate)
         {
             if (TryZeroDclTargetEvadeBytes(targetIdx))
@@ -3639,6 +7622,7 @@ public class Mod : ModBase
         int casterIdx,
         int abilityId,
         int actionType,
+        int actionPayload,
         DclHitDecision decision,
         long nowTick,
         bool cached,
@@ -3652,8 +7636,12 @@ public class Mod : ModBase
         lock (_dclHitStampedTargetGate)
         {
             if (!cached)
-                _dclHitDecisionCache.Record(targetIdx, casterIdx, abilityId, actionType, decision, nowTick);
+                _dclHitDecisionCache.Record(targetIdx, casterIdx, abilityId, actionType, actionPayload, decision, nowTick);
 
+            // The forecast-copy hook fires after calc-entry and may run after result consumers have
+            // retired the decision cache entry. Mirror the authored chance separately so the UI can
+            // still display the exact percentage that produced this cached roll.
+            SetDclPreviewHitPct(targetIdx, decision.Pct);
             _dclHitStampedTargets[targetIdx] = true;
             // Output-control (DclMissOutputControlEnabled + live 0x205B38 hook): the VM must
             // ALWAYS connect — LT8 proved the class-evade input stamp only works in the target's
@@ -3686,7 +7674,7 @@ public class Mod : ModBase
         try
         {
             var settings = _settings;
-            if (!settings.DclHitControlEnabled)
+            if (!settings.DclHitControlEnabled && !settings.DclPreviewAmountEnabled)
                 return 0;
 
             nint orderRecordPtr = (nint)orderRecordPtrRaw;
@@ -3699,7 +7687,8 @@ public class Mod : ModBase
             }
             if (orderRecordPtr == 0)
             {
-                ZeroDclTargetEvade(targetIdx);
+                if (settings.DclHitControlEnabled)
+                    ZeroDclTargetEvade(targetIdx);
                 QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=null-order-record targetIdx={targetIdx}");
                 return 0;
             }
@@ -3709,19 +7698,27 @@ public class Mod : ModBase
             int casterIdx = packed & 0xFF;
             int actionType = (packed >> 8) & 0xFF;
             int abilityId = (packed >> 16) & 0xFFFF;
+            int actionPayload = (ushort)Marshal.ReadInt16(orderRecordPtr + 8);
             if ((uint)casterIdx >= 64)
             {
-                ZeroDclTargetEvade(targetIdx);
+                if (settings.DclHitControlEnabled)
+                    ZeroDclTargetEvade(targetIdx);
                 QueueDclHitLog(settings, $"[DCL-HIT-MISS] reason=caster-index-oob casterIdx={casterIdx} targetIdx={targetIdx}");
                 return 0;
             }
 
+            if (settings.DclPreviewAmountEnabled)
+                ComputeAndStoreDclPreviewAmounts(settings, targetIdx, casterIdx, actionType, abilityId, actionPayload);
+
+            if (!settings.DclHitControlEnabled)
+                return 0;
+
             long nowTick = Stopwatch.GetTimestamp();
             long ttlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
-            bool cached = _dclHitDecisionCache.TryGet(targetIdx, casterIdx, abilityId, actionType, nowTick, ttlTicks, out var decision);
+            bool cached = _dclHitDecisionCache.TryGet(targetIdx, casterIdx, abilityId, actionType, actionPayload, nowTick, ttlTicks, out var decision);
             if (!cached)
             {
-                if (!TryComputeDclHitDecision(settings, targetIdx, casterIdx, actionType, abilityId, out decision))
+                if (!TryComputeDclHitDecision(settings, targetIdx, casterIdx, actionType, abilityId, actionPayload, out decision))
                 {
                     ZeroDclTargetEvade(targetIdx);
                     return 0;
@@ -3733,7 +7730,7 @@ public class Mod : ModBase
             nint casterPtr = (nint)(unitTable + (long)casterIdx * BattleUnitStride);
             int missClassEvade = Math.Clamp(settings.DclMissClassEvadeValue, 0, 255);
             bool forceConnect = settings.DclMissOutputControlEnabled && _preClampDamageRewriteHookActive && _dclMissKindHookActive;
-            StampDclHitDecision(targetIdx, casterIdx, abilityId, actionType, decision, nowTick, cached, targetPtr, missClassEvade, forceConnect);
+            StampDclHitDecision(targetIdx, casterIdx, abilityId, actionType, actionPayload, decision, nowTick, cached, targetPtr, missClassEvade, forceConnect);
 
             int casterCharId = TryReadUnitByte(casterPtr, 0, out int cid) ? cid : -1;
             int targetCharId = TryReadUnitByte(targetPtr, 0, out int tid) ? tid : -1;
@@ -3746,11 +7743,26 @@ public class Mod : ModBase
             int tx = TryReadUnitByte(targetPtr, 0x4F, out int txv) ? txv : -1;
             int ty = TryReadUnitByte(targetPtr, 0x50, out int tyv) ? tyv : -1;
             int tf = TryReadUnitByte(targetPtr, 0x51, out int tfv) ? tfv : -1;
+            string modelClause = decision.Model switch
+            {
+                DclHitModel.PhysicalContest when decision.Multistrike.StrikeCount > 1 =>
+                    $" model=physical-multistrike physical={decision.PhysicalOutcome} " +
+                    $"strikes={decision.Multistrike.StrikeCount} hits={decision.Multistrike.HitCount} " +
+                    $"crits={decision.Multistrike.CriticalCount} misses={decision.Multistrike.AttackMissCount} " +
+                    $"fumbles={decision.Multistrike.FumbleCount} defended={decision.Multistrike.DefendedCount} " +
+                    $"parryAttempts={decision.Multistrike.ParryAttempts} blockAttempts={decision.Multistrike.BlockAttempts}",
+                DclHitModel.PhysicalContest =>
+                    $" model=physical physical={decision.PhysicalOutcome} skill={decision.AttackSkill} " +
+                    $"defense={decision.DefenseKind}:{decision.DefenseTarget} defenseRoll={decision.DefenseRoll}",
+                DclHitModel.MagicEvade => $" model=magic-evade magicEvade={decision.MagicEvade}",
+                _ => " model=percent",
+            };
             QueueDclHitLog(
                 settings,
                 $"[DCL-HIT] caster=0x{casterCharId:X2} target=0x{targetCharId:X2} ability={abilityId} type=0x{actionType:X2} " +
-                $"pct={decision.Pct} roll={decision.Roll} outcome={(decision.Hit ? "hit" : "miss")} cached={(cached ? 1 : 0)} " +
-                $"ax={ax} ay={ay} af={af} tx={tx} ty={ty} tf={tf}");
+                    $"payload={actionPayload} " +
+                    $"pct={decision.Pct} roll={decision.Roll} outcome={(decision.Hit ? "hit" : "miss")} cached={(cached ? 1 : 0)}" +
+                    $"{modelClause} ax={ax} ay={ay} af={af} tx={tx} ty={ty} tf={tf}");
             return 0;
         }
         catch
@@ -3758,11 +7770,75 @@ public class Mod : ModBase
             Interlocked.Increment(ref _dclHitFailCount);
             // Fail-open must not leave a stale MISS stamp: restore the force-hit baseline
             // for the target when it was already validated before the exception.
-            if ((uint)targetIdx < 64)
+            if (_settings.DclHitControlEnabled && (uint)targetIdx < 64)
             {
                 try { ZeroDclTargetEvade(targetIdx); } catch { }
             }
             return 0;
+        }
+    }
+
+    private void ComputeAndStoreDclPreviewAmounts(
+        RuntimeSettings settings,
+        int targetIdx,
+        int casterIdx,
+        int actionType,
+        int abilityId,
+        int actionPayload)
+    {
+        Volatile.Write(ref _dclPreviewDebits[targetIdx], -1);
+        Volatile.Write(ref _dclPreviewCredits[targetIdx], -1);
+        try
+        {
+            long unitTable = _moduleBase.ToInt64() + BattleUnitTableRva;
+            nint targetPtr = (nint)(unitTable + (long)targetIdx * BattleUnitStride);
+            nint casterPtr = (nint)(unitTable + (long)casterIdx * BattleUnitStride);
+            if (!TryReadLiveUnitSnapshot(targetPtr, out var target, out _) ||
+                !TryReadLiveUnitSnapshot(casterPtr, out var attacker, out _))
+                return;
+
+            long eventIndex = Interlocked.Increment(ref _probeEventIndex);
+            long eventSeed = ComputeEventSeed(target, eventIndex, target.Hp, target.Hp, 0);
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                settings, _itemCatalog, _abilityCatalog, target, attacker, eventIndex, eventSeed,
+                actionType, abilityId, oldDebit: 0, oldCredit: 0, oldMpDebit: 0, oldMpCredit: 0,
+                actionPayload: actionPayload);
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+            {
+                QueueDclHitLog(settings,
+                    $"[DCL-PREVIEW-ERR] ability={abilityId} target=0x{target.CharId:X2} error={CleanDclLogValue(derivedError)}");
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.DclPreviewDamageFormula))
+            {
+                if (!FormulaExpression.TryEvaluate(settings.DclPreviewDamageFormula, context, out int debit, out string error))
+                {
+                    QueueDclHitLog(settings,
+                        $"[DCL-PREVIEW-ERR] ability={abilityId} channel=hp-debit error={CleanDclLogValue(error)}");
+                    return;
+                }
+                Volatile.Write(ref _dclPreviewDebits[targetIdx], Math.Clamp(debit, 0, short.MaxValue));
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.DclPreviewHealingFormula))
+            {
+                if (!FormulaExpression.TryEvaluate(settings.DclPreviewHealingFormula, context, out int credit, out string error))
+                {
+                    Volatile.Write(ref _dclPreviewDebits[targetIdx], -1);
+                    QueueDclHitLog(settings,
+                        $"[DCL-PREVIEW-ERR] ability={abilityId} channel=hp-credit error={CleanDclLogValue(error)}");
+                    return;
+                }
+                Volatile.Write(ref _dclPreviewCredits[targetIdx], Math.Clamp(credit, 0, short.MaxValue));
+            }
+        }
+        catch (Exception ex)
+        {
+            Volatile.Write(ref _dclPreviewDebits[targetIdx], -1);
+            Volatile.Write(ref _dclPreviewCredits[targetIdx], -1);
+            QueueDclHitLog(settings, $"[DCL-PREVIEW-ERR] ability={abilityId} error={CleanDclLogValue(ex.Message)}");
         }
     }
 
@@ -3772,6 +7848,7 @@ public class Mod : ModBase
         int casterIdx,
         int actionType,
         int abilityId,
+        int actionPayload,
         out DclHitDecision decision)
     {
         decision = default;
@@ -3811,7 +7888,8 @@ public class Mod : ModBase
             actionType,
             abilityId,
             oldDebit: 0,   // pre-roll: no staged result exists yet; dcl.oldDebit/oldCredit are 0 here
-            oldCredit: 0);
+            oldCredit: 0,
+            actionPayload: actionPayload);
 
         if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
         {
@@ -3821,6 +7899,72 @@ public class Mod : ModBase
                 $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} type=0x{actionType:X2} error={CleanDclLogValue(derivedError)}");
             return false;
         }
+        if (settings.DclPhysicalContestEnabled)
+        {
+            if (!FormulaExpression.TryEvaluate(settings.DclPhysicalContestConditionFormula, context,
+                    out int physicalEligible, out string physicalConditionError))
+            {
+                ZeroDclTargetEvade(targetIdx);
+                QueueDclHitLog(settings,
+                    $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} " +
+                    $"type=0x{actionType:X2} physicalFormula={nameof(settings.DclPhysicalContestConditionFormula)} " +
+                    $"error={CleanDclLogValue(physicalConditionError)}");
+                return false;
+            }
+
+            if (physicalEligible != 0)
+                return TryComputeDclPhysicalDecision(settings, context, targetPtr, target, abilityId, out decision);
+        }
+
+        if (settings.DclMagicEvadeEnabled)
+        {
+            if (!FormulaExpression.TryEvaluate(settings.DclMagicEvadeConditionFormula, context,
+                    out int magicEligible, out string magicConditionError))
+            {
+                ZeroDclTargetEvade(targetIdx);
+                QueueDclHitLog(settings,
+                    $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} " +
+                    $"type=0x{actionType:X2} magicFormula={nameof(settings.DclMagicEvadeConditionFormula)} " +
+                    $"error={CleanDclLogValue(magicConditionError)}");
+                return false;
+            }
+
+            if (magicEligible != 0)
+            {
+                if (!FormulaExpression.TryEvaluate(settings.DclMagicEvadeFormula, context,
+                        out int rawMagicEvade, out string magicEvadeError))
+                {
+                    ZeroDclTargetEvade(targetIdx);
+                    QueueDclHitLog(settings,
+                        $"[DCL-HIT-ERR] caster=0x{attacker.CharId:X2} target=0x{target.CharId:X2} ability={abilityId} " +
+                        $"type=0x{actionType:X2} magicFormula={nameof(settings.DclMagicEvadeFormula)} " +
+                        $"error={CleanDclLogValue(magicEvadeError)}");
+                    return false;
+                }
+
+                int magicEvade = DclMagicEvade.EvadePercent(rawMagicEvade, settings.DclMagicEvadeCapPct);
+                int magicHitPct = 100 - magicEvade;
+                int magicRoll;
+                if (settings.DclHitForcedRoll is >= 0 and <= 99)
+                {
+                    magicRoll = settings.DclHitForcedRoll;
+                }
+                else
+                {
+                    lock (_dclHitRngGate)
+                        magicRoll = (_dclHitRng ??= new Random()).Next(100);
+                }
+
+                decision = new DclHitDecision(
+                    magicRoll < magicHitPct,
+                    magicHitPct,
+                    magicRoll,
+                    Model: DclHitModel.MagicEvade,
+                    MagicEvade: magicEvade);
+                return true;
+            }
+        }
+
         if (!FormulaExpression.TryEvaluate(settings.DclHitChanceFormula, context, out int rawPct, out string formulaError))
         {
             ZeroDclTargetEvade(targetIdx);
@@ -3844,6 +7988,289 @@ public class Mod : ModBase
         }
 
         decision = new DclHitDecision(roll < pct, pct, roll);
+        return true;
+    }
+
+    private bool TryComputeDclPhysicalDecision(
+        RuntimeSettings settings,
+        FormulaContext context,
+        nint targetPtr,
+        UnitSnapshot target,
+        int abilityId,
+        out DclHitDecision decision)
+    {
+        decision = default;
+
+        if (_abilityCatalog.TryGet(abilityId, out var ability) && ability.DclMetadata.IsManagedMultistrike)
+        {
+            return TryComputeDclPhysicalMultistrikeDecision(
+                settings,
+                context,
+                targetPtr,
+                target,
+                ability.DclMetadata.StrikeCount,
+                out decision);
+        }
+
+        bool E(string formula, string name, out int value)
+        {
+            if (FormulaExpression.TryEvaluate(formula, context, out value, out string error))
+                return true;
+            QueueDclHitLog(settings,
+                $"[DCL-HIT-ERR] target=0x{target.CharId:X2} physicalFormula={name} error={CleanDclLogValue(error)}");
+            return false;
+        }
+
+        if (!E(settings.DclAttackSkillFormula, nameof(settings.DclAttackSkillFormula), out int attackSkill) ||
+            !E(settings.DclParryUsesFormula, nameof(settings.DclParryUsesFormula), out int maxParryUses) ||
+            !E(settings.DclBlockUsesFormula, nameof(settings.DclBlockUsesFormula), out int maxBlockUses))
+            return false;
+
+        bool parryAvailable;
+        bool blockAvailable;
+        lock (_dclGuardGate)
+        {
+            if (!_dclGuardPools.TryGetValue(targetPtr, out var pool))
+            {
+                pool = new DclGuardPool();
+                _dclGuardPools[targetPtr] = pool;
+            }
+            pool.InitializeOrUpdate(target.CharId, Math.Clamp(maxParryUses, 0, 99), Math.Clamp(maxBlockUses, 0, 99),
+                target.ReadByte(0x1B8) == 1);
+            parryAvailable = pool.IsAvailable(DclDefenseKind.Parry);
+            blockAvailable = pool.IsAvailable(DclDefenseKind.Block);
+            context.Set("guard.parryRemaining", pool.ParryUses);
+            context.Set("guard.parryMax", pool.MaxParryUses);
+            context.Set("guard.blockRemaining", pool.BlockUses);
+            context.Set("guard.blockMax", pool.MaxBlockUses);
+        }
+
+        if (!E(settings.DclDodgeFormula, nameof(settings.DclDodgeFormula), out int dodge) ||
+            !E(settings.DclParryFormula, nameof(settings.DclParryFormula), out int parry) ||
+            !E(settings.DclBlockFormula, nameof(settings.DclBlockFormula), out int block) ||
+            !E(settings.DclDefenseAllowedFormula, nameof(settings.DclDefenseAllowedFormula), out int defenseAllowed) ||
+            !E(settings.DclDefenseModifierFormula, nameof(settings.DclDefenseModifierFormula), out int defenseModifier))
+            return false;
+
+        var defense = DclPhysicalContest.ChooseBestDefense(
+            dodge,
+            parry,
+            parryAvailable,
+            block,
+            blockAvailable,
+            defenseModifier,
+            defenseAllowed != 0);
+
+        int attackRoll;
+        int defenseRoll = -1;
+        lock (_dclHitRngGate)
+        {
+            var rng = _dclHitRng ??= new Random();
+            attackRoll = settings.DclAttackForcedRoll is >= 3 and <= 18
+                ? settings.DclAttackForcedRoll
+                : DclPhysicalContest.Roll3D6(rng);
+            if (defense.Kind != DclDefenseKind.None)
+                defenseRoll = settings.DclDefenseForcedRoll is >= 3 and <= 18
+                    ? settings.DclDefenseForcedRoll
+                    : DclPhysicalContest.Roll3D6(rng);
+        }
+
+        var result = DclPhysicalContest.Resolve(attackSkill, attackRoll, defense, defenseRoll);
+        int pct = DclPhysicalContest.HitChancePercent(attackSkill, defense);
+        decision = new DclHitDecision(
+            result.Hit,
+            pct,
+            attackRoll,
+            result.Outcome,
+            result.AttackSkill,
+            result.DefenseKind,
+            result.DefenseTarget,
+            result.DefenseRoll,
+            Model: DclHitModel.PhysicalContest);
+        return true;
+    }
+
+    private bool TryComputeDclPhysicalMultistrikeDecision(
+        RuntimeSettings settings,
+        FormulaContext context,
+        nint targetPtr,
+        UnitSnapshot target,
+        int strikeCount,
+        out DclHitDecision decision)
+    {
+        decision = default;
+
+        bool E(string formula, string name, int strikeNumber, out int value)
+        {
+            if (FormulaExpression.TryEvaluate(formula, context, out value, out string error))
+                return true;
+            QueueDclHitLog(settings,
+                $"[DCL-HIT-ERR] target=0x{target.CharId:X2} strike={strikeNumber}/{strikeCount} " +
+                $"physicalFormula={name} error={CleanDclLogValue(error)}");
+            return false;
+        }
+
+        if (strikeCount < 2)
+            return false;
+
+        if (!E(settings.DclParryUsesFormula, nameof(settings.DclParryUsesFormula), 0, out int maxParryUses) ||
+            !E(settings.DclBlockUsesFormula, nameof(settings.DclBlockUsesFormula), 0, out int maxBlockUses))
+            return false;
+
+        int parryRemaining;
+        int blockRemaining;
+        int parryMax;
+        int blockMax;
+        lock (_dclGuardGate)
+        {
+            if (!_dclGuardPools.TryGetValue(targetPtr, out var pool))
+            {
+                pool = new DclGuardPool();
+                _dclGuardPools[targetPtr] = pool;
+            }
+            pool.InitializeOrUpdate(target.CharId, Math.Clamp(maxParryUses, 0, 99), Math.Clamp(maxBlockUses, 0, 99),
+                target.ReadByte(0x1B8) == 1);
+            parryRemaining = pool.ParryUses;
+            blockRemaining = pool.BlockUses;
+            parryMax = pool.MaxParryUses;
+            blockMax = pool.MaxBlockUses;
+        }
+
+        bool TryBuildProfile(
+            int strikeIndex,
+            int stateParryRemaining,
+            int stateBlockRemaining,
+            out DclPhysicalStrikeProfile profile)
+        {
+            profile = default;
+            int strikeNumber = strikeIndex + 1;
+            context.Set("dcl.strike.count", strikeCount);
+            context.Set("dcl.strike.index", strikeIndex);
+            context.Set("dcl.strike.number", strikeNumber);
+            context.Set("guard.parryRemaining", stateParryRemaining);
+            context.Set("guard.parryMax", parryMax);
+            context.Set("guard.blockRemaining", stateBlockRemaining);
+            context.Set("guard.blockMax", blockMax);
+
+            // Re-evaluate authored intermediates after setting the strike index and the local Guard
+            // snapshot. This permits per-strike skill penalties without mutating the live Guard pool
+            // before the aggregate action commits.
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+            {
+                QueueDclHitLog(settings,
+                    $"[DCL-HIT-ERR] target=0x{target.CharId:X2} strike={strikeNumber}/{strikeCount} " +
+                    $"physicalFormula=DclDerivedVariables error={CleanDclLogValue(derivedError)}");
+                return false;
+            }
+
+            if (!E(settings.DclAttackSkillFormula, nameof(settings.DclAttackSkillFormula), strikeNumber, out int attackSkill) ||
+                !E(settings.DclDodgeFormula, nameof(settings.DclDodgeFormula), strikeNumber, out int dodge) ||
+                !E(settings.DclParryFormula, nameof(settings.DclParryFormula), strikeNumber, out int parry) ||
+                !E(settings.DclBlockFormula, nameof(settings.DclBlockFormula), strikeNumber, out int block) ||
+                !E(settings.DclDefenseAllowedFormula, nameof(settings.DclDefenseAllowedFormula), strikeNumber, out int defenseAllowed) ||
+                !E(settings.DclDefenseModifierFormula, nameof(settings.DclDefenseModifierFormula), strikeNumber, out int defenseModifier))
+                return false;
+
+            profile = new DclPhysicalStrikeProfile(
+                attackSkill,
+                DclPhysicalContest.ChooseBestDefense(
+                dodge,
+                parry,
+                stateParryRemaining > 0,
+                block,
+                stateBlockRemaining > 0,
+                defenseModifier,
+                defenseAllowed != 0));
+            return true;
+        }
+
+        int exactAnyHitPct;
+        try
+        {
+            exactAnyHitPct = DclMultistrike.ExactPhysicalAnyHitChancePercent(
+                strikeCount,
+                parryRemaining,
+                blockRemaining,
+                (strikeIndex, stateParry, stateBlock) =>
+                {
+                    if (!TryBuildProfile(strikeIndex, stateParry, stateBlock, out var profile))
+                        throw new InvalidOperationException("multistrike profile evaluation failed");
+                    return profile;
+                });
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+
+        var strikes = new List<DclPhysicalContestResult>(strikeCount);
+        for (int strikeIndex = 0; strikeIndex < strikeCount; strikeIndex++)
+        {
+            int strikeNumber = strikeIndex + 1;
+            if (!TryBuildProfile(strikeIndex, parryRemaining, blockRemaining, out var profile))
+                return false;
+            int attackSkill = profile.AttackSkill;
+            var defense = profile.Defense;
+
+            int attackRoll;
+            int defenseRoll = -1;
+            lock (_dclHitRngGate)
+            {
+                var rng = _dclHitRng ??= new Random();
+                attackRoll = settings.DclAttackForcedRoll is >= 3 and <= 18
+                    ? settings.DclAttackForcedRoll
+                    : DclPhysicalContest.Roll3D6(rng);
+                if (defense.Kind != DclDefenseKind.None)
+                {
+                    defenseRoll = settings.DclDefenseForcedRoll is >= 3 and <= 18
+                        ? settings.DclDefenseForcedRoll
+                        : DclPhysicalContest.Roll3D6(rng);
+                }
+            }
+
+            var result = DclPhysicalContest.Resolve(attackSkill, attackRoll, defense, defenseRoll);
+            strikes.Add(result);
+            if (result.DefenseKind == DclDefenseKind.Parry && parryRemaining > 0)
+                parryRemaining--;
+            else if (result.DefenseKind == DclDefenseKind.Block && blockRemaining > 0)
+                blockRemaining--;
+
+            QueueDclHitLog(settings,
+                $"[DCL-STRIKE] target=0x{target.CharId:X2} strike={strikeNumber}/{strikeCount} " +
+                $"outcome={result.Outcome} skill={result.AttackSkill} roll={result.AttackRoll} " +
+                $"defense={result.DefenseKind}:{result.DefenseTarget} defenseRoll={result.DefenseRoll} " +
+                $"parryAfter={parryRemaining} blockAfter={blockRemaining}");
+        }
+
+        var aggregate = DclMultistrike.AggregatePhysical(strikes, normalDebit: 0, criticalDebit: 0);
+        var first = strikes[0];
+        DclPhysicalOutcome summaryOutcome = aggregate.AnyHit
+            ? (aggregate.HitCount == aggregate.CriticalCount
+                ? DclPhysicalOutcome.CriticalHit
+                : DclPhysicalOutcome.Hit)
+            : aggregate.DefendedCount > 0
+                ? DclPhysicalOutcome.Defended
+                : aggregate.FumbleCount == aggregate.StrikeCount
+                    ? DclPhysicalOutcome.AttackFumble
+                    : DclPhysicalOutcome.AttackMiss;
+        DclDefenseKind summaryDefense = aggregate.BlockAttempts > 0
+            ? DclDefenseKind.Block
+            : aggregate.ParryAttempts > 0
+                ? DclDefenseKind.Parry
+                : DclDefenseKind.None;
+
+        decision = new DclHitDecision(
+            aggregate.AnyHit,
+            exactAnyHitPct,
+            first.AttackRoll,
+            summaryOutcome,
+            first.AttackSkill,
+            summaryDefense,
+            DefenseTarget: 0,
+            DefenseRoll: -1,
+            Model: DclHitModel.PhysicalContest,
+            Multistrike: aggregate);
         return true;
     }
 
@@ -4043,7 +8470,7 @@ public class Mod : ModBase
     // Consumption semantics: any fire with a live decision proves that (caster,target,ability,
     // type) EXECUTED for this target — the once-per-execution signal §Q1 was hunting. Both HITs
     // and MISSes use the two-consumer handshake in DclHitDecisionCache.MarkConsumed: the pre-clamp
-    // side (0x30A66F damage path) may fire before OR after this commit, so neither side may retire
+    // side (0x30A5D7 damage path) may fire before OR after this commit, so neither side may retire
     // the entry alone — the kind callback must still find the decision to log its outcome (LT9
     // per-swing 1:1). If the pre-clamp hook is not live (half-armed install) the kind flip is
     // suppressed so a rendered miss can never ship with full vanilla damage.
@@ -4073,7 +8500,7 @@ public class Mod : ModBase
             long maxAgeTicks = StopwatchTicksFromMilliseconds(settings.DclActionContextMaxAgeMs);
             long ttlTicks = StopwatchTicksFromMilliseconds(settings.DclHitDecisionTtlMs);
             if (!_dclActionCache.TryGetLatest(targetIdx, nowTick, maxAgeTicks, out var actionContext) ||
-                !_dclHitDecisionCache.TryGet(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, nowTick, ttlTicks, out var decision))
+                !_dclHitDecisionCache.TryGet(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload, nowTick, ttlTicks, out var decision))
             {
                 QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=none");
                 return -1;
@@ -4084,12 +8511,14 @@ public class Mod : ModBase
                 // Symmetric with the miss path: mark the kind side and let whoever completes the
                 // pair retire the entry, so the pre-clamp HIT consumer that fired first still left
                 // a live decision for this callback to read (decision=hit) regardless of order.
-                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: true);
+                if (!ShouldRetainDclHitDecisionForRandomFire(actionContext.AbilityId))
+                    _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload, byOutcomeDelivery: true);
                 QueueDclHitLog(settings, $"[DCL-KIND] target={targetIdx} naturalKind=0x{naturalKind:X2} forcedKind=kept decision=hit");
                 return -1;
             }
 
-            _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, byKindCommit: true);
+            if (!ShouldRetainDclHitDecisionForRandomFire(actionContext.AbilityId))
+                _dclHitDecisionCache.MarkConsumed(targetIdx, actionContext.CasterIdx, actionContext.AbilityId, actionContext.ActionType, actionContext.ActionPayload, byOutcomeDelivery: true);
 
             if (settings.DclMissKindLogOnly)
             {
@@ -4438,6 +8867,12 @@ public class Mod : ModBase
                 CaptureResultSelectorProbeEvents(nowTick);
                 CaptureEvadeInputProbeEvents(nowTick);
                 CaptureDclCounterPathProbeEvents(nowTick);
+                CaptureDclReactionCommitProbeEvents(nowTick);
+                CaptureDclReactionPreSelectorProbeEvents(nowTick);
+                CaptureDclReactionMaterializationProbeEvents(nowTick);
+                CaptureDclReactionEffectProbeEvents(nowTick);
+                CaptureDclAutoPotionConsumeProbeEvents(nowTick);
+                CaptureDclWeaponLineOfFireProbeEvents(nowTick);
                 CaptureRollVerdictProbeEvents(nowTick);
                 CaptureCalcEntryProbeEvents(nowTick);
                 CaptureDclDecisionLogs();
@@ -4477,7 +8912,9 @@ public class Mod : ModBase
     private int _forecastPokeCount;
     private void PokeForecastPreviewIfEnabled()
     {
-        if (!_settings.PreviewForecastPokeEnabled || _settings.PreviewForecastPokeValue < 0 || _moduleBase == 0)
+        bool staticPoke = _settings.PreviewForecastPokeEnabled && _settings.PreviewForecastPokeValue >= 0;
+        bool dclPoke = _settings.DclPreviewAmountEnabled;
+        if ((!staticPoke && !dclPoke) || _moduleBase == 0)
             return;
         nint globalAddr = _moduleBase + _settings.PreviewForecastGlobalRva;
         nint obj = Marshal.ReadIntPtr(globalAddr);          // forecast object = target_unit + ObjOffset
@@ -4489,11 +8926,30 @@ public class Mod : ModBase
         long maxUnits = Math.Max(1, _settings.MaxTrackedBattleUnits);
         if (rel < 0 || rel > stride * maxUnits || (rel % stride) != 0)
             return;                                         // not aligned into the unit table -> skip (no corruption)
+        int targetIdx = (int)(rel / stride);
+        if (dclPoke)
+        {
+            if ((uint)targetIdx >= 64)
+                return;
+            int debit = Volatile.Read(ref _dclPreviewDebits[targetIdx]);
+            int credit = Volatile.Read(ref _dclPreviewCredits[targetIdx]);
+            if (debit >= 0)
+                Marshal.WriteInt16(obj + 0x6, (short)Math.Clamp(debit, 0, short.MaxValue));
+            if (credit >= 0)
+                Marshal.WriteInt16(obj + 0x8, (short)Math.Clamp(credit, 0, short.MaxValue));
+            if (_forecastPokeCount++ < 6 && (debit >= 0 || credit >= 0))
+            {
+                Line($"[DCL-FORECAST] obj=0x{obj.ToInt64():X} unitIdx={targetIdx} debit={debit} credit={credit}");
+                Flush();
+            }
+            return;
+        }
+
         short value = (short)Math.Clamp(_settings.PreviewForecastPokeValue, 0, 0x7FFF);
         Marshal.WriteInt16(obj + _settings.PreviewForecastDamageFieldOffset, value);
         if (_forecastPokeCount++ < 3)
         {
-            Line($"[FORECAST-POKE] obj=0x{obj.ToInt64():X} unitIdx={rel / stride} wrote unit+0x{_settings.PreviewForecastObjOffset + _settings.PreviewForecastDamageFieldOffset:X}={value}");
+            Line($"[FORECAST-POKE] obj=0x{obj.ToInt64():X} unitIdx={targetIdx} wrote unit+0x{_settings.PreviewForecastObjOffset + _settings.PreviewForecastDamageFieldOffset:X}={value}");
             Flush();
         }
     }
@@ -5073,7 +9529,7 @@ public class Mod : ModBase
 
     private void PollRegisteredUnits(long nowTick)
     {
-        if (_unitRegistry.Count == 0) return;
+        if (_unitRegistry.Count == 0 && _dclStatusDurations.Count == 0) return;
 
         foreach (var unitPtr in _unitRegistry.ToArray())
         {
@@ -5086,6 +9542,10 @@ public class Mod : ModBase
             ProcessObservedUnit(target, nowTick, touchForContext: false, logStructMapping: false);
         }
 
+        UpdateDclStatusDurations();
+        UpdateDclGuardPools();
+        UpdateDclMpTrickle();
+        UpdateDclReactionCadence();
         ApplyEvadeOverrideSweep();
         ApplyBraveOverrideSweep();
         ApplyStatusOverrideSweep();
@@ -5099,6 +9559,204 @@ public class Mod : ModBase
     // add = OR the mask onto the offset; remove = AND-NOT the mask. Sanity-checks the charId exists in
     // the registry, bounds the offset to the unit struct (0x0..0x1FF), and caps live writes with
     // StatusPokeMaxWrites. Mirrors the ApplyStatusOverride poke pattern but one-shot (per session).
+    private void UpdateDclStatusDurations()
+    {
+        lock (_dclStatusDurationGate)
+        {
+            foreach (var (key, state) in _dclStatusDurations.ToArray())
+            {
+                if (!TryReadLiveUnitSnapshot(state.TargetPtr, out var target, out string error) ||
+                    target.CharId != state.TargetCharId)
+                {
+                    _dclStatusDurations.Remove(key);
+                    QueueDclStatusLog(_settings,
+                        $"[DCL-STATUS-DURATION] rule={CleanDclLogValue(state.RuleName)} target=0x{state.TargetCharId:X2} " +
+                        $"outcome=forgotten reason={CleanDclLogValue(error)}");
+                    continue;
+                }
+
+                int masterOffset = 0x1EF + state.StatusByteIndex;
+                int effectiveOffset = 0x61 + state.StatusByteIndex;
+                int sourceOffset = 0x57 + state.StatusByteIndex;
+                byte master = Marshal.ReadByte(state.TargetPtr, masterOffset);
+                byte effective = Marshal.ReadByte(state.TargetPtr, effectiveOffset);
+                byte source = Marshal.ReadByte(state.TargetPtr, sourceOffset);
+                if (((master | effective | source) & state.StatusMask) == 0)
+                {
+                    _dclStatusDurations.Remove(key);
+                    QueueDclStatusLog(_settings,
+                        $"[DCL-STATUS-DURATION] rule={CleanDclLogValue(state.RuleName)} target=0x{state.TargetCharId:X2} " +
+                        "outcome=native-clear");
+                    continue;
+                }
+
+                bool activeNow = target.ReadByte(0x1B8) == 1;
+                var transition = DclStatusDurationTracker.Advance(state, activeNow);
+                if (transition == DclStatusDurationTransition.None)
+                    continue;
+                if (transition == DclStatusDurationTransition.SkippedApplicationTurn)
+                {
+                    QueueDclStatusLog(_settings,
+                        $"[DCL-STATUS-DURATION] rule={CleanDclLogValue(state.RuleName)} target=0x{state.TargetCharId:X2} " +
+                        $"outcome=skip-application-turn remaining={state.RemainingTargetTurns}");
+                    continue;
+                }
+                if (transition == DclStatusDurationTransition.CountedTargetTurn)
+                {
+                    QueueDclStatusLog(_settings,
+                        $"[DCL-STATUS-DURATION] rule={CleanDclLogValue(state.RuleName)} target=0x{state.TargetCharId:X2} " +
+                        $"outcome=target-turn-complete remaining={state.RemainingTargetTurns}");
+                    continue;
+                }
+
+                byte newMaster = (byte)(master & ~state.StatusMask);
+                byte newEffective = (byte)((effective & ~state.StatusMask) | (source & state.StatusMask));
+                Marshal.WriteByte(state.TargetPtr, masterOffset, newMaster);
+                Marshal.WriteByte(state.TargetPtr, effectiveOffset, newEffective);
+                _dclStatusDurations.Remove(key);
+                QueueDclStatusLog(_settings,
+                    $"[DCL-STATUS-DURATION] rule={CleanDclLogValue(state.RuleName)} target=0x{state.TargetCharId:X2} " +
+                    $"outcome=expired master=0x{master:X2}->0x{newMaster:X2} " +
+                    $"effective=0x{effective:X2}->0x{newEffective:X2}");
+            }
+        }
+    }
+
+    private void UpdateDclGuardPools()
+    {
+        lock (_dclGuardGate)
+        {
+            foreach (var (targetPtr, pool) in _dclGuardPools.ToArray())
+            {
+                if (!TryReadLiveUnitSnapshot(targetPtr, out var target, out _) || target.CharId != pool.TargetCharId)
+                {
+                    _dclGuardPools.Remove(targetPtr);
+                    continue;
+                }
+
+                if (!pool.ObserveActive(target.ReadByte(0x1B8) == 1))
+                    continue;
+
+                QueueDclGuardLog(_settings,
+                    $"[DCL-GUARD] target=0x{target.CharId:X2} outcome=own-turn-refresh " +
+                    $"parry={pool.ParryUses}/{pool.MaxParryUses} block={pool.BlockUses}/{pool.MaxBlockUses}");
+            }
+        }
+    }
+
+    private void QueueDclGuardLog(RuntimeSettings settings, string line)
+    {
+        lock (_dclDecisionLogGate)
+        {
+            if (_dclGuardLogCount >= Math.Clamp(settings.DclGuardMaxLogs, 0, 100_000))
+                return;
+            _dclGuardLogCount++;
+            _dclDecisionLogQueue.Enqueue(line);
+        }
+    }
+
+    private void UpdateDclMpTrickle()
+    {
+        if (!_settings.DclMpTrickleEnabled)
+            return;
+
+        foreach (nint targetPtr in _unitRegistry.ToArray())
+        {
+            if (!TryReadLiveUnitSnapshot(targetPtr, out var target, out _))
+                continue;
+
+            if (!_dclMpTrickleStates.TryGetValue(targetPtr, out var state))
+            {
+                state = new DclMpTrickleState();
+                _dclMpTrickleStates[targetPtr] = state;
+            }
+
+            if (!state.Observe(target.CharId, target.ReadByte(0x1B8) == 1))
+                continue;
+
+            var context = FormulaRuntimeContextBuilder.BuildDclDamageContext(
+                _settings, _itemCatalog, _abilityCatalog, target, target,
+                eventIndex: 0, eventSeed: 0, actionType: -1, abilityId: -1,
+                oldDebit: 0, oldCredit: 0, oldMpDebit: 0, oldMpCredit: 0);
+            if (!FormulaRuntimeContextBuilder.TryApplyDerivedVariables(
+                    context, _settings.DclDerivedVariables, "DclDerivedVariables", out string derivedError))
+            {
+                QueueDclMpTrickleLog($"[DCL-MP-TRICKLE] target=0x{target.CharId:X2} outcome=formula-error error={CleanDclLogValue(derivedError)}");
+                continue;
+            }
+            if (!FormulaExpression.TryEvaluate(_settings.DclMpTrickleFormula, context, out int requested, out string formulaError))
+            {
+                QueueDclMpTrickleLog($"[DCL-MP-TRICKLE] target=0x{target.CharId:X2} outcome=formula-error error={CleanDclLogValue(formulaError)}");
+                continue;
+            }
+
+            int credit = DclMpEconomy.ClampCredit(requested, target.Mp, target.MaxMp);
+            if (credit <= 0)
+            {
+                QueueDclMpTrickleLog($"[DCL-MP-TRICKLE] target=0x{target.CharId:X2} outcome=no-credit requested={requested} mp={target.Mp}/{target.MaxMp}");
+                continue;
+            }
+
+            int desired = target.Mp + credit;
+            if (_settings.DryRunRewrites)
+            {
+                QueueDclMpTrickleLog($"[DCL-MP-TRICKLE-DRY-RUN] target=0x{target.CharId:X2} requested={requested} credit={credit} mp={target.Mp}->{desired}/{target.MaxMp}");
+                continue;
+            }
+
+            if (!CurrentProcessMemory.TryWriteInt16(targetPtr + 0x34, (short)desired, out string writeError))
+            {
+                QueueDclMpTrickleLog($"[DCL-MP-TRICKLE] target=0x{target.CharId:X2} outcome=write-failed error={CleanDclLogValue(writeError)}");
+                continue;
+            }
+
+            // Keep the ordinary MP delta observer synchronized so the mod-owned credit is not
+            // misclassified as an unrelated native MP-gain event on the next poll.
+            _lastMp[targetPtr] = desired;
+            _lastMpSampleTick[targetPtr] = Stopwatch.GetTimestamp();
+            QueueDclMpTrickleLog($"[DCL-MP-TRICKLE] target=0x{target.CharId:X2} outcome=credited requested={requested} credit={credit} mp={target.Mp}->{desired}/{target.MaxMp}");
+        }
+    }
+
+    private DclReactionCadenceState GetOrCreateDclReactionCadenceState(UnitSnapshot unit)
+    {
+        if (!_dclReactionCadenceStates.TryGetValue(unit.Ptr, out var state))
+        {
+            state = new DclReactionCadenceState();
+            _dclReactionCadenceStates[unit.Ptr] = state;
+        }
+        state.Observe(unit.CharId, unit.ReadByte(0x1B8) == 1);
+        return state;
+    }
+
+    private void UpdateDclReactionCadence()
+    {
+        lock (_dclReactionCadenceGate)
+        {
+            foreach (nint unitPtr in _unitRegistry.ToArray())
+            {
+                if (!TryReadLiveUnitSnapshot(unitPtr, out var unit, out _))
+                {
+                    _dclReactionCadenceStates.Remove(unitPtr);
+                    continue;
+                }
+                GetOrCreateDclReactionCadenceState(unit);
+            }
+
+            foreach (nint stale in _dclReactionCadenceStates.Keys
+                         .Where(ptr => !_unitRegistry.Contains(ptr)).ToArray())
+                _dclReactionCadenceStates.Remove(stale);
+        }
+    }
+
+    private void QueueDclMpTrickleLog(string line)
+    {
+        if (_dclMpTrickleLogCount >= Math.Clamp(_settings.DclMpTrickleMaxLogs, 0, 100_000))
+            return;
+        _dclMpTrickleLogCount++;
+        Line(line);
+    }
+
     private int _statusPokeWrites;
     private void ApplyStatusPokeIfEnabled()
     {
@@ -5850,6 +10508,15 @@ public class Mod : ModBase
         _deathCaptureFollow.Remove(unitPtr);
         _deathCaptured.Remove(unitPtr);
         _lastObservedRaw.Remove(unitPtr);
+        lock (_dclStatusDurationGate)
+        {
+            foreach (var key in _dclStatusDurations.Keys.Where(key => key.TargetPtr == unitPtr).ToArray())
+                _dclStatusDurations.Remove(key);
+        }
+        lock (_dclGuardGate)
+            _dclGuardPools.Remove(unitPtr);
+        _dclMpTrickleStates.Remove(unitPtr);
+        _dclHexWardCoordinator.Forget(unitPtr);
         Line($"[UNIT-LOST ptr=0x{unitPtr:X}] {reason}");
         Flush();
     }
@@ -6299,11 +10966,22 @@ public class Mod : ModBase
                                      !nextAbilityCatalogPath.Equals(_abilityCatalogPath, StringComparison.OrdinalIgnoreCase) ||
                                      abilityCatalogWrite != _abilityCatalogLastWriteUtc;
 
-        AbilityCatalog nextAbilityCatalog = _abilityCatalog;
-        if (abilityCatalogChanged)
-            nextAbilityCatalog = AbilityCatalog.Load(nextAbilityCatalogPath);
+        string nextAbilityMetadataPath = string.IsNullOrWhiteSpace(nextSettings.DclAbilityMetadataPath)
+            ? ""
+            : ResolveModPath(nextSettings.DclAbilityMetadataPath, _modDirectory, "");
+        DateTime abilityMetadataWrite = File.Exists(nextAbilityMetadataPath)
+            ? File.GetLastWriteTimeUtc(nextAbilityMetadataPath)
+            : DateTime.MinValue;
+        bool abilityMetadataChanged = force ||
+                                      settingsChanged ||
+                                      !nextAbilityMetadataPath.Equals(_abilityMetadataPath, StringComparison.OrdinalIgnoreCase) ||
+                                      abilityMetadataWrite != _abilityMetadataLastWriteUtc;
 
-        if (!settingsChanged && !catalogChanged && !abilityCatalogChanged) return;
+        AbilityCatalog nextAbilityCatalog = _abilityCatalog;
+        if (abilityCatalogChanged || abilityMetadataChanged)
+            nextAbilityCatalog = AbilityCatalog.Load(nextAbilityCatalogPath, nextAbilityMetadataPath);
+
+        if (!settingsChanged && !catalogChanged && !abilityCatalogChanged && !abilityMetadataChanged) return;
 
         _settings = nextSettings;
         _itemCatalog = nextCatalog;
@@ -6311,14 +10989,19 @@ public class Mod : ModBase
         _formulaEngine = new BattleFormulaEngine(_settings, _itemCatalog, _abilityCatalog);
         _contextResolver = new BattleContextResolver(_settings);
         if (settingsChanged)
+        {
             _pendingActionTracker.Reset();
+            _dclComputePointCache.Clear();
+        }
         _settingsLastWriteUtc = settingsWrite;
         _catalogPath = nextCatalogPath;
         _catalogLastWriteUtc = catalogWrite;
         _abilityCatalogPath = nextAbilityCatalogPath;
         _abilityCatalogLastWriteUtc = abilityCatalogWrite;
+        _abilityMetadataPath = nextAbilityMetadataPath;
+        _abilityMetadataLastWriteUtc = abilityMetadataWrite;
 
-        string tag = force ? "RUNTIME-INIT" : settingsChanged ? "SETTINGS-RELOAD" : catalogChanged ? "CATALOG-RELOAD" : "ABILITY-CATALOG-RELOAD";
+        string tag = force ? "RUNTIME-INIT" : settingsChanged ? "SETTINGS-RELOAD" : catalogChanged ? "CATALOG-RELOAD" : abilityCatalogChanged ? "ABILITY-CATALOG-RELOAD" : "ABILITY-METADATA-RELOAD";
         Line($"[{tag}] settings: {_settings.Describe()}");
         Line($"[{tag}] item catalog: {_itemCatalog.Describe()}");
         Line($"[{tag}] ability catalog: {_abilityCatalog.Describe()}");
@@ -7823,6 +12506,12 @@ public class Mod : ModBase
         _resultSelectorProbeHook = null;
         _evadeInputProbeHook = null;
         _dclCounterPathProbeHook = null;
+        _dclReactionCommitProbeHooks.Clear();
+        _dclReactionPreSelectorProbeHook = null;
+        _dclReactionMaterializationProbeHook = null;
+        _dclReactionEffectProbeHook = null;
+        _dclAutoPotionConsumeProbeHook = null;
+        _dclWeaponLineOfFireProbeHooks.Clear();
         _rollVerdictProbeHook = null;
         _landmarkHooks.Clear();
         if (_buf != 0) { try { Marshal.FreeHGlobal(_buf); } catch { } _buf = 0; }
@@ -7831,7 +12520,15 @@ public class Mod : ModBase
         if (_resultSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_resultSelectorProbeBuf); } catch { } _resultSelectorProbeBuf = 0; }
         if (_evadeInputProbeBuf != 0) { try { Marshal.FreeHGlobal(_evadeInputProbeBuf); } catch { } _evadeInputProbeBuf = 0; }
         if (_dclCounterPathProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclCounterPathProbeBuf); } catch { } _dclCounterPathProbeBuf = 0; }
+        if (_dclReactionCommitProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionCommitProbeBuf); } catch { } _dclReactionCommitProbeBuf = 0; }
+        if (_dclReactionPreSelectorProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionPreSelectorProbeBuf); } catch { } _dclReactionPreSelectorProbeBuf = 0; }
+        if (_dclHexWardProducerBuf != 0) { try { Marshal.FreeHGlobal(_dclHexWardProducerBuf); } catch { } _dclHexWardProducerBuf = 0; }
+        if (_dclReactionMaterializationProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionMaterializationProbeBuf); } catch { } _dclReactionMaterializationProbeBuf = 0; }
+        if (_dclReactionEffectProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclReactionEffectProbeBuf); } catch { } _dclReactionEffectProbeBuf = 0; }
+        if (_dclAutoPotionConsumeProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclAutoPotionConsumeProbeBuf); } catch { } _dclAutoPotionConsumeProbeBuf = 0; }
+        if (_dclWeaponLineOfFireProbeBuf != 0) { try { Marshal.FreeHGlobal(_dclWeaponLineOfFireProbeBuf); } catch { } _dclWeaponLineOfFireProbeBuf = 0; }
         if (_rollVerdictProbeBuf != 0) { try { Marshal.FreeHGlobal(_rollVerdictProbeBuf); } catch { } _rollVerdictProbeBuf = 0; }
+        if (_previewHitPctBuf != 0) { try { Marshal.FreeHGlobal(_previewHitPctBuf); } catch { } _previewHitPctBuf = 0; }
     }
 
     #region For Exports, Serialization etc.
@@ -10055,10 +14752,27 @@ internal sealed class RuntimeSettings
     public string FinalDamageFormula { get; set; } = "";
     public bool DclPipelineEnabled { get; set; } = false;
     public string DclDamageFormula { get; set; } = "";
+    public string DclHealingFormula { get; set; } = "";
+    public string DclMpDebitFormula { get; set; } = "";
+    public string DclMpCreditFormula { get; set; } = "";
+    // Publish final numeric formulas at the post-calc outer-sweep boundary so enemy utility sees
+    // the same staged result later delivered by pre-clamp. Confirmed-execution results are cached
+    // and consumed once at delivery; AI evaluations are written transiently and never cached.
+    public bool DclComputePointNumericEnabled { get; set; } = false;
+    public int DclComputePointCacheTtlMs { get; set; } = 5000;
+    // Rebuild result-kind bits from the final four staged HP/MP channels in the same pre-clamp
+    // transaction. Only low nonnumeric bits may be preserved; numeric bits 0xF0 are always derived.
+    public bool DclResultFlagsControlEnabled { get; set; } = false;
+    public int DclResultFlagsPreserveMask { get; set; } = DclResultFlags.DefaultPreserveMask;
+    // Native MaxMP is the DCL per-battle budget. This optional own-turn rising-edge writer adds only
+    // the small configured trickle and clamps it to the native MaxMP ceiling.
+    public bool DclMpTrickleEnabled { get; set; } = false;
+    public string DclMpTrickleFormula { get; set; } = "";
+    public int DclMpTrickleMaxLogs { get; set; } = 200;
     public List<FormulaDerivedVariable> DclDerivedVariables { get; set; } = new();
     public int DclActionContextMaxAgeMs { get; set; } = 5000;
     public int DclDecisionMaxLogs { get; set; } = 40;
-    // DCL HIT CONTROL — authored hit% + own RNG + binary outcome forcing at calc-entry (0x309A44).
+    // DCL HIT CONTROL — authored hit% + own RNG + binary outcome forcing at calc-entry (0x3099AC).
     // The managed decision callback evaluates DclHitChanceFormula in the full DCL context (pre-roll:
     // dcl.oldDebit/oldCredit are 0), rolls the mod's own RNG (or uses DclHitForcedRoll), and stamps
     // the TARGET's evade input bytes before the VM avoidance roll: HIT => 0x46..0x4E all 0; MISS =>
@@ -10071,17 +14785,72 @@ internal sealed class RuntimeSettings
     public int DclHitForcedRoll { get; set; } = -1;         // -1 = real RNG; 0..99 = deterministic roll (live tests)
     public int DclHitMaxLogs { get; set; } = 400;           // [DCL-HIT*] log budget (separate from DclDecisionMaxLogs)
     public int DclMissClassEvadeValue { get; set; } = 100;  // byte for +0x4B on MISS (LT5-B proven force-Miss value)
-    // DCL MISS OUTPUT-CONTROL — the definitive miss lever (LT8 proved the input-control class-evade
-    // stamp is frontal-arc only). The VM always connects (both outcomes get the all-zero evade
-    // stamp), the pre-clamp zeroes the staged debit on a cached MISS, and a third managed hook at
-    // the result-kind commit (RVA 0x205B38, Strong-static 2026-07-04, UNPROVEN live until LT9)
-    // flips the committed outcome-kind byte +0x1C0 to DclMissKindValue before the engine's own
-    // store. AOB-guarded + fail-safe: byte mismatch disables the whole feature at install.
+    // Optional physical two-roll model: attack skill on 3d6, then the best available Dodge/Parry/
+    // Block defense on 3d6. Finite Parry/Block uses refresh at the defender's own turn start.
+    public bool DclPhysicalContestEnabled { get; set; } = false;
+    public string DclPhysicalContestConditionFormula { get; set; } = "action.type == 1";
+    public string DclAttackSkillFormula { get; set; } = "";
+    public string DclDodgeFormula { get; set; } = "";
+    public string DclParryFormula { get; set; } = "";
+    public string DclBlockFormula { get; set; } = "";
+    public string DclDefenseAllowedFormula { get; set; } = "1";
+    public string DclDefenseModifierFormula { get; set; } = "0";
+    public string DclParryUsesFormula { get; set; } = "1";
+    public string DclBlockUsesFormula { get; set; } = "1";
+    public int DclAttackForcedRoll { get; set; } = -1;
+    public int DclDefenseForcedRoll { get; set; } = -1;
+    public int DclGuardMaxLogs { get; set; } = 300;
+    // Offensive magic rolls one independent binary Magic Evade check per target, including each
+    // AoE victim. The applicability formula must exclude healing and status-only actions. The evade
+    // formula is clamped by DclMagicEvadeCapPct so equipment/job stacking can never become immunity.
+    public bool DclMagicEvadeEnabled { get; set; } = false;
+    public string DclMagicEvadeConditionFormula { get; set; } = "ability.formula == 8";
+    public string DclMagicEvadeFormula { get; set; } = "";
+    public int DclMagicEvadeCapPct { get; set; } = 50;
+    // Formula-driven forecast HP amounts. Calc-entry computes them from the same action/target
+    // context; the poller mirrors them to +0x1C4/+0x1C6 while the forecast object is active.
+    public bool DclPreviewAmountEnabled { get; set; } = false;
+    public string DclPreviewDamageFormula { get; set; } = "";
+    public string DclPreviewHealingFormula { get; set; } = "";
+    // Display the authored DCL percentage in the forecast. Calc-entry mirrors the percentage from
+    // the same cached decision used for execution; the UI-copy hook maps forecast object -> target
+    // slot and substitutes that value without calling managed code on the UI path.
+    public bool DclPreviewHitPctEnabled { get; set; } = false;
+    // DCL STATUS CONTROL — per-ability rules own one native packet bit. Ordinary riders are evaluated
+    // in the successful apply window. `replaced-post-calc` rules run at the proven outer-sweep/state-
+    // 0x2A completion boundary so conditional status-only formulas can create a missing result; the
+    // exact decision is cached and reused at pre-clamp. Adds use 3d6 resistance; immunity auto-resists.
+    public bool DclStatusControlEnabled { get; set; } = false;
+    public List<DclStatusRule> DclStatusRules { get; set; } = new();
+    // Instant KO never writes the Dead bit. A successful 3d6 rule replaces the staged HP debit with
+    // a lethal value and lets native HP apply own the complete KO lifecycle. The corresponding native
+    // KO rider must first be suppressed in action data.
+    public bool DclInstantKoControlEnabled { get; set; } = false;
+    public List<DclInstantKoRule> DclInstantKoRules { get; set; } = new();
+    // Reaction taxonomy changes only the native reaction-chance input. Real-code gates carry their
+    // exact evaluation id; VM-internal rules read the exact calc-entry order-record id, virtualize
+    // Brave for that one synchronous call, and restore it at the sole exit. Native effects/RNG remain
+    // engine-owned; rules map exact Reaction ability ids to courage/caution/neutral.
+    public bool DclReactionTaxonomyEnabled { get; set; } = false;
+    public List<DclReactionRule> DclReactionRules { get; set; } = new();
+    public int DclReactionCalcExitRva { get; set; } = 0x309FA1;
+    public string DclReactionCalcExitExpectedBytes { get; set; } = "48 83 C4 40 41 5F 41 5E";
+    public int DclReactionMaxLogs { get; set; } = 200;
+    public int DclStatusForcedRoll { get; set; } = -1;       // -1 = mod RNG; 3..18 = deterministic live-test roll
+    public int DclStatusMaxLogs { get; set; } = 200;
+    // DCL MISS OUTPUT-CONTROL. The VM always connects, the pre-clamp zeroes the staged debit on a
+    // cached MISS, and the result selector authors the clean evade branch. The older 0x205B38 kind
+    // commit remains a guarded diagnostic/fallback site; plain force-connected hits skip that store.
     public bool DclMissOutputControlEnabled { get; set; } = false;
     public int DclMissKindRva { get; set; } = 0x205B38;     // `mov [rdi+0x1C0], r12b` commit-site RVA
     public string DclMissKindExpectedBytes { get; set; } = "44 88 A7 C0 01 00 00"; // the store; the 16-byte gate window at rva-9 is checked too
     public int DclMissKindValue { get; set; } = 6;          // kind byte committed on a forced miss (0x06 = miss)
     public bool DclMissKindLogOnly { get; set; } = false;   // true = observe the commit, never write r12b
+    // Clean outcome delivery at result selector 0x205210. On a cached DCL miss, force +0x1C0 to the
+    // authored miss kind and +0x1BE to 0 (the selector's evade/no-damage branch).
+    public bool DclMissSelectorOutcomeEnabled { get; set; } = false;
+    // Suppress Brave-gated reactions for a cached DCL miss at the four real-code reaction roll sites.
+    public bool DclMissSuppressReactionsEnabled { get; set; } = false;
     // DCL MISS PRESENTATION (LT10-C) — render "Miss" instead of the "0" damage popup on a forced miss.
     // Static RE (2026-07-04): record+0x1D8 is a 32-bit "what-to-draw" bitfield the draw fn 0x2667E0
     // walks in mutually-exclusive stages — bit 2 (0x4) = damage-number route (snapshots word[+0x1C4]
@@ -10111,6 +14880,7 @@ internal sealed class RuntimeSettings
     public Dictionary<string, Dictionary<string, int>> FormulaMaps { get; set; } = new();
     public string ItemCatalogPath { get; set; } = "item_catalog.csv";
     public string AbilityCatalogPath { get; set; } = "wotl_ability_action_baseline.csv";
+    public string DclAbilityMetadataPath { get; set; } = "";
     public bool AffectAllies { get; set; } = true;
     public bool AffectFoes { get; set; } = true;
     public List<ActionSignalRule> ActionSignalRules { get; set; } = new();
@@ -10189,6 +14959,7 @@ internal sealed class RuntimeSettings
     public string ResultSelectorProbeExpectedBytes { get; set; } = "48 89 5C 24 08 48 89 6C 24 10";
     public string ResultSelectorProbeActorRegister { get; set; } = "r8";
     public int ResultSelectorProbeRecordUnitOffset { get; set; } = 0x148;
+    private int ResultSelectorRecordUnitOffset => ResultSelectorProbeRecordUnitOffset;
     public int ResultSelectorProbeMaxLogs { get; set; } = 256;
     public int ResultSelectorProbeRecordDumpBytes { get; set; } = 64;
     // Result-selector CONTROL (rides the observe hook; requires ResultSelectorProbeEnabled). Two opt-ins
@@ -10201,12 +14972,12 @@ internal sealed class RuntimeSettings
     public int ResultSelectorControlForceEvadeType { get; set; } = -1;// -1=no change; else byte -> cl + [record+0x1C0]
     public int ResultSelectorControlForceResultCode { get; set; } = -1;// -1=no change; else byte -> [record+0x1BE] (0 for evade)
 
-    // Evade-INPUT control (hook at RVA 0x30F49C, the last real instr before the single VM avoidance roll
+    // Evade-INPUT control (hook at RVA 0x30F404, the last real instr before the single VM avoidance roll
     // 0x30FA34; target unit in rbx). Writes the target's evade INPUT bytes (+0x46/+0x47 weapon, +0x4A/+0x4E
     // shield, +0x4B class) just before the VM reads them, so the engine's native roll produces our outcome
     // (all 0 => guaranteed hit; one source = 100 => that evade type). Probe logs before/after bytes.
     public bool EvadeInputProbeEnabled { get; set; } = false;
-    public int EvadeInputProbeRva { get; set; } = 0x30F49C;
+    public int EvadeInputProbeRva { get; set; } = 0x30F404;
     public string EvadeInputProbeExpectedBytes { get; set; } = "48 8B D3 88 4B 41";
     public int EvadeInputProbeMaxLogs { get; set; } = 64;
     public bool EvadeInputControlEnabled { get; set; } = false;   // master; false => observe-only
@@ -10220,22 +14991,110 @@ internal sealed class RuntimeSettings
     public int EvadeInputForce4E { get; set; } = -1;             // shield evade 2
 
     // DCL COUNTER-PATH probe (OBSERVE-ONLY; RE work/1783184308-dcl-miss-consumption-and-counter-path.md §Q2).
-    // Hooks fn entry 0x30C798 — the Strong-static candidate for the counter/reaction result-staging path
-    // that bypasses computeActionResult 0x309A44. At entry rcx = the staged result record. The managed
+    // Hooks fn entry 0x30C700 — the Strong-static candidate for the counter/reaction result-staging path
+    // that bypasses computeActionResult 0x3099AC. At entry rcx = the staged result record. The managed
     // drain logs [DCL-CTRPATH] rcx / targetIdx(+0x1BC) / e8(+0x1E8) / e9(+0x1E9) / hp(unit table, idx<64).
     // No writes to game memory. ExpectedBytes = the verified function-entry prologue (double as an AOB guard).
     public bool DclCounterPathProbeEnabled { get; set; } = false;
-    public int DclCounterPathProbeRva { get; set; } = 0x30C798;
+    public int DclCounterPathProbeRva { get; set; } = 0x30C700;
     public string DclCounterPathProbeExpectedBytes { get; set; } = "48 89 5C 24 08 57 48 83 EC 20 80 79 01 FF";
     public int DclCounterPathProbeMaxLogs { get; set; } = 200;
 
-    // Roll-VERDICT control (hook at RVA 0x30F4A7 = "mov r10d,eax" right after the VM avoidance roll
+    // DCL REACTION-COMMIT probe/control. The configured RVA owns pass 2; guarded built-in sites also
+    // observe passes 0 and 1. All are immediately after exact-id stores. Replacement/retarget are
+    // diagnostic-only here because carrier delivery overwrites executable id and target afterward.
+    public bool DclReactionCommitProbeEnabled { get; set; } = false;
+    public int DclReactionCommitProbeRva { get; set; } = 0x206421;
+    public string DclReactionCommitProbeExpectedBytes { get; set; } = "40 88 B3 D3 01 00 00";
+    public int DclReactionCommitProbeMaxLogs { get; set; } = 64;
+    public bool DclReactionActionReplacementEnabled { get; set; } = false;
+    public bool DclReactionActionReplacementLogOnly { get; set; } = true;
+    public int DclReactionActionReplacementCarrierId { get; set; } = -1;
+    public int DclReactionActionReplacementAbilityId { get; set; } = -1;
+    public int DclReactionActionReplacementMinTargetCount { get; set; } = 1;
+    public int DclReactionActionReplacementMaxWrites { get; set; } = 1;
+    public bool DclReactionRetargetEnabled { get; set; } = false;
+    public bool DclReactionRetargetLogOnly { get; set; } = true;
+    public int DclReactionRetargetCarrierId { get; set; } = -1;
+    public int DclReactionRetargetMaxWrites { get; set; } = 1;
+
+    // Snapshot immediately before pass-2 selector 0x282E38 consumes unit+0x1CE. The producer is a
+    // disabled-by-default, empty-slot-only vertical-test control for one explicit battle-unit index.
+    public bool DclReactionPreSelectorProbeEnabled { get; set; } = false;
+    public int DclReactionPreSelectorProbeRva { get; set; } = 0x2063A9;
+    public string DclReactionPreSelectorProbeExpectedBytes { get; set; } = "48 8D 4D D2 E8 86 CA 07 00";
+    public int DclReactionPreSelectorProbeMaxLogs { get; set; } = 128;
+    public bool DclReactionProducerEnabled { get; set; } = false;
+    public bool DclReactionProducerLogOnly { get; set; } = true;
+    public int DclReactionProducerCarrierId { get; set; } = -1;
+    public int DclReactionProducerUnitIndex { get; set; } = -1;
+    public int DclReactionProducerMaxWrites { get; set; } = 1;
+
+    // Accepted pass-2 order snapshot after carrier materialization and before actor construction.
+    // Captures all 20 order bytes plus exact Reaction/reactor/source identity. The optional guarded
+    // order controller below shares this hook; the default remains observe-only.
+    public bool DclReactionMaterializationProbeEnabled { get; set; } = false;
+    public int DclReactionMaterializationProbeRva { get; set; } = 0x2063BD;
+    public string DclReactionMaterializationProbeExpectedBytes { get; set; } = "0F B7 C8 C7 05 02 4E A6 00 29 00 00 00";
+    public int DclReactionMaterializationProbeMaxLogs { get; set; } = 128;
+
+    // Guarded accepted-order rewrite at the same post-materialization/pre-actor boundary. The
+    // controller can replace executable type/payload and/or retarget the complete unit target to
+    // the incoming source. It is log-only by default and requires the materialization probe guard.
+    public bool DclReactionOrderRewriteEnabled { get; set; } = false;
+    public bool DclReactionOrderRewriteLogOnly { get; set; } = true;
+    public int DclReactionOrderRewriteCarrierId { get; set; } = -1;
+    public bool DclReactionOrderRewriteActionEnabled { get; set; } = false;
+    public int DclReactionOrderRewriteActionType { get; set; } = -1;
+    public int DclReactionOrderRewriteAbilityId { get; set; } = -1;
+    public bool DclReactionOrderRewriteRetargetSource { get; set; } = false;
+    public int DclReactionOrderRewriteExpectedActionType { get; set; } = -1;
+    public int DclReactionOrderRewriteExpectedAbilityId { get; set; } = -1;
+    public int DclReactionOrderRewriteMaxWrites { get; set; } = 1;
+
+    // Hex Ward is a composed Reaction transaction built on blank native carrier 443. The managed
+    // successful incoming-result Caution roll reserves a dynamic pass-2 producer request;
+    // accepted-order retargeting points the
+    // carrier at the incoming source; the exact pass-2 commit consumes cadence and delivers one
+    // managed Blind or current-Brave reduction. Disabled and log-only by default.
+    public bool DclHexWardEnabled { get; set; } = false;
+    public bool DclHexWardLogOnly { get; set; } = true;
+    public string DclHexWardEffect { get; set; } = "blind";       // blind | brave-down
+    public int DclHexWardForcedRoll { get; set; } = -1;          // -1 = mod RNG; 0..99 deterministic
+    public int DclHexWardBlindDurationTargetTurns { get; set; } = 0;
+    public int DclHexWardBraveDecrease { get; set; } = 10;
+    public int DclHexWardBraveFloor { get; set; } = 0;
+    public int DclHexWardMaxWrites { get; set; } = 1;
+    public int DclHexWardMaxLogs { get; set; } = 64;
+
+    // Observe-only per-execution boundary after state-0x2B VM execution and current-actor resolution
+    // in state 0x2C. A multi-transaction carrier such as Dual Wield Counter emits multiple rows.
+    public bool DclReactionEffectProbeEnabled { get; set; } = false;
+    public int DclReactionEffectProbeRva { get; set; } = 0x212C2E;
+    public string DclReactionEffectProbeExpectedBytes { get; set; } = "66 44 01 70 0C";
+    public int DclReactionEffectProbeMaxLogs { get; set; } = 128;
+
+    // Observe-only snapshot at the shared item inventory decrement. Auto-Potion is classified by
+    // action id 441 and selected/native item id 240..242; ordinary item uses remain as controls.
+    public bool DclAutoPotionConsumeProbeEnabled { get; set; } = false;
+    public int DclAutoPotionConsumeProbeRva { get; set; } = 0x2816B2;
+    public string DclAutoPotionConsumeProbeExpectedBytes { get; set; } = "2A CB 43 88 8C 05 00 7C 1A 01";
+    public int DclAutoPotionConsumeProbeMaxLogs { get; set; } = 128;
+
+    // Observe-only post-return snapshots for native Arc and Direct weapon target resolvers.
+    public bool DclWeaponLineOfFireProbeEnabled { get; set; } = false;
+    public int DclWeaponLineOfFireArcRva { get; set; } = 0x28030B;
+    public int DclWeaponLineOfFireDirectRva { get; set; } = 0x2803A3;
+    public string DclWeaponLineOfFireExpectedBytes { get; set; } = "8B F8 85 F6 78 08 85 C0 78 07 3B F0 75 03 44 8A FB";
+    public int DclWeaponLineOfFireProbeMaxLogs { get; set; } = 128;
+
+    // Roll-VERDICT control (hook at RVA 0x30F40F = "mov r10d,eax" right after the VM avoidance roll
     // 0x30FA34 returns). eax is the hit/miss verdict in REAL code (then: test eax,eax; je miss). Forcing
     // eax overrides native evade+reactions (both virtualized inside the roll) with NO data change. Set
     // ForceVerdict=1 => guaranteed hit (apply path runs; author damage at the pre-clamp); 0 => miss; 2 =
     // engine "special" outcome. The probe logs native vs final eax per roll. Observe-only by default.
     public bool RollVerdictProbeEnabled { get; set; } = false;
-    public int RollVerdictProbeRva { get; set; } = 0x30F4A7;
+    public int RollVerdictProbeRva { get; set; } = 0x30F40F;
     public string RollVerdictProbeExpectedBytes { get; set; } = "44 8B D0 BD 01 00 00 00 85 C0";
     public int RollVerdictProbeMaxLogs { get; set; } = 128;
     public bool RollVerdictControlEnabled { get; set; } = false;  // master; false => observe-only
@@ -10284,13 +15143,13 @@ internal sealed class RuntimeSettings
     public int EvadeCopierOverride4E { get; set; } = -1;   // shield magick block %
 
     // CalcEntryEvadeStamp — per-attack delivery of the SAME EvadeCopierOverride* value profile:
-    // stamps the target's evade bytes at computeActionResult (CalcEntryProbeRva, 0x309A44) right
+    // stamps the target's evade bytes at computeActionResult (CalcEntryProbeRva, 0x3099AC) right
     // before the VM avoidance roll inside that call. Zero-width race window; closes the residual
     // VM-side/init re-stamp leak seen in LT5-A. Works with or without CalcEntryProbeEnabled.
     public bool CalcEntryEvadeStampEnabled { get; set; } = false;
 
-    // ReactionChanceControl — the 4 real-code Brave-gate reaction roll sites (0x30BE86/0x30BEDC/
-    // 0x30BF32/0x30BF72). ForcedChance: -1 = observe only (log fires + natural Brave), 0 = suppress
+    // ReactionChanceControl — the 4 real-code Brave-gate reaction roll sites (0x30BDEE/0x30BE44/
+    // 0x30BE9A/0x30BEDA). ForcedChance: -1 = observe only (log fires + natural Brave), 0 = suppress
     // ALL reactions (Blade Grasp/Hamedo/Counter... never arm), 100 = force every reaction.
     public bool ReactionChanceControlEnabled { get; set; } = false;
     public int ReactionChanceForcedChance { get; set; } = -1;
@@ -10343,7 +15202,7 @@ internal sealed class RuntimeSettings
     // hit% into the on-screen forecast buffer (RVA 0x7832C0) and forces a chosen value at copy
     // time, so the displayed % is deterministically ours (no race with the engine's recompute).
     public bool PreviewHitPctControlEnabled { get; set; } = false;
-    public int PreviewHitPctRva { get; set; } = 0x227FFE;                       // `mov r10d,2`, between the load and the store
+    public int PreviewHitPctRva { get; set; } = 0x227F86;                       // `mov r10d,2`, between the load and the store
     public string PreviewHitPctExpectedBytes { get; set; } = "41 BA 02 00 00 00";
     public int PreviewHitPctForcedValue { get; set; } = -1;                     // 0..65535 to force; -1 = observe only
     public bool PreviewHitPctLogOnly { get; set; } = false;                     // record natural % without overwriting
@@ -10364,59 +15223,60 @@ internal sealed class RuntimeSettings
     public int PreviewForecastSourceForcedValue { get; set; } = -1;             // 0..65535 to force; -1 = observe only
     public bool PreviewForecastSourceLogOnly { get; set; } = false;             // record natural staged-damage without overwriting
 
-    // CALC-ENTRY PROBE (LT3, log-only) — ring-buffer probe on computeActionResult (0x309A44), the single
+    // CALC-ENTRY PROBE (LT3, log-only) — ring-buffer probe on computeActionResult (0x3099AC), the single
     // real-code per-(action,target) calc entry. Logs caster slot/type/ability id + target index + caster
     // team + turn owner per fire: the PREVIEW-time ability id and the AI same-calc discriminator.
     public bool CalcEntryProbeEnabled { get; set; } = false;
-    public int CalcEntryProbeRva { get; set; } = 0x309A44;
+    public int CalcEntryProbeRva { get; set; } = 0x3099AC;
+    // Observe-only extension of the calc ring. Captures the caller return RVA plus battle-state,
+    // turn-owner, reaction-source and UI-forecast globals at fire time. This distinguishes the
+    // ordinary target sweep from formula-0x25's nested synthetic Attack calculation without
+    // changing either native state or the DCL caches.
+    public bool DclCalcProvenanceProbeEnabled { get; set; } = false;
+    public int DclCalcProvenanceProbeMaxLogs { get; set; } = 256;
 
     // MAGIC-ACCURACY control (LT3) — hook at 0x304E2E captures the natural Faith-scaled chance in edx
     // (loaded at 0x304E2B) and can force it before roll(100, edx) at 0x304E33. 100 = always-hit, 0 =
     // always-miss, -1 = observe only.
     public bool MagicAccuracyControlEnabled { get; set; } = false;
-    public int MagicAccuracyRva { get; set; } = 0x304E2E;
+    public int MagicAccuracyRva { get; set; } = 0x304D96;
     public int MagicAccuracyForcedChance { get; set; } = -1;
 
     // STATUS-CHANCE control (LT3) — hook at 0x306633 captures/forces the status infliction chance in edx
     // (loaded from g_7B07AC at 0x30662C) before roll(100, edx) at 0x306636. Compute-time, so it wins where
     // the LT2 data-poke of g_7B07AC lost. 100 = always-proc, 0 = never-proc, -1 = observe only.
     public bool StatusChanceControlEnabled { get; set; } = false;
-    public int StatusChanceRva { get; set; } = 0x306633;
+    public int StatusChanceRva { get; set; } = 0x30659B;
     public int StatusChanceForcedChance { get; set; } = -1;
 
-    // ROLL-RNG PROBE (LT3b, log-only) — ring probe on the shared RNG head (0x278EE0, a Denuvo
+    // ROLL-RNG PROBE (LT3b, log-only) — ring probe on the shared RNG head (0x278E68, a Denuvo
     // trampoline whose CALLERS are real code). Logs (caller RVA, range, chance) per call to map every
     // real roll site (magic accuracy, status infliction, reactions, crits) in one battle.
     public bool RollRngProbeEnabled { get; set; } = false;
-    public int RollRngProbeRva { get; set; } = 0x278EE0;
+    public int RollRngProbeRva { get; set; } = 0x278E68;
 
-    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window at the sweep post-call (0x281F8A), right after the
+    // STAGED-BUNDLE PROBE (LT4) — the OUTPUT window at the sweep post-call (0x281F12), right after the
     // VM stages the effect bundle on the target and before apply. Logs target+0x1C0/+0x1C4/+0x1A8/
-    // +0x1D0/+0x1E5, and (gated on ForceTargetCharId) overwrites any field whose Force* is >= 0:
-    // Kind (+0x1C0), Ailment (+0x1A8), ApplyMask (+0x1D0), Dmg (+0x1C4). Proves output control of
-    // status infliction and magic miss->hit without touching the (VM-internal) roll.
+    // +0x1D0/+0x1E5. Kind, damage, and result-flag forcing remain available; legacy +0x1A8/+0x1D0
+    // forcing is hard-blocked because those fields control an item/inventory side effect.
     public bool StagedBundleProbeEnabled { get; set; } = false;
-    public int StagedBundleProbeRva { get; set; } = 0x281F8A;
+    public int StagedBundleProbeRva { get; set; } = 0x281F12;
     public int StagedBundleForceTargetCharId { get; set; } = -1;   // -1 = observe only; else force only this charId
     public int StagedBundleForceKind { get; set; } = -1;           // -1 = leave; else byte -> +0x1C0
-    public int StagedBundleForceAilment { get; set; } = -1;        // -1 = leave; else word -> +0x1A8
-    public int StagedBundleForceApplyMask { get; set; } = -1;      // -1 = leave; else byte -> +0x1D0
+    public int StagedBundleForceAilment { get; set; } = -1;        // RETIRED/BLOCKED legacy name: +0x1A8 item auxiliary id
+    public int StagedBundleForceApplyMask { get; set; } = -1;      // RETIRED/BLOCKED: +0x1D0 item-side-effect gate
     public int StagedBundleForceDmg { get; set; } = -1;            // -1 = leave; else word -> +0x1C4
     public int StagedBundleForceResFlag { get; set; } = -1;        // -1 = leave; else byte -> +0x1E5 (0x80 hit/apply, 0x00 miss)
 
-    // STATUS OUTPUT-CONTROL (LT10-B) — observe + rewrite the status the VM staged on a DCL-processed
-    // hit, inside the pre-clamp managed callback (same compute->apply window where the HP/MP debit
-    // writes are proven safe same-hit). The staged surface on the target (docs/modding/04 §2.3;
-    // inventory §1.9) is +0x1A8 (ailment id word), +0x1D0 (apply-mask byte, status bit family),
-    // +0x1E5 (result-flag byte, 0x08 = status). Encodings are Strong-static at best; the probe run
-    // refines them, which is why force also exposes a RAW offset/value escape hatch.
-    public bool DclStatusStageProbeEnabled { get; set; } = false;  // log-only observe of the staged status bytes on every DCL hit
-    public bool DclStatusSuppressEnabled { get; set; } = false;    // zero +0x1A8 and clear the status bits on +0x1D0/+0x1E5 (proc lands but no status appears)
-    public int DclStatusSuppressMask { get; set; } = 0x08;         // apply-mask (+0x1D0) status bit(s) to clear on suppress / set on force
+    // Legacy LT10 staged-auxiliary settings. Existing profiles still deserialize them, but every
+    // suppress/force write is validator- and runtime-blocked. The log-only probe remains available.
+    public bool DclStatusStageProbeEnabled { get; set; } = false;  // legacy name; staged-auxiliary observation only
+    public bool DclStatusSuppressEnabled { get; set; } = false;    // RETIRED/BLOCKED
+    public int DclStatusSuppressMask { get; set; } = 0x08;         // legacy serialized field; no writes
     public int DclStatusResultFlagStatusBit { get; set; } = 0x08;  // result-flag (+0x1E5) status bit to clear on suppress / set on force
-    public int DclStatusForceId { get; set; } = -1;                // -1 = off; else authored status id WORD -> +0x1A8 (+ status bits set)
-    public int DclStatusForceOffset { get; set; } = 0x1A8;         // raw byte offset for the encoding-agnostic force lever
-    public int DclStatusForceValue { get; set; } = -1;             // -1 = off; else raw byte written to DclStatusForceOffset
+    public int DclStatusForceId { get; set; } = -1;                // RETIRED/BLOCKED legacy auxiliary word
+    public int DclStatusForceOffset { get; set; } = 0x1A8;         // legacy serialized field; no writes
+    public int DclStatusForceValue { get; set; } = -1;             // RETIRED/BLOCKED
 
     // DIRECT STATUS POKE (LT10-B, outside actions) — one-shot guarded write to the durable status
     // master region of a chosen unit, mirroring the Brave/status override pokes. add = OR the mask;
@@ -10450,7 +15310,7 @@ internal sealed class RuntimeSettings
     public int PreviewForecastDamageFieldOffset { get; set; } = 0x6;           // obj+0x6 damage/debit; obj+0x8 healing/credit
 
     public bool PreClampDamageRewriteEnabled { get; set; } = false;
-    public int PreClampDamageRewriteRva { get; set; } = 0x30A66F;
+    public int PreClampDamageRewriteRva { get; set; } = 0x30A5D7;
     public string PreClampDamageRewriteExpectedBytes { get; set; } = "0F BF 45 06";
     public int PreClampDamageRewriteTargetCharId { get; set; } = -1;
     public int PreClampDamageRewriteTargetTeam { get; set; } = -1;
@@ -10603,6 +15463,52 @@ internal sealed class RuntimeSettings
         FormulaDerivedVariables ??= new List<FormulaDerivedVariable>();
         FormulaTraceVariables ??= new List<FormulaDerivedVariable>();
         DclDerivedVariables ??= new List<FormulaDerivedVariable>();
+        DclDamageFormula = DclDamageFormula?.Trim() ?? "";
+        DclHealingFormula = DclHealingFormula?.Trim() ?? "";
+        DclMpDebitFormula = DclMpDebitFormula?.Trim() ?? "";
+        DclMpCreditFormula = DclMpCreditFormula?.Trim() ?? "";
+        DclMpTrickleFormula = DclMpTrickleFormula?.Trim() ?? "";
+        DclHitChanceFormula = DclHitChanceFormula?.Trim() ?? "";
+        DclPhysicalContestConditionFormula = DclPhysicalContestConditionFormula?.Trim() ?? "";
+        DclMagicEvadeConditionFormula = DclMagicEvadeConditionFormula?.Trim() ?? "";
+        DclMagicEvadeFormula = DclMagicEvadeFormula?.Trim() ?? "";
+        DclAttackSkillFormula = DclAttackSkillFormula?.Trim() ?? "";
+        DclDodgeFormula = DclDodgeFormula?.Trim() ?? "";
+        DclParryFormula = DclParryFormula?.Trim() ?? "";
+        DclBlockFormula = DclBlockFormula?.Trim() ?? "";
+        DclDefenseAllowedFormula = DclDefenseAllowedFormula?.Trim() ?? "";
+        DclDefenseModifierFormula = DclDefenseModifierFormula?.Trim() ?? "";
+        DclParryUsesFormula = DclParryUsesFormula?.Trim() ?? "";
+        DclBlockUsesFormula = DclBlockUsesFormula?.Trim() ?? "";
+        DclPreviewDamageFormula = DclPreviewDamageFormula?.Trim() ?? "";
+        DclPreviewHealingFormula = DclPreviewHealingFormula?.Trim() ?? "";
+        DclStatusRules ??= new List<DclStatusRule>();
+        foreach (var rule in DclStatusRules)
+        {
+            rule.Name = rule.Name?.Trim() ?? "";
+            rule.Operation = string.IsNullOrWhiteSpace(rule.Operation) ? "add" : rule.Operation.Trim().ToLowerInvariant();
+            rule.ConditionFormula = rule.ConditionFormula?.Trim() ?? "";
+            rule.ResistanceFormula = rule.ResistanceFormula?.Trim() ?? "";
+        }
+        DclInstantKoRules ??= new List<DclInstantKoRule>();
+        foreach (var rule in DclInstantKoRules)
+        {
+            rule.Name = rule.Name?.Trim() ?? "";
+            rule.ConditionFormula = rule.ConditionFormula?.Trim() ?? "";
+            rule.ResistanceFormula = rule.ResistanceFormula?.Trim() ?? "";
+        }
+        DclReactionRules ??= new List<DclReactionRule>();
+        foreach (var rule in DclReactionRules)
+        {
+            rule.Name = rule.Name?.Trim() ?? "";
+            rule.Mode = string.IsNullOrWhiteSpace(rule.Mode) ? "courage" : rule.Mode.Trim().ToLowerInvariant();
+            rule.ConditionFormula = rule.ConditionFormula?.Trim() ?? "";
+            rule.ChanceFormula = rule.ChanceFormula?.Trim() ?? "";
+        }
+        DclReactionCalcExitExpectedBytes = DclReactionCalcExitExpectedBytes?.Trim() ?? "";
+        DclHexWardEffect = string.IsNullOrWhiteSpace(DclHexWardEffect)
+            ? "blind"
+            : DclHexWardEffect.Trim().ToLowerInvariant();
         FormulaTables ??= new Dictionary<string, List<int>>();
         FormulaMatrices ??= new Dictionary<string, List<List<int>>>();
         FormulaMaps ??= new Dictionary<string, Dictionary<string, int>>();
@@ -10625,6 +15531,49 @@ internal sealed class RuntimeSettings
         DeathStateWrites ??= new List<DeathStateWrite>();
     }
 
+    // Private formatting alias; it is not part of runtime-settings JSON.
+    private string ResultSelectorActorRegister => ResultSelectorProbeActorRegister;
+
     public string Describe()
-        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, DclPipelineEnabled={DclPipelineEnabled}, DclDamageFormula={(string.IsNullOrWhiteSpace(DclDamageFormula) ? "off" : "on")}, DclActionContextMaxAgeMs={DclActionContextMaxAgeMs}, DclDecisionMaxLogs={DclDecisionMaxLogs}, DclDerivedVariables={DclDerivedVariables.Count}, MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, AbilityCatalogPath={AbilityCatalogPath}, ActionSignalRules={ActionSignalRules.Count}, DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeOnTargetCache={HookRegisterProbeOnTargetCache}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, ResultSelectorProbeEnabled={ResultSelectorProbeEnabled}, ResultSelectorProbeRva=0x{ResultSelectorProbeRva:X}, ResultSelectorProbeActorRegister={ResultSelectorProbeActorRegister}, ResultSelectorProbeRecordUnitOffset=0x{ResultSelectorProbeRecordUnitOffset:X}, ResultSelectorProbeMaxLogs={ResultSelectorProbeMaxLogs}, ResultSelectorProbeRecordDumpBytes={ResultSelectorProbeRecordDumpBytes}, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, PreClampManagedCallbackEnabled={PreClampManagedCallbackEnabled}, PreClampManagedCallbackForcedDebit={PreClampManagedCallbackForcedDebit}, PreClampManagedCallbackActorFormulaEnabled={PreClampManagedCallbackActorFormulaEnabled}, PreClampManagedCallbackPaMultiplier={PreClampManagedCallbackPaMultiplier}, PreClampManagedCallbackStackScanBytes={PreClampManagedCallbackStackScanBytes}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
+        => $"RewriteObservedDamage={RewriteObservedDamage}, RewriteObservedHealing={RewriteObservedHealing}, RewriteObservedMpLoss={RewriteObservedMpLoss}, RewriteObservedMpGain={RewriteObservedMpGain}, " +
+           $"DryRunRewrites={DryRunRewrites}, ProofFinalDamage={ProofFinalDamage}, ProofFinalHealing={ProofFinalHealing}, ProofFinalMpLoss={ProofFinalMpLoss}, ProofFinalMpGain={ProofFinalMpGain}, FlatDamageReduction={FlatDamageReduction}, " +
+           $"RewriteConditionFormula={(string.IsNullOrWhiteSpace(RewriteConditionFormula) ? "off" : "on")}, FinalDamageFormula={(string.IsNullOrWhiteSpace(FinalDamageFormula) ? "off" : "on")}, " +
+           $"DclPipelineEnabled={DclPipelineEnabled}, DclDamageFormula={(string.IsNullOrWhiteSpace(DclDamageFormula) ? "off" : "on")}, DclHealingFormula={(string.IsNullOrWhiteSpace(DclHealingFormula) ? "off" : "on")}, " +
+           $"DclMpDebitFormula={(string.IsNullOrWhiteSpace(DclMpDebitFormula) ? "off" : "on")}, DclMpCreditFormula={(string.IsNullOrWhiteSpace(DclMpCreditFormula) ? "off" : "on")}, " +
+           $"DclComputePointNumericEnabled={DclComputePointNumericEnabled}, DclComputePointCacheTtlMs={DclComputePointCacheTtlMs}, " +
+           $"DclResultFlagsControl={DclResultFlagsControlEnabled}/preserve=0x{DclResultFlagsPreserveMask:X2}, " +
+           $"DclPhysicalContestEnabled={DclPhysicalContestEnabled}, DclMagicEvadeEnabled={DclMagicEvadeEnabled}, DclActionContextMaxAgeMs={DclActionContextMaxAgeMs}, DclDecisionMaxLogs={DclDecisionMaxLogs}, " +
+           $"DclDerivedVariables={DclDerivedVariables.Count}, DclStatusControlEnabled={DclStatusControlEnabled}, DclStatusRules={DclStatusRules.Count}, DclInstantKoControlEnabled={DclInstantKoControlEnabled}, DclInstantKoRules={DclInstantKoRules.Count}, " +
+           $"DclReactionTaxonomyEnabled={DclReactionTaxonomyEnabled}, DclReactionRules={DclReactionRules.Count}, DclReactionCommitProbeEnabled={DclReactionCommitProbeEnabled}, DclReactionPreSelectorProbeEnabled={DclReactionPreSelectorProbeEnabled}, DclReactionProducer={DclReactionProducerEnabled}/{(DclReactionProducerLogOnly ? "log-only" : "live")}, DclReactionMaterializationProbeEnabled={DclReactionMaterializationProbeEnabled}, DclReactionOrderRewrite={DclReactionOrderRewriteEnabled}/{(DclReactionOrderRewriteLogOnly ? "log-only" : "live")}, DclHexWard={DclHexWardEnabled}/{(DclHexWardLogOnly ? "log-only" : "live")}/{DclHexWardEffect}, DclReactionEffectProbeEnabled={DclReactionEffectProbeEnabled}, " +
+           $"DclAutoPotionConsumeProbeEnabled={DclAutoPotionConsumeProbeEnabled}, DclWeaponLineOfFireProbeEnabled={DclWeaponLineOfFireProbeEnabled}, DclCalcProvenanceProbeEnabled={DclCalcProvenanceProbeEnabled}, DclReactionActionReplacement={DclReactionActionReplacementEnabled}/{(DclReactionActionReplacementLogOnly ? "log-only" : "live")}, DclReactionRetarget={DclReactionRetargetEnabled}/{(DclReactionRetargetLogOnly ? "log-only" : "live")}, " +
+           $"MpRewriteConditionFormula={(string.IsNullOrWhiteSpace(MpRewriteConditionFormula) ? "off" : "on")}, FinalMpChangeFormula={(string.IsNullOrWhiteSpace(FinalMpChangeFormula) ? "off" : "on")}, " +
+           $"FormulaVariables={FormulaVariables.Count}, FormulaPreActionVariables={FormulaPreActionVariables.Count}, FormulaPreResponseVariables={FormulaPreResponseVariables.Count}, FormulaDerivedVariables={FormulaDerivedVariables.Count}, FormulaTraceVariables={FormulaTraceVariables.Count}, " +
+           $"FormulaTables={FormulaTables.Count}, FormulaMatrices={FormulaMatrices.Count}, FormulaMaps={FormulaMaps.Count}, ItemCatalogPath={ItemCatalogPath}, AbilityCatalogPath={AbilityCatalogPath}, DclAbilityMetadataPath={DclAbilityMetadataPath}, ActionSignalRules={ActionSignalRules.Count}, " +
+           $"DamageRules={DamageRules.Count}, MpRules={MpRules.Count}, ApplyEquipmentDr={ApplyEquipmentDr}, EquipmentSlots={EquipmentSlots.Count}, AttackerEquipmentSlots={AttackerEquipmentSlots.Count}, EquipmentDrRules={EquipmentDrRules.Count}, " +
+           $"ApplyDamageResponseRules={ApplyDamageResponseRules}, DamageResponseRules={DamageResponseRules.Count}, DamageResponseClamp={MinDamageResponsePermille}-{MaxDamageResponsePermille}, AffectAllies={AffectAllies}, AffectFoes={AffectFoes}, " +
+           $"InferAttackerFromRecentUnits={InferAttackerFromRecentUnits}, RecentAttackerWindowMs={RecentAttackerWindowMs}, ResolveAttackerByCt={ResolveAttackerByCt}, CtDropWindowMs={CtDropWindowMs}, " +
+           $"ResolveAttackerByLowCtFallback={ResolveAttackerByLowCtFallback}, CtLowFallbackMaxCt={CtLowFallbackMaxCt}, CtLowFallbackWindowMs={CtLowFallbackWindowMs}, LogCtResolutionDiagnostics={LogCtResolutionDiagnostics}, " +
+           $"ResolveCounterFromRecentDamage={ResolveCounterFromRecentDamage}, CounterEventWindowMs={CounterEventWindowMs}, LogAttackerCandidates={LogAttackerCandidates}, LogResolvedRuntimeContext={LogResolvedRuntimeContext}, " +
+           $"UnitPollIntervalMs={UnitPollIntervalMs}, MaxTrackedBattleUnits={MaxTrackedBattleUnits}, SuppressOwnRewriteEchoWindowMs={SuppressOwnRewriteEchoWindowMs}, MemoryTableProbes={MemoryTableProbes.Count}/{MemoryTableProbes.Count(probe => probe.Enabled)} enabled, " +
+           $"LogUnknownFieldDiffs={LogUnknownFieldDiffs}, UnknownDiff=0x{UnknownDiffStart:X2}-0x{UnknownDiffEnd:X2}, CaptureStructOnDeath={CaptureStructOnDeath}, CauseDeathOnZeroHp={CauseDeathOnZeroHp}, DeathStateWrites={DeathStateWrites.Count}, MinHpFloor={MinHpFloor}, " +
+           $"HookRegisterProbe={HookRegisterProbe}/{HookRegisterProbeMaxLogs}, HookRegisterProbeOnHpEvent={HookRegisterProbeOnHpEvent}, HookRegisterProbeOnMpEvent={HookRegisterProbeOnMpEvent}, HookRegisterProbeOnCtDrop={HookRegisterProbeOnCtDrop}, " +
+           $"HookRegisterProbeOnActionBoundary={HookRegisterProbeOnActionBoundary}, HookRegisterProbeOnPendingResolve={HookRegisterProbeOnPendingResolve}, HookRegisterProbeOnTargetCache={HookRegisterProbeOnTargetCache}, HookRegisterProbeEventMaxLogs={HookRegisterProbeEventMaxLogs}, " +
+           $"HookRegisterProbeStackSlots={HookRegisterProbeStackSlots}, HookRegisterProbePointerScanBytes={HookRegisterProbePointerScanBytes}, HookRegisterProbePointerMaxLogs={HookRegisterProbePointerMaxLogs}, HookRegisterProbePointerMaxPointersPerRoot={HookRegisterProbePointerMaxPointersPerRoot}, " +
+           $"LandmarkProbeEnabled={LandmarkProbeEnabled}, LandmarkProbeMaxLogs={LandmarkProbeMaxLogs}, LandmarkProbeStackSlots={LandmarkProbeStackSlots}, LandmarkProbes={LandmarkProbes.Count}/{LandmarkProbes.Count(probe => probe.Enabled)} enabled, " +
+           $"ResultSelectorProbeEnabled={ResultSelectorProbeEnabled}, ResultSelectorProbeRva=0x{ResultSelectorProbeRva:X}, ResultSelectorProbeActorRegister={ResultSelectorActorRegister}, ResultSelectorProbeRecordUnitOffset=0x{ResultSelectorRecordUnitOffset:X}, " +
+           $"ResultSelectorProbeMaxLogs={ResultSelectorProbeMaxLogs}, ResultSelectorProbeRecordDumpBytes={ResultSelectorProbeRecordDumpBytes}, PreClampDamageRewriteEnabled={PreClampDamageRewriteEnabled}, PreClampDamageRewriteRva=0x{PreClampDamageRewriteRva:X}, " +
+           $"PreClampDamageRewriteTargetCharId={PreClampDamageRewriteTargetCharId}, PreClampDamageRewriteExpectedDebit={PreClampDamageRewriteExpectedDebit}, PreClampDamageRewriteForcedDebit={PreClampDamageRewriteForcedDebit}, PreClampDamageRewriteMaxWrites={PreClampDamageRewriteMaxWrites}, " +
+           $"PreClampManagedCallbackEnabled={PreClampManagedCallbackEnabled}, PreClampManagedCallbackForcedDebit={PreClampManagedCallbackForcedDebit}, PreClampManagedCallbackActorFormulaEnabled={PreClampManagedCallbackActorFormulaEnabled}, PreClampManagedCallbackPaMultiplier={PreClampManagedCallbackPaMultiplier}, " +
+           $"PreClampManagedCallbackStackScanBytes={PreClampManagedCallbackStackScanBytes}, PreClampPointerScanBytes={PreClampPointerScanBytes}, PreClampPointerMaxLogs={PreClampPointerMaxLogs}, PreClampPointerMaxPointersPerRoot={PreClampPointerMaxPointersPerRoot}, " +
+           $"PreClampActorStructDumpEnabled={PreClampActorStructDumpEnabled}, PreClampActorStructDumpBytes={PreClampActorStructDumpBytes}, PreClampActorStructUnitOffset=0x{PreClampActorStructUnitOffset:X}, PreClampActorStructDumpMaxLogs={PreClampActorStructDumpMaxLogs}, " +
+           $"PreClampResolveActorContext={PreClampResolveActorContext}, PreClampActorActionIdOffset=0x{PreClampActorActionIdOffset:X}, PreClampActorContextMaxLogs={PreClampActorContextMaxLogs}, PreClampLogEquipment={PreClampLogEquipment}, " +
+           $"PreClampEquipBlockOffset=0x{PreClampEquipBlockOffset:X}, PreClampEquipMaxLogs={PreClampEquipMaxLogs}, LogPreClampFormulaCandidates={LogPreClampFormulaCandidates}/{PreClampFormulaCandidateMaxLogs}, PreClampFormulaCandidateRequirePendingMatch={PreClampFormulaCandidateRequirePendingMatch}, " +
+           $"PreClampFormulaCandidateAllowImmediateAction={PreClampFormulaCandidateAllowImmediateAction}, PreClampImmediateActionMinScore={PreClampImmediateActionMinScore}, PreClampImmediateActionMinMargin={PreClampImmediateActionMinMargin}, PreClampImmediateActionMaxAgeMs={PreClampImmediateActionMaxAgeMs}, " +
+           $"PreClampImmediateActionRequireFreshActive={PreClampImmediateActionRequireFreshActive}, PreClampImmediateActionAllowZeroActionId={PreClampImmediateActionAllowZeroActionId}, PreClampImmediateActionPlanMaxWrites={PreClampImmediateActionPlanMaxWrites}, " +
+           $"PreClampImmediateActionPlanRequireExpectedHp={PreClampImmediateActionPlanRequireExpectedHp}, PreClampImmediateActionPlanEagerTargets={PreClampImmediateActionPlanEagerTargets}, PreClampImmediateActionNearbyUnitScanRadius={PreClampImmediateActionNearbyUnitScanRadius}, " +
+           $"PreClampFormulaPlanEnabled={PreClampFormulaPlanEnabled}, PreClampFormulaPlanSlots={PreClampFormulaPlanSlots}, PreClampFormulaPlanWindowMs={PreClampFormulaPlanWindowMs}, PreClampFormulaPlanMaxWrites={PreClampFormulaPlanMaxWrites}, PreClampFormulaPlanRequirePhaseZero={PreClampFormulaPlanRequirePhaseZero}, " +
+           $"ActorProbeOnEvent={ActorProbeOnEvent}, ActorProbe=0x{ActorProbeStart:X2}-0x{ActorProbeEnd:X2}, LogHpEventProbe={LogHpEventProbe}/{HpEventProbeMaxLogs}, HpEventProbeDiffMax={HpEventProbeDiffMax}, HpEventProbeDumpRaw={HpEventProbeDumpRaw}, " +
+           $"LogActionBoundaryProbe={LogActionBoundaryProbe}/{ActionBoundaryProbeMaxLogs}, ActionBoundaryProbeDiffMax={ActionBoundaryProbeDiffMax}, LogPendingActionCandidatesOnEvent={LogPendingActionCandidatesOnEvent}, LogAllPendingActionCandidates={LogAllPendingActionCandidates}, " +
+           $"PendingActionCandidateMaxUnits={PendingActionCandidateMaxUnits}, LogImmediateActionCandidatesOnEvent={LogImmediateActionCandidatesOnEvent}, ImmediateActionCandidateMaxUnits={ImmediateActionCandidateMaxUnits}, LogActionStateChanges={LogActionStateChanges}, " +
+           $"TrackPendingActions={TrackPendingActions}, PendingActionResolveWindowMs={PendingActionResolveWindowMs}, PendingActionMaxBatchEvents={PendingActionMaxBatchEvents}, PendingActionStaleMs={PendingActionStaleMs}";
 }

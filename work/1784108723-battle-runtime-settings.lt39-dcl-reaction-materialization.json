@@ -1,0 +1,17 @@
+{
+  "_note": "LT39 observe-only accepted-Reaction order correlation. Captures the complete pass-2 materialized unit order before actor construction, its accepted commit, and delivered state-0x2C effects. No producer, replacement, retarget, effect, cadence, formula, status, or game-memory write is enabled.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 128,
+  "DclReactionMaterializationProbeEnabled": true,
+  "DclReactionMaterializationProbeRva": 2122685,
+  "DclReactionMaterializationProbeExpectedBytes": "0F B7 C8 C7 05 02 4E A6 00 29 00 00 00",
+  "DclReactionMaterializationProbeMaxLogs": 128,
+  "DclReactionEffectProbeEnabled": true,
+  "DclReactionEffectProbeRva": 2173998,
+  "DclReactionEffectProbeExpectedBytes": "66 44 01 70 0C",
+  "DclReactionEffectProbeMaxLogs": 128
+}

@@ -1,0 +1,10 @@
+{
+  "_note": "LT27 observe-only native weapon line-of-fire result snapshot. Records Arc/Direct intended and reached/intercepted unit indices after the native resolver; never calls a resolver or changes targeting.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclWeaponLineOfFireProbeEnabled": true,
+  "DclWeaponLineOfFireArcRva": 2622219,
+  "DclWeaponLineOfFireDirectRva": 2622371,
+  "DclWeaponLineOfFireExpectedBytes": "8B F8 85 F6 78 08 85 C0 78 07 3B F0 75 03 44 8A FB",
+  "DclWeaponLineOfFireProbeMaxLogs": 128
+}

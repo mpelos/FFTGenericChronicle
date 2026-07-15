@@ -50,6 +50,7 @@ tools/*
 !tools/profile_struct.py
 !tools/lt1_mega_probe.py
 !tools/lt2_poke.py
+!tools/manage_fft_enhanced_autosave.ps1
 
 # === Unpacked game data (copyrighted, regenerated) ===
 work/modded_unpack/

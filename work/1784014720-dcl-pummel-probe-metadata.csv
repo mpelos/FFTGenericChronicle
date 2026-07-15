@@ -1,0 +1,2 @@
+ability_id,approved,action_kind,damage_type,avoidance_policy,status_category,side_effect_policy,power,strike_count
+101,1,physical_damage,crush,physical_contest,none,managed_multistrike,40,3

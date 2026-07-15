@@ -1,0 +1,93 @@
+{
+  "_note": "Offline mechanism profile for formula-0x38 correlated retained carriers. Native payloads remain intact only to preserve each status-only result; DCL replaces every inherited bit with one shared group decision before native validation and commit.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Nightmare Sleep",
+      "AbilityId": 194,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "nightmare",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "Nightmare Death Sentence",
+      "AbilityId": 194,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 1,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "nightmare",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "Toot Confusion",
+      "AbilityId": 313,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "toot",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "Toot Sleep",
+      "AbilityId": 313,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "toot",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "Poisonous Frog Frog",
+      "AbilityId": 346,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 2,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "poisonous-frog",
+      "ContestMode": "all-or-nothing"
+    },
+    {
+      "Name": "Poisonous Frog Poison",
+      "AbilityId": 346,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 128,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "poisonous-frog",
+      "ContestMode": "all-or-nothing"
+    }
+  ]
+}

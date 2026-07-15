@@ -1,0 +1,13 @@
+{
+  "_note": "LT31 observe-only accepted-Reaction commit/effect correlation. Captures all three queue commits and the state-0x2C executed actor before cleanup. It performs no effect, cadence, formula, status, or game-memory writes.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 128,
+  "DclReactionEffectProbeEnabled": true,
+  "DclReactionEffectProbeRva": 2173998,
+  "DclReactionEffectProbeExpectedBytes": "66 44 01 70 0C",
+  "DclReactionEffectProbeMaxLogs": 128
+}

@@ -1,0 +1,9 @@
+{
+  "_note": "LT26 observe-only shared item-consumption snapshot. Captures native item/count operands and order context before inventory subtraction; no inventory, reaction, or game-state control.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclAutoPotionConsumeProbeEnabled": true,
+  "DclAutoPotionConsumeProbeRva": 2627250,
+  "DclAutoPotionConsumeProbeExpectedBytes": "2A CB 43 88 8C 05 00 7C 1A 01",
+  "DclAutoPotionConsumeProbeMaxLogs": 128
+}

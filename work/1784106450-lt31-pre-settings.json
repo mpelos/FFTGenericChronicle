@@ -1,0 +1,9 @@
+{
+  "_note": "LT23 observe-only accepted-reaction action-queue commit probe. No DCL formula, chance, cadence, or game-memory control is enabled.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 64
+}

@@ -28,7 +28,7 @@ buffers the VM reads/writes are ordinary, externally read/write-able memory. So 
 combat by hooking stable `.text` touchpoints and reading/writing that memory, never by hooking the
 virtualized math. Proven control (2026-06-27):
 
-- **Damage / MP magnitude** — rewrite the engine's staged debit at the pre-clamp hook (`0x30A66F`)
+- **Damage / MP magnitude** — rewrite the engine's staged debit at the pre-clamp hook (`0x30A5D7`)
   just before HP/MP application; even lethal damage lands in the SAME hit through vanilla's own HP
   clamp and KO/death (a memory write cannot force death — the engine still owns it). This supersedes
   the older late post-damage reconciler (now a fallback).
@@ -74,7 +74,7 @@ The mod has four distinct editing surfaces:
   code mod, via the same-hit pre-clamp staged-debit hook in `06` (not a direct damage-routine hook).
 - **Denuvo virtualizes code, not data — combat is PROVEN controllable (2026-06-27).** The damage
   routine can't be hooked, but the memory it reads/writes can: damage/MP via the pre-clamp hook
-  (`0x30A66F`, same-hit), hit/miss/block/parry via the defender's live evade bytes (input-control) or
+  (`0x30A5D7`, same-hit), hit/miss/block/parry via the defender's live evade bytes (input-control) or
   the result selector (`0x205210`, output-control), status via `+0x1EF/+0x61`, reactions via Brave
   `+0x2B`, and the full forecast display — hit-% (hook `0x227FFE`) and HP amount number + HP-bar
   ghost (`obj+0x6`==`unit+0x1C4` for damage, `obj+0x8`==`unit+0x1C6` for healing).

@@ -1,0 +1,27 @@
+{
+  "_note": "Offline Self-Destruct rider profile. Pair only with --dcl-conditional-status-rider-neuter 277: formula 0x52 preserves victim damage from caster missing HP and the caster's lethal current-HP debit while DCL restores Oil only for non-self victim results.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Self-Destruct victim Oil",
+      "AbilityId": 277,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 128,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ConditionFormula": "dcl.isSelf == 0",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    }
+  ]
+}

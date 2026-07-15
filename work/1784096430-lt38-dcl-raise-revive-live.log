@@ -1,0 +1,282 @@
+==== Generic Chronicle Battle Runtime Harness (iter 20) ====
+settings path: C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json
+[RUNTIME-INIT] settings: RewriteObservedDamage=False, RewriteObservedHealing=False, RewriteObservedMpLoss=False, RewriteObservedMpGain=False, DryRunRewrites=False, ProofFinalDamage=1, ProofFinalHealing=1, ProofFinalMpLoss=1, ProofFinalMpGain=1, FlatDamageReduction=0, RewriteConditionFormula=off, FinalDamageFormula=off, DclPipelineEnabled=True, DclDamageFormula=on, DclHealingFormula=on, DclMpDebitFormula=off, DclMpCreditFormula=off, DclComputePointNumericEnabled=True, DclComputePointCacheTtlMs=5000, DclResultFlagsControl=True/preserve=0x0F, DclPhysicalContestEnabled=True, DclMagicEvadeEnabled=True, DclActionContextMaxAgeMs=5000, DclDecisionMaxLogs=400, DclDerivedVariables=121, DclStatusControlEnabled=False, DclStatusRules=0, DclInstantKoControlEnabled=True, DclInstantKoRules=1, DclReactionTaxonomyEnabled=False, DclReactionRules=0, DclReactionCommitProbeEnabled=False, DclReactionPreSelectorProbeEnabled=False, DclReactionProducer=False/log-only, DclReactionEffectProbeEnabled=False, DclAutoPotionConsumeProbeEnabled=False, DclWeaponLineOfFireProbeEnabled=False, DclCalcProvenanceProbeEnabled=True, DclReactionActionReplacement=False/log-only, DclReactionRetarget=False/log-only, MpRewriteConditionFormula=off, FinalMpChangeFormula=off, FormulaVariables=25, FormulaPreActionVariables=0, FormulaPreResponseVariables=0, FormulaDerivedVariables=0, FormulaTraceVariables=0, FormulaTables=4, FormulaMatrices=1, FormulaMaps=2, ItemCatalogPath=item_catalog.csv, AbilityCatalogPath=wotl_ability_action_baseline.csv, DclAbilityMetadataPath=, ActionSignalRules=0, DamageRules=0, MpRules=0, ApplyEquipmentDr=False, EquipmentSlots=7, AttackerEquipmentSlots=2, EquipmentDrRules=0, ApplyDamageResponseRules=False, DamageResponseRules=0, DamageResponseClamp=0-10000, AffectAllies=True, AffectFoes=True, InferAttackerFromRecentUnits=False, RecentAttackerWindowMs=1500, ResolveAttackerByCt=False, CtDropWindowMs=4000, ResolveAttackerByLowCtFallback=False, CtLowFallbackMaxCt=20, CtLowFallbackWindowMs=1500, LogCtResolutionDiagnostics=False, ResolveCounterFromRecentDamage=False, CounterEventWindowMs=1500, LogAttackerCandidates=True, LogResolvedRuntimeContext=False, UnitPollIntervalMs=25, MaxTrackedBattleUnits=64, SuppressOwnRewriteEchoWindowMs=1000, MemoryTableProbes=0/0 enabled, LogUnknownFieldDiffs=True, UnknownDiff=0x44-0x17F, CaptureStructOnDeath=False, CauseDeathOnZeroHp=False, DeathStateWrites=0, MinHpFloor=0, HookRegisterProbe=False/32, HookRegisterProbeOnHpEvent=False, HookRegisterProbeOnMpEvent=False, HookRegisterProbeOnCtDrop=False, HookRegisterProbeOnActionBoundary=False, HookRegisterProbeOnPendingResolve=False, HookRegisterProbeOnTargetCache=False, HookRegisterProbeEventMaxLogs=64, HookRegisterProbeStackSlots=0, HookRegisterProbePointerScanBytes=0, HookRegisterProbePointerMaxLogs=64, HookRegisterProbePointerMaxPointersPerRoot=8, LandmarkProbeEnabled=False, LandmarkProbeMaxLogs=160, LandmarkProbeStackSlots=16, LandmarkProbes=0/0 enabled, ResultSelectorProbeEnabled=False, ResultSelectorProbeRva=0x205210, ResultSelectorProbeActorRegister=r8, ResultSelectorProbeRecordUnitOffset=0x148, ResultSelectorProbeMaxLogs=0, ResultSelectorProbeRecordDumpBytes=64, PreClampDamageRewriteEnabled=False, PreClampDamageRewriteRva=0x30A5D7, PreClampDamageRewriteTargetCharId=-1, PreClampDamageRewriteExpectedDebit=-1, PreClampDamageRewriteForcedDebit=-1, PreClampDamageRewriteMaxWrites=1, PreClampManagedCallbackEnabled=False, PreClampManagedCallbackForcedDebit=-1, PreClampManagedCallbackActorFormulaEnabled=False, PreClampManagedCallbackPaMultiplier=10, PreClampManagedCallbackStackScanBytes=256, PreClampPointerScanBytes=0, PreClampPointerMaxLogs=64, PreClampPointerMaxPointersPerRoot=8, PreClampActorStructDumpEnabled=False, PreClampActorStructDumpBytes=512, PreClampActorStructUnitOffset=0x148, PreClampActorStructDumpMaxLogs=32, PreClampResolveActorContext=False, PreClampActorActionIdOffset=0x142, PreClampActorContextMaxLogs=64, PreClampLogEquipment=False, PreClampEquipBlockOffset=0x1A, PreClampEquipMaxLogs=64, LogPreClampFormulaCandidates=False/64, PreClampFormulaCandidateRequirePendingMatch=True, PreClampFormulaCandidateAllowImmediateAction=False, PreClampImmediateActionMinScore=1800, PreClampImmediateActionMinMargin=300, PreClampImmediateActionMaxAgeMs=1500, PreClampImmediateActionRequireFreshActive=True, PreClampImmediateActionAllowZeroActionId=False, PreClampImmediateActionPlanMaxWrites=1, PreClampImmediateActionPlanRequireExpectedHp=True, PreClampImmediateActionPlanEagerTargets=False, PreClampImmediateActionNearbyUnitScanRadius=8, PreClampFormulaPlanEnabled=False, PreClampFormulaPlanSlots=16, PreClampFormulaPlanWindowMs=3000, PreClampFormulaPlanMaxWrites=1, PreClampFormulaPlanRequirePhaseZero=True, ActorProbeOnEvent=False, ActorProbe=0x40-0x44, LogHpEventProbe=False/32, HpEventProbeDiffMax=64, HpEventProbeDumpRaw=False, LogActionBoundaryProbe=False/96, ActionBoundaryProbeDiffMax=32, LogPendingActionCandidatesOnEvent=False, LogAllPendingActionCandidates=False, PendingActionCandidateMaxUnits=16, LogImmediateActionCandidatesOnEvent=False, ImmediateActionCandidateMaxUnits=16, LogActionStateChanges=False, TrackPendingActions=False, PendingActionResolveWindowMs=5000, PendingActionMaxBatchEvents=16, PendingActionStaleMs=30000
+[RUNTIME-INIT] item catalog: 261 items from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\item_catalog.csv
+[RUNTIME-INIT] ability catalog: 512 abilities from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\wotl_ability_action_baseline.csv; DCL metadata disabled
+EnabledMods: fftivc.utility.modloader, fftivc.generic.chronicle.codemod, ffttic.katanareforged
+ACTIVE MODS (3): reloaded.sharedlib.hooks, Reloaded.Memory.SigScan.ReloadedII, fftivc.utility.modloader
+data mod fftivc.generic.chronicle loaded? False
+[PRECLAMP-REWRITE-HOOK] rva=0x30A5D7 addr=0x14030A5D7 targetId=any expectedDebit=any expectedCredit=any forcedDebit=any forcedCredit=any maxWrites=1 logOnly=0 planEnabled=0 planSlots=16 managedCallback=1 managedForcedDebit=any managedActorFormula=0 dclPipeline=1 dclHpDebit=on dclHpCredit=on dclMpDebit=off dclMpCredit=off
+[DCL-KIND-HOOK] rva=0x205B38 addr=0x140205B38 kind=0x06 logOnly=0 ttlMs=2500 maxAgeMs=5000
+[SELECTOR-PROBE-HOOK] rva=0x205210 addr=0x140205210 actorReg=r8 recordUnitOffset=0x148 dumpBytes=64 ctxRegs=16 ctxStack=24 maxLogs=0 expected=48 89 5C 24 08 48 89 6C 24 10 (control=off, observe-only) dclOutcome=ON
+[EVADE-COPIER-HOOK] site=B/0x28531C rva=0x2854DB addr=0x1402854DB unit=rbx (target=any force[46=0x00 47=0x00 48=0x00 49=0x00 4A=0x00 4B=0x00 4C=0x00 4D=0x00 4E=0x00])
+[EVADE-COPIER-HOOK] site=C/0x396518 rva=0x3966BF addr=0x1403966BF unit=rsi (target=any force[46=0x00 47=0x00 48=0x00 49=0x00 4A=0x00 4B=0x00 4C=0x00 4D=0x00 4E=0x00])
+[PREVIEW-HITPCT-HOOK] rva=0x227F86 addr=0x140227F86 buf=0x5A2C330 forced=any logOnly=0 dcl=1
+[DCL-CALC-INSTALL] hit=1 previewAmounts=1 seed=450546785 forcedRoll=any ttlMs=2500 missClassEvade=100 maxLogs=600 formula=on
+[CALC-PROBE-HOOK] rva=0x3099AC addr=0x1403099AC probe=on buf=0x79E050 ring=64 provenance=ON evadeStamp=off hitControl=ON previewAmounts=ON reactionTaxonomy=off
+[DCL-REACTION-HOOK] site=R1 rva=0x30BDEE idReg=r11d taxonomy=0 suppressMisses=1 expected=E8 75 D0 F6 FF
+[DCL-REACTION-HOOK] site=R2 rva=0x30BE44 idReg=ebx taxonomy=0 suppressMisses=1 expected=E8 1F D0 F6 FF
+[DCL-REACTION-HOOK] site=R3 rva=0x30BE9A idReg=ebx taxonomy=0 suppressMisses=1 expected=E8 C9 CF F6 FF
+[DCL-REACTION-HOOK] site=R4 rva=0x30BEDA idReg=r11d taxonomy=0 suppressMisses=1 expected=E8 89 CF F6 FF
+[POST-CALC-HOOK] rva=0x281F12 addr=0x140281F12 bundleProbe=1 numericWriter=1 statusProducer=0
+[BUNDLE-HOOK] buf=0x5A82760 forceChar=any kind=any itemAux=blocked itemGate=blocked dmg=any resFlag=any
+[FOUND] battle_base_ptr module+0x226D20
+[HOOK] validation harness @ 0x140226D20 (read-only).
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT4 Mv5 Jp3 Br92 Fa74
+[DUMP ptr=0x141855EE0 id=0x81] 81 11 06 50 00 08 50 03 06 51 00 00 00 00 00 00 | 00 00 0B 13 C3 01 D3 01 E7 01 FF 00 FF 00 FF 00 | FF 00 FF 00 FF 00 FF 00 46 27 5C 5C 4A 4A 01 00 | 5B 00 5B 00 42 00 42 00 04 0D 08 00 00 00 04 0D | 08 04 05 03 00 00 00 00 00 00 00 05 00 00 00 06 | 01 02 81 00 06 FF 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 4F 67 1E 7C D7 | 0D 7A 11 02 C5 C8 01 64 2E 02 0C 4B 09 78 64 64 | 3C 3C 32 96 00 00 00 04 00 04 00 00 40 00 00 FF | FF 80 60 00 0C 83 04 10 88 00 80 C0 00 18 E3 00 | 40 80 00 00 CF CF 40 24 00 40 00 00 00 C4 00 08 | 00 00 00 00 00 10 10 00 00 00 00 00 FF C0 F8 00 | 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 53 44 65 84 46 34 25 86 20 31 01 00 | FA 01 BA 01 47 03 C7 00 ED 01 73 04 F2 07 09 02 | 46 03 8F 01 72 02 B6 01 FD 00 62 04 0D 00 AD 06 | 33 00 00 00 E1 01 6F 00 00 00 00 00 00 00 66 04 | 32 02 0F 04 B5 03 97 07 73 04 22 19 99 03 46 03 | B7 06 72 02 14 03 FD 00 62 04 4D 1F AD 06 5F 01 | 00 00 E1 01 6F 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 6D | 00 79 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 11 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 08 00 | 00 00 00 00 1A FF 00 00 00 00 00 00 7D 02 00 00
+[CANDIDATES ptr=0x141855EE0 id=0x81] bytes[44-83] +0x4B=5 +0x4F=6 +0x50=1 +0x51=2 +0x52=129 +0x54=6 +0x55=255 +0x7B=79 +0x7C=103 +0x7D=30 +0x7E=124 +0x7F=215 +0x80=13 +0x81=122 | words<=511 +0x52w=129 || bytes[84-C3] +0x84=197 +0x85=200 +0x86=1 +0x87=100 +0x88=46 +0x89=2 +0x8A=12 +0x8B=75 +0x8C=9 +0x8D=120 +0x8E=100 +0x8F=100 +0x90=60 +0x91=60 | words<=511 +0x9Cw=64 +0xA2w=96 +0xA8w=136 +0xAEw=227 || bytes[C4-103] +0xC5=16 +0xC6=16 +0xCC=255 +0xCD=192 +0xCE=248 +0xD4=64 +0xE4=83 +0xE5=68 +0xE6=101 +0xE7=132 +0xE8=70 +0xE9=52 +0xEA=37 +0xEB=134 | words<=511 +0xC6w=16 +0xCEw=248 +0xD4w=64 +0xEEw=1 +0xF0w=506 +0xF2w=442 +0xF6w=199 +0xF8w=493 +0x102w=399 || bytes[104-143] +0x104=114 +0x105=2 +0x106=182 +0x107=1 +0x108=253 +0x10A=98 +0x10B=4 +0x10C=13 +0x10E=173 +0x10F=6 +0x110=51 +0x114=225 +0x115=1 +0x116=111 | words<=511 +0x106w=438 +0x108w=253 +0x10Cw=13 +0x110w=51 +0x114w=481 +0x116w=111 +0x136w=253 +0x13Ew=351 +0x142w=481 || bytes[144-17F] +0x144=111 | words<=511 +0x144w=111
+[ITEMTABLE-EVADE-ZERO] sanity ok (VenetianShield 32 19) — zeroing weapon W-Ev + shield + accessory evade every poll
+[DCL-CALC-PROVENANCE] n=0 origin=forecast-trace returnRva=0xEF53F14 battleState=0x19 turnOwner=17 sourceIdx=0 forecastPtr=0x0 casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=0 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=17
+[DIFF ptr=0x141855EE0 id=0x81] +0x4B:05->00
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=43 outcome=hit cached=0 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DCL-FORECAST] obj=0x14185609E unitIdx=17 debit=0 credit=0
+[DIFF ptr=0x141855EE0 id=0x81] +0x61:00->08
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT64 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT0 Mv4 Jp4 Br61 Fa72
+[DUMP ptr=0x1418548E0 id=0x82] 82 06 FF 67 03 50 20 03 43 71 F1 01 EC 01 BA 01 | 00 00 B9 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 04 48 3D 3D 48 48 01 00 | DF 01 DF 01 0E 00 0E 00 0F 34 0A 00 00 00 0F 34 | 0A 00 04 04 00 00 00 00 00 00 00 17 00 00 00 03 | 08 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 08 00 B0 54 67 92 0C | 07 08 48 02 8D FE 03 15 80 0E 06 74 1E 32 55 74 | 27 62 07 5B 00 00 08 00 00 00 00 00 02 10 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 04 89 | 00 F8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 06 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 70 03 00 00
+[CANDIDATES ptr=0x1418548E0 id=0x82] bytes[44-83] +0x4B=23 +0x4F=3 +0x50=8 +0x52=128 +0x5D=4 +0x79=8 +0x7B=176 +0x7C=84 +0x7D=103 +0x7E=146 +0x7F=12 +0x80=7 +0x81=8 +0x82=72 | words<=511 +0x50w=8 +0x52w=128 || bytes[84-C3] +0x84=141 +0x85=254 +0x86=3 +0x87=21 +0x88=128 +0x89=14 +0x8A=6 +0x8B=116 +0x8C=30 +0x8D=50 +0x8E=85 +0x8F=116 +0x90=39 +0x91=98 | words<=511 +0x96w=8 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[DCL-CALC-PROVENANCE] n=1 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=1 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT96 Mv5 Jp3 Br92 Fa74
+[MPLOSS ptr=0x141855EE0 id=0x81] 66 -> 42 = 24 sampleAgeMs=27
+[MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=ptr=0x1418548E0/id=0x82/foe/t3/age=507ms/PA=15/opposing
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT60 Mv4 Jp4 Br61 Fa72
+[DCL-CALC-PROVENANCE] n=2 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=2 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=3 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=3 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=4 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=4 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=5 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=5 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=6 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=6 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=7 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=7 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=8 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=8 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-CALC-PROVENANCE] n=9 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=9 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=6
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=0 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-MISS] reason=no-confirmed-execution-calc miss=1 target=0x81 targetIdx=17 now=217134977035
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[BUNDLE] n=0 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=1 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=2 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=3 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=4 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=5 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=6 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=7 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=8 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT64 Mv5 Jp3 Br92 Fa74
+[MPGAIN ptr=0x141855EE0 id=0x81] 42 -> 66 = 24 sampleAgeMs=38
+[MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=ptr=0x1418548E0/id=0x82/foe/t3/age=545ms/PA=15/opposing
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT0 Mv4 Jp4 Br61 Fa72
+[DIFF ptr=0x1418548E0 id=0x82] +0x4F:03->04 +0x50:08->05
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT20 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT80 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT40 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT0 Mv3 Jp3 Br54 Fa53
+[DUMP ptr=0x141853CE0 id=0x82] 82 00 FF 61 03 90 20 03 23 61 00 00 00 00 BA 01 | 00 00 B3 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 57 47 36 36 35 35 01 00 | A1 01 A1 01 0B 00 0B 00 0E 31 09 00 00 00 0E 31 | 09 00 03 03 00 00 00 00 00 00 00 12 00 00 00 08 | 0A 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 20 00 7F 24 59 7D 41 | 07 50 44 02 52 96 03 37 73 0E 07 75 1E 28 55 69 | 27 62 07 55 00 00 08 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 02 87 | 00 FE 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 00 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 90 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 55 03 00 00
+[CANDIDATES ptr=0x141853CE0 id=0x82] bytes[44-83] +0x4B=18 +0x4F=8 +0x50=10 +0x52=128 +0x5D=4 +0x79=32 +0x7B=127 +0x7C=36 +0x7D=89 +0x7E=125 +0x7F=65 +0x80=7 +0x81=80 +0x82=68 | words<=511 +0x50w=10 +0x52w=128 || bytes[84-C3] +0x84=82 +0x85=150 +0x86=3 +0x87=55 +0x88=115 +0x89=14 +0x8A=7 +0x8B=117 +0x8C=30 +0x8D=40 +0x8E=85 +0x8F=105 +0x90=39 +0x91=98 | words<=511 +0x96w=8 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[DCL-CALC-PROVENANCE] n=10 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=10 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-CALC-PROVENANCE] n=11 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=11 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-CALC-PROVENANCE] n=12 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=12 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-CALC-PROVENANCE] n=13 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=13 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-CALC-PROVENANCE] n=14 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=14 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=0 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[BUNDLE] n=9 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=10 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=11 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=12 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=13 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=14 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[BUNDLE] n=15 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=34 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[DCL-CALC-PROVENANCE] n=15 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=15 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=16 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=16 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=63 outcome=hit cached=1 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=ai-expected rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 successPermille=375 debit=34 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->34/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DIFF ptr=0x141853CE0 id=0x82] +0x4F:08->07 +0x50:0A->08 +0x51:00->01
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT20 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT0 Mv3 Jp3 Br94 Fa82
+[DUMP ptr=0x141855CE0 id=0x80] 80 10 01 52 00 08 90 03 69 00 00 00 00 00 00 00 | 00 00 0D 0A B9 01 D3 01 F2 01 A7 00 CA 00 FF 00 | 3F 00 FF 00 FF 00 FF 00 41 26 5E 5E 52 52 01 00 | C7 00 C7 00 6F 00 6F 00 03 08 07 00 04 01 03 0C | 08 00 03 03 04 00 0F 00 00 00 00 05 00 00 00 05 | 01 02 81 80 06 FF 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 48 04 1D 66 F0 | 0E A1 0C 02 54 EF 01 B9 B9 01 0D 46 08 7D 64 5A | 46 32 32 7D 00 00 10 00 00 04 00 00 00 08 00 FF | B0 80 60 00 1C C2 04 98 00 00 00 00 00 00 00 00 | 00 FC AC 00 8C 84 40 E5 30 30 FE 98 40 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 54 32 37 68 84 34 23 45 32 01 01 00 | 32 02 5E 01 AD 01 86 01 8B 02 99 00 84 02 40 00 | A3 01 F4 02 E2 01 C8 02 06 01 06 02 1B 04 54 04 | A5 00 07 01 00 00 A0 00 00 00 00 00 00 00 4E 04 | 42 04 AD 01 86 01 8B 02 31 09 66 07 26 1A 47 12 | F4 02 E2 01 C8 02 06 01 06 02 1B 04 54 04 D1 01 | 07 01 00 00 A0 00 00 00 00 00 00 00 41 72 74 68 | 75 72 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 70 | 00 78 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 10 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 08 00 | 00 00 00 00 1C FF 00 00 00 00 00 00 50 01 00 00
+[CANDIDATES ptr=0x141855CE0 id=0x80] bytes[44-83] +0x44=4 +0x46=15 +0x4B=5 +0x4F=5 +0x50=1 +0x51=2 +0x52=129 +0x53=128 +0x54=6 +0x55=255 +0x7B=72 +0x7C=4 +0x7D=29 +0x7E=102 | words<=511 +0x44w=4 +0x46w=15 || bytes[84-C3] +0x84=84 +0x85=239 +0x86=1 +0x87=185 +0x88=185 +0x89=1 +0x8A=13 +0x8B=70 +0x8C=8 +0x8D=125 +0x8E=100 +0x8F=90 +0x90=70 +0x91=50 | words<=511 +0x88w=441 +0x96w=16 +0xA2w=96 +0xB2w=172 +0xBCw=64 || bytes[C4-103] +0xD4=64 +0xE4=84 +0xE5=50 +0xE6=55 +0xE7=104 +0xE8=132 +0xE9=52 +0xEA=35 +0xEB=69 +0xEC=50 +0xED=1 +0xEE=1 +0xF0=50 +0xF1=2 | words<=511 +0xD4w=64 +0xECw=306 +0xEEw=1 +0xF2w=350 +0xF4w=429 +0xF6w=390 +0xFAw=153 +0xFEw=64 +0x100w=419 || bytes[104-143] +0x104=226 +0x105=1 +0x106=200 +0x107=2 +0x108=6 +0x109=1 +0x10A=6 +0x10B=2 +0x10C=27 +0x10D=4 +0x10E=84 +0x10F=4 +0x110=165 +0x112=7 | words<=511 +0x104w=482 +0x108w=262 +0x110w=165 +0x112w=263 +0x116w=160 +0x122w=429 +0x124w=390 +0x132w=482 +0x136w=262 +0x13Ew=465 || bytes[144-17F] +0x144=160 +0x14C=65 +0x14D=114 +0x14E=116 +0x14F=104 +0x150=117 +0x151=114 | words<=511 +0x144w=160
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT96 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT60 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT38 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT56 Mv3 Jp3 Br94 Fa82
+[MPLOSS ptr=0x141855EE0 id=0x81] 66 -> 42 = 24 sampleAgeMs=26
+[MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[DCL-CALC-PROVENANCE] n=17 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=16 sourceIdx=17 forecastPtr=0x14185609E casterIdx=17 type=0x0B abilityId=30 payload=0 targetIdx=17
+[CALC] n=17 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x0B abilityId=30 (0x001E) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-HIT] caster=0x81 target=0x81 ability=30 type=0x0B payload=0 pct=100 roll=71 outcome=hit cached=0 model=percent ax=6 ay=1 af=2 tx=6 ty=1 tf=2
+[DCL-KO-COMPUTE] phase=execution rule=Death inverse-Faith 3d6 target=0x81 ability=30 resistance=11 roll=18 outcome=engine-owned-ko debit=91 credit=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x81 target=0x81 ability=30 targetIdx=17 miss=0 hp=91/0->91/0 mp=0/0->0/0 flags=0x80->0x80 cached=1
+[BUNDLE] n=16 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=91 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[DCL] caster=0x81 target=0x81 abilityId=30 ability=Death actionType=0x0B result=91 debit=91 oldDebit=91 credit=0 oldCredit=0 mpDebit=0 oldMpDebit=0 mpCredit=0 oldMpCredit=0 flags=0x80->0x80 computePoint=1
+[DAMAGE ptr=0x141855EE0 id=0x81] 91 -> 0 = 91 sampleAgeMs=27
+[CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[DCL-KIND] target=30 naturalKind=0x00 forcedKind=kept decision=none
+[DIFF ptr=0x141855EE0 id=0x81] +0x61:08->20
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT28 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT0 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT74 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT88 Mv3 Jp3 Br94 Fa82
+[DCL-CALC-PROVENANCE] n=18 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=6 sourceIdx=6 forecastPtr=0x14185609E casterIdx=6 type=0xB9 abilityId=280 payload=0 targetIdx=16
+[CALC] n=18 rec=0x141854A80 casterSlot=6 casterIdx=6 type=0xB9 abilityId=280 (0x0118) payload=0 targetIdx=16 casterTeam=3 turnOwner=6
+[DCL-HIT] caster=0x82 target=0x80 ability=280 type=0xB9 payload=0 pct=100 roll=73 outcome=hit cached=0 model=percent ax=4 ay=1 af=0 tx=5 ty=1 tf=2
+[BUNDLE] n=17 targetIdx=16 charId=0x80 kind=0x00 stagedDmg=162 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x82 target=0x80 ability=280 targetIdx=16 miss=0 hp=162/0->162/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[DIFF ptr=0x1418548E0 id=0x82] +0x50:05->01
+[DCL-CALC-PROVENANCE] n=19 origin=forecast-trace returnRva=0xEF53F14 battleState=0x19 turnOwner=6 sourceIdx=6 forecastPtr=0x14185609E casterIdx=6 type=0xB9 abilityId=280 payload=0 targetIdx=16
+[CALC] n=19 rec=0x141854A80 casterSlot=6 casterIdx=6 type=0xB9 abilityId=280 (0x0118) payload=0 targetIdx=16 casterTeam=3 turnOwner=6
+[DCL-HIT] caster=0x82 target=0x80 ability=280 type=0xB9 payload=0 pct=100 roll=77 outcome=hit cached=0 model=percent ax=4 ay=1 af=0 tx=5 ty=1 tf=2
+[DCL-CALC-PROVENANCE] n=20 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=6 sourceIdx=6 forecastPtr=0x141855E9E casterIdx=6 type=0xB9 abilityId=280 payload=0 targetIdx=16
+[CALC] n=20 rec=0x141854A80 casterSlot=6 casterIdx=6 type=0xB9 abilityId=280 (0x0118) payload=0 targetIdx=16 casterTeam=3 turnOwner=6
+[DCL-HIT] caster=0x82 target=0x80 ability=280 type=0xB9 payload=0 pct=100 roll=50 outcome=hit cached=0 model=percent ax=4 ay=1 af=0 tx=5 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x82 target=0x80 ability=280 targetIdx=16 miss=0 hp=162/0->162/0 mp=0/0->0/0 flags=0x80->0x80 cached=1
+[BUNDLE] n=18 targetIdx=16 charId=0x80 kind=0x00 stagedDmg=162 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[DCL] caster=0x82 target=0x80 abilityId=280 ability=Claw actionType=0xB9 result=162 debit=162 oldDebit=162 credit=0 oldCredit=0 mpDebit=0 oldMpDebit=0 mpCredit=0 oldMpCredit=0 flags=0x80->0x80 computePoint=1
+[DAMAGE ptr=0x141855CE0 id=0x80] 199 -> 37 = 162 sampleAgeMs=26
+[CTX ptr=0x141855CE0 id=0x80] resolved=none attackerCandidates=none
+[DCL-SELECTOR] targetIdx=16 casterIdx=6 ability=280 type=0xB9 naturalKind=0x00 resultCode=0x01 decision=hit kept
+[DCL-CALC-PROVENANCE] n=21 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=6 sourceIdx=6 forecastPtr=0x141855E9E casterIdx=16 type=0x06 abilityId=441 payload=240 targetIdx=16
+[CALC] n=21 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x06 abilityId=441 (0x01B9) payload=240 targetIdx=16 casterTeam=0 turnOwner=6
+[DCL-HIT] caster=0x80 target=0x80 ability=441 type=0x06 payload=240 pct=100 roll=21 outcome=hit cached=0 model=percent ax=5 ay=1 af=2 tx=5 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x80 target=0x80 ability=441 targetIdx=16 miss=0 hp=0/30->0/30 mp=0/0->0/0 flags=0x40->0x40 cached=1
+[BUNDLE] n=19 targetIdx=16 charId=0x80 kind=0x00 stagedDmg=0 itemAux=0x00F0 sideEffectMask=0x00 resFlag=0x40
+[DCL] caster=0x80 target=0x80 abilityId=441 ability=Auto-Potion actionType=0x06 result=0 debit=0 oldDebit=0 credit=30 oldCredit=30 mpDebit=0 oldMpDebit=0 mpCredit=0 oldMpCredit=0 flags=0x40->0x40 computePoint=1
+[DIFF ptr=0x1418548E0 id=0x82] +0x51:00->03
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT44 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT20 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT92 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT4 Mv3 Jp3 Br94 Fa82
+[DIFF ptr=0x141855CE0 id=0x80] +0x46:0F->00 +0x4B:05->00 +0x63:00->01
+[DCL-CALC-PROVENANCE] n=22 origin=forecast-trace returnRva=0xEF53F14 battleState=0x19 turnOwner=16 sourceIdx=6 forecastPtr=0x141855E9E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=22 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=16
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=59 outcome=hit cached=0 model=percent ax=5 ay=1 af=2 tx=6 ty=1 tf=2
+[DIFF ptr=0x141855CE0 id=0x80] +0x61:00->08
+[DIFF ptr=0x141855CE0 id=0x80] +0x4F:05->0B +0x50:01->00 +0x51:02->03
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT12 Mv3 Jp3 Br94 Fa82
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT52 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT30 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT1 Mv3 Jp3 Br54 Fa53
+[DIFF ptr=0x141853CE0 id=0x82] +0x51:01->00
+[DCL-CALC-PROVENANCE] n=23 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=23 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=24 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=24 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=25 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=25 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=26 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=26 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=27 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=27 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=28 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=28 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-CALC-PROVENANCE] n=29 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=29 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=0 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=78 outcome=hit cached=1 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[BUNDLE] n=20 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=21 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=22 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=23 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=24 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=25 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=26 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[BUNDLE] n=27 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[DCL-CALC-PROVENANCE] n=30 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=30 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=0
+[DIFF ptr=0x141853CE0 id=0x82] +0x4F:07->09 +0x50:08->07
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT21 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT68 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT50 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT39 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT28 Mv3 Jp3 Br94 Fa82
+[MPLOSS ptr=0x141855CE0 id=0x80] 111 -> 101 = 10 sampleAgeMs=26
+[MP-CTX ptr=0x141855CE0 id=0x80] resolved=none attackerCandidates=none
+[DCL-CALC-PROVENANCE] n=31 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=0 sourceIdx=16 forecastPtr=0x14185609E casterIdx=16 type=0x0A abilityId=5 payload=0 targetIdx=17
+[CALC] n=31 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x0A abilityId=5 (0x0005) payload=0 targetIdx=17 casterTeam=0 turnOwner=0
+[DCL-HIT] caster=0x80 target=0x81 ability=5 type=0x0A payload=0 pct=100 roll=6 outcome=hit cached=0 model=percent ax=11 ay=0 af=3 tx=6 ty=1 tf=2
+[DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x80 target=0x81 ability=5 targetIdx=17 miss=0 hp=0/46->0/111 mp=0/0->0/0 flags=0x48->0x48 cached=1
+[BUNDLE] n=28 targetIdx=17 charId=0x81 kind=0x00 stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x48
+[HEALING ptr=0x141855EE0 id=0x81] 0 -> 91 = 91 sampleAgeMs=27
+[CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[DIFF ptr=0x141855CE0 id=0x80] +0x61:08->00 +0x100:A3->CD +0x12E:47->71
+[UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT0 Mv5 Jp3 Br92 Fa74
+[UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv72 HP479 MP14 PA15 MA52 Sp10 CT90 Mv4 Jp4 Br61 Fa72
+[UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv71 HP417 MP11 PA14 MA49 Sp9 CT75 Mv3 Jp3 Br54 Fa53
+[UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP199 MP111 PA3 MA12 Sp8 CT60 Mv3 Jp3 Br94 Fa82
+[DIFF ptr=0x141855EE0 id=0x81] +0x61:20->00 +0x100:46->4E +0x12E:46->4E

@@ -1,0 +1,9 @@
+{
+  "_note": "LT28 observe-only calc-entry provenance probe. Captures caller/state metadata only; no formula, cache, outcome, item, status, reaction, or battle-state writes are enabled.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "CalcEntryProbeEnabled": true,
+  "CalcEntryProbeRva": 3185068,
+  "DclCalcProvenanceProbeEnabled": true,
+  "DclCalcProvenanceProbeMaxLogs": 256
+}

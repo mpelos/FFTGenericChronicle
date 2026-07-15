@@ -1,0 +1,13 @@
+{
+  "_note": "LT30 log-only pass-2 reaction retarget vertical. Matching carrier 443 commits report the validated incoming source as the candidate target. It performs no game-memory writes.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 64,
+  "DclReactionRetargetEnabled": true,
+  "DclReactionRetargetLogOnly": true,
+  "DclReactionRetargetCarrierId": 443,
+  "DclReactionRetargetMaxWrites": 1
+}

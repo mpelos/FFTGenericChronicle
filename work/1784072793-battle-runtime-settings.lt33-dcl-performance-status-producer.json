@@ -1,0 +1,81 @@
+{
+  "_note": "LT33 execution-only Nameless Song performance producer. Native cadence, target sweep, forecast/AI behavior, and Performing cleanup remain intact; each confirmed eligible tick replaces the complete five-status random packet with one cached DCL random-one contest.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 400,
+  "DclStatusControlEnabled": true,
+  "DclStatusForcedRoll": 18,
+  "DclStatusMaxLogs": 400,
+  "DclStatusRules": [
+    {
+      "Name": "LT33 Nameless Song Reraise",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Regen",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 64,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Protect",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Shell",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Haste",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    }
+  ]
+}

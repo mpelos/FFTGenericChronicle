@@ -1,0 +1,45 @@
+{
+  "_note": "Offline mechanism profile for the direct-finalizer formula-0x38 Salve carrier. Native Salve remains intact to preserve its 100% status-only result; DCL owns and stages all three remove bits before native commit.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Salve removes Darkness",
+      "AbilityId": 149,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "remove",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Salve removes Silence",
+      "AbilityId": 149,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Salve removes Poison",
+      "AbilityId": 149,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 128,
+      "Operation": "remove",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "DurationTargetTurns": 0
+    }
+  ]
+}

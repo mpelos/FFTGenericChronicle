@@ -68,20 +68,23 @@ target states, and Zodiac compatibility.
 | `0x0F` | MP drain percent/hit | Spell absorb style effects |
 | `0x10` | HP drain percent/hit | Life drain style effects |
 | `0x12` | `Hit_F(MA+X)%` grant immediate turn (Set_Quick) | Quick (Time Magick) |
+| `0x14` | Activate the native team-indexed Golem mitigation pool | Golem |
 | `0x1A` | Stat reduction hit using `MA + Y` | Ruin/Drain stat skills |
-| `0x1E` | Multi-hit MA formula | Truth-like multi-hit |
-| `0x1F` | Faith-inverted multi-hit MA formula | Untruth-like multi-hit |
+| `0x1E` | MA result formula used by RandomFire actions | Truth-like repeated targeting |
+| `0x1F` | Faith-inverted MA result formula used by RandomFire actions | Untruth-like repeated targeting |
 | `0x20` | `MA * Y` non-Faith damage | Iaido/Draw Out style |
 | `0x24` | `((PA + Y) / 2) * MA` style | Geomancy style |
 | `0x25` | Equipment break success | Break skills |
 | `0x26` | Equipment steal success | Steal skills |
+| `0x27` | Gil steal success and transfer | Steal Gil / Plunder Gil |
+| `0x28` | EXP steal success and transfer | Steal EXP / Plunder EXP |
 | `0x2A` | Talk skill Brave/Faith/status behavior | Speech/Talk skills |
 | `0x2D` | `PA * (WP + Y)` plus status | Holy Sword / swordskills |
 | `0x2E` | Equipment break plus `PA * WP` damage | Shellbust-like skills |
 | `0x2F` | MP drain using `PA * WP` | Dark Sword style |
 | `0x30` | HP drain using `PA * WP` | Night Sword style |
 | `0x31` | `((PA + Y) / 2) * PA` | Punch Art damage |
-| `0x32` | Random multi-hit PA damage | Repeating Fist style |
+| `0x32` | One staged PA debit multiplied by `Rdm(1..X)` | Repeating Fist style aggregate damage |
 | `0x33` | `PA + X` hit/status | Stigma Magic style |
 | `0x34` | `PA * Y` HP and MP healing | Chakra style |
 | `0x36` | Raise PA by `Y` | Accumulate/Focus style |
@@ -103,16 +106,90 @@ target states, and Zodiac compatibility.
 | `0x4E` | `MA * Y` non-Faith damage | Limit/monster style |
 | `0x4F` | Goblin Punch style | Monster skill |
 | `0x51` | `Hit_(MA+X)%` apply InflictStatus entry (cancel sets work) | Choco Esuna style |
+| `0x52` | Split Self-Destruct: missing-HP victim damage, current-HP caster debit, victim-only rider | Self-Destruct |
 | `0x53` | Percent damage plus MA hit | Hurricane style |
+| `0x58` | Generic-unit transformation transaction | Malboro Spores / Moldball Virus |
 | `0x5A` | Dragon Check + `Hit(100)%` apply InflictStatus | Dragon's Charm |
-| `0x5B` | Dragon Check + Wish math + status-cancel rider | Dragon's Gift |
+| `0x5B` | Dragon Check + paired target HP credit/source HP debit + status-cancel rider | Dragon's Gift |
 | `0x5C` | Dragon Check + Scream body (= `0x3B` on target) | Dragon's Might |
 | `0x5D` | Dragon Check + Set_Quick | Dragon's Speed |
-| `0x5E` | Multi-hit MA variant | Hydra style |
-| `0x5F` | MA single-hit variant | Nanoflare style |
+| `0x5E` | MA result variant used by a RandomFire action | Hydra style repeated targeting |
+| `0x5F` | MA single-hit variant with RandomFire clear | Nanoflare style |
 | `0x60` | Unevadeable MA multi-hit variant | Special monster formulas |
 | `0x63` | `Sp * WP` | Throw |
 | `0x64` | Jump formula | Jump |
+| `0x65` | 80% staged damage followed by native HP-drain pairing | Sanguine Sword / Chant slot |
+| `0x66` | 80% staged damage followed by native MP-drain pairing | Infernal Strike |
+| `0x67` | Direct wrapper alias of formula `0x2D` | Crushing Blow |
+| `0x68` | Distance-sensitive sword damage/status pipeline | Abyssal Blade |
+| `0x69` | Non-Faith MA damage with MaxHP-derived power plus status | Unholy Sacrifice |
+| `0x6A` | Dynamic equipped-weapon formula dispatch plus normal-attack postprocess | Barrage |
+
+The `0x65` and `0x66` handlers first compute an ordinary staged debit, replace it with
+`trunc(debit * 8 / 10)`, and call the same HP- or MP-transfer helper used by the established drain
+families. The paired drain record fields, Undead reversal, result cap, and native HP/MP application
+are defined in `04-engine-memory-model.md`. Formula `0x67` jumps directly to the `0x2D` handler.
+
+Formula `0x69` constructs the non-Faith formula-`0x4E` power term as:
+
+```text
+Y = PA + floor((3 * MaxHP) / (10 * MA))
+damage = MA * Y
+```
+
+Its status rider remains a separate authored status-contest decision. Formula `0x6A` reads the
+weapon formula selected from the exact type-`1` order payload, dispatches through the ordinary formula table, and then enters
+the native normal-attack postprocessor. Barrage's action metadata selects `WeaponRange` and
+`NormalAttack`; its animation id is `0` and its effect id is `-1`, so the editable animation/effect
+tables do not contain a Barrage-specific repeat sequence. **Strong:** the shared native initializer
+recognizes formula `0x6A` and writes fixed repeat count `4` at RVA `0x7B0762`. The result producer
+increments the shared index at RVA `0x7B0763` and publishes continuation after each result. Because
+Barrage clears `RandomFire`, the dedicated random-tile selector is not dispatched; its original
+single target remains selected while each repeated calculation delegates to the equipped weapon.
+
+Formulas `0x1E`, `0x5E`, and `0x5F` share the same current-build MA result handler. Repetition is
+therefore not an intrinsic property of that handler: the ability action's `RandomFire` flag is the
+outer targeting/cadence carrier. Exactly 16 catalog actions set it: ids `169..180`, `255`, and
+`342..344`; all use formula `0x1E`, `0x1F`, or `0x5E`. Celestial Void, Corporeal Void, and Dark
+Whisper additionally carry hostile status riders. Nanoflare clears `RandomFire` and produces a
+single hit. **Strong:** the flag consumer dispatches a selector that marks exactly one eligible tile
+for each native repeat, then the ordinary target calculation runs once for that selected tile.
+Repeat count and the incremented repeat index share RVAs `0x7B0762` and `0x7B0763` with Barrage. Formulas
+`0x1E/0x1F` choose 1..10 repeats with weights `5,5,10,10,20,20,10,10,5,5`; formula `0x5E` uses
+`X+1`. The result producer publishes continuation after comparing the incremented index with the
+count, so every repeat is a distinct target/calculation event rather than an aggregate result.
+Formula `0x32` is also not a native
+per-strike transaction: it computes `floor(random15 * X / 32768) + 1` and multiplies one staged HP
+debit by that count. DCL per-strike contest and Guard spending require a managed carrier for Pummel.
+Pummel's dedicated animation id `104` and effect id `96` are presentation data, not evidence of
+separate native result applications.
+
+Formula `0x14` stages activation bit `0x0001`; state application writes the activating unit's MaxHP
+into one of four unsigned 16-bit team/faction pools at RVA `0x186B020`. Native interception marks an
+incoming result through the sign bit of `result+0x12`, subtracts its staged HP debit from the pool
+with saturation at zero, and skips the ordinary HP debit. The triggering hit does not spill residual
+damage when it exhausts a smaller remainder. The packed pool participates in the native battle-state
+import/export block.
+
+Formula `0x58` is a native transformation, not an InflictStatus bundle. Its only stock member,
+Malboro Spores, has no status payload. A successful eligible target stages bit `0x0002`; state apply
+clears existing status/effect state and transfers control to the protected native transformation
+continuation. Eligibility accepts generic character ids `0x80..0x82`, rejects units with the tested
+special flags, and rejects job ids `0x82..0x84`.
+
+Formulas `0x25` and `0x2E` share an exact-action equipment selector. It writes the selected item id
+to `result+0x04`, its concrete slot mask to `result+0x1B`, and returns zero for a valid selection.
+Native destruction is carried by `result+0x12` bit `0x0004`. Formula `0x2E` continues through its
+ordinary physical damage chain after staging the bit. Formula `0x25` is a re-entrant exception: if
+the requested equipment is absent, it temporarily writes Basic Attack `(order type=1, action=0)`,
+calls the universal calculation entry, and restores the outer Rend order. Repointing a reused action
+away from `0x25` removes both the permanent break and this nested calculation.
+
+Formula `0x42` stages a paired recoil transaction. The target result record at
+`qword[0x14186AF70]` receives `result+0x06 = PA*Y`; the caster/self result record at
+`qword[0x14186AF60]` receives `result+0x06 = trunc((PA*Y)/X)`. Both records are activated and marked
+with result flag `0x80`, so native state application performs both HP debits through its ordinary
+clamp and KO lifecycle.
 
 ## Slot-Hardcoded Risk
 
@@ -229,7 +306,7 @@ Br/Fa, HP/MP cur+max, Level, Move/Jump, Zodiac, status, element, height, distanc
 Limits: integer arithmetic, result clamped to the engine's damage width (16-bit), stat bytes. No
 modding API exposes a damage hook — neither the loader managers nor Faith Framework — and the
 damage routine itself is Denuvo-virtualized, so the code mod owns the final result by rewriting the
-engine's staged debit at the pre-clamp hook (`0x30A66F`) before vanilla applies HP — delivering even
+engine's staged debit at the pre-clamp hook (`0x30A5D7`) before vanilla applies HP — delivering even
 lethal damage in the same hit — with a post-damage reconciler as fallback, rather than by hooking the
 virtualized routine directly. **Accuracy/avoidance is also Tier-2-controllable** (not a data field):
 hit/miss/block/parry by writing the defender's live evade bytes (input-control) or repainting the

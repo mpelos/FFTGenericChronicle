@@ -1,0 +1,160 @@
+[00:52:17] [Reloaded] Create Loader | Time: 22ms
+[00:52:17] [Reloaded] Loading 1 Mod(s).
+[00:52:17] [Reloaded] 
+[00:52:17] [Reloaded] Loading: Reloaded II Shared Lib: Reloaded.Hooks
+[00:52:17] [Reloaded] - AppId   : reloaded.sharedlib.hooks
+[00:52:17] [Reloaded] - Location: C:\Reloaded-II\Mods\reloaded.sharedlib.hooks\ModConfig.json
+[00:52:17] [Reloaded] - LoadTime: 3ms
+[00:52:17] [Reloaded] Loaded via: C:\reloaded-ii\Loader\x64\Bootstrapper\Reloaded.Mod.Loader.Bootstrapper.dll
+[00:52:17] [Reloaded] Current Process Location: D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe
+[00:52:17] [Reloaded] Loading 4 Mod(s).
+[00:52:17] [Reloaded] 
+[00:52:17] [Reloaded] Loading: Library: Reloaded.Memory.Sigscan for Reloaded II
+[00:52:17] [Reloaded] - AppId   : Reloaded.Memory.SigScan.ReloadedII
+[00:52:17] [Reloaded] - Location: C:\Reloaded-II\Mods\Reloaded.Memory.SigScan.ReloadedII\ModConfig.json
+[00:52:17] [Reloaded] - LoadTime: 3ms
+[00:52:17] [Reloaded] 
+[00:52:17] [Reloaded] Loading: FINAL FANTASY TACTICS - The Ivalice Chronicles Mod Loader
+[00:52:17] [Reloaded] - AppId   : fftivc.utility.modloader
+[00:52:17] [Reloaded] - Location: C:\Reloaded-II\Mods\fftivc.utility.modloader\ModConfig.json
+[00:52:17] [fftivc.utility.modloader] by Nenkai
+[00:52:17] - https://github.com/Nenkai
+[00:52:17] - https://twitter.com/Nenkaai
+[00:52:17] [fftivc.utility.modloader] Initializing...
+[00:52:17] [fftivc.utility.modloader] Game Version: 1.00
+[00:52:17] [fftivc.utility.modloader] Installing game transition hooks..
+[00:52:17] [fftivc.utility.modloader] Game transition hooks installed. (CreateProcessA)
+[00:52:17] [fftivc.utility.modloader] Attempting to disable anti-debug..
+[00:52:17] [fftivc.utility.modloader] Installing SetUnhandledExceptionFilter hook to prevent game from installing it..
+[00:52:17] [fftivc.utility.modloader] Installed SetUnhandledExceptionFilter hook.
+[00:52:17] [R-II SteamHook] SteamAPI_RestartAppIfNecessary hooked successfully.
+[00:52:17] [fftivc.utility.modloader] Not installing resource manager (general file logging) hooks as per config.
+[00:52:17] [fftivc.utility.modloader] Installing window hooks..
+[00:52:17] [fftivc.utility.modloader] Installing language manager hooks..
+[00:52:17] [R-II SteamHook] SteamAPI_IsSteamRunning hooked successfully.
+[00:52:17] [R-II SteamHook] Found Steam Library Entry with Id 1004640. Dropping steam_appid.txt.
+[00:52:17] [Reloaded] Setting Up Hooks (Async) | Time: 125ms
+[00:52:17] Loaded 36 pack(s).
+[00:52:17] Loaded 25 pack(s).
+[00:52:17] [Reloaded] - LoadTime: 222ms
+[00:52:17] [Reloaded] 
+[00:52:17] [Reloaded] Loading: Generic Chronicle (Battle Probe)
+[00:52:17] [Reloaded] - AppId   : fftivc.generic.chronicle.codemod
+[00:52:17] [Reloaded] - Location: C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\ModConfig.json
+[00:52:17] [GC-Probe] ==== Generic Chronicle Battle Runtime Harness (iter 20) ====
+[00:52:17] [GC-Probe] settings path: C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json
+[00:52:17] [GC-Probe] [RUNTIME-INIT] settings: RewriteObservedDamage=False, RewriteObservedHealing=False, RewriteObservedMpLoss=False, RewriteObservedMpGain=False, DryRunRewrites=False, ProofFinalDamage=1, ProofFinalHealing=1, ProofFinalMpLoss=1, ProofFinalMpGain=1, FlatDamageReduction=0, RewriteConditionFormula=off, FinalDamageFormula=off, DclPipelineEnabled=False, DclDamageFormula=off, DclHealingFormula=off, DclMpDebitFormula=off, DclMpCreditFormula=off, DclResultFlagsControl=False/preserve=0x0F, DclPhysicalContestEnabled=False, DclMagicEvadeEnabled=False, DclActionContextMaxAgeMs=5000, DclDecisionMaxLogs=40, DclDerivedVariables=0, DclStatusControlEnabled=False, DclStatusRules=0, DclInstantKoControlEnabled=False, DclInstantKoRules=0, DclReactionTaxonomyEnabled=False, DclReactionRules=0, DclReactionCommitProbeEnabled=False, DclReactionPreSelectorProbeEnabled=False, DclReactionProducer=False/log-only, DclReactionEffectProbeEnabled=False, DclAutoPotionConsumeProbeEnabled=False, DclWeaponLineOfFireProbeEnabled=False, DclCalcProvenanceProbeEnabled=True, DclReactionActionReplacement=False/log-only, DclReactionRetarget=False/log-only, MpRewriteConditionFormula=off, FinalMpChangeFormula=off, FormulaVariables=0, FormulaPreActionVariables=0, FormulaPreResponseVariables=0, FormulaDerivedVariables=0, FormulaTraceVariables=0, FormulaTables=0, FormulaMatrices=0, FormulaMaps=0, ItemCatalogPath=item_catalog.csv, AbilityCatalogPath=wotl_ability_action_baseline.csv, DclAbilityMetadataPath=, ActionSignalRules=0, DamageRules=0, MpRules=0, ApplyEquipmentDr=False, EquipmentSlots=0, AttackerEquipmentSlots=0, EquipmentDrRules=0, ApplyDamageResponseRules=False, DamageResponseRules=0, DamageResponseClamp=0-10000, AffectAllies=True, AffectFoes=True, InferAttackerFromRecentUnits=False, RecentAttackerWindowMs=1500, ResolveAttackerByCt=False, CtDropWindowMs=4000, ResolveAttackerByLowCtFallback=False, CtLowFallbackMaxCt=20, CtLowFallbackWindowMs=1500, LogCtResolutionDiagnostics=False, ResolveCounterFromRecentDamage=False, CounterEventWindowMs=1500, LogAttackerCandidates=True, LogResolvedRuntimeContext=False, UnitPollIntervalMs=10, MaxTrackedBattleUnits=64, SuppressOwnRewriteEchoWindowMs=1000, MemoryTableProbes=0/0 enabled, LogUnknownFieldDiffs=True, UnknownDiff=0x44-0x17F, CaptureStructOnDeath=False, CauseDeathOnZeroHp=False, DeathStateWrites=0, MinHpFloor=0, HookRegisterProbe=False/32, HookRegisterProbeOnHpEvent=False, HookRegisterProbeOnMpEvent=False, HookRegisterProbeOnCtDrop=False, HookRegisterProbeOnActionBoundary=False, HookRegisterProbeOnPendingResolve=False, HookRegisterProbeOnTargetCache=False, HookRegisterProbeEventMaxLogs=64, HookRegisterProbeStackSlots=0, HookRegisterProbePointerScanBytes=0, HookRegisterProbePointerMaxLogs=64, HookRegisterProbePointerMaxPointersPerRoot=8, LandmarkProbeEnabled=False, LandmarkProbeMaxLogs=160, LandmarkProbeStackSlots=16, LandmarkProbes=0/0 enabled, ResultSelectorProbeEnabled=False, ResultSelectorProbeRva=0x205210, ResultSelectorProbeActorRegister=r8, ResultSelectorProbeRecordUnitOffset=0x148, ResultSelectorProbeMaxLogs=256, ResultSelectorProbeRecordDumpBytes=64, PreClampDamageRewriteEnabled=False, PreClampDamageRewriteRva=0x30A5D7, PreClampDamageRewriteTargetCharId=-1, PreClampDamageRewriteExpectedDebit=-1, PreClampDamageRewriteForcedDebit=-1, PreClampDamageRewriteMaxWrites=1, PreClampManagedCallbackEnabled=False, PreClampManagedCallbackForcedDebit=-1, PreClampManagedCallbackActorFormulaEnabled=False, PreClampManagedCallbackPaMultiplier=10, PreClampManagedCallbackStackScanBytes=256, PreClampPointerScanBytes=0, PreClampPointerMaxLogs=64, PreClampPointerMaxPointersPerRoot=8, PreClampActorStructDumpEnabled=False, PreClampActorStructDumpBytes=512, PreClampActorStructUnitOffset=0x148, PreClampActorStructDumpMaxLogs=32, PreClampResolveActorContext=False, PreClampActorActionIdOffset=0x142, PreClampActorContextMaxLogs=64, PreClampLogEquipment=False, PreClampEquipBlockOffset=0x1A, PreClampEquipMaxLogs=64, LogPreClampFormulaCandidates=False/64, PreClampFormulaCandidateRequirePendingMatch=True, PreClampFormulaCandidateAllowImmediateAction=False, PreClampImmediateActionMinScore=1800, PreClampImmediateActionMinMargin=300, PreClampImmediateActionMaxAgeMs=1500, PreClampImmediateActionRequireFreshActive=True, PreClampImmediateActionAllowZeroActionId=False, PreClampImmediateActionPlanMaxWrites=1, PreClampImmediateActionPlanRequireExpectedHp=True, PreClampImmediateActionPlanEagerTargets=False, PreClampImmediateActionNearbyUnitScanRadius=8, PreClampFormulaPlanEnabled=False, PreClampFormulaPlanSlots=16, PreClampFormulaPlanWindowMs=3000, PreClampFormulaPlanMaxWrites=1, PreClampFormulaPlanRequirePhaseZero=True, ActorProbeOnEvent=False, ActorProbe=0x40-0x44, LogHpEventProbe=False/32, HpEventProbeDiffMax=64, HpEventProbeDumpRaw=False, LogActionBoundaryProbe=False/96, ActionBoundaryProbeDiffMax=32, LogPendingActionCandidatesOnEvent=False, LogAllPendingActionCandidates=False, PendingActionCandidateMaxUnits=16, LogImmediateActionCandidatesOnEvent=False, ImmediateActionCandidateMaxUnits=16, LogActionStateChanges=False, TrackPendingActions=False, PendingActionResolveWindowMs=5000, PendingActionMaxBatchEvents=16, PendingActionStaleMs=30000
+[00:52:17] [GC-Probe] [RUNTIME-INIT] item catalog: 261 items from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\item_catalog.csv
+[00:52:17] [GC-Probe] [RUNTIME-INIT] ability catalog: 512 abilities from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\wotl_ability_action_baseline.csv; DCL metadata disabled
+[00:52:17] [GC-Probe] EnabledMods: fftivc.utility.modloader, fftivc.generic.chronicle.codemod, ffttic.katanareforged
+[00:52:17] [GC-Probe] ACTIVE MODS (3): reloaded.sharedlib.hooks, Reloaded.Memory.SigScan.ReloadedII, fftivc.utility.modloader
+[00:52:17] [GC-Probe] data mod fftivc.generic.chronicle loaded? False
+[00:52:17] [GC-Probe] [CALC-PROBE-HOOK] rva=0x3099AC addr=0x1403099AC probe=on buf=0x5B80820 ring=64 provenance=ON evadeStamp=off hitControl=off previewAmounts=off reactionTaxonomy=off
+[00:52:17] [GC-Probe] [POST-CALC-HOOK] rva=0x281F12 addr=0x140281F12 bundleProbe=1 statusProducer=0
+[00:52:17] [GC-Probe] [BUNDLE-HOOK] buf=0x5B39B70 forceChar=any kind=any itemAux=blocked itemGate=blocked dmg=any resFlag=any
+[00:52:17] [Reloaded] - LoadTime: 79ms
+[00:52:17] [Reloaded] 
+[00:52:17] [Reloaded] Loading: Katana Reforged
+[00:52:17] [Reloaded] - AppId   : ffttic.katanareforged
+[00:52:17] [Reloaded] - Location: C:\Reloaded-II\Mods\ffttic.katanareforged\ModConfig.json
+[00:52:17] [Reloaded] - LoadTime: 4ms
+[00:52:17] [fftivc.utility.modloader] Entrypoint anti-debug neutralized.
+[00:52:17] [fftivc.utility.modloader] Update loop anti-debug neutralized.
+[00:52:17] [fftivc.utility.modloader] Hooked SetCursor @ 0x14001DC14
+[00:52:17] [fftivc.utility.modloader] Hooked faith::Localize::LanguageManager::SetLanguage @ 0x145F6441C
+[00:52:17] [fftivc.utility.modloader] Found AbilityData table @ 0x140787F80
+[00:52:17] [fftivc.utility.modloader] Found AbilityEffectNumberFilterData table @ 0x140683500
+[00:52:17] [fftivc.utility.modloader] Found AbilityTypeData table @ 0x140672DA0
+[00:52:17] [fftivc.utility.modloader] Found AbilityChargeAimData table @ 0x140789280
+[00:52:17] [fftivc.utility.modloader] Found AbilityJumpData table @ 0x140789260
+[00:52:17] [fftivc.utility.modloader] Found AbilityMathData table @ 0x140784688
+[00:52:17] [fftivc.utility.modloader] Could not find AbilityThrowData table!
+[00:52:17] [fftivc.utility.modloader] Found ItemData table @ 0x14080EA90
+[00:52:17] [fftivc.utility.modloader] Found ItemData extended table @ 0x140680510
+[00:52:17] [fftivc.utility.modloader] Found ItemDataTypeToItemIdRangeData table @ 0x14067FB38
+[00:52:17] [fftivc.utility.modloader] Found ItemIdRangeToCategoryData table @ 0x1406804E0
+[00:52:17] [fftivc.utility.modloader] Found ItemCategoryToDataTypeData table @ 0x14067FB78
+[00:52:17] [fftivc.utility.modloader] Found ItemEquipBonusData table @ 0x14080FEA0
+[00:52:17] [fftivc.utility.modloader] Found ItemOptionsData table @ 0x14080FBA0
+[00:52:17] [fftivc.utility.modloader] Found ItemWeaponData table @ 0x14080F690
+[00:52:17] [fftivc.utility.modloader] Found ItemShieldData table @ 0x14080FA90
+[00:52:17] [fftivc.utility.modloader] Found ItemArmorData table @ 0x14080FAB0
+[00:52:17] [fftivc.utility.modloader] Found ItemAccessoryData table @ 0x14080FB30
+[00:52:17] [fftivc.utility.modloader] Found ItemConsumableData table @ 0x14080FB70
+[00:52:17] [fftivc.utility.modloader] Found ItemShopsData table @ 0x14067F890
+[00:52:17] [fftivc.utility.modloader] Found MonsterJobCommandData table @ 0x14067F4C0
+[00:52:17] [fftivc.utility.modloader] Found MapTrapFormationData table @ 0x140783840
+[00:52:17] [fftivc.utility.modloader] Found JobCommandData table @ 0x14067E210
+[00:52:17] [fftivc.utility.modloader] Found War of the Lions job commands @ 0x14067F340
+[00:52:17] [fftivc.utility.modloader] Found JobData table @ 0x140785E30
+[00:52:17] [fftivc.utility.modloader] Found JobNeedLevelData table @ 0x14067F390
+[00:52:17] [fftivc.utility.modloader] Found StatusEffectData table @ 0x140788FE0
+[00:52:17] [fftivc.utility.modloader] Found CommandTypeData table @ 0x14067E010
+[00:52:17] [fftivc.utility.modloader] Found SpawnData table @ 0x14067F7D0
+[00:52:17] [fftivc.utility.modloader] Found SpawnVarianceData table @ 0x14067F800
+[00:52:17] [fftivc.utility.modloader] Hooked RegisterPackList @ 0x140092928
+[00:52:17] [fftivc.utility.modloader] Found RegisterPack @ 0x140092A04
+[00:52:17] [fftivc.utility.modloader] Hooked fileReadRequestOffset for fftpack.bin @ 0x14FD98FF0
+[00:52:17] [fftivc.utility.modloader] Hooked CFILE_DAT::Decode for g2d.dat @ 0x1518B08AC
+[00:52:17] [fftivc.utility.modloader] Hooked CFILE_DAT::Load for g2d.dat @ 0x15189CC5E
+[00:52:17] [GC-Probe] [FOUND] battle_base_ptr module+0x226D20
+[00:52:17] [GC-Probe] [HOOK] validation harness @ 0x140226D20 (read-only).
+[00:52:18] [fftivc.utility.modloader] FFTIVC Mod loader initialized with 0 pack(s).
+[00:52:18] [Reloaded] Loading Mods (Total) | Time: 621ms
+[00:52:18] [Reloaded] Total Loader Initialization Time: 657ms
+[00:52:18] Game language has changed to English.
+[00:52:20] Game language has changed to English.
+[00:52:58] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x01 ally t0] Lv76 HP569 MP86 PA20 MA9 Sp10 CT0 Mv6 Jp3 Br97 Fa70
+[00:52:58] [GC-Probe] [DUMP ptr=0x141855CE0 id=0x01] 01 10 00 A0 00 0B 90 03 F2 50 00 00 00 00 00 00 | 00 00 E0 19 C3 01 E4 01 E8 01 9C 00 B9 00 DA 00 | 25 00 FF 00 FF 00 8E 00 2D 4C 61 61 46 46 01 00 | 39 02 39 02 56 00 56 00 11 09 0A 03 00 00 14 09 | 0A 00 06 03 28 00 14 00 00 00 32 00 00 00 19 05 | 05 01 9A 40 19 FE 10 00 00 00 40 00 00 20 00 00 | 10 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 E0 00 00 D3 48 39 C9 EA | 17 D3 A2 02 B0 30 03 70 1A 03 0C 50 14 5A 64 64 | 28 8C 32 50 00 00 00 04 00 00 00 02 20 00 00 FF | FF 40 FE 07 FC C3 04 90 FF 00 F0 F2 00 10 C3 00 | 00 80 A0 00 EC E8 40 C2 00 00 F8 00 00 AE 00 30 | 10 00 00 80 00 00 FF F0 D0 CC 00 20 00 00 50 D0 | 00 20 00 00 00 60 00 20 00 00 00 00 00 00 F8 00 | 80 00 00 00 84 84 73 85 76 63 88 88 15 01 81 00 | DA 16 C8 01 88 0A ED 01 4D 05 87 01 5F 0A E5 04 | BF 07 CB 02 99 05 BF 01 16 03 04 03 9D 06 78 09 | A7 00 D8 00 00 00 83 00 B4 02 00 00 00 00 E4 20 | 58 03 02 18 45 04 9F 08 FF 01 B7 0C E5 04 63 09 | 17 07 61 06 23 02 44 0C CE 0B DD 0C 3C 0E A7 00 | 88 05 00 00 83 00 30 18 64 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 01 | 00 01 19 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 08 00 01 00 00 00 10 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 0B 00 | 00 00 00 00 22 FF 00 00 00 00 00 00 01 00 00 00
+[00:52:58] [GC-Probe] [CANDIDATES ptr=0x141855CE0 id=0x01] bytes[44-83] +0x44=40 +0x46=20 +0x4A=50 +0x4E=25 +0x4F=5 +0x50=5 +0x51=1 +0x52=154 +0x53=64 +0x54=25 +0x55=254 +0x56=16 +0x5A=64 +0x5D=32 | words<=511 +0x44w=40 +0x46w=20 +0x4Aw=50 +0x50w=261 +0x56w=16 +0x5Aw=64 +0x60w=16 +0x64w=64 +0x78w=224 || bytes[84-C3] +0x84=176 +0x85=48 +0x86=3 +0x87=112 +0x88=26 +0x89=3 +0x8A=12 +0x8B=80 +0x8C=20 +0x8D=90 +0x8E=100 +0x8F=100 +0x90=40 +0x91=140 | words<=511 +0x9Cw=32 +0xA8w=255 +0xAEw=195 +0xB2w=160 +0xBAw=248 +0xC0w=16 || bytes[C4-103] +0xC6=255 +0xC7=240 +0xC8=208 +0xC9=204 +0xCB=32 +0xCE=80 +0xCF=208 +0xD1=32 +0xD5=96 +0xD7=32 +0xDE=248 +0xE0=128 +0xE4=132 +0xE5=132 | words<=511 +0xDEw=248 +0xE0w=128 +0xECw=277 +0xEEw=129 +0xF2w=456 +0xF6w=493 +0xFAw=391 || bytes[104-143] +0x104=153 +0x105=5 +0x106=191 +0x107=1 +0x108=22 +0x109=3 +0x10A=4 +0x10B=3 +0x10C=157 +0x10D=6 +0x10E=120 +0x10F=9 +0x110=167 +0x112=216 | words<=511 +0x106w=447 +0x110w=167 +0x112w=216 +0x116w=131 +0x128w=511 +0x13Ew=167 || bytes[144-17F] +0x144=131 +0x146=48 +0x147=24 +0x148=100 | words<=511 +0x144w=131 +0x148w=100
+[00:53:41] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x01 ally t0] Lv76 HP569 MP86 PA20 MA9 Sp10 CT40 Mv6 Jp3 Br97 Fa70
+[00:53:42] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x01 ally t0] Lv76 HP569 MP86 PA20 MA9 Sp10 CT70 Mv6 Jp3 Br97 Fa70
+[00:53:42] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x80 ally t0] Lv71 HP277 MP41 PA15 MA7 Sp16 CT8 Mv6 Jp4 Br97 Fa72
+[00:53:42] [GC-Probe] [DUMP ptr=0x141855EE0 id=0x80] 80 11 03 59 00 08 90 03 D2 40 DD 01 00 00 00 00 | 00 00 14 06 B7 01 DA 01 E7 01 A8 00 C5 00 EC 00 | 11 00 FF 00 12 00 FF 00 3B 47 61 61 48 48 01 00 | 1A 00 15 01 29 00 29 00 0F 07 0C 00 00 04 0F 07 | 10 08 06 04 0F 0F 0A 05 00 00 00 1E 00 00 00 05 | 07 03 E0 40 06 BF 00 00 00 20 40 00 00 00 00 00 | 0C 00 00 21 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 EC 66 38 92 FD | 14 DC A5 02 E4 19 03 5E 5F 02 0C 46 0D 32 50 78 | 2B 7A 32 4B 00 00 40 00 00 00 09 00 40 00 00 FF | FF 50 60 00 9C FE 3C F8 04 00 10 C4 00 10 FF 00 | F8 C8 A0 00 C8 80 00 00 00 00 00 00 00 FF 00 FC | 09 40 00 10 00 00 20 00 40 8C 00 40 00 00 40 FF | F0 F0 00 00 00 80 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 88 75 83 54 68 54 66 78 14 01 42 00 | 88 0A 5D 01 9D 06 AF 00 4E 01 C7 01 69 04 05 04 | BB 06 FC 04 45 03 D7 02 C3 04 2D 02 24 06 02 22 | 9F 00 0C 03 00 00 96 00 1C 03 00 00 00 00 A8 0D | 0F 13 27 09 65 04 02 16 53 02 69 04 05 04 BB 06 | B8 11 9D 05 D7 02 E9 06 09 08 E0 08 0F 27 9F 00 | 70 03 00 00 96 00 1C 03 C8 00 00 00 52 69 6F 6E | 00 77 75 6C 66 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 7E | 00 78 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 11 14 7F 01 00 00 00 00 02 00 05 00 06 00 00 00 | 05 00 00 00 00 01 00 00 01 00 00 02 11 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 08 00 | 00 01 00 00 38 FF 00 00 00 00 00 00 65 01 00 00
+[00:53:42] [GC-Probe] [CANDIDATES ptr=0x141855EE0 id=0x80] bytes[44-83] +0x44=15 +0x45=15 +0x46=10 +0x47=5 +0x4B=30 +0x4F=5 +0x50=7 +0x51=3 +0x52=224 +0x53=64 +0x54=6 +0x55=191 +0x59=32 +0x5A=64 | words<=511 +0x5Aw=64 +0x60w=12 +0x64w=64 || bytes[84-C3] +0x84=228 +0x85=25 +0x86=3 +0x87=94 +0x88=95 +0x89=2 +0x8A=12 +0x8B=70 +0x8C=13 +0x8D=50 +0x8E=80 +0x8F=120 +0x90=43 +0x91=122 | words<=511 +0x96w=64 +0x9Aw=9 +0x9Cw=64 +0xA2w=96 +0xA8w=4 +0xAEw=255 +0xB2w=160 || bytes[C4-103] +0xC6=32 +0xC8=64 +0xC9=140 +0xCB=64 +0xCE=64 +0xCF=255 +0xD0=240 +0xD1=240 +0xD5=128 +0xE4=136 +0xE5=117 +0xE6=131 +0xE7=84 +0xE8=104 | words<=511 +0xC6w=32 +0xECw=276 +0xEEw=66 +0xF2w=349 +0xF6w=175 +0xF8w=334 +0xFAw=455 || bytes[104-143] +0x104=69 +0x105=3 +0x106=215 +0x107=2 +0x108=195 +0x109=4 +0x10A=45 +0x10B=2 +0x10C=36 +0x10D=6 +0x10E=2 +0x10F=34 +0x110=159 +0x112=12 | words<=511 +0x110w=159 +0x116w=150 +0x13Ew=159 || bytes[144-17F] +0x144=150 +0x146=28 +0x147=3 +0x148=200 +0x14C=82 +0x14D=105 +0x14E=111 +0x14F=110 +0x151=119 +0x152=117 +0x153=108 +0x154=102 | words<=511 +0x144w=150 +0x148w=200 +0x154w=102
+[00:54:05] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x80 ally t0] Lv71 HP277 MP41 PA15 MA7 Sp16 CT48 Mv6 Jp4 Br97 Fa72
+[00:54:05] [GC-Probe] [HEALING ptr=0x141855EE0 id=0x80] 26 -> 60 = 34 sampleAgeMs=11
+[00:54:05] [GC-Probe] [CTX ptr=0x141855EE0 id=0x80] resolved=none attackerCandidates=none
+[00:54:06] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x01 ally t0] Lv76 HP569 MP86 PA20 MA9 Sp10 CT90 Mv6 Jp3 Br97 Fa70
+[00:54:06] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x80 ally t0] Lv71 HP277 MP41 PA15 MA7 Sp16 CT80 Mv6 Jp4 Br97 Fa72
+[00:54:06] [GC-Probe] [UNIT ptr=0x1418542E0 id=0x82 foe  t3] Lv74 HP372 MP29 PA14 MA57 Sp11 CT5 Mv6 Jp5 Br47 Fa56
+[00:54:06] [GC-Probe] [DUMP ptr=0x1418542E0 id=0x82] 82 03 FF 5E 03 50 20 03 7D 10 F7 01 00 00 BA 01 | 00 00 B0 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 19 4A 2F 2F 38 38 01 00 | 74 01 74 01 1D 00 1D 00 0E 39 0B 00 00 00 0E 39 | 0B 05 06 05 00 00 00 00 00 00 00 0F 00 00 00 08 | 09 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 E2 4D 56 F4 54 | 07 1D 73 02 71 D0 03 44 2B 0F 08 6C 1E 64 4B 77 | 23 62 07 5E 00 00 08 00 00 00 00 00 00 00 40 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 01 86 | 00 FB 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 03 B0 09 01 00 00 00 00 00 00 05 FF 05 00 00 00 | 05 00 FF FF 00 01 00 00 01 00 00 00 03 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 09 01 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 9E 03 00 00
+[00:54:06] [GC-Probe] [CANDIDATES ptr=0x1418542E0 id=0x82] bytes[44-83] +0x4B=15 +0x4F=8 +0x50=9 +0x52=128 +0x5D=4 +0x7B=226 +0x7C=77 +0x7D=86 +0x7E=244 +0x7F=84 +0x80=7 +0x81=29 +0x82=115 +0x83=2 | words<=511 +0x50w=9 +0x52w=128 || bytes[84-C3] +0x84=113 +0x85=208 +0x86=3 +0x87=68 +0x88=43 +0x89=15 +0x8A=8 +0x8B=108 +0x8C=30 +0x8D=100 +0x8E=75 +0x8F=119 +0x90=35 +0x91=98 | words<=511 +0x96w=8 +0x9Ew=64 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[00:54:07] [GC-Probe] [DCL-CALC-PROVENANCE] n=0 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=3 sourceIdx=3 forecastPtr=0x0 casterIdx=3 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:07] [GC-Probe] [CALC] n=0 rec=0x141854480 casterSlot=3 casterIdx=3 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=3
+[00:54:07] [GC-Probe] [DCL-CALC-PROVENANCE] n=1 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=3 sourceIdx=3 forecastPtr=0x0 casterIdx=3 type=0xB0 abilityId=265 payload=0 targetIdx=17
+[00:54:07] [GC-Probe] [CALC] n=1 rec=0x141854480 casterSlot=3 casterIdx=3 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=17 casterTeam=3 turnOwner=3
+[00:54:07] [GC-Probe] [BUNDLE] n=0 targetIdx=16 charId=0x01 kind=0x00 stagedDmg=122 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[00:54:07] [GC-Probe] [BUNDLE] n=1 targetIdx=17 charId=0x80 kind=0x00 stagedDmg=79 itemAux=0x0002 sideEffectMask=0x00 resFlag=0x80
+[00:54:10] [GC-Probe] [DIFF ptr=0x1418542E0 id=0x82] +0x4F:08->05 +0x50:09->06 +0x51:00->01
+[00:54:11] [GC-Probe] [DCL-CALC-PROVENANCE] n=2 origin=forecast-trace returnRva=0xEF53F14 battleState=0x19 turnOwner=3 sourceIdx=3 forecastPtr=0x0 casterIdx=3 type=0xB0 abilityId=265 payload=0 targetIdx=17
+[00:54:11] [GC-Probe] [CALC] n=2 rec=0x141854480 casterSlot=3 casterIdx=3 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=17 casterTeam=3 turnOwner=3
+[00:54:15] [GC-Probe] [DCL-CALC-PROVENANCE] n=3 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=3 sourceIdx=3 forecastPtr=0x14185609E casterIdx=3 type=0xB0 abilityId=265 payload=0 targetIdx=17
+[00:54:15] [GC-Probe] [CALC] n=3 rec=0x141854480 casterSlot=3 casterIdx=3 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=17 casterTeam=3 turnOwner=3
+[00:54:15] [GC-Probe] [BUNDLE] n=2 targetIdx=17 charId=0x80 kind=0x00 stagedDmg=79 itemAux=0x0002 sideEffectMask=0x00 resFlag=0x80
+[00:54:15] [GC-Probe] [DAMAGE ptr=0x141855EE0 id=0x80] 60 -> 0 = 60 sampleAgeMs=12
+[00:54:15] [GC-Probe] [CTX ptr=0x141855EE0 id=0x80] resolved=none attackerCandidates=none
+[00:54:17] [GC-Probe] [DIFF ptr=0x1418542E0 id=0x82] +0x51:01->02
+[00:54:19] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv74 HP352 MP27 PA16 MA53 Sp11 CT5 Mv6 Jp5 Br69 Fa73
+[00:54:19] [GC-Probe] [DUMP ptr=0x141854AE0 id=0x82] 82 07 FF 5E 03 50 20 03 D6 40 F7 01 00 00 BA 01 | 00 00 B0 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 16 4A 45 45 49 49 01 00 | 60 01 60 01 1B 00 1B 00 10 35 0B 00 00 00 10 35 | 0B 05 06 05 00 00 00 00 00 00 00 0F 00 00 00 06 | 05 01 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 5F AD 51 68 FE | 06 1D 73 02 17 17 04 DC 52 0E 08 6C 1E 64 4B 77 | 23 62 07 5E 00 00 08 00 00 00 00 00 00 00 40 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 01 86 | 00 F7 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 07 B0 09 01 00 00 00 00 00 00 05 FF 05 00 00 00 | 05 00 FF FF 00 01 00 00 01 00 00 00 07 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 09 01 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 93 03 00 00
+[00:54:19] [GC-Probe] [CANDIDATES ptr=0x141854AE0 id=0x82] bytes[44-83] +0x4B=15 +0x4F=6 +0x50=5 +0x51=1 +0x52=128 +0x5D=4 +0x7B=95 +0x7C=173 +0x7D=81 +0x7E=104 +0x7F=254 +0x80=6 +0x81=29 +0x82=115 | words<=511 +0x50w=261 +0x52w=128 || bytes[84-C3] +0x84=23 +0x85=23 +0x86=4 +0x87=220 +0x88=82 +0x89=14 +0x8A=8 +0x8B=108 +0x8C=30 +0x8D=100 +0x8E=75 +0x8F=119 +0x90=35 +0x91=98 | words<=511 +0x96w=8 +0x9Ew=64 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[00:54:20] [GC-Probe] [DCL-CALC-PROVENANCE] n=4 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=7 sourceIdx=7 forecastPtr=0x14185609E casterIdx=7 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:20] [GC-Probe] [CALC] n=4 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=7
+[00:54:20] [GC-Probe] [DCL-CALC-PROVENANCE] n=5 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=7 sourceIdx=7 forecastPtr=0x14185609E casterIdx=7 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:20] [GC-Probe] [CALC] n=5 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=7
+[00:54:20] [GC-Probe] [DCL-CALC-PROVENANCE] n=6 origin=outer-sweep returnRva=0x281F12 battleState=0x5 turnOwner=7 sourceIdx=7 forecastPtr=0x14185609E casterIdx=7 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:20] [GC-Probe] [CALC] n=6 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=7
+[00:54:20] [GC-Probe] [BUNDLE] n=3 targetIdx=16 charId=0x01 kind=0x00 stagedDmg=211 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[00:54:20] [GC-Probe] [BUNDLE] n=4 targetIdx=16 charId=0x01 kind=0x00 stagedDmg=211 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[00:54:20] [GC-Probe] [BUNDLE] n=5 targetIdx=16 charId=0x01 kind=0x00 stagedDmg=211 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x80
+[00:54:20] [GC-Probe] [DCL-CALC-PROVENANCE] n=7 origin=forecast-trace returnRva=0xEF53F14 battleState=0x19 turnOwner=7 sourceIdx=7 forecastPtr=0x14185609E casterIdx=7 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:20] [GC-Probe] [CALC] n=7 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=7
+[00:54:25] [GC-Probe] [DCL-CALC-PROVENANCE] n=8 origin=outer-sweep returnRva=0x281F12 battleState=0x2A turnOwner=7 sourceIdx=7 forecastPtr=0x141855E9E casterIdx=7 type=0xB0 abilityId=265 payload=0 targetIdx=16
+[00:54:25] [GC-Probe] [CALC] n=8 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 targetIdx=16 casterTeam=3 turnOwner=7
+[00:54:25] [GC-Probe] [BUNDLE] n=6 targetIdx=16 charId=0x01 kind=0x0B stagedDmg=0 itemAux=0x0000 sideEffectMask=0x00 resFlag=0x00
+[00:54:30] [GC-Probe] [DIFF ptr=0x141854AE0 id=0x82] +0x4F:06->0A +0x50:05->03 +0x51:01->00
+[00:54:32] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x01 ally t0] Lv76 HP569 MP86 PA20 MA9 Sp10 CT0 Mv6 Jp3 Br97 Fa70
+[00:54:32] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x80 ally t0] Lv71 HP277 MP41 PA15 MA7 Sp16 CT96 Mv6 Jp4 Br97 Fa72
+[00:54:32] [GC-Probe] [UNIT ptr=0x1418542E0 id=0x82 foe  t3] Lv74 HP372 MP29 PA14 MA57 Sp11 CT16 Mv6 Jp5 Br47 Fa56
+[00:54:32] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv74 HP352 MP27 PA16 MA53 Sp11 CT16 Mv6 Jp5 Br69 Fa73
+[00:54:51] [Reloaded] ExitProcess Hook: Log End

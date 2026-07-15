@@ -1,0 +1,19 @@
+{
+  "_note": "LT38 live-only Raise/revive fragment layered over the unified scaffold. Forced Death creates the KO fixture; Raise ability 5 authors exactly 111 HP credit so native Dead removal and presentation can be distinguished from the natural amount. Do not promote the forced roll or fixed credit into the integrated policy.",
+  "DclHealingFormula": "if(action.abilityId == 5, 111, if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), dcl.oldCredit)))",
+  "DclPreviewHealingFormula": "if(action.abilityId == 5, 111, if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), 0)))",
+  "DclStatusForcedRoll": 18,
+  "DclStatusMaxLogs": 512,
+  "CalcEntryProbeEnabled": true,
+  "CalcEntryProbeRva": 3185068,
+  "DclCalcProvenanceProbeEnabled": true,
+  "DclCalcProvenanceProbeMaxLogs": 512,
+  "StagedBundleProbeEnabled": true,
+  "StagedBundleProbeRva": 2629394,
+  "StagedBundleForceTargetCharId": -1,
+  "StagedBundleForceKind": -1,
+  "StagedBundleForceAilment": -1,
+  "StagedBundleForceApplyMask": -1,
+  "StagedBundleForceDmg": -1,
+  "StagedBundleForceResFlag": -1
+}

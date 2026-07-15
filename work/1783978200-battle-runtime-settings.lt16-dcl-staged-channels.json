@@ -1,0 +1,20 @@
+{
+  "_note": "LT16 validates formula-owned HP credit, MP debit, and MP credit in the successful DCL apply callback. Cure (ability 1) and Chakra (106) are forced to HP credit 111; Chakra is also forced to MP credit 22; Rend MP (142) is forced to MP debit 33. Every other action preserves all native staged channels. Use whichever of these abilities exists on save 05; do not add hit control in this slice.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "dcl.oldDebit",
+  "DclHealingFormula": "if(action.abilityId == 1 || action.abilityId == 106, 111, dcl.oldCredit)",
+  "DclMpDebitFormula": "if(action.abilityId == 142, 33, dcl.oldMpDebit)",
+  "DclMpCreditFormula": "if(action.abilityId == 106, 22, dcl.oldMpCredit)",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 400,
+
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampFormulaPlanEnabled": false,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1
+}

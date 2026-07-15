@@ -1,0 +1,95 @@
+{
+  "_note": "LT22 is an offline validator fixture for the reaction ConditionFormula surface. It is not a deployment profile or a claim that these reactions are implemented. Every formula is suppress-only; missing trigger producers, true line of sight, action provenance, effect synthesis, and execution-only cadence remain outside this fixture.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclActionContextMaxAgeMs": 5000,
+  "DclHitDecisionTtlMs": 2500,
+  "DclReactionTaxonomyEnabled": true,
+  "DclReactionMaxLogs": 400,
+
+  "DclDerivedVariables": [
+    {
+      "Name": "reaction.gridDistance",
+      "Formula": "abs(a.x - t.x) + abs(a.y - t.y)"
+    }
+  ],
+
+  "DclReactionRules": [
+    {
+      "Name": "Counter Tackle filter surface",
+      "AbilityId": 436,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && reaction.incomingHitKnown && reaction.incomingHit && ability.weapon_strike && reaction.gridDistance == 1"
+    },
+    {
+      "Name": "Riposte miss-or-defense filter surface",
+      "AbilityId": 442,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && reaction.incomingHitKnown && (reaction.incomingAttackMiss || reaction.incomingDefended) && ability.weapon_strike && reaction.gridDistance == 1"
+    },
+    {
+      "Name": "Countershot visible-range partial filter",
+      "AbilityId": 452,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && !a.status.invisible && (ability.range > 1 || ability.aoe > 0) && targetSlot.rightweapon.weaponRange >= reaction.gridDistance"
+    },
+    {
+      "Name": "Regenerator hit-and-survive filter",
+      "AbilityId": 428,
+      "Mode": "caution",
+      "ConditionFormula": "reaction.incomingHitKnown && reaction.incomingHit && t.hp > 0 && !t.status.ko"
+    },
+    {
+      "Name": "Rod Counter partial filter",
+      "AbilityId": 435,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && !reaction.isSelfSource && a.team != t.team && t.hp > 0 && !t.status.ko && ability.direct && !a.status.invisible && targetSlot.rightweapon.category_rod && targetSlot.rightweapon.weaponRange >= reaction.gridDistance"
+    },
+    {
+      "Name": "Vigilance visible-source filter",
+      "AbilityId": 426,
+      "Mode": "caution",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && !a.status.invisible"
+    },
+    {
+      "Name": "Hex Ward struck filter",
+      "AbilityId": 443,
+      "Mode": "caution",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingHitKnown && reaction.incomingHit"
+    },
+    {
+      "Name": "Mana Shield hit-with-MP partial filter",
+      "AbilityId": 445,
+      "Mode": "caution",
+      "ConditionFormula": "reaction.incomingHitKnown && reaction.incomingHit && t.mp > 0"
+    },
+    {
+      "Name": "Nature's Wrath close-visible filter",
+      "AbilityId": 437,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && !a.status.invisible && reaction.gridDistance <= 1"
+    },
+    {
+      "Name": "Dragon's Fury reach-and-weapon filter",
+      "AbilityId": 427,
+      "Mode": "courage",
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && !a.status.invisible && reaction.gridDistance <= 2 && targetSlot.rightweapon.category_polearm"
+    }
+  ],
+
+  "EquipmentSlots": [
+    {
+      "Name": "RightWeapon",
+      "Offset": 32,
+      "Width": "UInt16"
+    }
+  ],
+  "AttackerEquipmentSlots": [
+    {
+      "Name": "RightWeapon",
+      "Offset": 32,
+      "Width": "UInt16"
+    }
+  ]
+}

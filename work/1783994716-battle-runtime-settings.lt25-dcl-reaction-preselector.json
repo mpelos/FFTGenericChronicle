@@ -1,0 +1,9 @@
+{
+  "_note": "LT25 observe-only pass-2 pre-selector snapshot. Captures source/eval globals, incoming actor, and all 21 unit+0x1CE candidate words; no carrier staging or game-memory control.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionPreSelectorProbeEnabled": true,
+  "DclReactionPreSelectorProbeRva": 2122665,
+  "DclReactionPreSelectorProbeExpectedBytes": "48 8D 4D D2 E8 86 CA 07 00",
+  "DclReactionPreSelectorProbeMaxLogs": 128
+}

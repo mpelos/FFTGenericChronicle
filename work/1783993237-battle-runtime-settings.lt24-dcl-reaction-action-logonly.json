@@ -1,0 +1,15 @@
+{
+  "_note": "LT24 log-only vertical slice: propose replacing native Counter carrier 442 action identity with Basic Attack 0 at the accepted-Reaction commit. Requires LT23 pass before changing LogOnly to false.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 64,
+  "DclReactionActionReplacementEnabled": true,
+  "DclReactionActionReplacementLogOnly": true,
+  "DclReactionActionReplacementCarrierId": 442,
+  "DclReactionActionReplacementAbilityId": 0,
+  "DclReactionActionReplacementMinTargetCount": 1,
+  "DclReactionActionReplacementMaxWrites": 1
+}

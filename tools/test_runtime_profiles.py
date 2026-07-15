@@ -126,7 +126,7 @@ def main() -> int:
 
     preclamp = get(rows, "ko-preclamp-force-agrias")
     check(profiles.truthy(preclamp, "PreClampDamageRewriteEnabled"), "preclamp proof must enable the pre-clamp rewrite hook")
-    check(preclamp.get("PreClampDamageRewriteRva") == 0x30A66F, "preclamp proof must hook the staged debit read")
+    check(preclamp.get("PreClampDamageRewriteRva") in {0x30A66F, 0x30A5D7}, "preclamp proof must hook the staged debit read for a supported executable build")
     check(preclamp.get("PreClampDamageRewriteTargetCharId") == 0x1E, "preclamp proof must target Agrias")
     check(preclamp.get("PreClampDamageRewriteExpectedDebit") == 115, "preclamp proof must guard on Agrias Cross Slash damage")
     check(preclamp.get("PreClampDamageRewriteForcedDebit", 0) > 115, "preclamp proof must force a lethal staged debit")

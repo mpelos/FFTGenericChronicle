@@ -1,0 +1,24 @@
+{
+  "_note": "LT17 validates formula-driven forecast/result parity for HP debit and credit. Basic Attack (ability 0/type 1) previews and deals 222 damage. Cure (ability 1) previews and heals 111 HP. Other actions preserve native execution channels; their preview formulas return zero and are outside the pass cases.",
+  "UnitPollIntervalMs": 20,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "if(action.type == 1 && action.abilityId == 0, 222, dcl.oldDebit)",
+  "DclHealingFormula": "if(action.abilityId == 1, 111, dcl.oldCredit)",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 400,
+
+  "DclPreviewAmountEnabled": true,
+  "DclPreviewDamageFormula": "if(action.type == 1 && action.abilityId == 0, 222, 0)",
+  "DclPreviewHealingFormula": "if(action.abilityId == 1, 111, 0)",
+
+  "PreviewForecastPokeEnabled": false,
+  "PreviewDamageControlEnabled": false,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampFormulaPlanEnabled": false,
+  "PreClampDamageRewriteForcedDebit": -1,
+  "PreClampDamageRewriteForcedCredit": -1
+}

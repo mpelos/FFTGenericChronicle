@@ -1,0 +1,52 @@
+{
+  "_note": "LT21 hybrid DCL reaction taxonomy. Starts in forced-connect mode. Do not deploy while the unmodified Enhanced game cannot reach the menu. For the miss-composition phase change only DclHitChanceFormula from 100 to 0. For deterministic VM checks temporarily add ChanceFormula 0 or 100 only to the Shirahadori rule.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "dcl.oldDebit",
+  "DclHealingFormula": "dcl.oldCredit",
+  "DclDecisionMaxLogs": 800,
+
+  "DclHitControlEnabled": true,
+  "DclHitChanceFormula": "100",
+  "DclHitForcedRoll": 0,
+  "DclHitMaxLogs": 800,
+  "DclPreviewHitPctEnabled": true,
+  "DclMissOutputControlEnabled": true,
+  "DclMissSelectorOutcomeEnabled": true,
+  "DclMissSuppressReactionsEnabled": true,
+
+  "ItemTableEvadeZeroEnabled": true,
+  "EvadeCopierOverrideEnabled": true,
+  "EvadeCopierOverride46": 0,
+  "EvadeCopierOverride47": 0,
+  "EvadeCopierOverride48": 0,
+  "EvadeCopierOverride49": 0,
+  "EvadeCopierOverride4A": 0,
+  "EvadeCopierOverride4B": 0,
+  "EvadeCopierOverride4C": 0,
+  "EvadeCopierOverride4D": 0,
+  "EvadeCopierOverride4E": 0,
+
+  "DclReactionTaxonomyEnabled": true,
+  "DclReactionMaxLogs": 800,
+  "DclReactionRules": [
+    {
+      "Name": "Counter — Courage",
+      "AbilityId": 442,
+      "Mode": "courage"
+    },
+    {
+      "Name": "Mana Shield — Neutral",
+      "AbilityId": 445,
+      "Mode": "neutral",
+      "FlatChance": 50
+    },
+    {
+      "Name": "Shirahadori — Caution VM avoidance",
+      "AbilityId": 451,
+      "Mode": "caution",
+      "VmInternalAvoidance": true
+    }
+  ]
+}

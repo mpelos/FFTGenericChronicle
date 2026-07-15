@@ -1,0 +1,29 @@
+{
+  "_note": "LT32: one bounded ordinary-result proof of the managed native status packet. A connected basic Attack (ability 0, type 1) preserves vanilla HP damage and adds Blind through unit+0x1DB..0x1DF; the later native validator/committer owns durable/effective state and side effects. Attack has no native rider, so this test requires no action-data mutation.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 200,
+
+  "DclStatusControlEnabled": true,
+  "DclStatusForcedRoll": 18,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "LT32 Attack stages Blind in native packet",
+      "AbilityId": 0,
+      "ActionType": 1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "absent",
+      "ResistanceFormula": "10",
+      "DurationTargetTurns": 0
+    }
+  ]
+}

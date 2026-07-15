@@ -48,7 +48,27 @@ internal static class Program
             return false;
         }
 
-        var report = RuntimeSettingsValidator.Validate(settings, catalog);
+        string root = FindRepoRoot(AppContext.BaseDirectory);
+        string abilityCatalogPath = ResolveValidationPath(
+            root,
+            path,
+            settings.AbilityCatalogPath,
+            "wotl_ability_action_baseline.csv");
+        string metadataPath = ResolveValidationPath(
+            root,
+            path,
+            settings.DclAbilityMetadataPath,
+            defaultFile: "");
+        var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath, metadataPath);
+        var report = RuntimeSettingsValidator.Validate(settings, catalog, abilityCatalog);
+        report.Info("abilityCatalog", abilityCatalog.Describe());
+        bool abilityCatalogRequired = !string.IsNullOrWhiteSpace(settings.DclAbilityMetadataPath) ||
+            (settings.DclStatusRules ?? []).Any(rule => rule.NativeRiderReplacedPostCalc);
+        if (abilityCatalogRequired && !abilityCatalog.Loaded)
+            report.Error("AbilityCatalogPath", $"ability catalog failed to load: {abilityCatalog.Error}");
+        else if (!string.IsNullOrWhiteSpace(settings.DclAbilityMetadataPath) &&
+                 !string.IsNullOrWhiteSpace(abilityCatalog.MetadataError))
+            report.Error("DclAbilityMetadataPath", abilityCatalog.MetadataError);
         foreach (var finding in report.Findings)
         {
             if (!verbose && finding.Severity.Equals("INFO", StringComparison.OrdinalIgnoreCase))
@@ -58,6 +78,25 @@ internal static class Program
         Console.WriteLine($"summary: errors={report.ErrorCount}, warnings={report.WarningCount}");
         Console.WriteLine();
         return report.Success;
+    }
+
+    private static string ResolveValidationPath(
+        string root,
+        string settingsPath,
+        string configuredPath,
+        string defaultFile)
+    {
+        string value = string.IsNullOrWhiteSpace(configuredPath) ? defaultFile : configuredPath;
+        if (string.IsNullOrWhiteSpace(value) || Path.IsPathRooted(value))
+            return value;
+
+        string settingsDirectory = Path.GetDirectoryName(Path.GetFullPath(settingsPath)) ?? root;
+        string besideSettings = Path.Combine(settingsDirectory, value);
+        if (File.Exists(besideSettings))
+            return besideSettings;
+
+        string workPath = Path.Combine(root, "work", value);
+        return File.Exists(workPath) ? workPath : besideSettings;
     }
 
     private static List<string> DefaultSettingsPaths(string root)
@@ -87,6 +126,10 @@ internal static class Program
             Path.Combine(root, "work", "battle-runtime-settings.death-test.json"),
             Path.Combine(root, "work", "battle-runtime-settings.death-test-killflag.json"),
             Path.Combine(root, "work", "memtable-probe-candidates.disabled.json"),
+            Path.Combine(root, "work", "1784014720-battle-runtime-settings.dcl-pummel-multistrike.json"),
+            Path.Combine(root, "work", "1784015549-battle-runtime-settings.randomfire-cardinality-observe.json"),
+            Path.Combine(root, "work", "1784094553-battle-runtime-settings.dcl-integration-scaffold.json"),
+            Path.Combine(root, "work", "1784017665-battle-runtime-settings.dcl-result-flags-mechanism.json"),
         ];
         return candidates.Where(File.Exists).ToList();
     }

@@ -118,7 +118,7 @@ def static_scan_check() -> Check:
     ok = contains(
         path,
         "`battle_base_ptr`",
-        "`0x226D98",
+        "`0x226D20",
         "`damage_multiplier` | 0",
         "PASS_ABSENT",
     )

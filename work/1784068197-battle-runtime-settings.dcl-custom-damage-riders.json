@@ -1,0 +1,37 @@
+{
+  "_note": "Offline mechanism profile for custom-formula damage riders. Pair only with --dcl-status-rider-neuter 219 357: each mapped formula retains an HP result while DCL replaces the removed one-bit status rider.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 100,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 100,
+  "DclStatusRules": [
+    {
+      "Name": "Crushing Blow Stop",
+      "AbilityId": 219,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 2,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Unholy Sacrifice Slow",
+      "AbilityId": 357,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "_note": "Controlled partial-Mana-Shield result-flag mechanism fixture. Only target char 0x1F and only a native Mana Shield redirect (old HP debit zero, old MP debit positive) are split: half the redirected amount, capped by current MP, remains MP debit and the rest returns to HP debit. This is not final ratio policy. DclResultFlagsControl derives 0xA0 so HP damage is the primary selector route while both numeric channels apply.",
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "if(t.charId == 31 && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, max(1, dcl.oldMpDebit - min(t.mp, max(1, dcl.oldMpDebit / 2))), dcl.oldDebit)",
+  "DclMpDebitFormula": "if(t.charId == 31 && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, min(t.mp, max(1, dcl.oldMpDebit / 2)), dcl.oldMpDebit)",
+  "DclResultFlagsControlEnabled": true,
+  "DclResultFlagsPreserveMask": 15,
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 200
+}

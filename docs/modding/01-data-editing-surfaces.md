@@ -265,6 +265,42 @@ FFTIVC\data\enhanced\fftpack\<file>
 
 This layer matters because any global job/skill/formula redesign needs matching story-battle and random-battle redesign. Live runtime struct offsets for units are documented in `04-engine-memory-model.md`.
 
+## Manual-save test fixtures
+
+Manual Enhanced saves are PNG containers that FF16Tools exposes as `fftsave.bin`. The payload has a
+`0x10`-byte outer header followed by 50 manual slots with stride `0x9CE4`. Each slot's save-work area
+is `0x9CDC` bytes. Its roster begins at slot-relative `0x518` and contains 54 unit records with
+stride `0x258`.
+
+Within each roster-save unit record:
+
+| Offset | Width | Meaning | Confidence |
+| --- | ---: | --- | --- |
+| `+0x00` | byte | Character id / active marker | **Strong** |
+| `+0x01` | byte | Stored roster-unit index | **Strong** |
+| `+0x02` | byte | Job id | **Strong** |
+| `+0x07` | byte | Secondary command id | **Strong** |
+| `+0x08` | word | Equipped Reaction ability id | **Proven** |
+| `+0x32` | 60 bytes | Three learned-ability bytes for each of 20 generic jobs | **Strong** |
+| `+0xDC` | 16 bytes | Fixed ASCII nickname | **Strong** |
+| `+0x125` | byte | Current combat-set selector (`0xFF` = direct unit fields) | **Strong** |
+| `+0x230` | word | Character-name key | **Strong** |
+
+The save-record offsets are not the live battle-unit offsets: equipped Reaction is `+0x08` here and
+`+0x14` in the live struct owned by `04-engine-memory-model.md`.
+
+The three learned-ability bytes for a generic job encode its active abilities first. In the third
+byte, Reaction/Support/Movement list positions 1 through 6 use masks `0x80`, `0x40`, `0x20`,
+`0x10`, `0x08`, and `0x04`, respectively. For example, Counter is position 2 in the Monk R/S/M
+list, so its learned flag is mask `0x40` in the third Monk byte.
+
+Fixture generators edit an unpacked copy, let FF16Tools rebuild the PNG/checksum, unpack the result
+again, and byte-audit the round trip. `tools/build_fft_manual_ability_fixture.py` enables one learned
+active-ability bit; `tools/build_fft_manual_reaction_fixture.py` replaces one equipped-Reaction word
+and requires the caller to provide the expected source Reaction and prove that the destination
+Reaction is learned by that unit. The live save remains untouched
+until a separate stopped-process backup/deploy/restore protocol installs the audited PNG.
+
 ## Sources
 
 - Local loader layout: `C:\Reloaded-II\Mods\fftivc.utility.modloader\Nex\Layouts\ffto\OverrideAbilityActionData.layout`

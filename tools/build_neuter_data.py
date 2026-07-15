@@ -76,6 +76,24 @@ SENTINEL_BAND_VALUES = {
     "mid": 4,
     "high": 7,
 }
+
+# Native instant-KO riders that can be replaced by DclInstantKoRule after their ordinary damage
+# route is authored. Crystal/Bequeath Bacon is deliberately excluded: crystalization is a different
+# corpse/campaign lifecycle and cannot be represented by lethal HP debit.
+DCL_INSTANT_KO_ABILITY_IDS = (30, 137, 157, 183, 210, 262, 331, 344, 352)
+# Every member retains an ordinary single-result HP carrier after InflictStatus is cleared.
+# Dedicated KO, RandomFire, status-only, self/caster, and custom-formula records remain excluded.
+DCL_STATUS_RIDER_ABILITY_IDS = (
+    80, 82, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136,
+    155, 156, 158, 159, 200, 202, 203, 204, 209, 211, 219, 284, 357,
+)
+# Support actions whose numeric result remains an independent apply carrier after only
+# InflictStatus is cleared. Kept separate from the ordinary damage-rider allowlist because their
+# eligibility and paired numeric semantics require a dedicated static proof.
+DCL_SUPPORT_STATUS_RIDER_ABILITY_IDS = (252,)
+# Formula 0x52 stages a victim result with Oil but a separate caster self-KO result without Oil.
+# Its managed rule is therefore statically required to use dcl.isSelf == 0.
+DCL_CONDITIONAL_STATUS_RIDER_ABILITY_IDS = (277,)
 SENTINEL_WEAPON_CATEGORY_BANDS = {
     # GURPS-oriented first pass: blades/blunt hand weapons are swing/cut placeholders.
     "Knife": "low",
@@ -122,6 +140,50 @@ def parse_args() -> argparse.Namespace:
         help=(
             "uniform keeps the proven Power/X/Y=1 neuter. sentinel-coarse-v1 emits distinct "
             "low/mid/high placeholder magnitudes for action-identity live calibration."
+        ),
+    )
+    parser.add_argument(
+        "--dcl-instant-ko-neuter",
+        type=int,
+        nargs="+",
+        choices=DCL_INSTANT_KO_ABILITY_IDS,
+        default=[],
+        help=(
+            "Ability ids whose native Dead rider is replaced by a harmless formula-0x08 placeholder "
+            "and no InflictStatus. Enable each id only together with an authored DclInstantKoRule."
+        ),
+    )
+    parser.add_argument(
+        "--dcl-status-rider-neuter",
+        type=int,
+        nargs="+",
+        choices=DCL_STATUS_RIDER_ABILITY_IDS,
+        default=[],
+        help=(
+            "Ordinary single-result damage ability ids whose native status rider is removed with "
+            "InflictStatus=0. Enable each id only with exact authored DclStatusRules."
+        ),
+    )
+    parser.add_argument(
+        "--dcl-support-status-rider-neuter",
+        type=int,
+        nargs="+",
+        choices=DCL_SUPPORT_STATUS_RIDER_ABILITY_IDS,
+        default=[],
+        help=(
+            "Statically approved support ability ids whose status rider is removed with "
+            "InflictStatus=0 while their numeric result remains the apply carrier."
+        ),
+    )
+    parser.add_argument(
+        "--dcl-conditional-status-rider-neuter",
+        type=int,
+        nargs="+",
+        choices=DCL_CONDITIONAL_STATUS_RIDER_ABILITY_IDS,
+        default=[],
+        help=(
+            "Statically approved split-result ability ids whose native rider is removed while an "
+            "exact managed target condition prevents it from leaking onto the caster result."
         ),
     )
     return parser.parse_args()
@@ -346,6 +408,105 @@ def build_ability_neuter(placeholder_mode: str = "uniform") -> tuple[int, int, l
     return len(to_neuter), len(skipped), skipped
 
 
+def apply_dcl_instant_ko_neuter(
+    path: Path = NEUTER_OVERRIDE_SQLITE,
+    ability_ids: tuple[int, ...] | list[int] = DCL_INSTANT_KO_ABILITY_IDS,
+) -> int:
+    """Remove native Dead delivery so the runtime 3d6 contest is the sole KO authority.
+
+    Formula 0x08 guarantees an ordinary HP staging path into the proven pre-clamp hook. X/Y=1 keeps
+    the native placeholder harmless; InflictStatus=0 removes the inherited Dead rider. The runtime
+    then either zeroes/preserves authored ordinary damage on failure or supplies a lethal debit on
+    success, letting native HP apply own the complete death lifecycle.
+    """
+    selected = tuple(dict.fromkeys(int(ability_id) for ability_id in ability_ids))
+    unsupported = sorted(set(selected) - set(DCL_INSTANT_KO_ABILITY_IDS))
+    if unsupported:
+        raise ValueError(f"unsupported instant-KO ability ids: {unsupported}")
+    with sqlite3.connect(path) as con:
+        present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
+        missing = sorted(set(selected) - present)
+        if missing:
+            raise ValueError(f"instant-KO ability ids missing from override table: {missing}")
+        con.executemany(
+            "UPDATE OverrideAbilityActionData SET Formula=8, X=1, Y=1, InflictStatus=0 WHERE Key=?",
+            [(ability_id,) for ability_id in selected],
+        )
+        con.commit()
+    return len(selected)
+
+
+def apply_dcl_status_rider_neuter(
+    path: Path = NEUTER_OVERRIDE_SQLITE,
+    ability_ids: tuple[int, ...] | list[int] = DCL_STATUS_RIDER_ABILITY_IDS,
+) -> int:
+    """Remove a native status rider while preserving an ordinary HP result as the apply carrier.
+
+    The allowlist is deliberately narrower than every action with status metadata. Status-only
+    formulas can lose their only result when InflictStatus becomes zero; instant KO, RandomFire,
+    self/caster, and custom carriers have separate ownership and are rejected here.
+    """
+    selected = tuple(dict.fromkeys(int(ability_id) for ability_id in ability_ids))
+    unsupported = sorted(set(selected) - set(DCL_STATUS_RIDER_ABILITY_IDS))
+    if unsupported:
+        raise ValueError(f"unsupported ordinary damage status-rider ability ids: {unsupported}")
+    with sqlite3.connect(path) as con:
+        present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
+        missing = sorted(set(selected) - present)
+        if missing:
+            raise ValueError(f"status-rider ability ids missing from override table: {missing}")
+        con.executemany(
+            "UPDATE OverrideAbilityActionData SET InflictStatus=0 WHERE Key=?",
+            [(ability_id,) for ability_id in selected],
+        )
+        con.commit()
+    return len(selected)
+
+
+def apply_dcl_support_status_rider_neuter(
+    path: Path = NEUTER_OVERRIDE_SQLITE,
+    ability_ids: tuple[int, ...] | list[int] = DCL_SUPPORT_STATUS_RIDER_ABILITY_IDS,
+) -> int:
+    """Remove an allowlisted support rider while preserving its proven numeric result carrier."""
+    selected = tuple(dict.fromkeys(int(ability_id) for ability_id in ability_ids))
+    unsupported = sorted(set(selected) - set(DCL_SUPPORT_STATUS_RIDER_ABILITY_IDS))
+    if unsupported:
+        raise ValueError(f"unsupported support status-rider ability ids: {unsupported}")
+    with sqlite3.connect(path) as con:
+        present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
+        missing = sorted(set(selected) - present)
+        if missing:
+            raise ValueError(f"support status-rider ability ids missing from override table: {missing}")
+        con.executemany(
+            "UPDATE OverrideAbilityActionData SET InflictStatus=0 WHERE Key=?",
+            [(ability_id,) for ability_id in selected],
+        )
+        con.commit()
+    return len(selected)
+
+
+def apply_dcl_conditional_status_rider_neuter(
+    path: Path = NEUTER_OVERRIDE_SQLITE,
+    ability_ids: tuple[int, ...] | list[int] = DCL_CONDITIONAL_STATUS_RIDER_ABILITY_IDS,
+) -> int:
+    """Remove an allowlisted rider whose native formula has distinct victim/caster result branches."""
+    selected = tuple(dict.fromkeys(int(ability_id) for ability_id in ability_ids))
+    unsupported = sorted(set(selected) - set(DCL_CONDITIONAL_STATUS_RIDER_ABILITY_IDS))
+    if unsupported:
+        raise ValueError(f"unsupported conditional status-rider ability ids: {unsupported}")
+    with sqlite3.connect(path) as con:
+        present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
+        missing = sorted(set(selected) - present)
+        if missing:
+            raise ValueError(f"conditional status-rider ability ids missing from override table: {missing}")
+        con.executemany(
+            "UPDATE OverrideAbilityActionData SET InflictStatus=0 WHERE Key=?",
+            [(ability_id,) for ability_id in selected],
+        )
+        con.commit()
+    return len(selected)
+
+
 def ff16tools_command(ff16tools: Path) -> list[str]:
     return [
         str(ff16tools),
@@ -393,9 +554,27 @@ def main() -> None:
     print(f"[neuter] Aim/Charge abilities emitted: {charge_count}")
 
     neutered, skipped_n, skipped_ids = build_ability_neuter(args.placeholder_mode)
+    instant_ko_neutered = apply_dcl_instant_ko_neuter(ability_ids=args.dcl_instant_ko_neuter) if args.dcl_instant_ko_neuter else 0
+    status_riders_neutered = apply_dcl_status_rider_neuter(
+        ability_ids=args.dcl_status_rider_neuter
+    ) if args.dcl_status_rider_neuter else 0
+    support_status_riders_neutered = apply_dcl_support_status_rider_neuter(
+        ability_ids=args.dcl_support_status_rider_neuter
+    ) if args.dcl_support_status_rider_neuter else 0
+    conditional_status_riders_neutered = apply_dcl_conditional_status_rider_neuter(
+        ability_ids=args.dcl_conditional_status_rider_neuter
+    ) if args.dcl_conditional_status_rider_neuter else 0
     ABILITY_NXD_OUT.parent.mkdir(parents=True, exist_ok=True)
     print(f"[neuter] ability sqlite written: {NEUTER_OVERRIDE_SQLITE}")
     print(f"[neuter] damaging abilities emitted: {neutered} (skipped {skipped_n} out of table range: {skipped_ids})")
+    if instant_ko_neutered:
+        print(f"[neuter] DCL instant-KO native riders suppressed: {instant_ko_neutered}")
+    if status_riders_neutered:
+        print(f"[neuter] DCL ordinary damage status riders suppressed: {status_riders_neutered}")
+    if support_status_riders_neutered:
+        print(f"[neuter] DCL support status riders suppressed: {support_status_riders_neutered}")
+    if conditional_status_riders_neutered:
+        print(f"[neuter] DCL conditional status riders suppressed: {conditional_status_riders_neutered}")
     if args.build_nxd:
         build_ability_nxd(args.ff16tools)
     else:

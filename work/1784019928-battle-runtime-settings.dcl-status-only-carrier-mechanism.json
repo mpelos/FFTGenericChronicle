@@ -1,0 +1,59 @@
+{
+  "_note": "Offline mechanism profile for formula-0x22 status-only carriers. Kiyomori and Masamune keep their native riders solely to preserve result production; the DCL owns every inherited packet bit before native validation/commit. Resistance target 0 makes these friendly buffs unresisted under the 3d6 contest.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 200,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 200,
+  "DclStatusRules": [
+    {
+      "Name": "Kiyomori Protect carrier bit",
+      "AbilityId": 81,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Kiyomori Shell carrier bit",
+      "AbilityId": 81,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Masamune Regen carrier bit",
+      "AbilityId": 84,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 64,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Masamune Haste carrier bit",
+      "AbilityId": 84,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    }
+  ]
+}
