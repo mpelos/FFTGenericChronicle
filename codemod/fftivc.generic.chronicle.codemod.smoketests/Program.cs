@@ -5650,6 +5650,21 @@ internal static class Program
             "the complete log-only synthetic-Reaction producer/rewrite/commit contract should pass validation: " +
             string.Join(" | ", syntheticReactionLogOnlyReport.Findings.Select(f => $"{f.Severity}:{f.Scope}:{f.Message}")));
 
+        var syntheticReactionPreClampBypassReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
+        {
+            DclPipelineEnabled = true,
+            PreClampDamageRewriteLogOnly = true,
+            DclReactionTaxonomyEnabled = true,
+            DclReactionRules = [new DclReactionRule { Name = "Synthetic carrier probe", AbilityId = 443, Mode = "neutral", FlatChance = 100 }],
+            DclSyntheticReactionEnabled = true,
+            DclSyntheticReactionCarrierId = 443,
+        }, catalog);
+        Check(syntheticReactionPreClampBypassReport.Findings.Any(finding =>
+                finding.Scope == "DclSyntheticReactionEnabled" &&
+                finding.Severity == "ERROR" &&
+                finding.Message.Contains("bypasses that callback")),
+            "validator should reject a synthetic-Reaction profile that bypasses its committed-result callback");
+
         var syntheticReactionUnsafeReport = RuntimeSettingsValidator.Validate(new RuntimeSettings
         {
             DclSyntheticReactionEnabled = true,

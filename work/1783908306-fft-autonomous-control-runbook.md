@@ -202,6 +202,12 @@ Manage it only while `FFT_enhanced.exe` is stopped:
    from leaving the title menu idle long enough to restart the opening movie.
 6. Allow roughly 22 seconds for the saved battle/map state to finish loading before inspecting it.
 
+The current window-relative Computer Use runtime no longer applies the older title-bar coordinate
+offset: input `(640, 578)` selects **New Game+**, while the visible **Continue** row is approximately
+`(640, 607)`. One click can only move the feather; two clicks about 0.65 seconds apart select and
+activate Continue reliably. Always use the visible row position from the current 1280x720 capture
+instead of assuming the older offset.
+
 This full sequence was repeated from a restored container and returned to the same Ramza turn in
 the same battle. The latest atomic-burst validation clicked Continue 5.94 seconds after Enhanced and
 reached the loaded-state screenshot at 27.99 seconds. `F` and `Enter` did not reliably activate

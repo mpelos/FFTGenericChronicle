@@ -4815,54 +4815,54 @@ public class Mod : ModBase
                 string syntheticBuf = $"0{_dclSyntheticReactionProducerBuf:X}h";
                 int carrierId = Math.Clamp(_settings.DclSyntheticReactionCarrierId, 422, 453);
                 int maxWrites = Math.Clamp(_settings.DclSyntheticReactionMaxWrites, 1, 32);
-                var syntheticAsm = new List<string>();
-                for (int unitIndex = 0; unitIndex < 21; unitIndex++)
+                var syntheticAsm = new List<string>
                 {
-                    string done = $".synthetic_reaction_producer_{unitIndex}_done";
-                    int unitOffset = BattleUnitStride * unitIndex;
+                    $"mov rax, {syntheticBuf}",
+                    $"mov r8, {unitTable}",
+                    "xor edx, edx",
+                    ".synthetic_reaction_producer_loop:",
+                    $"cmp byte [rax+rdx+{SRP_STATES}], 1",
+                    "jne .synthetic_reaction_producer_next",
+                    $"mov byte [rax+rdx+{SRP_STATES}], 3",
+                    $"add dword [rax+{SRP_ATTEMPTS}], 1",
+                    "cmp byte [r8+1], 0FFh",
+                    "je .synthetic_reaction_producer_next",
+                    "cmp word [r8+30h], 0",
+                    "je .synthetic_reaction_producer_next",
+                    "test byte [r8+61h], 20h",
+                    "jne .synthetic_reaction_producer_next",
+                    "cmp word [r8+1CEh], 0",
+                    "jne .synthetic_reaction_producer_next",
+                };
+                if (_settings.DclSyntheticReactionLogOnly)
+                {
                     syntheticAsm.AddRange(
                     [
-                        $"mov rax, {syntheticBuf}",
-                        $"cmp byte [rax+{SRP_STATES + unitIndex}], 1",
-                        $"jne {done}",
-                        $"mov byte [rax+{SRP_STATES + unitIndex}], 3",
-                        $"add dword [rax+{SRP_ATTEMPTS}], 1",
-                        $"mov r8, {unitTable}",
-                        $"add r8, {unitOffset:X}h",
-                        "cmp byte [r8+1], 0FFh",
-                        $"je {done}",
-                        "cmp word [r8+30h], 0",
-                        $"je {done}",
-                        "test byte [r8+61h], 20h",
-                        $"jne {done}",
-                        "cmp word [r8+1CEh], 0",
-                        $"jne {done}",
+                        $"mov byte [rax+rdx+{SRP_STATES}], 4",
+                        $"mov dword [rsi+{RPS_PRODUCER}], 3",
                     ]);
-                    if (_settings.DclSyntheticReactionLogOnly)
-                    {
-                        syntheticAsm.AddRange(
-                        [
-                            $"mov rax, {syntheticBuf}",
-                            $"mov byte [rax+{SRP_STATES + unitIndex}], 4",
-                            $"mov dword [rsi+{RPS_PRODUCER}], 3",
-                        ]);
-                    }
-                    else
-                    {
-                        syntheticAsm.AddRange(
-                        [
-                            $"mov rax, {syntheticBuf}",
-                            $"mov ecx, dword [rax+{SRP_CONTROL_WRITES}]",
-                            $"cmp ecx, {maxWrites}",
-                            $"jae {done}",
-                            $"mov word [r8+1CEh], {carrierId}",
-                            $"mov byte [rax+{SRP_STATES + unitIndex}], 2",
-                            $"add dword [rax+{SRP_CONTROL_WRITES}], 1",
-                            $"mov dword [rsi+{RPS_PRODUCER}], 4",
-                        ]);
-                    }
-                    syntheticAsm.Add(done + ":");
                 }
+                else
+                {
+                    syntheticAsm.AddRange(
+                    [
+                        $"mov ecx, dword [rax+{SRP_CONTROL_WRITES}]",
+                        $"cmp ecx, {maxWrites}",
+                        "jae .synthetic_reaction_producer_next",
+                        $"mov word [r8+1CEh], {carrierId}",
+                        $"mov byte [rax+rdx+{SRP_STATES}], 2",
+                        $"add dword [rax+{SRP_CONTROL_WRITES}], 1",
+                        $"mov dword [rsi+{RPS_PRODUCER}], 4",
+                    ]);
+                }
+                syntheticAsm.AddRange(
+                [
+                    ".synthetic_reaction_producer_next:",
+                    $"add r8, {BattleUnitStride:X}h",
+                    "add edx, 1",
+                    "cmp edx, 21",
+                    "jl .synthetic_reaction_producer_loop",
+                ]);
                 asm = asm.Concat(syntheticAsm).ToArray();
             }
 
@@ -6113,6 +6113,16 @@ public class Mod : ModBase
     private static bool IsPreClampManagedCallbackEnabled(RuntimeSettings settings)
         => settings.PreClampManagedCallbackEnabled || settings.DclPipelineEnabled;
 
+    private static bool HasDclManagedPreClampOutput(RuntimeSettings settings)
+        => !string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
+           !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
+           !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
+           !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) ||
+           settings.DclStatusControlEnabled ||
+           settings.DclInstantKoControlEnabled ||
+           settings.DclPhysicalContestEnabled ||
+           settings.DclMagicEvadeEnabled;
+
     private static int ClampInt16Immediate(int value)
         => value < 0 ? -1 : Math.Clamp(value, short.MinValue, short.MaxValue);
 
@@ -6133,15 +6143,16 @@ public class Mod : ModBase
             if (!PreClampManagedCallbackPassesGuards(targetPtr, statePtr, settings, out int targetId, out int oldDebit, out int oldCredit))
                 return -1;
 
+            bool hasManagedOutput = HasDclManagedPreClampOutput(settings);
             if (settings.DclPipelineEnabled &&
-                (!string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
-                 !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
-                 !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
-                 !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) ||
-                 settings.DclStatusControlEnabled || settings.DclInstantKoControlEnabled ||
-                 settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled) &&
+                (hasManagedOutput || settings.DclSyntheticReactionEnabled) &&
                 TryEvaluateDclPreClampDamage(targetPtr, hookStackPtr, settings, targetId, oldDebit, oldCredit, out int dclDebit))
-                return dclDebit;
+            {
+                // A synthetic-only trigger observes the committed native result but owns no numeric
+                // channel. Returning -1 leaves the staged HP debit untouched; composed profiles with
+                // an authored managed output retain the ordinary same-transaction rewrite path.
+                return hasManagedOutput ? dclDebit : -1;
+            }
 
             if (settings.PreClampManagedCallbackActorFormulaEnabled)
             {

@@ -33,6 +33,8 @@ ANCHORS = (
     Anchor("cadence-peek", "cadence", "public bool CanConsumeAttackerAction", "eligibility can be checked without early consumption"),
     Anchor("no-early-consume", "core", "Evaluation reserves but never consumes reaction cadence", "the chance callback owns no cadence commit"),
     Anchor("successful-hit-owner", "mod", "ReserveDclSyntheticReactionFromCommittedHit", "the successful result path can own a missing native trigger"),
+    Anchor("synthetic-only-preclamp-entry", "mod", "(hasManagedOutput || settings.DclSyntheticReactionEnabled)", "a synthetic-only profile reaches the committed pre-clamp result owner"),
+    Anchor("synthetic-only-no-numeric-write", "mod", "return hasManagedOutput ? dclDebit : -1;", "a synthetic-only log gate observes the result without rewriting its native HP debit"),
     Anchor("equipped-carrier-check", "mod", "defender.ReadUInt16(0x14) != carrierId", "only an exact equipped-carrier owner is evaluated"),
     Anchor("survivor-check", "mod", "defender.Hp + hpCredit - hpDebit <= 0", "a lethal incoming result cannot reserve a reaction"),
     Anchor("final-hp-check", "mod", '"cmp word [r8+30h], 0"', "the pass-2 producer rejects a defender killed by a later strike"),
@@ -40,6 +42,8 @@ ANCHORS = (
     Anchor("committed-origin", "mod", 'Origin: "committed-preclamp"', "the reservation records successful-result provenance"),
     Anchor("duplicate-gate", "core", "ShouldRequestProducer: false", "replayed callbacks never restage"),
     Anchor("dynamic-mailbox", "mod", "SRP_STATES + defenderTableIndex, 1", "accepted defenders arm their own producer slot"),
+    Anchor("bounded-producer-loop", "mod", '".synthetic_reaction_producer_loop:"', "one indexed loop handles every battle-table slot without exceeding the hook assembler budget"),
+    Anchor("producer-loop-cardinality", "mod", '"cmp edx, 21"', "the compact producer still covers all 21 battle-table slots"),
     Anchor("empty-slot", "mod", '"cmp word [r8+1CEh], 0"', "the producer never overwrites a native candidate"),
     Anchor("carrier-stage", "mod", '$"mov word [r8+1CEh], {carrierId}"', "the producer stages the configured carrier"),
     Anchor("bounded-stage", "validator", "synthetic Reaction live producer writes must be bounded within 1..32", "live staging is capped"),
@@ -57,6 +61,7 @@ FORBIDDEN = (
     ("mod", "Hex Ward", "no job-specific name remains in the runtime"),
     ("core", "Hex Ward", "the coordinator is job-agnostic"),
     ("validator", "Hex Ward", "validation is job-agnostic"),
+    ("mod", "synthetic_reaction_producer_{unitIndex}_done", "the producer is never expanded into 21 assembler blocks"),
 )
 
 

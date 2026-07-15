@@ -823,8 +823,8 @@ internal static class RuntimeSettingsValidator
                        !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
                        !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) || settings.DclStatusControlEnabled ||
                        settings.DclInstantKoControlEnabled ||
-                       settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled || settings.DclPreviewAmountEnabled ||
-                       settings.DclReactionTaxonomyEnabled)))
+                       settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled ||
+                       settings.DclSyntheticReactionEnabled)))
                     report.Error("PreClampManagedCallback", "Managed callback requires a forced debit, PreClampManagedCallbackActorFormulaEnabled, or a DCL HP/MP/status/KO/hit/reaction outcome.");
                 if (settings.PreClampManagedCallbackActorFormulaEnabled)
                     report.Warn("PreClampManagedCallbackActorFormulaEnabled", "actor formula resolves caster/action from the pre-clamp frame; use only in controlled captures until it is live-stable across action families.");
@@ -1150,6 +1150,8 @@ internal static class RuntimeSettingsValidator
             report.Error("DclSyntheticReactionTrigger", "the only currently owned synthetic trigger is 'successful-hit-survivor'.");
         if (!settings.DclPipelineEnabled)
             report.Error(scope, "synthetic Reaction requires DclPipelineEnabled for exact incoming hit/action identity.");
+        if (settings.PreClampDamageRewriteLogOnly)
+            report.Error(scope, "synthetic Reaction requires the managed pre-clamp callback; PreClampDamageRewriteLogOnly bypasses that callback entirely.");
         if (!settings.DclReactionTaxonomyEnabled)
             report.Error(scope, "synthetic Reaction requires DclReactionTaxonomyEnabled for its managed chance rule.");
 
