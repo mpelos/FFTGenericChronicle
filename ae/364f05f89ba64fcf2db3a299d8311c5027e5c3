@@ -1,0 +1,62 @@
+docs/deep-combat-layer/05-damage-armor-and-injury.md
+  s_ed1d6eab60ad79::t_2cb54afd418f30 112
+  s_ed1d6eab60ad79::t_f84d61d5a08ce8 1-30,33,35-43,46-55,57-59,63-74,79-103,105-106,108-111,113-124
+  s_ed1d6eab60ad79::t_07a265d0df1713 44-45
+  s_ed1d6eab60ad79::t_609763d811e82c 31-32,34,56,60-62,75-78,104,107
+docs/deep-combat-layer/07-ranged-combat.md
+  s_ed1d6eab60ad79::t_2cb54afd418f30 99
+  s_ed1d6eab60ad79::t_07a265d0df1713 103-104
+  s_ed1d6eab60ad79::t_d7f20c3002278e 1-98,100-102,105-127,133-135,154-158
+  s_ed1d6eab60ad79::t_609763d811e82c 128-132
+  s_ed1d6eab60ad79::t_2f7cc235d486f9 136-153
+docs/deep-combat-layer/08-status-resistance-and-posture.md
+  s_ed1d6eab60ad79::t_d7f20c3002278e 1-17,20-34,37-70,73-93
+  s_ed1d6eab60ad79::t_609763d811e82c 35-36
+  s_ed1d6eab60ad79::t_07a265d0df1713 18-19,71-72
+docs/deep-combat-layer/01-attributes-and-derived-stats.md
+  s_ed1d6eab60ad79::t_07a265d0df1713 46,86-87
+  s_ed1d6eab60ad79::t_7a3e54eaec548e 1-17,20,38-45,47-54,60-85,88-95,97-108,138-152
+  s_ed1d6eab60ad79::t_609763d811e82c 18-19,21-37,55-59,109-124,128-137
+  s_ed1d6eab60ad79::t_263d5a54708157 125-127
+  s_ed1d6eab60ad79::t_2cb54afd418f30 96
+docs/deep-combat-layer/02-turns-movement-and-actions.md
+  s_ed1d6eab60ad79::t_7a3e54eaec548e 1-94,96-108,110-116
+  s_ed1d6eab60ad79::t_2cb54afd418f30 95,109
+docs/deep-combat-layer/06-equipment-and-encumbrance.md
+  s_ed1d6eab60ad79::t_07a265d0df1713 52-53
+  s_ed1d6eab60ad79::t_f84d61d5a08ce8 1,3-4,6,8,10,12-27,29-30,32,34-37,39,41,43-47,49-50,55,57,59-62,64-65,67,69-123
+docs/deep-combat-layer/04-facing-reach-and-targeting.md
+  s_ed1d6eab60ad79::t_f84d61d5a08ce8 1-103
+docs/deep-combat-layer/03-skills-and-active-defenses.md
+  s_ed1d6eab60ad79::t_07a265d0df1713 158,196-197
+  s_ed1d6eab60ad79::t_263d5a54708157 199-201
+  s_ed1d6eab60ad79::t_7a3e54eaec548e 1-19,53-83,102-149,154-157,159-195,198,202-210
+  s_ed1d6eab60ad79::t_df26b574759b7d 20-52
+  s_ed1d6eab60ad79::t_609763d811e82c 84-101,150-153
+docs/deep-combat-layer/00-overview.md
+  s_ed1d6eab60ad79::t_7a3e54eaec548e 1,3-5,7,9-13,21-22,33-34
+  s_ed1d6eab60ad79::t_609763d811e82c 24-29,31-32
+  s_ed1d6eab60ad79::t_07a265d0df1713 15-17,23,30
+docs/deep-combat-layer/10-scope-calibration-and-retired-fields.md
+  s_ed1d6eab60ad79::t_609763d811e82c 48-49,52
+  s_ed1d6eab60ad79::t_d7f20c3002278e 1-47,50-51,53-96
+docs/deep-combat-layer/09-player-facing-information.md
+  s_ed1d6eab60ad79::t_2cb54afd418f30 79-80
+  s_ed1d6eab60ad79::t_d7f20c3002278e 1-78,81-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ae364f05f89ba64fcf2db3a299d8311c5027e5c3",
+  "prompts": {},
+  "sessions": {
+    "s_ed1d6eab60ad79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6632-c697-7551-ae59-edf55b1def10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
