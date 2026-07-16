@@ -1,0 +1,59 @@
+docs/deep-combat-layer/01-attributes-and-derived-stats.md
+  s_ed1d6eab60ad79::t_fa84699ab19536 9,11-12,41-44,52-53,65-75,83-105,136,138-139,154-155,171-172,187-189
+docs/deep-combat-layer/11-magic-skills-sources-and-energy.md
+  s_ed1d6eab60ad79::t_2501706a575768 65-66
+  s_ed1d6eab60ad79::t_a9c8b7e791039a 1-64,67-123,127-185
+  s_ed1d6eab60ad79::t_87d2fe1eaf89cf 124-126
+docs/deep-combat-layer/00-overview.md
+  s_ed1d6eab60ad79::t_45682b0d1e2c09 40-44
+  s_ed1d6eab60ad79::t_fa84699ab19536 3-6,8,12-14,16-17,34-37
+  s_ed1d6eab60ad79::t_c8a77f64134a2e 24-25,27-29,31-32
+docs/deep-combat-layer/04-facing-reach-and-targeting.md
+  s_ed1d6eab60ad79::t_08790997a7516d 69-70,82-85
+  s_ed1d6eab60ad79::t_b93911925e61e6 86
+docs/deep-combat-layer/05-damage-armor-and-injury.md
+  s_ed1d6eab60ad79::t_5c8b3bb5c83883 96-97,100
+  s_ed1d6eab60ad79::t_6627d7725fd5b1 4-6,43-44
+  s_ed1d6eab60ad79::t_d24bcb1133f61c 45
+docs/reference/gurps-heroic-combat-abilities-and-tradeoffs.md
+  s_ed1d6eab60ad79::t_45682b0d1e2c09 1-784
+docs/deep-combat-layer/12-casting-charge-and-targeting.md
+  s_ed1d6eab60ad79::t_a9c8b7e791039a 1-126
+docs/deep-combat-layer/06-equipment-and-encumbrance.md
+  s_ed1d6eab60ad79::t_277662a593c80a 3-4,32-44,62-65,81-83,96-98,107-109,114-115
+docs/deep-combat-layer/13-magic-resolution-and-defenses.md
+  s_ed1d6eab60ad79::t_a9c8b7e791039a 1-44,46-95,116-257
+  s_ed1d6eab60ad79::t_578074a17fce60 96-108,112-115
+  s_ed1d6eab60ad79::t_2ec947a2430a83 45,109-111
+docs/deep-combat-layer/14-magic-effects-and-persistence.md
+  s_ed1d6eab60ad79::t_2ec947a2430a83 67-70
+  s_ed1d6eab60ad79::t_2501706a575768 77-78
+  s_ed1d6eab60ad79::t_a9c8b7e791039a 1-66,71-76,79-180
+docs/deep-combat-layer/08-status-resistance-and-posture.md
+  s_ed1d6eab60ad79::t_db083292001e47 4-6,14-16,22-25
+  s_ed1d6eab60ad79::t_f9fbf1ca5eadef 26
+docs/deep-combat-layer/09-player-facing-information.md
+  s_ed1d6eab60ad79::t_7ec9274dfaa5e4 18-20,30,40-43,55-57,65,92-104,108-110,118-121
+  s_ed1d6eab60ad79::t_676068ae68d87c 34-35
+docs/deep-combat-layer/10-scope-calibration-and-retired-fields.md
+  s_ed1d6eab60ad79::t_cc05c4059364d3 6,8-10,12-14,31-37,49-51,53-54,64-72,77-78,84-89,99-102,111-115,120-123
+docs/deep-combat-layer/02-turns-movement-and-actions.md
+  s_ed1d6eab60ad79::t_87d2fe1eaf89cf 33-34,81-84
+  s_ed1d6eab60ad79::t_08f92b549af38b 35-36,78-80,85,125-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f8e4c1468352ec53d9052491c7d0d9377949ba9e",
+  "prompts": {},
+  "sessions": {
+    "s_ed1d6eab60ad79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6632-c697-7551-ae59-edf55b1def10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
