@@ -1,0 +1,36 @@
+docs/deep-combat-layer/10-scope-calibration-and-retired-fields.md
+  s_ed1d6eab60ad79::t_170fd3365b3305 9-11,47-50,53-59,88-91,116-120
+docs/deep-combat-layer/13-magic-resolution-and-defenses.md
+  s_ed1d6eab60ad79::t_a574ba5c9495f5 135-137
+docs/deep-combat-layer/03-skills-and-active-defenses.md
+  s_ed1d6eab60ad79::t_a574ba5c9495f5 101-103
+docs/deep-combat-layer/09-player-facing-information.md
+  s_ed1d6eab60ad79::t_170fd3365b3305 13-16,28-43
+  s_ed1d6eab60ad79::t_9b5749a584c859 44
+docs/deep-combat-layer/01-attributes-and-derived-stats.md
+  s_ed1d6eab60ad79::t_170fd3365b3305 58
+  s_ed1d6eab60ad79::t_a574ba5c9495f5 79
+  s_ed1d6eab60ad79::t_ffc5a94698a800 7,9-11,14-27,143,145-150
+docs/deep-combat-layer/00-overview.md
+  s_ed1d6eab60ad79::t_170fd3365b3305 38
+docs/deep-combat-layer/15-character-growth-and-job-stat-modifiers.md
+  s_ed1d6eab60ad79::t_a574ba5c9495f5 27-29,233-236
+  s_ed1d6eab60ad79::t_fda391145e440d 19-20
+  s_ed1d6eab60ad79::t_ffc5a94698a800 1-18,21-26,30-232,237-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8593332e3b01c249afbf661551edc4bb00a8246e",
+  "prompts": {},
+  "sessions": {
+    "s_ed1d6eab60ad79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6632-c697-7551-ae59-edf55b1def10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
