@@ -66,7 +66,8 @@ on that skill.
 
 ## Line of sight and cover
 
-An attack with no valid trajectory is illegal. Partial exposure instead modifies Effective Skill:
+A physical attack with no valid trajectory is illegal. Partial exposure instead modifies Effective
+Skill:
 
 | Cover | Skill modifier |
 | --- | ---: |
@@ -77,6 +78,11 @@ An attack with no valid trajectory is illegal. Partial exposure instead modifies
 
 Direct trajectories interact with intervening units and terrain. Arcing trajectories may pass over
 units and low cover when the weapon profile permits it.
+
+Unit-targeted magic is an explicit exception. It preserves FFT target tracking, performs no
+line-of-sight or cover check, and does not use the physical range-penalty table. That complete
+contract is owned by
+[Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md#unit-targets-follow-fft-tracking).
 
 ## Elevation
 

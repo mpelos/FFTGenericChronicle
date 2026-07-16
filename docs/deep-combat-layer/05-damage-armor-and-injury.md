@@ -1,7 +1,9 @@
 # Damage, Armor, and Injury
 
 This document owns physical damage dice, DR application, wound conversion, immediate injury effects,
-and the boundary with FFT's KO lifecycle.
+and the boundary with FFT's KO lifecycle. Magical power, delivery, Faith, Shell, elements, and the
+point at which magic enters this shared injury pipeline are owned by
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md).
 
 ## From ST and weapon to damage dice
 
@@ -37,6 +39,9 @@ Injury             = floor(PenetratingDamage * woundMultiplier)
 ```
 
 The target loses Injury HP. DR is subtracted before the wound multiplier.
+
+Manifested magical damage uses the same DR and injury operations after its delivery succeeds.
+Internal or spiritual magic may skip DR only when its delivery profile declares that rule.
 
 ## DR ownership
 
@@ -88,11 +93,11 @@ weapon or ability explicitly defines a visible critical effect.
 
 ## Shock
 
-Injury may cause short-lived Shock. Because FFT HP is scaled far above literal GURPS HP,
-`ShockBand` converts the injury fraction into a `0..4` penalty:
+Injury may cause short-lived Shock. HP and damage use the same GURPS-shaped numeric scale, so each
+point of Injury produces one point of Shock up to the normal cap:
 
 ```text
-ShockPenalty = min(4, ShockBand(Injury / MaxHP))
+ShockPenalty = min(4, Injury)
 ```
 
 Shock reduces DX- and IQ-based action rolls through the end of the victim's next turn. It does not

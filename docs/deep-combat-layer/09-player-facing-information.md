@@ -15,7 +15,9 @@ The unit screen exposes the real DCL values:
 | IQ | Raw MA mapping and current explicit modifiers. |
 | HT | Brave-derived 3d6 score and raw Brave. |
 | Will | IQ-derived score and modifiers. |
-| HP | Current/maximum and its ST-derived origin. |
+| Faith | Current value and continuous potency/receptivity factor. |
+| HP | Current/maximum and ST, Character HP Modifier, Job HP Modifier, and explicit item/status terms. |
+| MP | Current/maximum and `max(HT, IQ)`, Character MP Modifier, Job MP Modifier, and explicit item/status terms. |
 | Basic Speed | Actual fractional value. |
 | Move/Jump | Effective values after job, equipment, state, and encumbrance. |
 | Dodge | Final score and main penalties. |
@@ -25,15 +27,19 @@ The interface does not display a doubled compatibility Speed merely to resemble 
 
 ## Skill screen
 
-For each usable weapon and shield family, the player can inspect:
+For each usable weapon, shield, and magical tradition, the player can inspect:
 
 - governing attribute;
 - Difficulty;
-- active-job aptitude Tier;
-- Job Level;
+- relevant aptitude Tier and owning job;
+- Job Level that supplies Rank;
 - current Rank and equivalent investment band;
 - final Skill;
 - resulting Parry or Block.
+
+A magical tradition also shows its source job, source Job Level, IQ-based Tradition Skill, and each
+unlocked spell's relative Spell Modifier and final SpellScore. Faith is shown separately and never
+hidden inside the skill breakdown.
 
 A Job Level that raises Rank without crossing the next integer Skill breakpoint still shows that
 progress.
@@ -46,7 +52,9 @@ Weapons show damage expression, thrust/swing basis, damage type, armor divisor, 
 Accuracy, Weight, hands, Parry modifier, balance/readiness, and special properties.
 
 Body and head equipment show their separate DR and Weight. Shields show Block modifier, Defense
-Bonus, legal coverage, and Weight. Accessories show their explicit modifiers and Weight.
+Bonus, legal physical/magical coverage, and Weight. Foci and accessories show only their explicit
+Spell Skill, power, concentration, CastCT, MP-cost, Faith, affinity, routing, or resistance
+properties.
 
 Equipping an item immediately previews:
 
@@ -54,6 +62,7 @@ Equipping an item immediately previews:
 - effective Move, Jump, and Dodge;
 - BodyDR and HeadDR;
 - derived weapon damage and active defenses;
+- MaxHP, MaxMP, Magic Resistance, spell defenses, and relevant focus modifiers;
 - the next encumbrance threshold.
 
 ## Attack forecast
@@ -80,10 +89,25 @@ For ranged attacks the final percentage uses the formula owned by
 [Ranged Combat](07-ranged-combat.md) rather than
 subtracting an evasion percentage from an attack percentage.
 
+For a magical action the forecast additionally shows:
+
+- tradition skill, Difficulty, Rank, Spell Modifier, and final SpellScore;
+- caster and target Faith values and resulting factor where applicable;
+- Zodiac modifier when applicable;
+- MP cost, reserved MP, overcasting HP, and failure/interruption cost;
+- CastCT, expected resolution point, Charging state, and concentration/cancellation conditions;
+- unit tracking or fixed-tile mode, range and vertical legality, and the absence of a LoS check;
+- Reflect route before confirmation;
+- delivery class and the target's active defense or resistance score;
+- final success chance, damage/healing dice, DR/divisor policy, element, Shell, area, selectivity,
+  friendly-fire policy, status chance, and duration.
+
 ## Persistent states
 
 Prone, Stun, Don't Act, Don't Move, Aim, Ready/Unready, lost Block, repeated-Parry penalties, Shock,
-and any other state that changes a future choice require visible representation and a clear expiry.
+Charging, reserved resources, tracked targets, fixed tiles, Reflect routes, QuickLock, global
+duration/tick counters, and any other state that changes a future choice require visible
+representation and a clear expiry.
 
 The player must not need external notes to know:
 
@@ -91,4 +115,7 @@ The player must not need external notes to know:
 - whether Block is available;
 - which target is being Aimed at;
 - why Move or Dodge changed;
-- which armor location an attack will test.
+- which armor location an attack will test;
+- which spell is Charging and when it resolves;
+- why a spell can be Dodged, Blocked, resisted, reflected, or stopped by DR;
+- whether a persistent effect Refreshes, Replaces, stacks, or is the strongest instance.

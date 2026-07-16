@@ -30,7 +30,10 @@ CT -= TurnThreshold
 Equal gain and equal cycle length preserve the initial phase ordering unless an explicit CT effect
 changes it. Ties use unrounded Basic Speed, then DX, then a stable unit index.
 
-Charge time may use the same global CT clock, but it does not restore Speed-based turn frequency.
+Timed magical effects may consume the global CT clock without restoring Speed-based turn
+frequency. Their timing rules are owned by
+[Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md) and
+[Magic Effects and Persistence](14-magic-effects-and-persistence.md).
 
 ## Turn resources
 
@@ -72,6 +75,14 @@ GURPS `-4` Move-and-Attack penalty or the effective-skill-9 cap.
 An Attack does not normally remove active defenses. A maneuver or weapon property that sacrifices
 defense must declare that consequence.
 
+## Cast
+
+Cast consumes the Action resource. The unit may use Movement before starting the cast or start the
+cast and then use any unspent Movement. All other casting, concentration, delayed-action,
+resource-commitment, and unit/tile target-tracking rules are owned by
+[Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md); this file owns only the
+shared Movement-plus-Action budget.
+
 ## Ready
 
 Ready is an Action used only by equipment with an explicit readiness property.
@@ -111,6 +122,7 @@ penalties are owned by [Status Resistance and Posture](08-status-resistance-and-
 ## Maneuver ownership
 
 Only maneuvers defined by the DCL acquire universal rules. GURPS names such as All-Out Attack,
-All-Out Defense, Evaluate, Feint, Wait, Concentrate, and Do Nothing do not silently inherit their
-tabletop behavior. A job ability or later global rule may implement one of them explicitly while
+All-Out Defense, Evaluate, Feint, Wait, and Do Nothing do not silently inherit their tabletop
+behavior. Casting uses the explicit DCL concentration contract rather than importing the complete
+GURPS Concentrate maneuver. A job ability or later global rule may implement another maneuver while
 obeying the Movement-plus-Action economy.

@@ -1,7 +1,9 @@
 # Status Resistance and Posture
 
 This document owns physical and mental resistance characteristics, Stun, Knockdown, Prone, Stand
-Up, and the distinction between posture and temporary action restrictions.
+Up, and the distinction between posture and temporary action restrictions. Magical delivery and
+Spiritual Resistance use these characteristics through the contract in
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md).
 
 ## Resistance ownership
 
@@ -9,11 +11,18 @@ Up, and the distinction between posture and temporary action restrictions.
 | --- | --- |
 | Physical health | HT |
 | Mental coercion | Will |
-| Magical | Outside this physical layer |
+| Magical bodily effect | HT |
+| Magical mental effect | Will |
+| Magical spiritual effect | Spiritual Resistance |
 
 Typical HT-resisted effects include Poison, disease, physical Stun, Knockdown, and Major-Wound
 collapse. Typical Will-resisted effects include Charm, Confuse, imposed Berserk, Fear, Taunt, and
 other loss of voluntary control.
+
+Magical source does not replace effect ownership: a magical poison still normally tests HT, while a
+magical compulsion tests Will. Spiritual Resistance and the removal of universal Magic Evasion are
+owned by
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md#magic-resistance-and-retired-magical-evasion).
 
 The formulas for HT and Will are owned by
 [Attributes and Derived Stats](01-attributes-and-derived-stats.md).

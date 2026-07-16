@@ -1,7 +1,7 @@
 # Equipment and Encumbrance
 
-This document owns the physical rules vocabulary for every equipment slot and the conversion from
-item Weight to encumbrance.
+This document owns the physical and supernatural rules vocabulary for every equipment slot and the
+conversion from item Weight to encumbrance.
 
 No new item entries are required. Existing FFT equipment receives DCL metadata and formulas.
 
@@ -29,6 +29,19 @@ Every physical weapon profile declares:
 There is no per-weapon Minimum ST. Job equipment access, aptitude Tier, ST distribution, Weight,
 handedness, readiness, and the rest of the weapon profile provide the restrictions.
 
+A weapon that also serves as a magical focus may declare a small, coherent subset of:
+
+- SpellSkillModifier;
+- FocusPowerModifier;
+- ElementBoost;
+- ConcentrationModifier;
+- CastCTModifier;
+- MPCostModifier;
+- tradition compatibility.
+
+One item does not receive every focus axis merely because it is associated with a caster. Each
+property competes with the item's physical profile and other equipment opportunities.
+
 ## Hands and off-hand
 
 - A one-handed weapon leaves the off-hand available for a shield or a legal second weapon.
@@ -46,6 +59,10 @@ Each shield declares:
 - Weight;
 - any explicit status, element, or equipment property.
 
+A shield may additionally declare Block or Defense Bonus against Blockable spell manifestations.
+This does not protect against Internal Direct effects and does not become a universal Magic
+Resistance bonus.
+
 The wielder's DX, Shield Rank, and Job Level produce Shield Skill. The shield item modifies the
 result rather than supplying an independent percentage chance.
 
@@ -61,6 +78,9 @@ Body equipment declares:
 - explicit status or element properties;
 - any rare attribute or mobility modifier.
 
+It may also declare explicit HP/MP, IQ, Will, Magic Resistance, status immunity, or elemental
+affinity. These are authored properties rather than automatic benefits of armor class.
+
 Body equipment does not normally add HP. Its defensive identity is mitigation through BodyDR paid
 for through Weight and equipment access.
 
@@ -73,6 +93,9 @@ Head equipment declares:
 - explicit status or element properties;
 - any rare attribute or mobility modifier.
 
+It may also declare explicit HP/MP, IQ, Will, Magic Resistance, status immunity, or elemental
+affinity. HeadDR remains physical protection; the item does not gain a separate magical DR.
+
 HeadDR contributes to normal protection and is the only equipment DR used by a head-targeting
 attack. Hats may trade DR for nonphysical properties without changing the location rule.
 
@@ -81,11 +104,15 @@ attack. Hats may trade DR for nonphysical properties without changing the locati
 Accessories may supply:
 
 - status or element properties;
-- explicit Dodge, Defense Bonus, Move, Jump, attribute, or HP modifiers;
+- explicit Dodge, Defense Bonus, Move, Jump, attribute, HP, or MP modifiers;
+- Dodge against evadeable spells or EquipmentMagicResistance;
+- Faith, concentration, CastCT, MP-cost, affinity, Reflect, or tradition modifiers;
 - Weight, normally low;
 - explicit DR in exceptional cases.
 
 An accessory never receives a generic pile of unrelated bonuses merely to keep a legacy field live.
+The item must state whether a defensive modifier affects active defense, resistance, injury, or
+routing; those layers do not substitute for one another.
 
 ## Basic Lift and Load
 

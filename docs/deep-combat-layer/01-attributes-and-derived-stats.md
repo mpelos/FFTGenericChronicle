@@ -6,10 +6,10 @@ This document owns the mapping from FFT character data to the DCL's GURPS-like c
 
 | DCL attribute | FFT source | Physical-combat role |
 | --- | --- | --- |
-| ST | Raw PA | Thrust/swing damage, HP, and Basic Lift. |
+| ST | Raw PA | Thrust/swing damage, the base of HP, and Basic Lift. |
 | DX | Raw Speed | Weapon Skill, Shield Skill, and Basic Speed. |
-| IQ | Raw MA | Will and the future magic skill axis. |
-| HT | `BraveToHT(current Brave)` | Basic Speed and physical resistance checks. |
+| IQ | Raw MA | Will, magical-tradition skills, magical power, and one possible MP base. |
+| HT | `BraveToHT(current Brave)` | Basic Speed, physical resistance, and one possible MP base. |
 
 Raw PA, Raw Speed, and Raw MA are the character's pre-equipment stats. Ordinary weapons never add
 to these attributes. A rare nonweapon effect may explicitly modify an attribute, but it must be
@@ -38,7 +38,10 @@ replace HT checks.
 ## Secondary characteristics
 
 ```text
-MaxHP      = HPScale(ST)
+BaseMaxHP  = ST + CharacterHPModifier + JobHPModifier
+MaxHP      = BaseMaxHP + explicit equipment/status HP modifiers
+BaseMaxMP  = max(HT, IQ) + CharacterMPModifier + JobMPModifier
+MaxMP      = BaseMaxMP + explicit equipment/status MP modifiers
 Will       = IQ + explicit Will modifiers
 BasicLift  = LiftScale(ST * ST / 5)
 BasicSpeed = (DX + HT) / 4
@@ -46,8 +49,8 @@ BasicMove  = floor(BasicSpeed) + JobMoveAdjustment + explicit Move modifiers
 BaseDodge  = floor(BasicSpeed) + 3
 ```
 
-`HPScale` and `LiftScale` bridge GURPS-shaped values to FFT's heroic HP and equipment-Weight scales.
-They do not change which attribute owns each result.
+`LiftScale` bridges GURPS-shaped ST to FFT's equipment-Weight scale. HP and MP remain on the same
+additive numeric scale as the four attributes and their character/job modifiers.
 
 Basic Speed is displayed at its actual value, including `.25`, `.50`, and `.75`. It is not doubled
 or converted back to the vanilla FFT Speed scale.
@@ -59,8 +62,17 @@ half of the formula and also owns every physical skill.
 
 ## HP
 
-HP derives from ST rather than from a separate base-HP progression. A stronger character therefore
-has three linked benefits that belong to the GURPS ST package:
+HP starts from ST and receives signed character and job modifiers:
+
+```text
+BaseMaxHP = PA + CharacterHPModifier + JobHPModifier
+```
+
+The per-unit Raw HP storage is reinterpreted as `CharacterHPModifier`; it is no longer a complete HP
+pool. `JobHPModifier` belongs to the current job's chassis. This keeps unit growth separate from the
+bonus or penalty gained by changing jobs.
+
+A stronger character therefore has three linked benefits that belong to the GURPS ST package:
 
 - stronger thrust and swing damage;
 - a larger HP pool;
@@ -68,7 +80,29 @@ has three linked benefits that belong to the GURPS ST package:
 
 Armor protects through DR and does not normally increase the character's body. An item that truly
 grants vitality must say that it modifies HP; a normal body armor or helmet does not disguise DR as
-an HP bonus.
+an HP bonus. Character, job, equipment, and status HP modifiers are additive and may be positive or
+negative.
+
+## MP
+
+MP is the only extraordinary-energy pool:
+
+```text
+BaseMaxMP = max(HT, IQ) + CharacterMPModifier + JobMPModifier
+```
+
+The per-unit Raw MP storage is reinterpreted as `CharacterMPModifier`; it is no longer a complete MP
+pool. `JobMPModifier` is the canonical DCL name for the job's FP-like capacity adjustment. It does
+not create a separate Fatigue Point characteristic.
+
+The higher of HT and IQ supplies the base. A bodily specialist may power Ki or another supernatural
+technique through HT; an intellectual specialist may power spells through IQ. The lower attribute
+does not contribute until it becomes the higher one. This represents the unit's best energy channel,
+not a combined average of body and mind.
+
+Every job therefore has some MP. Consuming MP does not classify an action as a Spell: source,
+governing skill, Faith, Silence, Reflect, resistance, and damage behavior are declared independently
+in [Magic Skills, Sources, and Energy](11-magic-skills-sources-and-energy.md).
 
 ## Will and omitted Perception
 
@@ -99,10 +133,10 @@ Basic Speed owns initiative order but not turn frequency. The CT contract is def
 
 | FFT field | DCL role |
 | --- | --- |
-| Character Level | Produces permanent Raw PA, Raw Speed, and Raw MA growth; it is not added directly to combat rolls. |
+| Character Level | Produces permanent Raw PA, Raw Speed, Raw MA, Character HP Modifier, and Character MP Modifier growth; it is not added directly to combat rolls. |
 | EXP | Advances Character Level; it has no direct battle modifier. |
-| Job Level | Determines the training Rank supplied by the active job for Weapon and Shield skills. |
-| JP | Purchases abilities; it does not directly increase Weapon or Shield Skill. |
+| Job Level | Determines the training Rank supplied for Weapon, Shield, and the job's magical tradition skills. |
+| JP | Purchases abilities and spells; it does not directly increase a trained Skill after unlock. |
 
 This separation prevents double-dipping: Character Level grows attributes, while Job Level grows
 training relative to those attributes.
@@ -117,7 +151,8 @@ Job chassis and stat growth use GURPS point costs as a common accounting unit:
 | +1 DX | 20 |
 | +1 IQ | 20 |
 | +1 HT | 10 |
-| +1 HP independent of ST | 2 |
+| +1 HP through a character/job modifier | 2 |
+| +1 MP capacity through a character/job modifier | 3 |
 | +1 Will independent of IQ | 5 |
 | +0.25 Basic Speed independent of DX/HT | 5 |
 | +1 Basic Move independent of Basic Speed | 5 |
@@ -133,8 +168,8 @@ Basic Speed; those derived gains are not charged again. A direct job Move or Dod
 charged separately because it is not part of an attribute increase.
 
 HT is normally changed through Brave rather than job growth. Any permanent Brave manipulation must
-still be evaluated as the corresponding HT change because it also changes resistance and Basic
-Speed.
+still be evaluated as the corresponding HT change because it also changes resistance, Basic Speed,
+and MaxMP whenever HT is the unit's higher energy attribute.
 
 ## Evasion and equipment-derived display fields
 
@@ -149,4 +184,6 @@ independent percentage rolls:
 | Accessory physical evasion | Explicit Dodge or Defense Bonus supplied by that accessory. |
 | Weapon Attack R/L | Derived `Xd6+Y` expression for the corresponding equipped weapon. |
 
-Magical evasion fields are outside this physical layer.
+Magical evasion fields are reinterpreted by delivery, Magic Resistance, and explicit equipment
+properties as defined in
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md#magic-resistance-and-retired-magical-evasion).
