@@ -132,7 +132,9 @@ of success into magnitude.
 
 ## Faith potency and receptivity
 
-Faith uses a continuous factor centered at Faith 50:
+Faith uses a continuous factor centered at Faith 50. Permanent and temporary Faith ownership is
+defined by
+[Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md#faith-remains-outside-character-growth).
 
 ```text
 FaithFactor(F) = 1 + 0.006 * (F - 50)

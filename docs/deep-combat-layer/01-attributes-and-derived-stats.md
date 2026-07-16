@@ -4,16 +4,27 @@ This document owns the mapping from FFT character data to the DCL's GURPS-like c
 
 ## Primary attributes
 
-| DCL attribute | FFT source | Physical-combat role |
+| DCL attribute | Permanent FFT source | Physical-combat role |
 | --- | --- | --- |
-| ST | Raw PA | Thrust/swing damage, the base of HP, and Basic Lift. |
-| DX | Raw Speed | Weapon Skill, Shield Skill, and Basic Speed. |
-| IQ | Raw MA | Will, magical-tradition skills, magical power, and one possible MP base. |
+| ST | Raw PA plus current modifiers | Thrust/swing damage, the base of HP, and Basic Lift. |
+| DX | Raw Speed plus current modifiers | Weapon Skill, Shield Skill, and Basic Speed. |
+| IQ | Raw MA plus current modifiers | Will, magical-tradition skills, magical power, and one possible MP base. |
 | HT | `BraveToHT(current Brave)` | Basic Speed, physical resistance, and one possible MP base. |
 
-Raw PA, Raw Speed, and Raw MA are the character's pre-equipment stats. Ordinary weapons never add
-to these attributes. A rare nonweapon effect may explicitly modify an attribute, but it must be
-priced as an attribute modifier rather than hidden inside Weapon Power or armor progression.
+Raw PA, Raw Speed, and Raw MA are the character's permanent pre-job and pre-equipment attributes.
+The active job, equipment, and states apply explicit additive adjustments without rewriting those
+raw values:
+
+```text
+ST = RawPA    + JobSTAdjustment + EquipmentSTAdjustment + StateSTAdjustment
+DX = RawSpeed + JobDXAdjustment + EquipmentDXAdjustment + StateDXAdjustment
+IQ = RawMA    + JobIQAdjustment + EquipmentIQAdjustment + StateIQAdjustment
+```
+
+Ordinary weapons never add to these attributes. A rare nonweapon effect may explicitly modify an
+attribute, but it must be priced as an attribute modifier rather than hidden inside Weapon Power or
+armor progression. Permanent growth and job-adjustment ownership are defined in
+[Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md).
 
 Brave converts to the meaningful 3d6 HT band with a neutral midpoint at Brave 50 and a superhuman
 ceiling at HT 16:
@@ -44,7 +55,7 @@ BaseMaxMP  = max(HT, IQ) + CharacterMPModifier + JobMPModifier
 MaxMP      = BaseMaxMP + explicit equipment/status MP modifiers
 Will       = IQ + explicit Will modifiers
 BasicLift  = LiftScale(ST * ST / 5)
-BasicSpeed = (DX + HT) / 4
+BasicSpeed = (DX + HT) / 4 + JobBasicSpeedAdjustment + explicit Basic Speed modifiers
 BasicMove  = floor(BasicSpeed) + JobMoveAdjustment + explicit Move modifiers
 BaseDodge  = floor(BasicSpeed) + 3
 ```
@@ -65,7 +76,7 @@ half of the formula and also owns every physical skill.
 HP starts from ST and receives signed character and job modifiers:
 
 ```text
-BaseMaxHP = PA + CharacterHPModifier + JobHPModifier
+BaseMaxHP = ST + CharacterHPModifier + JobHPModifier
 ```
 
 The per-unit Raw HP storage is reinterpreted as `CharacterHPModifier`; it is no longer a complete HP
@@ -129,47 +140,14 @@ does not feed initiative, attack skill, or active defense.
 Basic Speed owns initiative order but not turn frequency. The CT contract is defined in
 [Turns, Movement, and Actions](02-turns-movement-and-actions.md).
 
-## Job and campaign progression
+## Progression ownership
 
-| FFT field | DCL role |
-| --- | --- |
-| Character Level | Produces permanent Raw PA, Raw Speed, Raw MA, Character HP Modifier, and Character MP Modifier growth; it is not added directly to combat rolls. |
-| EXP | Advances Character Level; it has no direct battle modifier. |
-| Job Level | Determines the training Rank supplied for Weapon, Shield, and the job's magical tradition skills. |
-| JP | Purchases abilities and spells; it does not directly increase a trained Skill after unlock. |
-
-This separation prevents double-dipping: Character Level grows attributes, while Job Level grows
-training relative to those attributes.
-
-## Point-equivalent balance weights
-
-Job chassis and stat growth use GURPS point costs as a common accounting unit:
-
-| Improvement | Point-equivalent cost |
-| --- | ---: |
-| +1 ST | 10 |
-| +1 DX | 20 |
-| +1 IQ | 20 |
-| +1 HT | 10 |
-| +1 HP through a character/job modifier | 2 |
-| +1 MP capacity through a character/job modifier | 3 |
-| +1 Will independent of IQ | 5 |
-| +0.25 Basic Speed independent of DX/HT | 5 |
-| +1 Basic Move independent of Basic Speed | 5 |
-| +1 Dodge independent of Basic Speed | 15 |
-| +1 Parry for one weapon family | 5 |
-| +1 Parry for every weapon family | 10 |
-| +1 Block | 5 |
-
-These weights compare cumulative expected gains at the same Character Level; raw FFT growth
-coefficients are not compared directly. Attribute consequences are included in the attribute's
-cost. For example, +1 DX costs 20 total even though it also improves skills and contributes to
-Basic Speed; those derived gains are not charged again. A direct job Move or Dodge adjustment is
-charged separately because it is not part of an attribute increase.
-
-HT is normally changed through Brave rather than job growth. Any permanent Brave manipulation must
-still be evaluated as the corresponding HT change because it also changes resistance, Basic Speed,
-and MaxMP whenever HT is the unit's higher energy attribute.
+Character Level, EXP, shared growth profiles, permanent Brave growth, job stat chassis, and
+point-equivalent balance weights are owned by
+[Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md). Job Level
+training and JP ownership are defined with their physical and magical skills in
+[Skills and Active Defenses](03-skills-and-active-defenses.md) and
+[Magic Skills, Sources, and Energy](11-magic-skills-sources-and-energy.md).
 
 ## Evasion and equipment-derived display fields
 

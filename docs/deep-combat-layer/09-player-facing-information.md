@@ -10,10 +10,10 @@ The unit screen exposes the real DCL values:
 
 | Value | Required presentation |
 | --- | --- |
-| ST | Raw PA mapping and current explicit modifiers. |
-| DX | Raw Speed mapping and current explicit modifiers. |
-| IQ | Raw MA mapping and current explicit modifiers. |
-| HT | Brave-derived 3d6 score and raw Brave. |
+| ST | Permanent Raw PA, Job ST Adjustment, and equipment/state terms. |
+| DX | Permanent Raw Speed, Job DX Adjustment, and equipment/state terms. |
+| IQ | Permanent Raw MA, Job IQ Adjustment, and equipment/state terms. |
+| HT | Current Brave-derived 3d6 score, Permanent Brave, and temporary Brave terms. |
 | Will | IQ-derived score and modifiers. |
 | Faith | Current value and continuous potency/receptivity factor. |
 | HP | Current/maximum and ST, Character HP Modifier, Job HP Modifier, and explicit item/status terms. |
@@ -24,6 +24,23 @@ The unit screen exposes the real DCL values:
 | Encumbrance | Band, current Load, Basic Lift, Move multiplier, and Dodge penalty. |
 
 The interface does not display a doubled compatibility Speed merely to resemble vanilla FFT.
+
+## Growth and job-change information
+
+Character Level results show the active job's shared growth profile, every permanent integer gain,
+and retained fractional progress. Faith never appears as unexplained level-up growth; an explicit
+permanent Faith effect reports its signed change separately.
+
+The job-selection preview separates permanent character values from the candidate chassis and
+shows the resulting changes to:
+
+- ST, DX, IQ, HT, Will, MaxHP, and MaxMP;
+- Basic Speed, initial initiative position, Move, Jump, and Dodge;
+- Basic Lift, Load threshold, and encumbrance band;
+- Weapon Skill, Shield Skill, Tradition Skill, Parry, Block, and Magic Resistance.
+
+The composition and preview contract is owned by
+[Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md).
 
 ## Skill screen
 

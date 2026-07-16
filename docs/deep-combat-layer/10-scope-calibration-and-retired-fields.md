@@ -6,8 +6,9 @@ GURPS subsystems, and deliberately retired FFT behavior.
 ## DCL boundary
 
 The DCL defines the shared physical and supernatural combat engine. Job kits live outside this
-directory. Jobs consume the contracts here by providing attribute growth, HP/MP modifiers,
-equipment access, aptitude Tiers, Job Level, tradition ownership, and explicit abilities.
+directory. Jobs consume the contracts here by selecting a shared growth profile and providing an
+additive stat chassis, equipment access, aptitude Tiers, Job Level, tradition ownership, and
+explicit abilities.
 
 The DCL does not assign individual spells or supernatural techniques to jobs, set their final JP
 costs, or add equipment entries. It defines the metadata and resolution contracts those authored
@@ -43,9 +44,19 @@ silently enabling the full subsystem.
 
 The following are structural and do not change during ordinary balance calibration:
 
-- `ST = Raw PA`, `DX = Raw Speed`, `IQ = Raw MA`, `HT = BraveToHT(Brave)`;
+- permanent Character ST = Raw PA, Character DX = Raw Speed, and Character IQ = Raw MA;
+- effective ST, DX, and IQ from permanent character value plus additive job, equipment, and state
+  adjustments;
+- `HT = BraveToHT(current Brave)` with permanent Brave participating in Character Level growth;
 - Brave 50 maps to HT 10, Brave 100 maps to HT 16, and the conversion uses the defined eight-Brave
   interval and rounding rule;
+- exactly three shared job growth profiles — Physical, Magical, and Hybrid — with equal total
+  point-equivalent budget and equal DX allocation;
+- deterministic fractional growth accumulators and no repeated growth award for a regained level;
+- Faith outside Character Level and Job Level growth, changed permanently only by explicit
+  reversible player-directed effects;
+- additive job stat adjustments applied in full while the job is active rather than multiplicative
+  PA, MA, Speed, HP, or MP scaling;
 - HP from ST plus additive character/job modifiers;
 - MP from the higher of HT/IQ plus additive character/job modifiers;
 - Basic Lift from ST, Will from IQ, Basic Speed from DX and HT;
@@ -74,11 +85,13 @@ The following are structural and do not change during ordinary balance calibrati
 
 The following are authored tables or constants that may change without changing the architecture:
 
-- CharacterHPModifier, JobHPModifier, CharacterMPModifier, and JobMPModifier progressions;
+- total Character Level growth budget, profile allocations, growth costs, and growth steps;
+- individual job ST, DX, IQ, HP, MP, Basic Speed, Move, Jump, Dodge, Will, and Magic Resistance
+  adjustments;
+- CharacterHPModifier, JobHPModifier, CharacterMPModifier, and JobMPModifier magnitudes;
 - the ST thrust/swing table bridge;
 - `LiftScale` and item Weight values;
 - `InitiativeSeed`, `GlobalCTGain`, and `TurnThreshold` magnitudes;
-- job Move/Dodge adjustments;
 - weapon modifiers, Parry modifiers, Block modifiers, DB, Accuracy, range, divisors, and readiness;
 - BodyDR, HeadDR, and accessory modifiers;
 - tradition Difficulties, Spell Modifiers, MP costs, CastCT, range, vertical tolerance, area, and
@@ -100,6 +113,11 @@ Calibration may tune these numbers but must preserve the owner and direction of 
 | HPMultiplier | Replaced by an additive JobHPModifier. |
 | Raw MP / MPGrowth | Reinterpreted as the per-character MP modifier and its growth, not a complete MP pool. |
 | MPMultiplier or FP-like job field | Replaced by an additive JobMPModifier; no FP pool exists. |
+| PA Growth / MA Growth / Speed Growth | Reinterpreted through the job's shared Character Growth profile rather than unique per-job optimization coefficients. |
+| PA Multiplier | Replaced by additive JobSTAdjustment. |
+| MA Multiplier | Replaced by additive JobIQAdjustment. |
+| Speed Multiplier | Replaced by additive JobDXAdjustment and, when required, a separate fractional JobBasicSpeedAdjustment. |
+| Automatic Faith growth by Character Level or Job Level | Retired; PermanentFaith changes only through an explicit roster-shaping effect. |
 | Large armor HP bonuses | Retired for ordinary armor; protection is DR. |
 | Weapon PA bonus | Retired as ST growth; weapon contribution is its damage modifier. |
 | Speed-based CT gain | Retired; CT gain is linear and Speed seeds initiative. |

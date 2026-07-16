@@ -35,6 +35,7 @@ retired legacy fields are owned by
 | [12 — Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md) | Cast declaration, movement order, CastCT, concentration, unit tracking, tile targeting, range, and no-LoS magic. |
 | [13 — Magic Resolution and Defenses](13-magic-resolution-and-defenses.md) | External/internal delivery, active defenses, resistance, Magic Resistance, damage, DR, Faith, elements, Shell, and Reflect. |
 | [14 — Magic Effects and Persistence](14-magic-effects-and-persistence.md) | Healing, revive, status duration, global ticks, Haste, Slow, Quick, Stop, Silence, Dispel, stacking, Undead, and Summon. |
+| [15 — Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md) | Shared growth profiles, deterministic level-up, Brave growth, Faith permanence, additive job chassis, and the job-authoring recipe. |
 
 Each rule has one owning file. Other documents link to the owner instead of restating the rule.
 
