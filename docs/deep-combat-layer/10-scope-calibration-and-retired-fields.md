@@ -5,10 +5,10 @@ GURPS subsystems, and deliberately retired FFT behavior.
 
 ## DCL boundary
 
-The DCL defines the shared physical and supernatural combat engine. Job kits live outside this
-directory. Jobs consume the contracts here by selecting a shared growth profile and providing an
-additive stat chassis, equipment access, aptitude Tiers, Job Level, tradition ownership, and
-explicit abilities.
+The DCL defines the shared physical and supernatural combat engine and the job-authoring budget
+contract. Individual job kits live outside this directory. Jobs consume the contracts here by
+providing an equal-budget growth vector, an equal-budget additive stat chassis, equipment access,
+Aptitude Grades, Job Tier, Job Level, tradition ownership, and explicit abilities.
 
 The DCL does not assign individual spells or supernatural techniques to jobs, set their final JP
 costs, or add equipment entries. It defines the metadata and resolution contracts those authored
@@ -48,10 +48,11 @@ The following are structural and do not change during ordinary balance calibrati
 - effective ST, DX, and IQ from permanent character value plus additive job, equipment, and state
   adjustments;
 - `HT = BraveToHT(current Brave)` with permanent Brave participating in Character Level growth;
-- Brave 50 maps to HT 10, Brave 100 maps to HT 16, and the conversion uses the defined eight-Brave
-  interval and rounding rule;
-- exactly three shared job growth profiles — Physical, Magical, and Hybrid — with equal total
-  point-equivalent budget and equal DX allocation;
+- Brave 50 maps to HT 10, Brave 100 maps to HT 16, Brave 112 maps to HT 18, and the conversion uses
+  the defined eight-Brave interval without an upper HT clamp;
+- raw-Brave probability mechanics clamp to `0%..100%` while Brave above 100 continues increasing HT;
+- every job owns an individual growth vector with the same total point-equivalent budget, regardless
+  of Job Tier;
 - deterministic fractional growth accumulators and no repeated growth award for a regained level;
 - Faith outside Character Level and Job Level growth, changed permanently only by explicit
   reversible player-directed effects;
@@ -64,6 +65,11 @@ The following are structural and do not change during ordinary balance calibrati
 - magical-tradition skill from IQ, Difficulty, Rank, aptitude Tier, and source Job Level;
 - individual spells as unlocked techniques with one relative Spell Modifier;
 - the Tier-by-Job-Level Rank schedule and its equivalent GURPS investment bands;
+- Job Tier ordered E, D, C, B, A and separated from weapon, Shield, and tradition Aptitude Grade;
+- equal Character Growth and numeric Job Modifier budgets across Job Tiers;
+- increasing Command and R/S/M budgets by Job Tier, with portable value increasing proportionally
+  faster than command value;
+- action capacity measured from state-dependent expected contribution rather than ability count;
 - attack roll followed by one active-defense roll;
 - reusable Dodge, cumulative repeated-Parry penalty, one normal Block per defensive cycle;
 - weapon damage from thrust/swing plus weapon modifier;
@@ -85,9 +91,13 @@ The following are structural and do not change during ordinary balance calibrati
 
 The following are authored tables or constants that may change without changing the architecture:
 
-- total Character Level growth budget, profile allocations, growth costs, and growth steps;
+- total Character Level growth budget, individual job allocations, growth costs, growth steps, and
+  natural endgame envelopes;
 - individual job ST, DX, IQ, HP, MP, Basic Speed, Move, Jump, Dodge, Will, and Magic Resistance
   adjustments;
+- numeric Job Modifier Budget and DCL-specific prices for Jump and Magic Resistance;
+- Command Kit, R/S/M Catalog, per-ability, and portable-loadout tier indices;
+- Action Equivalent outcome weights, benchmark scenario weights, and tier score tolerances;
 - CharacterHPModifier, JobHPModifier, CharacterMPModifier, and JobMPModifier magnitudes;
 - the ST thrust/swing table bridge;
 - `LiftScale` and item Weight values;
@@ -113,7 +123,7 @@ Calibration may tune these numbers but must preserve the owner and direction of 
 | HPMultiplier | Replaced by an additive JobHPModifier. |
 | Raw MP / MPGrowth | Reinterpreted as the per-character MP modifier and its growth, not a complete MP pool. |
 | MPMultiplier or FP-like job field | Replaced by an additive JobMPModifier; no FP pool exists. |
-| PA Growth / MA Growth / Speed Growth | Reinterpreted through the job's shared Character Growth profile rather than unique per-job optimization coefficients. |
+| PA Growth / MA Growth / Speed Growth | Reinterpreted as channels in the active job's individual equal-budget Character Growth vector. |
 | PA Multiplier | Replaced by additive JobSTAdjustment. |
 | MA Multiplier | Replaced by additive JobIQAdjustment. |
 | Speed Multiplier | Replaced by additive JobDXAdjustment and, when required, a separate fractional JobBasicSpeedAdjustment. |

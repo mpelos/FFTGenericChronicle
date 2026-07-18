@@ -1,8 +1,10 @@
 # Character Growth and Job Stat Modifiers
 
-This document owns permanent Character Level growth, the growth profile supplied by the active job,
-the current job's additive stat chassis, and the point-equivalent recipe used to compare those
-packages. It defines how a job is authored without assigning final values to any individual job.
+This document owns permanent Character Level growth, the active job's growth vector, fractional
+progress, permanent Brave and Faith policy, additive job stat modifiers, their point-equivalent
+accounting, and endgame attribute envelopes. Job tiers, ability budgets, and the complete job
+authoring workflow are owned by
+[Job Tiers, Ability Budgets, and Authoring](16-job-tiers-ability-budgets-and-authoring.md).
 
 Attribute meanings and derived-stat formulas are owned by
 [Attributes and Derived Stats](01-attributes-and-derived-stats.md). Weapon, Shield, and magical
@@ -15,13 +17,13 @@ The final unit is assembled from four independent layers:
 
 | Layer | Persistence | Owns |
 | --- | --- | --- |
-| Character growth | Permanent | ST, DX, IQ, Brave/HT, Character HP Modifier, and Character MP Modifier. |
+| Character growth | Permanent | ST, DX, IQ, Brave, Character HP Modifier, and Character MP Modifier. |
 | Job chassis | While the job is active | Additive stat adjustments, mobility, resistance, and equipment access. |
-| Job training | Permanent per learned job | Job Level, aptitude-driven proficiency Rank, and unlocked abilities. |
+| Job training | Permanent per learned job | Job Level, aptitude-driven Rank, and unlocked abilities. |
 | Equipment and states | While present | Item properties and temporary battle modifiers. |
 
-Character Level never enters an attack, defense, resistance, damage, HP, or MP formula directly.
-It awards permanent growth. Job Level never awards raw attributes; it supplies training Rank. A job
+Character Level never enters an attack, defense, resistance, damage, HP, or MP formula directly. It
+awards permanent growth. Job Level never awards raw attributes; it supplies training Rank. A job
 change replaces the chassis without rewriting the character's permanent values.
 
 EXP advances Character Level and has no direct combat term. JP purchases abilities and spells but
@@ -36,7 +38,7 @@ Normal Character Level growth may advance only these channels:
 | Character ST | Raw PA | Thrust/swing damage, MaxHP, and Basic Lift. |
 | Character DX | Raw Speed | Physical skills and one-half of Basic Speed's numerator. |
 | Character IQ | Raw MA | Will, magical skills, magical power, and the IQ route to MaxMP. |
-| Permanent Brave | Max/base Brave | Current HT, HT resistance, raw-Brave mechanics, and the HT route to Basic Speed and MaxMP. |
+| Permanent Brave | Max/base Brave | HT, raw-Brave mechanics, physical resistance, Basic Speed, and the HT route to MaxMP. |
 | Character HP Modifier | Reinterpreted Raw HP | MaxHP without increasing ST. |
 | Character MP Modifier | Reinterpreted Raw MP | MaxMP without increasing IQ or HT. |
 
@@ -48,56 +50,100 @@ This restriction prevents double-dipping. A point of ST already improves damage,
 capacity; Character Level does not also award separate permanent damage or Basic Lift growth for the
 same gain.
 
-## Growth profiles supplied by jobs
+## Per-job growth vectors with equal value
 
-Every job declares exactly one shared growth profile:
-
-- `Physical` emphasizes ST, Brave/HT, and Character HP Modifier while retaining some MP growth;
-- `Magical` emphasizes IQ and Character MP Modifier while retaining some physical growth;
-- `Hybrid` distributes growth between physical and magical channels without matching either
-  specialist at its peaks.
-
-Jobs assigned to the same profile use the same growth allocation. An individual job never receives
-a secretly superior version of Physical, Magical, or Hybrid growth. Job identity inside a profile
-comes from its current chassis, aptitudes, equipment, and abilities rather than a better permanent
-level-up table.
-
-All profiles receive the same total point-equivalent budget for the same Character Level gain. They
-change only the allocation of that budget. DX receives the same growth allocation in all three
-profiles: fast-job identity belongs to the current chassis, so leveling in one particular agile job
-does not become the permanent optimal route for every build.
-
-The profile allocations and total per-level budget are calibrated data. This architecture does not
-require a particular job-specific amount.
-
-## Deterministic level-up recipe
-
-Each permanent channel owns a fractional progress accumulator. On the first award for a Character
-Level, the active job's shared profile distributes that level's point-equivalent budget:
+Every job declares its own allocation vector:
 
 ```text
-profile = ActiveJob.GrowthProfile
-
-for each growth channel:
-    GrowthProgress[channel] +=
-        LevelGrowthBudget * ProfileAllocation[profile][channel]
-
-    while GrowthProgress[channel] >= GrowthCost[channel]:
-        PermanentValue[channel] += GrowthStep[channel]
-        GrowthProgress[channel] -= GrowthCost[channel]
+GrowthVector(job) = {
+    STAllocation,
+    DXAllocation,
+    IQAllocation,
+    BraveAllocation,
+    HPModifierAllocation,
+    MPModifierAllocation
+}
 ```
 
-Fractional progress is retained, so a level that does not cross an integer breakpoint is not a dead
-level. The process contains no random stat roll: identical permanent starting values and identical
-profile histories produce identical results.
+A job may allocate zero to any channel and does not need to grow every attribute. Its identity comes
+from the shape of the vector, but every job at every Job Tier receives the same point-equivalent
+budget per Character Level:
 
-A level grants growth only the first time that character earns it. Losing a Character Level does
-not remove already-earned growth, and regaining a previously awarded level does not award growth a
-second time. Delevel/relevel cycles therefore cannot manufacture permanent attributes.
+```text
+sum(GrowthAllocation[job, channel]) = UniversalGrowthBudget
+```
 
-Gender never changes a profile, allocation, cost, step, accumulator, or job chassis modifier.
+Equivalently, when a job is authored as stat rates:
 
-## Brave growth and current HT
+```text
+sum(
+    GrowthRate[job, channel]
+    * PointCostPerStep[channel]
+) = UniversalGrowthBudget
+```
+
+Equal budget prevents an objectively inferior leveling job; different allocation creates permanent
+specialization. A unit that levels exclusively in a physical job and later becomes a caster retains
+equal total development, but much of that value remains invested in physical channels. Safe total
+value does not mean cost-free respecialization.
+
+Job Tier never changes `UniversalGrowthBudget`. An advanced job receives its progression reward in
+ability budgets, not permanent growth.
+
+## Deterministic fractional level-up
+
+Each permanent channel owns one lifetime progress accumulator. On the first award for a Character
+Level, the active job distributes that level's allocation:
+
+```text
+job = ActiveJob
+
+for each growth channel:
+    GrowthPoints[channel] += JobGrowthAllocation[job][channel]
+
+    while GrowthPoints[channel] >= PointCostPerStep[channel]:
+        PermanentValue[channel] += GrowthStep[channel]
+        GrowthPoints[channel] -= PointCostPerStep[channel]
+```
+
+The equivalent rate representation is:
+
+```text
+GrowthProgress[channel] += JobGrowthRate[job][channel]
+gain = floor(GrowthProgress[channel])
+PermanentValue[channel] += gain
+GrowthProgress[channel] -= gain
+```
+
+The implementation stores fixed-point integer units rather than binary floating-point values. A
+fraction is retained across Character Levels and job changes, so separately rounded job histories
+never destroy progress. The same multiset of levels in the same jobs produces the same permanent
+result regardless of order.
+
+The process has no random stat roll. A Character Level grants growth only once. Losing a Character
+Level does not remove earned growth, and regaining an already-awarded level does not award growth
+again. Delevel/relevel cycles cannot manufacture attributes.
+
+Job Level, JP, gender, and Job Tier never change an allocation, cost, step, or accumulator.
+
+## Earned, realized, and latent value
+
+Integer attribute breakpoints separate the budget already earned from the value currently active in
+battle:
+
+```text
+EarnedGrowthValue   = every point allocated by earned Character Levels
+RealizedGrowthValue = point value of permanent integer gains already crossed
+LatentGrowthValue   = retained fractional progress toward later gains
+```
+
+Equal earned value alone is insufficient. Every job is evaluated at representative Character
+Levels to ensure that costly or widely spread allocations do not leave an excessive share of their
+budget latent for most of the campaign. Nonzero channels also obey a calibrated maximum interval
+between visible gains. Concentrating a vector is valid; hiding its value behind unusably slow
+breakpoints is not.
+
+## Brave growth and open-ended HT
 
 Brave is the persistent storage for HT growth:
 
@@ -110,17 +156,33 @@ CurrentBrave = PermanentBrave + temporary battle changes
 HT           = BraveToHT(CurrentBrave)
 ```
 
-Growth is awarded in raw Brave steps rather than hidden HT steps. Every Brave point can matter to a
-mechanic that explicitly uses Brave percentage, while crossing a conversion breakpoint changes HT
-and all of HT's derived consequences.
+The conversion has no upper clamp at Brave 100:
 
-The point budget begins from the GURPS value of `+1 HT = 10` and the DCL's approximate eight-Brave
-conversion interval. The calibrated cost of raw Brave also accounts for its independent percentage
-uses; those uses are not free merely because the next HT breakpoint has not been reached.
+```text
+HT = max(4, 10 + roundNearest((CurrentBrave - 50) / 8))
+```
 
-An ordinary job chassis does not grant `JobBraveAdjustment` or `JobHTAdjustment`. The active job can
-shape future Brave growth through its shared profile, but equipping a job does not instantly rewrite
-the character's courage or health.
+Brave 50 maps to HT 10, Brave 100 maps to HT 16, and Brave 112 maps to HT 18. Growth is awarded in
+raw Brave steps rather than hidden HT steps. Every Brave point can matter to a mechanic that
+expressly uses Brave, while crossing a conversion breakpoint changes HT and all of its derived
+consequences.
+
+A mechanic that interprets Brave as a probability uses:
+
+```text
+BraveChance = clamp(0, 100, CurrentBrave)%
+```
+
+Brave above 100 therefore continues to improve HT but never produces an invalid probability above
+100%. The initial point price begins from `+1 HT = 10` and approximately eight Brave per HT, or
+`1.25` points per raw Brave. Calibration may price pre-100 Brave more highly when its direct
+percentage use creates value beyond HT; that extra percentage value saturates at 100.
+
+An ordinary job chassis does not grant `JobBraveAdjustment` or `JobHTAdjustment`. The active job
+shapes future Brave through its growth vector but does not instantly rewrite courage or health.
+
+Any repeatable effect that changes Permanent Brave declares its legal range or convergence rule.
+Open-ended growth storage does not silently authorize an unlimited permanent-stat farming loop.
 
 ## Faith remains outside Character Growth
 
@@ -131,19 +193,19 @@ PermanentFaith = RecruitmentFaith + explicit permanent Faith changes
 CurrentFaith   = PermanentFaith + temporary battle changes
 ```
 
-Character Level, Job Level, growth profile, and ordinary job chassis do not raise or lower Faith.
+Character Level, Job Level, growth vector, and ordinary job chassis do not raise or lower Faith.
 Permanent Faith changes require an explicit, reversible, player-directed roster-shaping effect.
 Hostile or ordinary combat manipulation changes CurrentFaith only, so an enemy cannot silently ruin
 a roster unit after battle.
 
-Faith therefore has no positive Character Growth point cost. Its high and low values exchange
-supernatural potency and receptivity rather than forming a universal improvement ladder. The
-continuous combat factor remains owned by
+Faith has no positive Character Growth point cost. Its high and low values exchange supernatural
+potency and receptivity rather than forming a universal improvement ladder. The continuous combat
+factor is owned by
 [Magic Resolution and Defenses](13-magic-resolution-and-defenses.md#faith-potency-and-receptivity).
 
 ## Additive job stat chassis
 
-The active job supplies fixed additive adjustments. The generic composition rule is:
+The active job supplies fixed additive adjustments:
 
 ```text
 EffectiveValue = CharacterValue
@@ -164,19 +226,18 @@ Every unspecified adjustment is zero. A job may use these chassis axes:
 | Job ST Adjustment | Damage, MaxHP, and Basic Lift through ST. |
 | Job DX Adjustment | Physical skills and Basic Speed through DX. |
 | Job IQ Adjustment | Will, magical skill, magical power, and possibly MaxMP through IQ. |
-| Job HP Modifier | MaxHP only, after the job-adjusted ST contribution. |
+| Job HP Modifier | MaxHP only, after job-adjusted ST. |
 | Job MP Modifier | MaxMP only, after the higher-of-HT/IQ contribution. |
-| Job Basic Speed Adjustment | Fractional initiative, Move, and Dodge without increasing DX-based skills. |
+| Job Basic Speed Adjustment | Fractional initiative, Move, and Dodge without increasing DX skills. |
 | Job Move Adjustment | Horizontal movement without changing initiative or Dodge. |
 | Job Jump | Vertical FFT traversal without changing the other mobility axes. |
 | Job Dodge Adjustment | Active evasion without increasing initiative or attack skill. |
-| Job Will Modifier | Mental resistance without increasing IQ-based skills or magical power. |
-| Job Magic Resistance | Spiritual resistance without changing Will or ordinary magical Dodge. |
+| Job Will Modifier | Mental resistance without increasing IQ skill or magical power. |
+| Job Magic Resistance | Spiritual resistance without changing Will or magical Dodge. |
 
-A `+0.25` Job Basic Speed Adjustment is meaningful and remains fractional until a formula explicitly
-floors Basic Speed. A job that receives both an attribute adjustment and a direct derived-stat
-adjustment receives both effects and pays for both; for example, Job DX plus Job Dodge is not treated
-as one bonus written twice.
+A `+0.25` Job Basic Speed Adjustment remains fractional until a formula explicitly floors Basic
+Speed. A job receiving both an attribute adjustment and a direct derived-stat adjustment receives
+both effects and pays for both.
 
 ### Values not owned by an ordinary chassis
 
@@ -186,32 +247,41 @@ An ordinary job chassis does not directly modify:
 - HT independently from Brave;
 - DR, which belongs to equipped body and head items;
 - weapon damage modifiers, Reach, Accuracy, or readiness, which belong to weapons;
-- Parry or Block when the same identity can be expressed by aptitude, weapon, or shield;
 - global MP cost, CastCT, duration, or Faith factor;
 - Character Level, EXP, JP, or learned Job Level.
 
-An explicit ability, status, innate, or item can modify one of these values when its own rule says so.
-That exception is not converted into a silent baseline property of every job.
+An explicit ability, state, or item can modify one of these values when its own rule says so. That
+exception is not converted into a silent baseline property of every job.
 
-## Aptitudes and access are separate from stat modifiers
+## Equal stat-modifier budget
 
-A complete job package also declares:
+Every job receives the same point-equivalent numeric modifier budget regardless of Job Tier:
 
-- weapon-family aptitude Tiers;
-- Shield aptitude when shields are legal;
-- magical-tradition aptitude Tiers;
-- equipment access;
-- innate and command abilities.
+```text
+ModifierBudget(job) = UniversalModifierBudget
+```
 
-These properties influence combat power but are not disguised as attribute modifiers. Job Level
-uses aptitude to supply Rank; it does not amplify the job's ST, DX, IQ, HP, MP, Speed, Move, Jump,
-Dodge, Will, or Magic Resistance chassis.
+The initial calibration hypothesis uses approximately `90` points per job chassis. This value is a
+starting envelope, not proof of equal field performance. Examples of equal-cost numeric packages
+include:
+
+| Example chassis | Point value |
+| --- | ---: |
+| `+3 IQ`, `+10 MP` | 90 |
+| `+3 ST`, `+30 HP` | 90 |
+| `+2 ST`, `+1 DX`, `+25 HP` | 90 |
+| `+2 IQ`, `+15 MP`, `+1 Will` | 90 |
+
+A negative modifier is a real weakness but never buys unlimited value on an axis irrelevant to the
+job's actual play. Equipment access, aptitude breadth, shields, armor, weapon families, innates, and
+ability packages also influence battle power; they remain explicit inputs to the job-capacity audit
+rather than hidden stat modifiers.
 
 ## Point-equivalent accounting
 
-Growth profiles and job stat chassis use GURPS costs as a common comparison currency:
+Growth vectors and numeric job modifiers use GURPS costs as their common comparison currency:
 
-| Improvement | Point-equivalent cost |
+| Improvement | Initial point-equivalent cost |
 | --- | ---: |
 | +1 ST | 10 |
 | +1 DX | 20 |
@@ -228,37 +298,92 @@ Growth profiles and job stat chassis use GURPS costs as a common comparison curr
 | +1 Block | 5 |
 
 An attribute's price includes its normal derived consequences. `+1 DX` is charged once even though
-it can improve skills and Basic Speed. A direct Job Dodge or Job Basic Speed Adjustment is charged
-separately because it is not part of an attribute increase.
+it improves physical skills and Basic Speed. A direct Job Dodge or Job Basic Speed Adjustment is
+charged separately because it is not part of an attribute increase.
 
-Jump and Magic Resistance are DCL-specific job axes rather than direct purchases from the GURPS
-attribute table. Their job-budget weights come from scenario calibration and are not inferred from
-an unrelated attribute cost.
+Jump and Magic Resistance are DCL-specific axes. Their weights come from scenario calibration rather
+than an unrelated GURPS purchase. The GURPS table is an initial balance currency; DCL playtests may
+change a price when the adapted attribute package proves systematically more or less valuable.
 
-Point equivalence is an accounting gate, not proof that two jobs play equally. Equipment access,
-aptitude breadth, action economy, range, armor, innates, and ability packages require their own
-scenario validation. A negative chassis adjustment is a real weakness but does not automatically
-buy an unlimited amount of strength on axes irrelevant to the job's intended play.
+## Endgame calibration envelope
 
-## Job-authoring recipe
+The initial Character Level baseline is:
 
-Each job definition follows the same order:
+```text
+Raw ST                = 10
+Raw DX                = 10
+Raw IQ                = 10
+Brave                 = 50  -> HT 10
+Character HP Modifier = 20
+Character MP Modifier = 5
+```
 
-1. Assign `Physical`, `Magical`, or `Hybrid` growth; do not author a private growth table.
-2. State the current-job strengths and weaknesses the chassis must express.
-3. Add only the smallest necessary ST, DX, IQ, HP, MP, Basic Speed, Move, Jump, Dodge, Will, and
-   Magic Resistance adjustments; every other axis remains zero.
-4. List every derived value changed by those adjustments so no consequence is counted or hidden
-   twice.
-5. Declare weapon, Shield, and magical-tradition aptitudes separately from the stat chassis.
-6. Declare equipment access and innate/ability value separately from point-equivalent stat totals.
-7. Compare jobs at the same Character Level, profile-history assumption, equipment tier, and Job
-   Level before judging their chassis.
-8. Validate the job in favorable and unfavorable matchups; equal point totals do not excuse a job
-   with no practical weakness or one that is never worth fielding.
+The initial growth hypothesis awards `4` point-equivalent units per Character Level. The 98 awards
+from Character Level 1 to 99 therefore provide:
 
-This recipe determines how future job numbers are produced without fixing those numbers in the
-global combat specification.
+```text
+Level99GrowthBudget = 98 * 4 = 392 points
+```
+
+This budget targets a heroic/cinematic endgame while retaining meaningful 3d6 ranges. The natural
+endgame envelope includes permanent growth plus the active job chassis, but excludes equipment and
+temporary states:
+
+| Final value | Ordinary level-99 band | Initial natural ceiling |
+| --- | ---: | ---: |
+| ST | 11–18 | 21–22 |
+| DX | 12–16 | 18 |
+| IQ | 10–17 | 18 |
+| Brave | job-shaped | at least 112 |
+| HT | 10–16 | 18 as the first specialist target; no formula clamp |
+| HP | 70–140 | approximately 155–160 |
+| MP | 30–80 | approximately 90–95 |
+| Basic Speed | 6–7.5 | approximately 8 |
+| Move | 5–7 | approximately 8 |
+| Dodge before equipment | 9–10 | approximately 11–12 |
+| Will | normally IQ-derived | approximately 18–19 |
+
+Natural ceilings are authoring targets rather than engine clamps. Equipment and temporary states
+may exceed them when explicitly authored. Each ceiling names at least one owner whose growth rate
+and job modifier align, so a pure career in that job reaches the intended maximum. A mixed history
+cannot exceed the owner's raw growth rate merely by averaging other jobs.
+
+### Black Mage endpoint example
+
+The calibration model for an IQ-ceiling owner uses a provisional `+3 Job IQ` and `+10 Job MP`
+chassis. Its 392 growth points allocate:
+
+| Channel | Level-99 permanent gain | Point value |
+| --- | ---: | ---: |
+| ST | +1 | 10 |
+| DX | +3 | 60 |
+| IQ | +5 | 100 |
+| Brave | +8 | 10 |
+| Character HP Modifier | +43 | 86 |
+| Character MP Modifier | +42 | 126 |
+| Total |  | 392 |
+
+The resulting unequipped level-99 state is:
+
+```text
+ST = 11
+DX = 13
+IQ = 15 + 3 = 18
+Brave = 58 -> HT 11
+HP = 11 + 63 = 74
+MP = max(11, 18) + 47 + 10 = 75
+Basic Speed = 6
+Base Dodge = 9
+Will = 18
+```
+
+The corresponding per-level rates are approximately `0.0102 ST`, `0.0306 DX`, `0.0510 IQ`,
+`0.0816 Brave`, `0.4388 HP Modifier`, and `0.4286 MP Modifier`. Their point-equivalent sum is exactly
+`4` per awarded Character Level.
+
+The endgame comparison suite also includes pure physical, agile, vitality, MP, and hybrid histories.
+It evaluates Character Levels 1, 10, 20, 40, 60, 80, and 99 rather than accepting a correct endpoint
+with a broken midgame curve.
 
 ## Player-facing requirements
 
@@ -266,6 +391,6 @@ The unit screen separates permanent values from current-job and equipment/state 
 job-change preview shows every resulting change to ST, DX, IQ, HT, HP, MP, Will, Basic Speed, Move,
 Jump, Dodge, Weapon/Shield skills, Parry, Block, Magic Resistance, Basic Lift, and encumbrance.
 
-A Character Level result identifies the active growth profile, every permanent integer gain, and
-retained fractional progress toward later gains. Faith changes appear only when an explicit
-Faith-shaping effect occurs; they never appear as an unexplained level-up result.
+A Character Level result identifies the active job's allocation, equal point budget, every
+permanent integer gain, and retained fractional progress. Faith changes appear only when an explicit
+Faith-shaping effect occurs; they never appear as unexplained level-up growth.

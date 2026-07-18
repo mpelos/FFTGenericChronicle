@@ -109,15 +109,16 @@ movement before the shot cancels the accumulated aim.
 
 ## Stand Up
 
-Stand Up removes Prone and consumes both resources:
+Stand Up removes Knocked Down and consumes both resources:
 
 ```text
 Action = consumed
 Movement = consumed
 ```
 
-The unit ends the turn standing and uses normal standing defenses afterward. Prone and its
-penalties are owned by [Status Resistance and Posture](08-status-resistance-and-posture.md).
+The unit ends the turn standing and uses normal standing defenses afterward. Knocked Down and its
+penalties are owned by
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md#knockdown-and-knocked-down).
 
 ## Maneuver ownership
 

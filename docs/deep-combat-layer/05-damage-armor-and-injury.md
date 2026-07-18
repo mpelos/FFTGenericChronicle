@@ -93,16 +93,9 @@ weapon or ability explicitly defines a visible critical effect.
 
 ## Shock
 
-Injury may cause short-lived Shock. HP and damage use the same GURPS-shaped numeric scale, so each
-point of Injury produces one point of Shock up to the normal cap:
-
-```text
-ShockPenalty = min(4, Injury)
-```
-
-Shock reduces DX- and IQ-based action rolls through the end of the victim's next turn. It does not
-reduce active defenses or resistance checks. The displayed state must show the current penalty and
-its expiration.
+Injury applies short-lived Shock through the formula, duration, stacking, and numeric Doom-icon
+presentation owned by
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md#shock).
 
 ## Major Wounds
 
@@ -113,8 +106,9 @@ if Injury > MaxHP / 2:
     roll 3d6 against effective HT
 ```
 
-Success avoids the physical collapse. Failure applies Stun and Knockdown/Prone according to
-[Status Resistance and Posture](08-status-resistance-and-posture.md). A location-specific skill may modify this HT check.
+Success avoids the physical collapse. Failure applies Stun and Knockdown according to
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md). A
+location-specific skill may modify this HT check.
 
 ## Zero HP and death
 

@@ -27,9 +27,10 @@ The interface does not display a doubled compatibility Speed merely to resemble 
 
 ## Growth and job-change information
 
-Character Level results show the active job's shared growth profile, every permanent integer gain,
-and retained fractional progress. Faith never appears as unexplained level-up growth; an explicit
-permanent Faith effect reports its signed change separately.
+Character Level results show the active job's growth allocation, the equal point-equivalent budget,
+every permanent integer gain, and retained fractional progress in every channel. Faith never
+appears as unexplained level-up growth; an explicit permanent Faith effect reports its signed
+change separately.
 
 The job-selection preview separates permanent character values from the candidate chassis and
 shows the resulting changes to:
@@ -121,7 +122,9 @@ For a magical action the forecast additionally shows:
 
 ## Persistent states
 
-Prone, Stun, Don't Act, Don't Move, Aim, Ready/Unready, lost Block, repeated-Parry penalties, Shock,
+The complete state, icon, position, palette, source-link, duration, and cleanup contract is owned by
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md). Knocked Down,
+Stun, Don't Act, Don't Move, Aim, Ready/Unready, lost Block, repeated-Parry penalties, Shock,
 Charging, reserved resources, tracked targets, fixed tiles, Reflect routes, QuickLock, global
 duration/tick counters, and any other state that changes a future choice require visible
 representation and a clear expiry.

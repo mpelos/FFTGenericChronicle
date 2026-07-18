@@ -56,7 +56,8 @@ three or more Aims       -> AimBonus = Acc + 2
 ```
 
 Aim tracks one target. Changing target, losing the legal trajectory, moving before the shot, or
-entering Stun/Prone cancels the accumulated bonus. Damage may require a Will check to retain Aim.
+entering Stun or Knocked Down cancels the accumulated bonus. Damage may require a Will check to
+retain Aim.
 
 Aim consumes Action and restricts Movement until the shot. On the firing turn, the unit fires
 before moving and may use Movement afterward.
@@ -98,11 +99,11 @@ not apply to gunfire.
 Facing, cover, elevation, and target locations are owned by
 [Facing, Reach, and Targeting](04-facing-reach-and-targeting.md).
 
-## Prone interactions
+## Knocked Down interactions
 
 - Ranged Skill, Dodge, and Block use the modifiers defined by
-  [Status Resistance and Posture](08-status-resistance-and-posture.md).
-- Bows cannot normally fire while Prone; crossbows and guns can, subject to their item profiles.
+  [Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md#knockdown-and-knocked-down).
+- Bows cannot normally fire while Knocked Down; crossbows and guns can, subject to their item profiles.
 - Thrown attacks receive the posture penalty defined by the action.
 
 ## Head shots

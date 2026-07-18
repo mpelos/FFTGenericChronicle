@@ -26,11 +26,11 @@ attribute, but it must be priced as an attribute modifier rather than hidden ins
 armor progression. Permanent growth and job-adjustment ownership are defined in
 [Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md).
 
-Brave converts to the meaningful 3d6 HT band with a neutral midpoint at Brave 50 and a superhuman
-ceiling at HT 16:
+Brave converts to the meaningful 3d6 HT band with a neutral midpoint at Brave 50 and open-ended
+heroic progression above the vanilla Brave range:
 
 ```text
-HT = clamp(4, 16, 10 + roundNearest((current Brave - 50) / 8))
+HT = max(4, 10 + roundNearest((current Brave - 50) / 8))
 ```
 
 `roundNearest` rounds to the nearest integer, with exact halves away from zero. The anchors are:
@@ -42,9 +42,12 @@ HT = clamp(4, 16, 10 + roundNearest((current Brave - 50) / 8))
 | 50 | 10 |
 | 75 | 13 |
 | 100 | 16 |
+| 112 | 18 |
+| 120 | 19 |
 
-Raw Brave remains available to mechanics that expressly use Brave percentage; those rolls do not
-replace HT checks.
+Raw Brave remains available to mechanics that expressly use Brave percentage; those rolls clamp
+their probability to the legal `0%..100%` band and do not replace HT checks. Brave above 100 can
+therefore continue increasing HT without producing an invalid probability above 100%.
 
 ## Secondary characteristics
 
@@ -142,7 +145,7 @@ Basic Speed owns initiative order but not turn frequency. The CT contract is def
 
 ## Progression ownership
 
-Character Level, EXP, shared growth profiles, permanent Brave growth, job stat chassis, and
+Character Level, EXP, per-job growth vectors, permanent Brave growth, job stat chassis, and
 point-equivalent balance weights are owned by
 [Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md). Job Level
 training and JP ownership are defined with their physical and magical skills in

@@ -98,7 +98,7 @@ without changing the spacing between them.
 
 Rank never decreases, a lower aptitude never overtakes a higher aptitude at equal Job Level, and
 every Tier improves at least once. Job Level changes training Rank; Character Level changes DX
-through the shared profile recipe in
+through the active job's growth vector in
 [Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md). Rank 0 is
 reserved for an explicitly permitted untrained/default use.
 
