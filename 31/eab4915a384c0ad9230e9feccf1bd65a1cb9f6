@@ -1,0 +1,46 @@
+docs/deep-combat-layer/09-player-facing-information.md
+  s_ed1d6eab60ad79::t_5c5f479815fd13 125-127
+  s_ed1d6eab60ad79::t_d67a15219f5d78 30-33
+docs/deep-combat-layer/07-ranged-combat.md
+  s_ed1d6eab60ad79::t_5c5f479815fd13 59-60,102,105-106
+docs/deep-combat-layer/00-overview.md
+  s_ed1d6eab60ad79::t_d67a15219f5d78 38-39
+  s_ed1d6eab60ad79::t_5c5f479815fd13 28,31
+docs/deep-combat-layer/08-status-resistance-and-posture.md
+  s_ed1d6eab60ad79::t_e484d36d4808e4 1,3-56,58-142,156,158,164-174,176-184,188-198,204-205,211-259,272,297-356,360-361,363,365-369,376-388,390-394,396,398,402-403,405,407-408,410-413,415,417-437,441-492,494-533,537,541-576,578,580-587,589-717,719-724,727-748
+  s_ed1d6eab60ad79::t_8616b78b1affe7 371-374,438-440
+  s_ed1d6eab60ad79::t_a40678f9cd6281 57,260-271
+  s_ed1d6eab60ad79::t_9730a7affe4ac9 175,185-187,199-202,207-209,718
+  s_ed1d6eab60ad79::t_996a0871b4809e 273-296
+docs/deep-combat-layer/05-damage-armor-and-injury.md
+  s_ed1d6eab60ad79::t_5c5f479815fd13 96-98,109-111
+docs/deep-combat-layer/15-character-growth-and-job-stat-modifiers.md
+  s_ed1d6eab60ad79::t_12b8204102923b 3-7,20,22,25-26,41,53,55,57-66,68-70,72-74,76-83,85-88,90-96,99,102,104,106-115,118-121,123-125,127,129-146,159,161-168,170-185,196,201-203,208,229,231,235-236,238-240,253-254,256-262,264-266,268-273,275-278,282,284,301-386,394-396
+docs/deep-combat-layer/02-turns-movement-and-actions.md
+  s_ed1d6eab60ad79::t_5c5f479815fd13 112,119-121
+docs/deep-combat-layer/16-job-tiers-ability-budgets-and-authoring.md
+  s_ed1d6eab60ad79::t_d71b03174509fa 1-332,335-641
+  s_ed1d6eab60ad79::t_5c5f479815fd13 333-334
+docs/deep-combat-layer/03-skills-and-active-defenses.md
+  s_ed1d6eab60ad79::t_d67a15219f5d78 101
+docs/deep-combat-layer/10-scope-calibration-and-retired-fields.md
+  s_ed1d6eab60ad79::t_d6e2f0ea25e1da 8-11,51-55,68-72,94-95,98-100,126
+docs/deep-combat-layer/01-attributes-and-derived-stats.md
+  s_ed1d6eab60ad79::t_d67a15219f5d78 29-30,33,45-46,48-50,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "31eab4915a384c0ad9230e9feccf1bd65a1cb9f6",
+  "prompts": {},
+  "sessions": {
+    "s_ed1d6eab60ad79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6632-c697-7551-ae59-edf55b1def10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
