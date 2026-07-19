@@ -1,0 +1,19 @@
+docs/deep-combat-layer/08-status-resistance-and-posture.md
+  s_ed1d6eab60ad79::t_5b0ff9ea6c7563 522-524,532-538,542-543,547-550,560-561,576-579,581-583,603,605
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "060e6e97534ca383e0a6c8edda83d9f2d1614b99",
+  "prompts": {},
+  "sessions": {
+    "s_ed1d6eab60ad79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6632-c697-7551-ae59-edf55b1def10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Marcelo Pélos <mpelos@gmail.com>"
+    }
+  }
+}
