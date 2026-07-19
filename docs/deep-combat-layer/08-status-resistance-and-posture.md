@@ -519,8 +519,9 @@ displayed for Shock.
 
 ## Taunt
 
-Taunt is a source-bound mental compulsion. It restricts hostile target choice without handing
-control of the unit to AI and without converting the unit to Berserk.
+Taunt is a source-bound mental compulsion. For one turn it restricts the unit to the universal
+normal `Attack` command against the provocateur, without handing control of the unit to AI and
+without converting the unit to Berserk.
 
 Application tests the source's authored Taunt score against `TauntResistance`. The resulting state
 stores the provoking `SourceUnitKey`.
@@ -528,21 +529,25 @@ stores the provoking `SourceUnitKey`.
 While Taunted:
 
 - Movement remains legal;
-- self-targeted, allied, defensive, Ready, Stand Up, and other non-hostile actions remain legal;
-- if the provocateur is a legal target from the unit's current post-movement position, a hostile
-  action must include the provocateur among its targets;
-- if the provocateur is not a legal target, other hostile targets remain legal;
-- the unit is never forced to use a basic attack and remains under its normal controller.
+- the only legal use of the Action resource is the universal normal `Attack` command with the
+  provocateur as its sole target;
+- action skills, spells, items, Reequip, Ready, Stand Up, defensive commands, self-targeted actions,
+  allied actions, and attacks against any other unit are illegal;
+- if Movement does not produce a position from which the provocateur is a legal normal-Attack
+  target, the unit cannot spend its Action resource that turn;
+- the player still controls Movement and facing; Taunt never asks AI to choose a path or action.
 
 Taunt ends when:
 
-- the unit resolves one hostile action that includes the provocateur;
-- the unit completes its second turn after application;
+- the unit completes the first turn that began with Taunt active, whether it attacked or lost its
+  Action;
 - the provocateur is KO, removed from battle, or no longer has a valid `UnitKey`;
 - a matching mental cleanse removes it.
 
-Taunt uses `Replace`: a successful new Taunt replaces the previous source and resets the two-turn
-limit. A failed application does not disturb the existing instance.
+Taunt uses `Replace`: a successful new Taunt replaces the previous source and resets the one-turn
+duration. A failed application does not disturb the existing instance. Applying Taunt during the
+victim's current turn does not consume that turn; the duration is the next turn that begins with
+Taunt active, following the target-turn clock rule.
 
 Presentation:
 
@@ -552,8 +557,8 @@ Presentation:
 | Position | None. |
 | Palette | Intense red. |
 | Source cue | Selecting the victim highlights the provocateur with the existing target outline. |
-| Targeting | Illegal hostile targets are disabled before confirmation. |
-| Detail | `Taunted by NAME — hostile actions must include NAME when NAME is targetable.` |
+| Targeting | Every Action except normal Attack against the provocateur is disabled. |
+| Detail | `Taunted by NAME — this turn: only normal Attack against NAME.` |
 
 Native Berserk retains its existing orange palette and loss-of-control behavior. The palette and
 detail text distinguish it from Taunt even though the icon asset is shared.
@@ -568,11 +573,14 @@ frightening `SourceUnitKey` and its winning margin.
 
 While Feared:
 
-- a voluntary move cannot end at a smaller horizontal tile distance from the source than the unit's
-  starting tile for that Movement resource;
-- the distance is `abs(sourceX - targetX) + abs(sourceY - targetY)` and ignores height;
-- the unit may stay in place, move laterally, or move farther away;
+- a voluntary Movement endpoint must be at least three horizontal tiles from every active enemy;
+- for each enemy, distance is `abs(enemyX - endpointX) + abs(enemyY - endpointY)` and ignores
+  height, so an endpoint at distance `0`, `1`, or `2` is illegal;
+- the restriction tests only the final tile: a legal path may pass within two tiles of an enemy;
 - voluntary teleport and relocation obey the same endpoint rule;
+- Movement remains optional and is never selected by AI on the player's behalf;
+- if no reachable endpoint satisfies the rule, the Movement command has no legal destination and
+  the unit remains on its current tile;
 - hostile actions against the fear source receive `-2` Effective Skill;
 - hostile actions against other targets are unaffected;
 - the unit remains under its normal controller and is never forced to flee.
@@ -592,9 +600,9 @@ Presentation:
 | Position | None. |
 | Palette | Blue-gray. |
 | Source cue | Selecting the victim highlights the fear source. |
-| Movement | Illegal destination tiles are disabled in the movement preview. |
+| Movement | Every destination within two tiles of any enemy is disabled in the movement preview. |
 | Forecast | Attacks against the source show `Fear -2`. |
-| Detail | `Feared by NAME — cannot move closer; attacks against NAME -2.` |
+| Detail | `Feared by NAME — Movement must end 3+ tiles from every enemy; attacks against NAME -2.` |
 
 Native Chicken retains its native behavior. The humanoid unit, blue-gray palette, source cue, and
 detail text distinguish Fear from Chicken.
