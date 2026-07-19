@@ -4,31 +4,43 @@ This document owns physical turn cadence and the shared Movement-plus-Action eco
 
 ## Initiative through initial CT
 
-Speed determines the unit's starting position in the CT timeline:
+Speed determines only the unit's starting position in the CT timeline. At battle initialization,
+eligible units are sorted by descending unrounded Basic Speed, then descending DX, then stable unit
+index. Basic Speed retains quarter-point precision.
 
 ```text
-InitialCT = InitiativeSeed(BasicSpeed)
+N    = number of eligible units
+rank = zero-based position in the sorted order
+
+InitialCT = floor((N - rank) * 100 / (N + 1))
 ```
 
-`InitiativeSeed` is strictly monotonic: a higher Basic Speed always produces at least as much
-starting CT. Fractional Basic Speed is retained for tie-breaking even when CT storage is integral.
+The fastest unit therefore starts closest to the threshold without beginning immediately eligible.
+The formula is rank-based rather than `BasicSpeed * constant`, so open-ended attribute growth never
+collapses every sufficiently fast unit onto the same initial CT.
 
 After initialization, every unit receives the same CT gain per global tick:
 
 ```text
-CT += GlobalCTGain
+TurnThreshold = 100
+GlobalCTGain  = 10
+CT += status-adjusted CTGain
 ```
 
-Speed never changes `GlobalCTGain`. A fast unit acts earlier, not more often. When a unit reaches
-the action threshold, resolving its turn subtracts the threshold rather than assigning a
-Speed-dependent reset:
+Normal CT gain is 10. Haste and Slow modify that gain as defined by
+[Magic Effects and Persistence](14-magic-effects-and-persistence.md). CT uses quarter-point internal
+precision so Slow's `7.5` gain remains exact.
+
+Speed never changes ongoing gain. A fast unit acts earlier, not more often. After every granted
+turn, CT resets to zero:
 
 ```text
-CT -= TurnThreshold
+CT = 0
 ```
 
-Equal gain and equal cycle length preserve the initial phase ordering unless an explicit CT effect
-changes it. Ties use unrounded Basic Speed, then DX, then a stable unit index.
+The reset occurs whether the unit moved, acted, waited, or did nothing. Unspent Movement or Action
+never retains CT. Equal gain and equal reset preserve the initial phase ordering unless Haste, Slow,
+Quick, Stop, or another explicit CT effect changes it.
 
 Timed magical effects may consume the global CT clock without restoring Speed-based turn
 frequency. Their timing rules are owned by
@@ -101,11 +113,13 @@ every-other-turn attack cadence.
 
 Both states must be visible to the player.
 
-## Aim
+## Reequip
 
-Aim is the ranged preparation Action defined in [Ranged Combat](07-ranged-combat.md). It grants the selected
-weapon's Accuracy against one tracked target. Aim restricts Movement until the aimed shot is fired;
-movement before the shot cancels the accumulated aim.
+Reequip consumes Action and leaves Movement available before or after it. It obeys the active job's
+normal equipment permissions, slots, hand requirements, and inventory rules. It does not refresh
+Block, repeated-Parry counters, readiness, or another spent defensive resource. The outer-action
+contract and universal-command boundary are owned by
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md#universal-action-choices).
 
 ## Stand Up
 
@@ -123,7 +137,7 @@ penalties are owned by
 ## Maneuver ownership
 
 Only maneuvers defined by the DCL acquire universal rules. GURPS names such as All-Out Attack,
-All-Out Defense, Evaluate, Feint, Wait, and Do Nothing do not silently inherit their tabletop
-behavior. Casting uses the explicit DCL concentration contract rather than importing the complete
-GURPS Concentrate maneuver. A job ability or later global rule may implement another maneuver while
-obeying the Movement-plus-Action economy.
+All-Out Defense, Evaluate, Feint, Deceptive Attack, Aim, Wait, and Do Nothing do not silently inherit
+their tabletop behavior. Casting uses the explicit DCL concentration contract rather than importing
+the complete GURPS Concentrate maneuver. An authored ability may grant Aim, Deceptive-Attack
+behavior, or another maneuver while obeying the Movement-plus-Action economy.

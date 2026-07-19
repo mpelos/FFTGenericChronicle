@@ -21,15 +21,18 @@ def main() -> int:
 
     by_id = {int(row["item_id"]): row for row in rows}
     by_name = {row["name"]: row for row in rows if row["name"]}
-    check(by_id[0]["route"] == "unarmed-sentinel" and by_id[0]["damage_type"] == "crush",
+    check(by_id[0]["route"] == "unarmed-sentinel" and by_id[0]["damage_type"] == "crushing",
           "item 0 must be the job-derived unarmed sentinel")
-    check(by_name["Dagger"]["damage_type"] == "thrust" and by_name["Dagger"]["handedness"] == "1H",
+    check(all(not row["damage_mode"] and not row["damage_type"] for row in rows if row["route"] == "equipped-weapon"),
+          "weapon families must not turn an old profile hint into unauthored damage mode/type")
+    check(by_name["Dagger"]["skill_family"] == "Knife" and by_name["Dagger"]["handedness"] == "1H",
           "Knife policy drift")
-    check(by_name["Leather Armor"]["armor_class"] == "heavy" and by_name["Leather Armor"]["dr_profile_cut_thrust_crush"] == "9/8/3",
-          "IVC Armor category must use the three-class heavy profile")
-    check(by_name["Flame Rod"]["bolt_role"] == "offensive_elemental_bolt" and by_name["Flame Rod"]["dcl_range"] == "3",
-          "Rod magic-bolt policy drift")
-    check(by_name["Crossbow"]["skill_primary"] == "weapon-skill" and by_name["Crossbow"]["overcap_route"] == "raw-damage",
+    check(by_name["Leather Armor"]["armor_class"] == "heavy" and "dcl_dr" in by_name["Leather Armor"] and
+          "dr_profile_cut_thrust_crush" not in by_name["Leather Armor"],
+          "body armor must expose one per-item DR rather than a damage-type matrix")
+    check(by_name["Flame Rod"]["bolt_role"] == "offensive_elemental_bolt" and by_name["Flame Rod"]["dcl_range"] == "1",
+          "Rod melee Reach must remain 1; bolt range belongs to authored magical metadata")
+    check(by_name["Crossbow"]["skill_family"] == "Crossbow" and by_name["Crossbow"]["overcap_route"] == "raw-damage",
           "Crossbow marksmanship policy drift")
     check(by_name["Romandan Pistol"]["overcap_route"] == "penetration", "Gun penetration policy drift")
     check(by_name["Venetian Shield"]["block_source"] == "shield" and by_name["Venetian Shield"]["weight_required"] == "true",

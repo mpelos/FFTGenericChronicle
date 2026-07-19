@@ -22,9 +22,9 @@ retired legacy fields are owned by
 | File | Owns |
 | --- | --- |
 | [01 — Attributes and Derived Stats](01-attributes-and-derived-stats.md) | ST, DX, IQ, HT, HP, MP, Will, Speed, Move, Jump, Base Dodge, Basic Lift, and legacy-stat ownership. |
-| [02 — Turns, Movement, and Actions](02-turns-movement-and-actions.md) | Initial CT, linear CT growth, Movement, Action, Attack, Cast, Ready, Aim, and Stand Up. |
+| [02 — Turns, Movement, and Actions](02-turns-movement-and-actions.md) | Initial CT, linear CT growth, Movement, Action, Attack, Cast, Ready, Reequip, and Stand Up. |
 | [03 — Skills and Active Defenses](03-skills-and-active-defenses.md) | Difficulty, Rank, aptitude tiers, Job Level, Weapon Skill, Shield Skill, Dodge, Parry, Block, and criticals. |
-| [04 — Facing, Reach, and Targeting](04-facing-reach-and-targeting.md) | Facing, Reach 1/2, target locations, physical cover/elevation/awareness, and the magic-targeting exception. |
+| [04 — Facing, Reach, and Targeting](04-facing-reach-and-targeting.md) | Facing, Reach 1/2, explicit target locations, native FFT physical trajectory/height legality, and awareness. |
 | [05 — Damage, Armor, and Injury](05-damage-armor-and-injury.md) | Thrust/swing dice, weapon modifiers, shared DR/injury, armor divisors, wound multipliers, Major Wounds, and the KO boundary. |
 | [06 — Equipment and Encumbrance](06-equipment-and-encumbrance.md) | Physical and supernatural weapon, shield, body, head, and accessory schemas; Weight and Basic Lift bands. |
 | [07 — Ranged Combat](07-ranged-combat.md) | Range penalties, Accuracy, Aim, trajectories, ranged defenses, and final hit chance. |
@@ -37,6 +37,9 @@ retired legacy fields are owned by
 | [14 — Magic Effects and Persistence](14-magic-effects-and-persistence.md) | Healing, revive, status duration, global ticks, Haste, Slow, Quick, Stop, Silence, Dispel, stacking, Undead, and Summon. |
 | [15 — Character Growth and Job Stat Modifiers](15-character-growth-and-job-stat-modifiers.md) | Equal-budget per-job growth vectors, deterministic fractional level-up, open-ended Brave/HT, Faith permanence, additive job chassis, and endgame calibration envelopes. |
 | [16 — Job Tiers, Ability Budgets, and Authoring](16-job-tiers-ability-budgets-and-authoring.md) | Job Tier E–A, sealed budgets, command and R/S/M capacity, Action Equivalent scoring, scenario validation, skill cards, and the complete job-authoring recipe. |
+| [17 — Numeric Resolution Contract](17-numeric-resolution-contract.md) | Fixed-point precision, rounding, clamps, universal 3d6 rolls, critical classification, Quick Contests, percentage rolls, exact forecasts, and RNG ownership. |
+| [18 — Action Transactions and Reactions](18-action-transactions-and-reactions.md) | Outer-action identity, resolution snapshots, area plan/commit, per-strike defenses, combo KO, staged effects, and post-action Reactions. |
+| [19 — Action and State Authoring Contract](19-action-and-state-authoring-contract.md) | Normalized action/state schemas, defaults, delivery unions, cardinality, presentation/AI parity, and fail-closed validation. |
 
 Each rule has one owning file. Other documents link to the owner instead of restating the rule.
 

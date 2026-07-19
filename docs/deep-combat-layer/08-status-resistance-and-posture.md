@@ -5,8 +5,11 @@ status presentation, palette and pose precedence, and the mechanics of Stun, Kno
 Down, Shock, Taunt, and Fear. It also defines the implementation contract for other persistent
 combat states that reuse this infrastructure.
 
-Status delivery by magic, duration derived from a resistance margin, global CT duration, and the
-general stacking policies are owned by
+Outer-action staging, per-strike application, KO short-circuiting, and the post-action Reaction
+window are owned by
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md). Status delivery by
+magic, duration derived from a resistance margin, global CT duration, and the general stacking
+policies are owned by
 [Magic Effects and Persistence](14-magic-effects-and-persistence.md). Turn-resource costs for
 Ready, Aim, and Stand Up are owned by
 [Turns, Movement, and Actions](02-turns-movement-and-actions.md).
@@ -23,6 +26,7 @@ or removes it.
 | --- | --- | --- |
 | Native status | Poison, Haste, Charm, KO | Native 40-bit status state and native lifecycle. |
 | DCL status | Stun, Taunt, Fear, Guard Broken | DCL runtime instance with explicit expiry and presentation. |
+| Derived health state | Critical | Re-evaluated from current and maximum HP after every HP change. |
 | Posture | Knocked Down | Persists until Stand Up or an explicit lift effect. |
 | Preparation or stance | Aim, Overwatch, Bulwark, Cover | Persists until its declared action, trigger, cancellation, or expiry. |
 | Equipment state | Unready, Weapon Bound | Bound to an equipment slot and removed by its declared reset. |
@@ -33,6 +37,11 @@ or removes it.
 `Knockdown` is the event that applies `KnockedDown`. `MajorWound` is an injury event that may apply
 Stun and Knocked Down. `KO` is not a second DCL unconscious state. At 0 HP, the native FFT KO
 lifecycle begins.
+
+`Shove` and other authored forced-movement events exist only when an ability declares them. The
+only universal displacement is the capped critical-only knockback check; the damage-layer boundary
+is owned by
+[Damage, Armor, and Injury](05-damage-armor-and-injury.md#knockback-boundary).
 
 ## Native and DCL storage
 
@@ -97,7 +106,8 @@ The runtime follows these invariants:
 
 1. Battle start creates a new battle generation and clears all DCL state.
 2. Unit spawn or slot reuse clears instances whose `UnitKey` no longer matches.
-3. Application resolves immunity, delivery, resistance, and stacking before committing state.
+3. Application resolves immunity, delivery, resistance, and stacking before staging or committing
+   state through the outer-action transaction.
 4. Forecast and execution use the same committed or prospective state definition.
 5. A source-bound state validates its source whenever target legality is evaluated.
 6. KO removes states marked `RemoveOnTargetKo` and terminates source-bound states whose source is KO.
@@ -127,19 +137,24 @@ An instance is invalid if one of these fields affects play but is unspecified.
 
 ## Application order
 
-Status-producing actions resolve in this order:
+For each prospective target, a status-producing effect resolves in this order:
 
 1. Validate target, state-specific eligibility, and explicit immunity.
 2. Resolve the carrier's hit/delivery rule.
 3. Resolve the named resistance roll or Quick Contest.
 4. Determine duration and `EffectStrength` where applicable.
 5. Apply the state-specific stacking policy.
-6. Commit either the native status packet or the DCL state instance.
+6. Stage or commit the native status packet or DCL state instance at the boundary declared by the
+   outer action.
 7. Commit the application animation, pose, palette, icon, command restrictions, and forecast state.
 8. Expose the same result to AI evaluation.
 
 A rider whose carrier already hit does not roll its carrier a second time. It uses the resistance
 rule authored for that rider.
+
+This target-local order does not create Reactions or permit one target's newly applied state to
+change another target's planned result. Those transaction boundaries are defined by
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md).
 
 ## Resistance ownership
 
@@ -182,8 +197,8 @@ High Brave therefore makes a unit harder to frighten but easier to provoke. Low 
 easier to frighten but harder to provoke. Other mental statuses use Will without this modifier
 unless their global definition explicitly says otherwise.
 
-`roundNearest` uses the rounding contract defined with the Brave-to-HT conversion: nearest integer,
-with exact halves away from zero.
+`roundNearest` uses the shared
+[Numeric Resolution Contract](17-numeric-resolution-contract.md#shared-operations).
 
 ## Duration and stacking
 
@@ -385,6 +400,34 @@ Presentation:
 Critical alone uses the Critical position with the normal winning palette. Stun is distinguished by
 the Disable icon and pale-yellow palette. If Critical and Stun coexist, the detail list shows both.
 
+## Critical low HP
+
+The DCL replaces FFT's native approximately-one-fifth Critical threshold with the GURPS reeling
+threshold. Critical is a derived state rather than a timed status:
+
+```text
+Critical = CurrentHP > 0 and 3 * CurrentHP < MaxHP
+```
+
+The integer comparison is exact and means strictly less than one-third MaxHP. At exactly one-third,
+the unit is not Critical. Reaching 0 HP enters KO instead.
+
+Critical applies after all ordinary Move and Dodge modifiers:
+
+```text
+FinalMove  = max(1, ceil(MoveBeforeCritical / 2))
+FinalDodge = ceil(DodgeBeforeCritical / 2)
+```
+
+It does not modify Jump, Basic Speed, the initiative seed, or global CT gain. Healing immediately
+re-evaluates the state; reaching or exceeding one-third MaxHP removes both reductions. Any Reaction
+or ability condition that names Critical uses this DCL threshold rather than the retired native
+threshold.
+
+Presentation uses the existing Critical position, no icon, and the currently winning palette. Unit
+details show `Critical — Move and Dodge halved.` The pose follows the normal precedence table and
+does not conceal a higher-priority Stun or Knocked Down presentation.
+
 ## Knockdown and Knocked Down
 
 Knockdown is an instant event. On success it applies the `KnockedDown` posture. Sources include:
@@ -392,6 +435,10 @@ Knockdown is an instant event. On success it applies the `KnockedDown` posture. 
 - failure of the HT check caused by a Major Wound;
 - an explicit physical effect;
 - a fall or other rule that names Knockdown.
+
+Critical knockback is not a Knockdown source. Its target makes no balance roll and remains in its
+current posture after horizontal displacement. Native FFT edge and fall behavior does not silently
+apply the DCL Knocked Down posture.
 
 Knocked Down is not Don't Move. The unit remains alive, targetable, and able to crawl or Stand Up.
 
@@ -424,20 +471,38 @@ Presentation:
 
 Native KO is distinguished by 0 HP, the native death counter, the absence of a normal turn, and the
 absence of the Immobilize icon. If a Knocked Down unit reaches 0 HP, KO presentation and lifecycle
-replace Knocked Down.
+replace Knocked Down. An injury that reaches 0 HP enters KO directly and never makes the
+Major-Wound HT check that could apply this posture.
 
 ## Shock
 
 Each injury may apply short-lived Shock:
 
 ```text
-NewShockPenalty = min(3, Injury)
-ShockPenalty = max(UnexpiredShockPenalty, NewShockPenalty)
+if Injury > 0:
+    ShockUnit             = max(1, floor(MaxHP / 10))
+    UnexpiredShockInjury  = UnexpiredShockInjury + Injury
+    ShockPenalty          = min(3, floor(UnexpiredShockInjury / ShockUnit))
 ```
 
 Shock reduces DX- and IQ-based action rolls through the end of the victim's next turn that begins
 with Shock active. It does not reduce active defenses or resistance checks. Shock clears at the end
-of that turn. It does not stack beyond `-3`.
+of that turn. Injuries received while the same Shock window is active accumulate, including
+independent strikes of a multi-hit action. The stored accumulator is Injury rather than an already
+rounded penalty, so multiple smaller wounds may cross a ShockUnit boundary together. The penalty
+never exceeds `-3`. Rolled Damage that produces zero Injury after DR and wound conversion adds no
+Shock.
+
+Examples:
+
+```text
+MaxHP 15 -> ShockUnit 1
+MaxHP 20 -> ShockUnit 2
+MaxHP 80 -> ShockUnit 8
+```
+
+For MaxHP 80, accumulated Injury 7 produces no Shock penalty, 8 produces `-1`, 16 produces `-2`,
+and 24 or more produces the capped `-3`.
 
 Presentation:
 
@@ -448,7 +513,9 @@ Presentation:
 | `-3` | Existing Doom counter `3`. |
 
 Shock uses no persistent position or palette. The forecast and skill breakdown display the signed
-penalty and expiry. The general Doom icon is not displayed for Shock.
+penalty and expiry. No numeric icon is displayed while accumulated Injury remains below ShockUnit;
+the accumulator still remains active until the window expires. The general Doom icon is not
+displayed for Shock.
 
 ## Taunt
 
@@ -594,6 +661,9 @@ Presentation uses the existing `Disable` icon, no position, and no palette. The 
 its commands are disabled or display the exact penalty. Identical Disable icons may coexist for
 Stun, Guard Broken, and Weapon Bound; their detail rows remain separate.
 
+Weapon Bound and Unready are temporary combat states, not item durability. They never mark an item
+as broken, require post-battle repair, or destroy an inventory entry.
+
 ## Bulwark
 
 Bulwark is a self-owned defensive stance. Its payload is:
@@ -667,13 +737,17 @@ Elemental Exposure is a typed vulnerability state:
 
 ```text
 Element
-Magnitude
+AffinityStep          // normally +1 or +2
 ExpiresAtGlobalCT or ExpiresAfterTurnSerial
 ```
 
-The applying effect selects exactly one duration clock. Instances use `StrongestWins` per element;
-different elements are independent only when the source explicitly allows multi-element exposure.
-The damage forecast shows the stored element and magnitude before confirmation.
+AffinityStep is a signed integer consumed by the bounded affinity calculation in
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md#elements-and-oil). Exposure is
+normally a vulnerability and therefore authors `+1` or `+2`; a resistance effect uses its own named
+state rather than disguising a negative step as Exposure. The applying effect selects exactly one
+duration clock. Instances use `StrongestWins` per element; different elements are independent only
+when the source explicitly allows multi-element exposure. The damage forecast shows the stored
+element and step before confirmation.
 
 Presentation uses the existing Oil icon, no position, and the character palette associated with the
 stored element. Elemental Exposure has the lowest palette priority. The implementation uses the
@@ -723,9 +797,13 @@ ineligible.
 HT resists initial physical Poison/disease infliction and any explicit recovery check. Armor DR
 does not improve HT. Equipment immunity prevents the named status before a resistance roll.
 
-Blind, Invisible, or an explicit surprise state may change deterministic facing awareness. There is
-no general Perception roll. The source states how it affects attack legality, Effective Skill, or
-active defense.
+Blind uses the fixed attack and active-defense penalties owned by
+[Facing, Reach, and Targeting](04-facing-reach-and-targeting.md#blind) without replacing facing
+awareness. Invisibility uses FFT target selection, has no detection subsystem, and ends on the
+Invisible unit's first Action as defined by
+[Facing, Reach, and Targeting](04-facing-reach-and-targeting.md#invisibility-and-target-selection).
+An immediate offensive first Action receives no active-defense roll and then removes Invisibility;
+it receives no attack-skill bonus. There is no general Perception roll or awareness branch.
 
 ## Implementation acceptance contract
 

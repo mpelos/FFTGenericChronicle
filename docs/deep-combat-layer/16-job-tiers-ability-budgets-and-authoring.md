@@ -572,7 +572,9 @@ Function and player use
 Governing attribute and skill
 Delivery and effect
 Legal targets, range, vertical tolerance, area, and friendly-fire policy
+VisionRequired targeting/delivery flag
 Execution, active-defense, and resistance gates
+Outer-action structure: targets, strikes, riders, within-action application, and Reaction window
 DR and hit-location policy
 Magnitude and duration
 CastCT or readiness
@@ -587,6 +589,17 @@ What prevents spam
 What prevents universal adoption
 Protected systems carried
 ```
+
+Every battle-action skill card references a valid normalized `DclActionProfile`; every persistent
+effect references a valid `DclStateDefinition`. The schemas and defaults are owned by
+[Action and State Authoring Contract](19-action-and-state-authoring-contract.md). The skill card
+adds design intent, capacity, and job-fit evidence rather than restating that runtime record.
+
+A Reaction additionally records its `Trigger`, `ActivationMode`, optional single
+`ActivationReference`, activation modifier, source/target binding, native cardinality, and
+once-per-window behavior. The allowed activation modes and absence of a universal Brave chance are
+owned by
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md#reaction-activation-modes).
 
 A battle action also states when it is preferable to attacking, killing, healing, or moving to
 safety. A campaign action states why its durable value justifies the turn, JP, risk, or opportunity

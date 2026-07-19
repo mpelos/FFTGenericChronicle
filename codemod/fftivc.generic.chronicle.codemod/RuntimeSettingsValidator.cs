@@ -817,15 +817,8 @@ internal static class RuntimeSettingsValidator
                 report.Warn("PreClampManagedCallbackEnabled", "managed callback calls C# from the native pre-clamp hook; use only for a tightly guarded ABI proof until live-stable.");
                 if (settings.PreClampManagedCallbackForcedDebit < 0 &&
                     !settings.PreClampManagedCallbackActorFormulaEnabled &&
-                    !(settings.DclPipelineEnabled &&
-                      (!string.IsNullOrWhiteSpace(settings.DclDamageFormula) ||
-                       !string.IsNullOrWhiteSpace(settings.DclHealingFormula) ||
-                       !string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) ||
-                       !string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) || settings.DclStatusControlEnabled ||
-                       settings.DclInstantKoControlEnabled ||
-                       settings.DclPhysicalContestEnabled || settings.DclMagicEvadeEnabled ||
-                       settings.DclSyntheticReactionEnabled)))
-                    report.Error("PreClampManagedCallback", "Managed callback requires a forced debit, PreClampManagedCallbackActorFormulaEnabled, or a DCL HP/MP/status/KO/hit/reaction outcome.");
+                    !settings.DclPipelineEnabled)
+                    report.Error("PreClampManagedCallback", "Standalone managed callback requires a forced debit or PreClampManagedCallbackActorFormulaEnabled; DclPipelineEnabled owns its own guarded no-op/fall-through behavior.");
                 if (settings.PreClampManagedCallbackActorFormulaEnabled)
                     report.Warn("PreClampManagedCallbackActorFormulaEnabled", "actor formula resolves caster/action from the pre-clamp frame; use only in controlled captures until it is live-stable across action families.");
             }

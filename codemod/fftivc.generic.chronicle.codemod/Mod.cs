@@ -10358,7 +10358,7 @@ public class Mod : ModBase
         return TryCreateUnitSnapshot(unitPtr, raw, out target, out error);
     }
 
-    private static bool TryCreateUnitSnapshot(nint unitPtr, byte[] raw, out UnitSnapshot target, out string error)
+    internal static bool TryCreateUnitSnapshot(nint unitPtr, byte[] raw, out UnitSnapshot target, out string error)
     {
         target = null!;
         error = "";
@@ -10432,9 +10432,11 @@ public class Mod : ModBase
             error = $"invalid mobility Mv/Jp {mov}/{jmp}";
             return false;
         }
-        if (br > 100 || fa > 100)
+        // DCL Brave is open-ended inside the byte's legal range: Brave 112 is the first HT 18
+        // specialist target. Faith remains a 0..100 two-sided roster trait.
+        if (fa > 100)
         {
-            error = $"invalid Brave/Faith {br}/{fa}";
+            error = $"invalid Faith {fa}";
             return false;
         }
 

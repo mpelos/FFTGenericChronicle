@@ -125,7 +125,7 @@ internal static class DclStatusContest
     }
 
     public static bool Resists(int roll, int resistance)
-        => roll <= resistance;
+        => DclSuccessRoll.Succeeds(roll, resistance);
 
     public static int ResistChancePermille(int resistance)
     {

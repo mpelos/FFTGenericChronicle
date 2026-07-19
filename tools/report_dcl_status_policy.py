@@ -30,10 +30,12 @@ STATUS_BITS: dict[str, tuple[int, int, str]] = {
 }
 
 BENEFICIAL = {"Float", "Reraise", "Transparent", "Regen", "Protect", "Shell", "Haste", "Reflect"}
-MENTAL_BRAVE = {"Charm", "Confusion", "Berserk"}
-PHYSICAL_BODY = {"Poison"}
-MAGICAL_INVERSE_FAITH = {"Petrify", "Frog", "Stop", "Slow", "Sleep", "DontMove", "DontAct", "DeathSentence"}
-UNRESOLVED_NATURE = {"Darkness", "Silence", "BloodSuck", "Oil", "Undead", "Faith", "Innocent"}
+MENTAL_WILL = {"Charm", "Confusion", "Berserk"}
+PHYSICAL_HT = {"Poison"}
+UNRESOLVED_NATURE = {
+    "Petrify", "Frog", "Stop", "Slow", "Sleep", "DontMove", "DontAct", "DeathSentence",
+    "Darkness", "Silence", "BloodSuck", "Oil", "Undead", "Faith", "Innocent",
+}
 
 CLEAR_NEGATIVE = {14, 56, 105, 149, 167, 252, 268}
 CLEAR_POSITIVE = {232, 244}
@@ -82,19 +84,16 @@ def policy_for(ability_id: int, status: str, operation: str, byte_index: int) ->
     if operation == "add-buff-or-trait":
         return ("beneficial", "none", "caster-MA-or-authored", "authoring-required", "authoring-required",
                 "dcl_status_add", "Beneficial status has no defensive resistance contest; hit/duration policy remains ability-authored.")
-    if status in MENTAL_BRAVE:
-        return ("mental-will", "high-Brave", "authored-skill-or-MA", "authoring-required", "surface-ready",
-                "dcl_status_contest", "DCL explicitly moves will-override mental statuses onto Brave resistance.")
-    if status == "Poison":
-        return ("physical-body", "base-HP", "authored-skill-or-MA", "authoring-required", "surface-ready",
+    if status in MENTAL_WILL:
+        return ("mental-will", "Will", "authored-skill-or-MA", "authoring-required", "surface-ready",
+                "dcl_status_contest", "Mental coercion tests Will; raw Brave modifies only rules that explicitly model temperament.")
+    if status in PHYSICAL_HT:
+        return ("physical-health", "HT", "authored-skill-or-MA", "authoring-required", "surface-ready",
                 "dcl_status_contest", "Poison follows its physical affliction nature even when delivered by a spell.")
     if status in {"DontMove", "DontAct"} and ability_id in PHYSICAL_DA_DM:
         label = "Knockdown" if status == "DontMove" else "Stun"
-        return ("physical-body", "base-HP", "authored-physical-skill", "1-target-turn", "surface-ready",
+        return ("physical-health", "HT", "authored-physical-skill", "1-target-turn", "surface-ready",
                 "dcl_status_contest", f"{label} is the physical one-turn reskin of the shared native flag.")
-    if status in MAGICAL_INVERSE_FAITH:
-        return ("magical-inverted", "inverse-Faith", "caster-MA", "authoring-required", "surface-ready",
-                "dcl_status_contest", "DCL explicitly assigns this magical status to inverse-Faith resistance.")
     if status == "Dead":
         return ("lifecycle", "explicit-rule", "explicit-rule", "lifecycle", "data-authoring-required",
                 "dcl_instant_ko", "The runtime can deliver engine-owned KO through lethal staged HP after the native Dead rider is removed in action data; ordinary damage and resistance formulas remain per-ability authoring.")
@@ -106,7 +105,7 @@ def policy_for(ability_id: int, status: str, operation: str, byte_index: int) ->
         readiness = "design-decision-required"
         return ("unresolved-nature", "design-decision-required", "design-decision-required", "authoring-required",
                 readiness, "dcl_status_policy_required",
-                "The DCL status chapter does not yet assign this status to physical, mental, or magical resistance.")
+                "The status still needs an explicit bodily (HT), mental (Will), spiritual, beneficial, or special classification; Faith is not a default resistance stat.")
     raise KeyError(f"no policy for status {status}")
 
 
@@ -197,8 +196,8 @@ def render_markdown(rows: list[dict[str, str]], source: Path, csv_path: Path | N
         "- Raise/Arise/Revive/Squeal preserve the native revive lifecycle. DCL amount authoring is limited to staged HP credit; generic status removal never clears KO.",
         "- Bequeath Bacon preserves native formula `0x57`: bounded target level gain plus caster Crystal/campaign lifecycle. The DCL never writes or clears Crystal.",
         "- `Invite` is a battle/campaign allegiance operation, not a normal temporary status.",
-        "- Physical Stun/Knockdown and magical Don't Act/Don't Move share bits; ability ids 213/214 are the current explicit physical candidates, while other uses remain magical by documented nature.",
-        "- Darkness, Silence, BloodSuck, Oil, Undead, Faith, and Innocent still need an explicit DCL nature/resistance decision.",
+        "- Physical Stun/Knockdown and other Don't Act/Don't Move effects share bits; ability ids 213/214 are the current explicit physical candidates, while every other use still needs an authored effect nature.",
+        "- Unclassified native status tokens remain design gates until they are assigned to HT, Will, Spiritual Resistance, beneficial delivery, or a special route. Faith is never inferred as a default resistance stat.",
         "",])
     return "\n".join(lines)
 

@@ -11,6 +11,7 @@ internal static class Program
         string catalogPath = Path.Combine(root, "work", "item_catalog.csv");
         var catalog = ItemCatalog.Load(catalogPath);
         Check(catalog.Loaded, $"item catalog loaded: {catalog.Describe()}");
+        TestDclOpenEndedBraveUnitSnapshot();
         TestItemCatalog(catalog);
         string abilityCatalogPath = Path.Combine(root, "work", "wotl_ability_action_baseline.csv");
         var abilityCatalog = AbilityCatalog.Load(abilityCatalogPath);
@@ -23,6 +24,7 @@ internal static class Program
         TestDclHitDecisionCache();
         TestDclStatusControl(catalog, abilityCatalog);
         TestDclPhysicalContest(catalog);
+        TestDclStrengthDamage();
         TestDclMultistrike();
         TestDclMagicEvade(catalog);
         TestDclWeaponSkill(catalog, abilityCatalog);
@@ -2236,6 +2238,26 @@ internal static class Program
             throw new InvalidOperationException(message);
     }
 
+    private static void TestDclOpenEndedBraveUnitSnapshot()
+    {
+        var raw = new byte[0x200];
+        raw[0x29] = 1; // Level.
+        raw[0x30] = 1; // Current HP.
+        raw[0x32] = 1; // Max HP.
+        raw[0x2B] = 112;
+        raw[0x2D] = 50;
+
+        Check(
+            Mod.TryCreateUnitSnapshot((nint)0x1000, raw, out UnitSnapshot unit, out string error),
+            $"Brave above 100 should remain a valid DCL unit value: {error}");
+        Check(unit.Brave == 112, $"expected Brave 112, got {unit.Brave}");
+
+        raw[0x2D] = 101;
+        Check(
+            !Mod.TryCreateUnitSnapshot((nint)0x1000, raw, out _, out _),
+            "Faith above its 0..100 roster domain should remain invalid");
+    }
+
     private static int EvalFormula(string expression, UnitSnapshot target, UnitSnapshot attacker, long eventIndex = 0, long eventSeed = 0)
     {
         var context = new FormulaContext(target, attacker, eventIndex, eventSeed);
@@ -3563,10 +3585,12 @@ internal static class Program
 
     private static void TestDclStatusControl(ItemCatalog catalog, AbilityCatalog abilityCatalog)
     {
-        Check(DclStatusContest.ResistChancePermille(2) == 0, "3d6 resistance below 3 should never pass");
-        Check(DclStatusContest.ResistChancePermille(3) == 4, "3d6 resistance 3 should pass only on triple ones");
+        Check(DclStatusContest.ResistChancePermille(2) == 18, "natural 3-4 must resist even below target 3");
+        Check(DclStatusContest.ResistChancePermille(3) == 18, "natural 3-4 must use the universal automatic-success rule");
         Check(DclStatusContest.ResistChancePermille(10) == 500, "3d6 resistance 10 should pass exactly half the outcomes");
-        Check(DclStatusContest.ResistChancePermille(18) == 1000, "3d6 resistance 18 should always pass");
+        Check(DclStatusContest.ResistChancePermille(18) == 981, "natural 17-18 must fail even against resistance 18");
+        Check(DclStatusContest.Resists(4, 2), "natural 3-4 must be automatic resistance success");
+        Check(!DclStatusContest.Resists(18, 18), "natural 17-18 must be automatic resistance failure");
         Check(DclStatusContest.Resists(10, 10), "3d6 resistance passes when roll equals target number");
         Check(!DclStatusContest.Resists(11, 10), "3d6 resistance fails when roll exceeds target number");
 
@@ -4274,16 +4298,16 @@ internal static class Program
         Check(DclLifecycle.WouldBeLethal(120, 35, 155) &&
               !DclLifecycle.WouldBeLethal(120, 35, 154),
             "instant KO lethality must use the native HP + credit - debit equation");
-        var certainKo = new DclInstantKoAssessment("certain", true, false, 2, true);
+        var nearCertainKo = new DclInstantKoAssessment("near-certain", true, false, 2, true);
         var halfKo = new DclInstantKoAssessment("half", true, false, 10, false);
         var resistedKo = new DclInstantKoAssessment("resisted", true, false, 18, false);
         var immuneKo = new DclInstantKoAssessment("immune", true, true, 0, false);
-        Check(certainKo.SuccessPermille == 1000 && halfKo.SuccessPermille == 500 &&
-              resistedKo.SuccessPermille == 0 && immuneKo.SuccessPermille == 0,
+        Check(nearCertainKo.SuccessPermille == 982 && halfKo.SuccessPermille == 500 &&
+              resistedKo.SuccessPermille == 19 && immuneKo.SuccessPermille == 0,
             "instant KO AI assessment should derive exact success probability from the 3d6 resistance curve");
-        Check(DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, certainKo) == 150 &&
+        Check(DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, nearCertainKo) == 148 &&
               DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, halfKo) == 85 &&
-              DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, resistedKo) == 20 &&
+              DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, resistedKo) == 22 &&
               DclLifecycle.ComputeExpectedInstantKoDebit(120, 30, 20, immuneKo) == 20,
             "instant KO AI scoring should blend lethal and failure debit without sampling the execution roll");
         var killDecision = new DclInstantKoDecision("kill", true, false, 2, 18, false, true);
@@ -4522,6 +4546,40 @@ internal static class Program
             "synthetic Reaction should reject the inclusive chance boundary roll and retain that decision idempotently");
     }
 
+    private static void TestDclStrengthDamage()
+    {
+        Check(DclStrengthDamage.Lookup(1, DclStrengthDamageMode.Thrust) == new DclDiceExpression(1, -6),
+            "ST 1 thrust must match the literal GURPS table");
+        Check(DclStrengthDamage.Lookup(10, DclStrengthDamageMode.Swing) == new DclDiceExpression(1, 0),
+            "ST 10 swing must match the literal GURPS table");
+        Check(DclStrengthDamage.Lookup(13, DclStrengthDamageMode.Swing) == new DclDiceExpression(2, -1),
+            "ST 13 swing must preserve the GURPS breakpoint");
+        Check(DclStrengthDamage.Lookup(27, DclStrengthDamageMode.Thrust) == new DclDiceExpression(3, -1),
+            "ST 27 thrust must match the literal GURPS table");
+        Check(DclStrengthDamage.Lookup(44, DclStrengthDamageMode.Swing) == new DclDiceExpression(7, -1),
+            "unlisted ST 41..44 must use the greatest lower five-point row");
+        Check(DclStrengthDamage.Lookup(45, DclStrengthDamageMode.Swing) == new DclDiceExpression(7, 1),
+            "ST 45 swing must cross to its listed row");
+        Check(DclStrengthDamage.Lookup(99, DclStrengthDamageMode.Thrust) == new DclDiceExpression(10, 2),
+            "ST 99 must use the listed ST 95 row");
+        Check(DclStrengthDamage.Lookup(100, DclStrengthDamageMode.Swing) == new DclDiceExpression(13, 0),
+            "ST 100 swing must match the final listed row");
+        Check(DclStrengthDamage.Lookup(109, DclStrengthDamageMode.Thrust) == new DclDiceExpression(11, 0) &&
+              DclStrengthDamage.Lookup(110, DclStrengthDamageMode.Thrust) == new DclDiceExpression(12, 0),
+            "ST above 100 must add one die only per full ten ST");
+
+        Check(new DclDiceExpression(1, 0).AddAndNormalize(4) == new DclDiceExpression(2, 0),
+            "+4 must normalize into one additional die");
+        Check(new DclDiceExpression(1, 0).AddAndNormalize(13) == new DclDiceExpression(4, 2),
+            "+13 must normalize through +7 and +4 into 4d6+2");
+        Check(new DclDiceExpression(2, -1).AddAndNormalize(-5) == new DclDiceExpression(2, -6),
+            "negative adds must remain adds and never remove dice");
+        Check(new DclDiceExpression(4, 2).ToString() == "4d6+2" &&
+              new DclDiceExpression(2, -1).ToString() == "2d6-1" &&
+              new DclDiceExpression(1, 0).ToString() == "1d6",
+            "damage-expression display must render positive, negative, and zero adds canonically");
+    }
+
     private static void TestDclPhysicalContest(ItemCatalog catalog)
     {
         var dodge = DclPhysicalContest.ChooseBestDefense(
@@ -4533,8 +4591,14 @@ internal static class Program
         var guarded = DclPhysicalContest.ChooseBestDefense(
             dodge: 8, parry: 11, parryAvailable: true, block: 11, blockAvailable: true,
             modifier: -2, defenseAllowed: true);
-        Check(guarded.Kind == DclDefenseKind.Block && guarded.Target == 9 && guarded.Depletes,
-            "equal finite defenses should deterministically prefer Block and include the facing modifier");
+        Check(guarded.Kind == DclDefenseKind.Parry && guarded.Target == 9 && guarded.Depletes,
+            "equal finite defenses should deterministically prefer Parry over Block and include the facing modifier");
+
+        var equalReusable = DclPhysicalContest.ChooseBestDefense(
+            dodge: 11, parry: 11, parryAvailable: true, block: 11, blockAvailable: true,
+            modifier: 0, defenseAllowed: true);
+        Check(equalReusable.Kind == DclDefenseKind.Dodge && equalReusable.Target == 11 && !equalReusable.Depletes,
+            "equal defenses should deterministically preserve finite guards by preferring Dodge");
 
         var back = DclPhysicalContest.ChooseBestDefense(
             dodge: 8, parry: 12, parryAvailable: true, block: 13, blockAvailable: true,
@@ -4552,6 +4616,18 @@ internal static class Program
             "a connected ordinary attack should be turned aside when defense rolls at or below target");
         Check(DclPhysicalContest.Resolve(12, 10, guarded, 12).Outcome == DclPhysicalOutcome.Hit,
             "a connected ordinary attack should land when the defense roll exceeds its target");
+        Check(DclPhysicalContest.Resolve(12, 10, new DclDefenseOption(DclDefenseKind.Dodge, 18, false), 18).Outcome == DclPhysicalOutcome.Hit,
+            "natural defense 18 must fail even against score 18");
+        Check(DclPhysicalContest.Resolve(12, 10, new DclDefenseOption(DclDefenseKind.Dodge, 2, false), 4).Outcome == DclPhysicalOutcome.Defended,
+            "natural defense 3-4 must succeed even below score 3");
+        Check(DclPhysicalContest.Resolve(6, 16, back, 18).Outcome == DclPhysicalOutcome.AttackFumble,
+            "an attack roll at least 10 above low Effective Skill must critically fail");
+        Check(DclPhysicalContest.Resolve(-7, 3, back, 18).Outcome == DclPhysicalOutcome.CriticalHit,
+            "natural attack 3 must remain critical success even when it exceeds a very low score by 10");
+        Check(DclSuccessRoll.SuccessOutcomeCount(2) == 4,
+            "exact enumeration must retain the four natural 3-4 successes below score 3");
+        Check(DclSuccessRoll.SuccessOutcomeCount(18) == 212,
+            "exact enumeration must remove the four natural 17-18 failures at score 18");
 
         int openPct = DclPhysicalContest.HitChancePercent(12, back);
         int dodgePct = DclPhysicalContest.HitChancePercent(12, dodge);
@@ -6449,6 +6525,16 @@ internal static class Program
                     : new DclDefenseOption(DclDefenseKind.None, 0, false)));
         Check(finiteBlockPct > naiveFreshBlockPct,
             "exact multistrike forecast must account for a finite Block disappearing on defended no-hit branches");
+
+        int automaticLowSkillPct = DclMultistrike.ExactPhysicalAnyHitChancePercent(
+            strikeCount: 1,
+            initialParryUses: 0,
+            initialBlockUses: 0,
+            (_, _, _) => new DclPhysicalStrikeProfile(
+                AttackSkill: 2,
+                Defense: new DclDefenseOption(DclDefenseKind.None, 0, false)));
+        Check(automaticLowSkillPct == 2,
+            $"multistrike forecast must retain natural 3-4 success below Skill 3, got {automaticLowSkillPct}%");
 
         int pummelProbePct = DclMultistrike.ExactPhysicalAnyHitChancePercent(
             strikeCount: 3,

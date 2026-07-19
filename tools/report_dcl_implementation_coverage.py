@@ -14,6 +14,8 @@ ALLOWED = {
     "proven-live",
     "mechanism-ready",
     "partial-live-gated",
+    "metadata-authoring",
+    "design-open",
     "integration-missing",
     "regression-pending",
 }
@@ -40,9 +42,9 @@ ROWS = (
     Coverage("Damage", "Barrage weapon multistrike carrier", "deep-combat-layer/04,10", "mechanism-ready", "Formula 0x6A writes fixed count four into the shared native repeat counter. Each result delegates to the exact order-payload weapon formula and ordinary normal-attack postprocessor; RandomFire is clear, so the original single target remains selected. The native result producer increments the shared index and publishes continuation per result.", ("tools/analyze_dcl_multistrike_transactions.py", "tools/analyze_dcl_active_weapon_payload.py", "codemod/fftivc.generic.chronicle.codemod/DclNativeRepeat.cs", "tools/report_dcl_ability_classification.py"), "Live-confirm the four mapped repeats through pre-clamp/apply, presentation, and reaction cadence."),
     Coverage("Position", "Facing and flank/back policy", "deep-combat-layer/05", "proven-live", "Coordinates/facing enum and front/side/back derived variables are owned.", ("docs/modding/04-engine-memory-model.md", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Regress bridge/map-level geometry with sentinel modifiers; final calibration is out of scope."),
     Coverage("Position", "Reach, range, height and weapon LoS", "deep-combat-layer/06", "partial-live-gated", "Range/coordinates/tile data are exposed; native Arc/Direct target-equality LoS is mapped and LT27 is prepared.", ("work/1783996629-lt27-dcl-weapon-line-of-fire-live-plan.md", "docs/modding/04-engine-memory-model.md"), "Run LT27, prove reaction-delivered bow/gun attacks traverse the resolver, then integrate a synchronous verdict and author vertical policies."),
-    Coverage("Traits", "Brave offense/defense/reaction inputs", "deep-combat-layer/07", "mechanism-ready", "Brave is formula-visible; courage/caution reaction taxonomy and exact-id real-code/VM chance controls exist.", ("codemod/fftivc.generic.chronicle.codemod/DclReactions.cs", "docs/modding/06-code-mod-runtime-dsl.md"), "Live-test VM-scoped avoidance and synthetic neutral/courage/caution controls with sentinel curves."),
+    Coverage("Traits", "Brave offense/defense/reaction inputs", "deep-combat-layer/07", "design-open", "Brave and derived HT are formula-visible. The existing courage/caution raw-Brave Reaction taxonomy is superseded by the DCL activation-mode contract and is not a conforming final Reaction gate.", ("codemod/fftivc.generic.chronicle.codemod/DclReactions.cs", "docs/modding/06-code-mod-runtime-dsl.md"), "Replace raw-Brave Reaction chance routing with AutomaticTrigger, SkillResponse, and one-reference ActivationRoll metadata before integration."),
     Coverage("Traits", "Faith magic output/vulnerability inputs", "deep-combat-layer/08", "mechanism-ready", "Raw/effective Faith and magic pipeline variables support output, healing, vulnerability, and status resistance.", ("work/1783983032-battle-runtime-settings.dcl-magic-pipeline-mechanism.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Run integrated magic regression with sentinel curves; final balance policy is out of scope."),
-    Coverage("Traits", "Zodiac compatibility inputs", "deep-combat-layer/09", "mechanism-ready", "Attacker/target zodiac and derived compatibility distance/multipliers are formula-owned.", ("work/1783980809-battle-runtime-settings.dcl-weapon-skill-mechanism.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Apply one sentinel matrix across representative physical, magic, heal, and status families."),
+    Coverage("Traits", "Zodiac compatibility inputs", "deep-combat-layer/09", "mechanism-ready", "Attacker/target zodiac and derived compatibility distance/multipliers are formula-owned.", ("work/1783980809-battle-runtime-settings.dcl-weapon-skill-mechanism.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Apply one sentinel matrix across representative magic, healing, and status families."),
     Coverage("Progression", "Weapon Skill level/family-grade mechanism", "deep-combat-layer/10", "mechanism-ready", "JP-derived job level, configurable family grades, growth, caps, and over-cap conversion are expressed and tested without requiring final job assignments.", ("work/1783980809-battle-runtime-settings.dcl-weapon-skill-mechanism.json", "docs/modding/06-code-mod-runtime-dsl.md"), "Validate representative low/mid/high synthetic grades end to end; final job matrices are out of scope."),
     Coverage("Progression", "Dual-wield active-weapon routing", "deep-combat-layer/10", "mechanism-ready", "For action type 1, orderRecord+8 is the exact weapon item id used by native formula dispatch. The calc ring, action context, formula variables, weapon-skill profile, and hit-decision key retain it end to end. Different equipped ids identify right/left; identical ids remain side-ambiguous but route through the same exact weapon family and skill.", ("tools/analyze_dcl_active_weapon_payload.py", "work/1784078789-dcl-active-weapon-payload-checkpoint.md", "codemod/fftivc.generic.chronicle.codemod/FormulaRuntimeContextBuilder.cs", "codemod/fftivc.generic.chronicle.codemod/DclHitDecisionCache.cs"), "Live-confirm that native Dual Wield emits two separate result transactions and preserves each strike's payload; weapon/skill routing itself is closed offline."),
     Coverage("Magic", "Unified damage/heal/affinity pipeline", "deep-combat-layer/11", "mechanism-ready", "Magic damage, healing, Faith, Zodiac, Shell, elements, affinity, and Undead inversion share tested formula context.", ("work/1783983032-battle-runtime-settings.dcl-magic-pipeline-mechanism.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Run AoE/Reflect/absorb regression with sentinel powers; final spell values are out of scope."),
@@ -57,21 +59,138 @@ ROWS = (
     Coverage("Equipment", "Item metadata exposure and DCL sidecar", "deep-combat-layer/14", "mechanism-ready", "Item catalog exposes native slots, range, evade, attack flags, elements, affinities, options, and status families; formula maps can supply DCL-only Weight, DR/class, modifiers, and special-family fields without changing item SKUs.", ("codemod/fftivc.generic.chronicle.codemod/ItemCatalog.cs", "work/1783984192-dcl-item-sidecar.csv", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Validate representative sentinel metadata through movement, Dodge, DR, damage, and affinity formulas; final per-item values are out of scope."),
     Coverage("Metadata", "Ability mechanism classification and runtime overlay", "deep-combat-layer/11,13,15", "mechanism-ready", "All 512 records are technically routed with zero unclassified, reverse-engineering, blocked, or mixed mechanism/design rows. The conservative classifier, approval-gated template, and fail-closed runtime overlay exist. Authored strike_count is accepted only for managed_multistrike policies; native_multistrike policies preserve engine repetition. Design-only row values are deliberately outside this technical audit.", ("tools/report_dcl_ability_classification.py", "tools/analyze_dcl_multistrike_transactions.py", "codemod/fftivc.generic.chronicle.codemod/AbilityCatalog.cs", "codemod/fftivc.generic.chronicle.codemod.settingsvalidate/Program.cs"), "Validate one sentinel overlay row for each mechanism class in the integrated profile."),
     Coverage("AI", "AI-visible rewritten scoring", "deep-combat-layer/00,11,12", "proven-live", "Enemy think-time sweeps consume the normalized staged bundle after 0x281F12 for target ranking. The permanent numeric writer publishes the complete formula-owned HP/MP bundle and flags there, leaves ordinary AI evaluations transient, caches only confirmed execution, and reuses that exact result at 0x30A5D7. LT36 proves target ranking and cached delivery. The charged Death vertical proves exact 3d6 expected lethal debit during AI evaluation and one cached sampled contest at execution.", ("tools/analyze_dcl_ai_scoring_boundary.py", "tools/analyze_dcl_instant_ko_compute.py", "tools/analyze_dcl_calc_provenance.py", "work/1784089635-lt36-compute-point-writer-live-result.md", "work/1784089584-lt36b-compute-point-delivery-live.log", "work/1784093540-lt37a-dcl-instant-ko-compute-resist-resolved-live.log", "work/1784093827-lt37b-dcl-instant-ko-compute-ko-resolved-live.log", "work/1784090430-dcl-compute-point-family-closure.md", "codemod/fftivc.generic.chronicle.codemod/DclComputePointCache.cs", "codemod/fftivc.generic.chronicle.codemod/DclComputePointNumericPlan.cs", "docs/modding/08-dcl-information-requirements.md"), "Regress representative healing, MP, miss/output-control, multistrike, AoE, and authored status-scoring families in the integrated profile."),
-    Coverage("Integration", "Unified DCL mechanism runtime profile", "deep-combat-layer/00-14", "integration-missing", "Strict fail-closed composition and freshness validation merge physical contest, numeric magic, and live-proven Instant-KO mechanisms into one validator-clean scaffold. Runtime/data pairing proves enabled technical rules have matching neutralized carriers. Status, synthetic Reaction, lifecycle, item metadata, and multistrike mechanisms are not yet all composed together.", ("tools/compose_runtime_settings.py", "tools/validate_dcl_runtime_data_pair.py", "work/1784094553-dcl-runtime-composition-manifest.json", "work/1784094553-dcl-death-runtime-data-pair.json", "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Extend the manifest into one canonical sentinel mechanism profile without importing any job or final balance decision."),
-    Coverage("Validation", "Whole-DCL mechanism live regression", "deep-combat-layer/00-14", "regression-pending", "Offline build, smoke, validators, analyzers, and hook guards are extensive; the final integrated technical battle matrix does not yet exist.", ("codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs", "tools/audit_runtime_hook_anchors.py"), "Run forecast/player/AI/multi-hit/AoE/status/reaction/KO/equipment regression on the integrated sentinel profile."),
+    Coverage("Integration", "Unified DCL mechanism runtime profile", "deep-combat-layer/00-19", "integration-missing", "Strict fail-closed composition and freshness validation merge physical contest, numeric magic, and live-proven Instant-KO mechanisms into one validator-clean scaffold. Runtime/data pairing proves enabled technical rules have matching neutralized carriers. Status, synthetic Reaction, lifecycle, item metadata, and multistrike mechanisms are not yet all composed together.", ("tools/compose_runtime_settings.py", "tools/validate_dcl_runtime_data_pair.py", "work/1784094553-dcl-runtime-composition-manifest.json", "work/1784094553-dcl-death-runtime-data-pair.json", "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json", "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs"), "Extend the manifest into one canonical sentinel mechanism profile without importing any job or final balance decision."),
+    Coverage("Validation", "Whole-DCL mechanism live regression", "deep-combat-layer/00-19", "regression-pending", "Offline build, smoke, validators, analyzers, and hook guards are extensive; the final integrated technical battle matrix does not yet exist.", ("codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs", "tools/audit_runtime_hook_anchors.py"), "Run forecast/player/AI/multi-hit/AoE/status/reaction/KO/equipment regression on the integrated sentinel profile."),
 )
+
+ROWS += (
+    Coverage(
+        "Metadata",
+        "Normalized action and state authoring contract",
+        "deep-combat-layer/19",
+        "metadata-authoring",
+        "The timeless DCL contract defines one normalized action profile, one persistent-state definition, safe defaults, delivery/effect unions, cardinality, presentation/AI parity, and fail-closed validation independent of physical storage.",
+        (
+            "docs/deep-combat-layer/19-action-and-state-authoring-contract.md",
+            "codemod/fftivc.generic.chronicle.codemod/AbilityCatalog.cs",
+            "codemod/fftivc.generic.chronicle.codemod/ItemCatalog.cs",
+        ),
+        "Materialize the normalized loader/validator across ability, item, state, forecast, AI, and execution data without importing final content values.",
+    ),
+    Coverage(
+        "Numeric core",
+        "Shared rounding, 3d6, forecast and RNG contract",
+        "deep-combat-layer/17",
+        "mechanism-ready",
+        "The DCL now has one numerical owner for rounding, clamps, universal success rolls, criticals, Quick Contests, exact forecast spaces, percentage rolls, and execution-only random draws. Physical defense and status resistance share one runtime classifier.",
+        (
+            "docs/deep-combat-layer/17-numeric-resolution-contract.md",
+            "codemod/fftivc.generic.chronicle.codemod/DclSuccessRoll.cs",
+            "codemod/fftivc.generic.chronicle.codemod.smoketests/Program.cs",
+        ),
+        "Apply the same classifier and stable roll-site identity to every remaining magic, recovery, concentration, and reaction implementation path.",
+    ),
+    Coverage(
+        "Action lifecycle",
+        "Outer action, batch, strike and Reaction transaction",
+        "deep-combat-layer/18",
+        "design-open",
+        "The timeless contract now defines resolution-time snapshots, target-order independence, per-strike physical contests, combo KO short-circuiting, deferred within-action state, and one post-action native Reaction window.",
+        (
+            "docs/deep-combat-layer/18-action-transactions-and-reactions.md",
+            "codemod/fftivc.generic.chronicle.codemod/DclMultistrike.cs",
+            "codemod/fftivc.generic.chronicle.codemod/DclPhysicalContest.cs",
+        ),
+        "Implement and prove the complete target-batch plan/commit boundary and activation-mode Reaction schema across player forecast, execution, and AI.",
+    ),
+)
+
+
+# Several rows predate the current numbered DCL set. Keep the evidence prose stable while making
+# current document ownership and readiness explicit in one auditable mapping.
+OWNER_OVERRIDES = {
+    "Outer/nested calculation provenance": "deep-combat-layer/00,02,12,18",
+    "Deterministic HP damage apply": "deep-combat-layer/05",
+    "Forecast damage/heal parity": "deep-combat-layer/05,09,13,14",
+    "Damage types, DR, wound and penetration": "deep-combat-layer/05,06",
+    "Physical hit contest and outcome delivery": "deep-combat-layer/03",
+    "Finite Parry/Block depletion": "deep-combat-layer/03,18",
+    "Barrage weapon multistrike carrier": "deep-combat-layer/03,16,18",
+    "Facing and flank/back policy": "deep-combat-layer/04",
+    "Reach, range, height and weapon LoS": "deep-combat-layer/04,07,12",
+    "Brave offense/defense/reaction inputs": "deep-combat-layer/01,08,15,18",
+    "Faith magic output/vulnerability inputs": "deep-combat-layer/11,13,15",
+    "Zodiac compatibility inputs": "deep-combat-layer/13",
+    "Weapon Skill level/family-grade mechanism": "deep-combat-layer/03",
+    "Dual-wield active-weapon routing": "deep-combat-layer/03,06",
+    "Unified damage/heal/affinity pipeline": "deep-combat-layer/11,13,14",
+    "Magic Evade": "deep-combat-layer/13",
+    "RandomFire multistrike carrier": "deep-combat-layer/13,16,18",
+    "Atomic HP/MP economy and redirect replacement": "deep-combat-layer/11,12",
+    "Authored status contest and duration": "deep-combat-layer/08,14",
+    "KO, revive, instant KO and corpse state": "deep-combat-layer/05,08,14",
+    "Native special-action transactions": "deep-combat-layer/10,16",
+    "Chance taxonomy and native effects": "deep-combat-layer/16,18",
+    "Synthetic producer, accepted-order transformation and commit": "deep-combat-layer/16,18",
+    "Item metadata exposure and DCL sidecar": "deep-combat-layer/06",
+    "Ability mechanism classification and runtime overlay": "deep-combat-layer/10,11,12,13,14,16",
+    "AI-visible rewritten scoring": "deep-combat-layer/09",
+    "Unified DCL mechanism runtime profile": "deep-combat-layer/00-19",
+    "Whole-DCL mechanism live regression": "deep-combat-layer/00-19",
+}
+
+STATUS_OVERRIDES = {
+    "Damage types, DR, wound and penetration": "metadata-authoring",
+    "Brave offense/defense/reaction inputs": "partial-live-gated",
+    "Authored status contest and duration": "partial-live-gated",
+    "Item metadata exposure and DCL sidecar": "metadata-authoring",
+    "Ability mechanism classification and runtime overlay": "metadata-authoring",
+    "Chance taxonomy and native effects": "partial-live-gated",
+    "Synthetic producer, accepted-order transformation and commit": "partial-live-gated",
+    "Outer action, batch, strike and Reaction transaction": "partial-live-gated",
+}
+
+
+def effective_owner(row: Coverage) -> str:
+    return OWNER_OVERRIDES.get(row.mechanism, row.owner)
+
+
+def effective_status(row: Coverage) -> str:
+    return STATUS_OVERRIDES.get(row.mechanism, row.status)
 
 
 def validate() -> list[str]:
     errors: list[str] = []
     names: set[tuple[str, str]] = set()
+    docs_by_number = {path.name[:2]: path for path in (ROOT / "docs" / "deep-combat-layer").glob("[0-9][0-9]-*.md")}
     for row in ROWS:
         key = (row.area, row.mechanism)
         if key in names:
             errors.append(f"duplicate row: {row.area}/{row.mechanism}")
         names.add(key)
-        if row.status not in ALLOWED:
-            errors.append(f"invalid status {row.status!r}: {row.mechanism}")
+        status = effective_status(row)
+        if status not in ALLOWED:
+            errors.append(f"invalid status {status!r}: {row.mechanism}")
+        owner = effective_owner(row)
+        prefix = "deep-combat-layer/"
+        if not owner.startswith(prefix):
+            errors.append(f"invalid owner {owner!r}: {row.mechanism}")
+        else:
+            numbers: set[int] = set()
+            for token in owner.removeprefix(prefix).split(","):
+                if "-" in token:
+                    start, end = token.split("-", 1)
+                    if not start.isdigit() or not end.isdigit() or int(start) > int(end):
+                        errors.append(f"invalid owner range {token!r}: {row.mechanism}")
+                        continue
+                    numbers.update(range(int(start), int(end) + 1))
+                elif token.isdigit():
+                    numbers.add(int(token))
+                else:
+                    errors.append(f"invalid owner token {token!r}: {row.mechanism}")
+            for number in sorted(numbers):
+                if f"{number:02d}" not in docs_by_number:
+                    errors.append(f"owner document {number:02d} does not exist: {row.mechanism}")
         for evidence in row.evidence:
             if not (ROOT / evidence).exists():
                 errors.append(f"missing evidence {evidence}: {row.mechanism}")
@@ -85,9 +204,9 @@ def write(prefix: int) -> tuple[Path, Path]:
         writer = csv.writer(handle)
         writer.writerow(("area", "mechanism", "owner", "status", "current", "evidence", "remaining"))
         for row in ROWS:
-            writer.writerow((row.area, row.mechanism, row.owner, row.status, row.current, "; ".join(row.evidence), row.remaining))
+            writer.writerow((row.area, row.mechanism, effective_owner(row), effective_status(row), row.current, "; ".join(row.evidence), row.remaining))
 
-    counts = {status: sum(row.status == status for row in ROWS) for status in sorted(ALLOWED)}
+    counts = {status: sum(effective_status(row) == status for row in ROWS) for status in sorted(ALLOWED)}
     lines = [
         "# Whole-DCL technical implementation coverage",
         "",
@@ -107,7 +226,7 @@ def write(prefix: int) -> tuple[Path, Path]:
     ]
     for row in ROWS:
         evidence = ", ".join(f"`{path}`" for path in row.evidence)
-        lines.append(f"| {row.area} | {row.mechanism} | `{row.owner}` | `{row.status}` | {row.current} Evidence: {evidence}. | {row.remaining} |")
+        lines.append(f"| {row.area} | {row.mechanism} | `{effective_owner(row)}` | `{effective_status(row)}` | {row.current} Evidence: {evidence}. | {row.remaining} |")
     lines.extend([
         "",
         "## Completion rule",

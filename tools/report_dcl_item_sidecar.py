@@ -22,12 +22,12 @@ DEFAULT_CATALOG = ROOT / "work" / "item_catalog.csv"
 @dataclass(frozen=True)
 class WeaponPolicy:
     role: str
-    damage_type: str
+    damage_profile_hint: str
     wmod_tier: str
     reach_policy: str
     handedness: str
     parry_tier: str
-    skill_primary: str
+    skill_family: str
     overcap_route: str = "none"
     armor_divisor_tier: str = "none"
     bolt_role: str = "none"
@@ -36,30 +36,30 @@ class WeaponPolicy:
 
 W = WeaponPolicy
 WEAPON_POLICIES: dict[str, WeaponPolicy] = {
-    "Knife": W("assassin_finisher", "thrust", "low", "1", "1H", "low", "PA", special_rule="modest_speed_grant"),
-    "NinjaBlade": W("light_dual_wield_blade", "cut", "low-medium", "1", "1H", "medium", "PA"),
-    "Sword": W("defensive_1h_blade", "cut", "medium", "1", "1H", "high", "PA"),
-    "Katana": W("draw_out_2h_blade", "cut", "high", "1", "2H", "high", "PA", special_rule="draw_out_repeatable_mp_cost"),
-    "KnightSword": W("brute_2h_blade", "cut", "very-high", "1", "2H", "medium", "PA"),
-    "Axe": W("anti_plate_brute", "crush", "very-high", "1", "1H", "low", "PA"),
-    "Flail": W("anti_guard_crusher", "crush", "high", "1", "1H", "very-low", "PA", special_rule="defender_parry_minus4_block_minus2"),
-    "Bag": W("job_utility_platform", "crush", "low", "1", "1H", "low", "PA", special_rule="job_buff_or_debuff_pending"),
-    "Polearm": W("offensive_reach", "thrust", "medium", "2", "2H", "medium", "PA", special_rule="reach_escape_counter_pointblank"),
-    "Pole": W("defensive_reach", "crush", "low-medium", "2", "2H", "very-high", "PA", special_rule="reach_escape_counter_pointblank"),
-    "Rod": W("offensive_magic_implement", "magic", "n/a", "3", "1H", "none", "MA", bolt_role="offensive_elemental_bolt", special_rule="offensive_magic_modifier"),
-    "Staff": W("support_magic_implement", "magic", "n/a", "3", "1H", "none", "MA", bolt_role="support_elemental_or_heal_bolt", special_rule="support_heal_modifier"),
-    "Bow": W("arc_strength_ranged", "missile", "medium", "native-projectile", "2H", "none", "PA", armor_divisor_tier="low", special_rule="arc_trajectory"),
-    "Crossbow": W("marksman_direct_ranged", "missile", "medium", "native-projectile", "2H", "none", "weapon-skill", overcap_route="raw-damage", armor_divisor_tier="medium", special_rule="straight_line"),
-    "Gun": W("armor_defeater_ranged", "missile", "medium-low", "native-projectile", "2H", "none", "weapon-skill", overcap_route="penetration", armor_divisor_tier="high", special_rule="straight_line"),
-    "Instrument": W("bard_utility_platform", "crush", "very-low", "1", "2H", "low", "PA", special_rule="song_identity_job_authored"),
-    "Cloth": W("dancer_utility_platform", "crush", "very-low", "2", "1H", "low", "PA", special_rule="dance_identity_job_authored"),
-    "Book": W("orator_utility_platform", "crush", "very-low", "1", "1H", "low", "PA", special_rule="talk_identity_job_authored"),
+    "Knife": W("assassin_finisher", "thrust", "low", "1", "1H", "low", "Knife", special_rule="modest_speed_grant"),
+    "NinjaBlade": W("light_dual_wield_blade", "cut", "low-medium", "1", "1H", "medium", "Shortsword"),
+    "Sword": W("defensive_1h_blade", "cut", "medium", "1", "1H", "high", "Broadsword"),
+    "Katana": W("draw_out_2h_blade", "cut", "high", "1", "2H", "high", "Broadsword-or-Two-Handed-Sword-by-item", special_rule="draw_out_repeatable_mp_cost"),
+    "KnightSword": W("brute_2h_blade", "cut", "very-high", "1", "2H", "medium", "Broadsword"),
+    "Axe": W("anti_plate_brute", "crush", "very-high", "1", "1H", "low", "Axe/Mace"),
+    "Flail": W("anti_guard_crusher", "crush", "high", "1", "1H", "very-low", "Flail", special_rule="defender_parry_minus4_block_minus2"),
+    "Bag": W("job_utility_platform", "crush", "low", "1", "1H", "low", "Flail", special_rule="job_buff_or_debuff_pending"),
+    "Polearm": W("offensive_reach", "thrust", "medium", "2", "2H", "medium", "Spear", special_rule="reach_escape_counter_pointblank"),
+    "Pole": W("defensive_reach", "crush", "low-medium", "2", "2H", "very-high", "Staff", special_rule="reach_escape_counter_pointblank"),
+    "Rod": W("offensive_magic_implement", "magic", "n/a", "1", "1H", "none", "Smallsword", bolt_role="offensive_elemental_bolt", special_rule="offensive_magic_modifier"),
+    "Staff": W("support_magic_implement", "magic", "n/a", "1", "1H", "none", "Staff", bolt_role="support_elemental_or_heal_bolt", special_rule="support_heal_modifier"),
+    "Bow": W("arc_strength_ranged", "missile", "medium", "native-projectile", "2H", "none", "Bow", armor_divisor_tier="low", special_rule="arc_trajectory"),
+    "Crossbow": W("marksman_direct_ranged", "missile", "medium", "native-projectile", "2H", "none", "Crossbow", overcap_route="raw-damage", armor_divisor_tier="medium", special_rule="straight_line"),
+    "Gun": W("armor_defeater_ranged", "missile", "medium-low", "native-projectile", "2H", "none", "Guns", overcap_route="penetration", armor_divisor_tier="high", special_rule="straight_line"),
+    "Instrument": W("bard_utility_platform", "crush", "very-low", "1", "2H", "low", "Innate Attack (Projectile)", special_rule="song_identity_job_authored"),
+    "Cloth": W("dancer_utility_platform", "crush", "very-low", "2", "1H", "low", "Whip", special_rule="dance_identity_job_authored"),
+    "Book": W("orator_utility_platform", "crush", "very-low", "1", "1H", "low", "Axe/Mace", special_rule="talk_identity_job_authored"),
 }
 
 BODY_POLICIES = {
-    "Armor": ("body", "heavy", "9/8/3"),
-    "Clothing": ("body", "light", "2/2/2"),
-    "Robe": ("body", "robe", "0/0/0"),
+    "Armor": ("body", "heavy"),
+    "Clothing": ("body", "light"),
+    "Robe": ("body", "robe"),
 }
 HEAD_CATEGORIES = {"Helmet", "Hat", "HairAdornment"}
 ACCESSORY_CATEGORIES = {"Armguard", "Armlet", "Cloak", "Perfume", "Ring", "Shoes"}
@@ -68,11 +68,11 @@ EXTERNAL_WEAPON_CATEGORIES = {"Throwing", "Bomb"}
 
 FIELDS = [
     "item_id", "name", "category", "secondary_kind", "route", "slot", "family_role",
-    "damage_type", "damage_type_confidence", "wmod_tier", "current_weapon_power", "dcl_wmod",
+    "damage_mode", "damage_type", "damage_profile_hint", "wmod_tier", "current_weapon_power", "dcl_wmod",
     "reach_policy", "current_range", "dcl_range", "handedness", "parry_tier",
-    "current_weapon_evasion", "dcl_parry", "skill_primary", "overcap_route",
-    "armor_divisor_tier", "dcl_armor_divisor", "armor_class", "dr_profile_cut_thrust_crush",
-    "dcl_dr_cut", "dcl_dr_thrust", "dcl_dr_crush", "weight_required", "dcl_weight",
+    "current_weapon_evasion", "dcl_parry", "skill_family", "overcap_route",
+    "armor_divisor_tier", "dcl_armor_divisor", "armor_class", "dcl_dr",
+    "weight_required", "dcl_weight",
     "bolt_role", "current_elements", "dcl_element", "block_source", "dcl_block",
     "special_rule", "readiness", "authoring_gates",
 ]
@@ -89,7 +89,6 @@ def empty_row(source: dict[str, str]) -> dict[str, str]:
         "current_range": source["weapon_range"],
         "current_weapon_evasion": source["weapon_evasion"],
         "current_elements": source["weapon_elements"],
-        "damage_type_confidence": "n/a",
         "weight_required": "false",
         "bolt_role": "none",
         "block_source": "none",
@@ -108,9 +107,10 @@ def classify(source: dict[str, str]) -> tuple[dict[str, str], list[str]]:
     if item_id == 0:
         row.update({
             "route": "unarmed-sentinel", "slot": "hands", "family_role": "unarmed_job_derived",
-            "damage_type": "crush", "damage_type_confidence": "designed", "wmod_tier": "job-derived",
+            "damage_mode": "thrust", "damage_type": "crushing", "damage_profile_hint": "unarmed",
+            "wmod_tier": "job-derived",
             "reach_policy": "1", "dcl_range": "1", "handedness": "unarmed", "parry_tier": "job-derived",
-            "skill_primary": "PA+martial-arts", "special_rule": "common_fist_penalty_or_martial_arts_wmod",
+            "skill_family": "Brawling", "special_rule": "common_fist_penalty_or_martial_arts_wmod",
             "readiness": "mechanism-ready-authoring-required",
             "authoring_gates": "unarmed wmod curve;untrained fist penalty;Martial Arts parry eligibility",
         })
@@ -119,8 +119,8 @@ def classify(source: dict[str, str]) -> tuple[dict[str, str], list[str]]:
     if category in EXTERNAL_WEAPON_CATEGORIES:
         row.update({
             "route": "thrown-payload-external", "slot": "inventory", "family_role": "throw_command_payload",
-            "damage_type": "external", "damage_type_confidence": "requires-formula-policy",
-            "reach_policy": "throw-command", "handedness": "not-equipped", "skill_primary": "throw-command",
+            "damage_profile_hint": "external payload",
+            "reach_policy": "throw-command", "handedness": "not-equipped", "skill_family": "authored Thrown Weapon skill",
             "readiness": "reverse-engineering",
             "authoring_gates": "throw payload formula;damage type;range/trajectory;inventory consumption;DCL hit/defense routing",
         })
@@ -130,16 +130,16 @@ def classify(source: dict[str, str]) -> tuple[dict[str, str], list[str]]:
         policy = WEAPON_POLICIES[category]
         row.update({
             "route": "equipped-weapon", "slot": "hands", "family_role": policy.role,
-            "damage_type": policy.damage_type, "damage_type_confidence": "designed",
+            "damage_profile_hint": policy.damage_profile_hint,
             "wmod_tier": policy.wmod_tier, "reach_policy": policy.reach_policy,
             "dcl_range": policy.reach_policy if policy.reach_policy != "native-projectile" else source["weapon_range"],
             "handedness": policy.handedness, "parry_tier": policy.parry_tier,
-            "skill_primary": policy.skill_primary, "overcap_route": policy.overcap_route,
+            "skill_family": policy.skill_family, "overcap_route": policy.overcap_route,
             "armor_divisor_tier": policy.armor_divisor_tier, "bolt_role": policy.bolt_role,
             "special_rule": policy.special_rule, "weight_required": "true",
             "readiness": "structure-ready-numeric-authoring-required",
         })
-        gates = ["Weight", "wmod"]
+        gates = ["Weight", "damage mode", "damage type", "wmod"]
         if policy.parry_tier != "none":
             gates.append("parry calibration")
         if policy.armor_divisor_tier != "none":
@@ -152,10 +152,10 @@ def classify(source: dict[str, str]) -> tuple[dict[str, str], list[str]]:
         return row, errors
 
     if category in BODY_POLICIES:
-        slot, armor_class, profile = BODY_POLICIES[category]
+        slot, armor_class = BODY_POLICIES[category]
         row.update({
             "route": "body-armor", "slot": slot, "family_role": f"{armor_class}_body_chassis",
-            "armor_class": armor_class, "dr_profile_cut_thrust_crush": profile,
+            "armor_class": armor_class,
             "weight_required": "true", "readiness": "structure-ready-numeric-authoring-required",
             "authoring_gates": "Weight;per-SKU DR;modest HP policy;native HP retune",
         })
@@ -253,7 +253,7 @@ def render_markdown(rows: list[dict[str, str]], source: Path, csv_path: Path | N
             numeric_missing["weapon parry"] += 1
         if row["armor_divisor_tier"] not in {"", "none"} and not row["dcl_armor_divisor"]:
             numeric_missing["armor divisor"] += 1
-        if row["route"] == "body-armor" and not row["dcl_dr_cut"]:
+        if row["route"] == "body-armor" and not row["dcl_dr"]:
             numeric_missing["per-SKU body DR"] += 1
         if row["route"] == "shield" and not row["dcl_block"]:
             numeric_missing["shield Block"] += 1
@@ -278,10 +278,10 @@ def render_markdown(rows: list[dict[str, str]], source: Path, csv_path: Path | N
     lines.extend(f"| {name} | {count} |" for name, count in sorted(routes.items()))
     lines.extend(["", "## Readiness", "", "| Readiness | Items |", "| --- | ---: |"])
     lines.extend(f"| {name} | {count} |" for name, count in sorted(readiness.items()))
-    lines.extend(["", "## Equipped weapon families", "", "| Family | SKUs | Type | Reach | Hands | Parry | Scale | Role |", "| --- | ---: | --- | --- | --- | --- | --- | --- |"])
+    lines.extend(["", "## Equipped weapon families", "", "| Family | SKUs | Damage hint | Reach | Hands | Parry | Skill | Role |", "| --- | ---: | --- | --- | --- | --- | --- | --- |"])
     for family, group in sorted(families.items()):
         row = group[0]
-        lines.append(f"| {family} | {len(group)} | {row['damage_type']} | {row['reach_policy']} | {row['handedness']} | {row['parry_tier']} | {row['skill_primary']} | {row['family_role']} |")
+        lines.append(f"| {family} | {len(group)} | {row['damage_profile_hint']} | {row['reach_policy']} | {row['handedness']} | {row['parry_tier']} | {row['skill_family']} | {row['family_role']} |")
     lines.extend([
         "",
         "## Explicit incomplete numeric authoring",

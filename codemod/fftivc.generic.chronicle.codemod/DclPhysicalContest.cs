@@ -34,9 +34,6 @@ internal readonly record struct DclPhysicalContestResult(
 
 internal static class DclPhysicalContest
 {
-    private const int MinRoll = 3;
-    private const int MaxRoll = 18;
-
     public static int Roll3D6(Random rng)
     {
         ArgumentNullException.ThrowIfNull(rng);
@@ -44,10 +41,10 @@ internal static class DclPhysicalContest
     }
 
     public static bool IsCritical(int roll, int skill)
-        => roll is 3 or 4 || (roll == 5 && skill >= 15) || (roll == 6 && skill >= 16);
+        => DclSuccessRoll.IsCriticalSuccess(roll, skill);
 
     public static bool IsFumble(int roll, int skill)
-        => roll == 18 || (roll == 17 && skill <= 15);
+        => DclSuccessRoll.IsCriticalFailure(roll, skill);
 
     public static DclDefenseOption ChooseBestDefense(
         int dodge,
@@ -61,12 +58,12 @@ internal static class DclPhysicalContest
         if (!defenseAllowed)
             return new DclDefenseOption(DclDefenseKind.None, 0, false);
 
-        // Ties deliberately prefer Block, then Parry, then Dodge. This makes the authored guard
-        // ladder deterministic and spends the finite shield before the finite weapon guard.
+        // Ties deliberately prefer Dodge, then Parry, then Block. This preserves finite defense
+        // resources when a reusable defense is equally effective.
         var best = new DclDefenseOption(DclDefenseKind.Dodge, dodge + modifier, false);
-        if (parryAvailable && parry + modifier >= best.Target)
+        if (parryAvailable && parry + modifier > best.Target)
             best = new DclDefenseOption(DclDefenseKind.Parry, parry + modifier, true);
-        if (blockAvailable && block + modifier >= best.Target)
+        if (blockAvailable && block + modifier > best.Target)
             best = new DclDefenseOption(DclDefenseKind.Block, block + modifier, true);
         return best;
     }
@@ -77,10 +74,9 @@ internal static class DclPhysicalContest
         DclDefenseOption defense,
         int defenseRoll)
     {
-        if (attackRoll is < MinRoll or > MaxRoll)
-            throw new ArgumentOutOfRangeException(nameof(attackRoll), "3d6 totals must be within 3..18.");
-        if (defense.Kind != DclDefenseKind.None && (defenseRoll is < MinRoll or > MaxRoll))
-            throw new ArgumentOutOfRangeException(nameof(defenseRoll), "3d6 totals must be within 3..18 when a defense roll exists.");
+        DclSuccessRoll.Validate(attackRoll);
+        if (defense.Kind != DclDefenseKind.None)
+            DclSuccessRoll.Validate(defenseRoll);
 
         if (IsCritical(attackRoll, attackSkill))
             return new DclPhysicalContestResult(DclPhysicalOutcome.CriticalHit, attackSkill, attackRoll,
@@ -88,10 +84,10 @@ internal static class DclPhysicalContest
         if (IsFumble(attackRoll, attackSkill))
             return new DclPhysicalContestResult(DclPhysicalOutcome.AttackFumble, attackSkill, attackRoll,
                 DclDefenseKind.None, 0, -1);
-        if (attackRoll > attackSkill)
+        if (!DclSuccessRoll.Succeeds(attackRoll, attackSkill))
             return new DclPhysicalContestResult(DclPhysicalOutcome.AttackMiss, attackSkill, attackRoll,
                 DclDefenseKind.None, 0, -1);
-        if (defense.Kind != DclDefenseKind.None && defenseRoll <= defense.Target)
+        if (defense.Kind != DclDefenseKind.None && DclSuccessRoll.Succeeds(defenseRoll, defense.Target))
             return new DclPhysicalContestResult(DclPhysicalOutcome.Defended, attackSkill, attackRoll,
                 defense.Kind, defense.Target, defenseRoll);
 
@@ -116,7 +112,7 @@ internal static class DclPhysicalContest
                 continue;
             }
 
-            if (IsFumble(attackRoll, attackSkill) || attackRoll > attackSkill)
+            if (IsFumble(attackRoll, attackSkill) || !DclSuccessRoll.Succeeds(attackRoll, attackSkill))
             {
                 outcomes += defense.Kind == DclDefenseKind.None ? 1 : 216;
                 continue;
@@ -134,7 +130,7 @@ internal static class DclPhysicalContest
             for (int f = 1; f <= 6; f++)
             {
                 int defenseRoll = d + e + f;
-                if (defenseRoll > defense.Target)
+                if (!DclSuccessRoll.Succeeds(defenseRoll, defense.Target))
                     hits++;
                 outcomes++;
             }

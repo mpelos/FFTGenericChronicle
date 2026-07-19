@@ -128,7 +128,8 @@ Sanity validation rejects impossible candidates (a stride scan once accepted a f
 - CT greater than `100`;
 - PA/MA/Speed greater than `127`;
 - Move/Jump greater than `32`;
-- Brave/Faith greater than `100`.
+- Faith greater than `100`. Brave uses the byte's full nonnegative range because the DCL deliberately
+  permits heroic Brave above `100` as an open-ended HT input.
 
 Still unmapped from the struct: secondary action-skill state and height. The status bitfield is
 **partly mapped and DATA-controllable** (see §2.3): `0x20`=KO and

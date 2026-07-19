@@ -1,7 +1,7 @@
 # Ranged Combat
 
-This document owns ranged Effective Skill, distance penalties, Accuracy, Aim, trajectories, legal
-ranged defenses, and forecast hit chance.
+This document owns ranged Effective Skill, distance penalties, Accuracy, skill-granted Aim, native
+FFT trajectories, legal ranged defenses, and forecast hit chance.
 
 ## Ranged attack pipeline
 
@@ -10,9 +10,7 @@ RangedWeaponSkill = GurpsSkillScore(DX, weaponDifficulty, Rank)
 
 EffectiveSkill = RangedWeaponSkill
                  + AimBonus
-                 + elevation modifier
                  - range penalty
-                 - cover penalty
                  - location penalty
                  - Shock/state penalties
 ```
@@ -38,29 +36,44 @@ Horizontal FFT grid distance maps directly to the GURPS range bands:
 | 21-30 | -7 |
 | 31-50 | -8 |
 
-The weapon's maximum range still determines target legality. Height is handled separately so the
-player can see whether distance, elevation, or cover caused a penalty.
+The weapon's maximum range and FFT's native vertical/trajectory rules determine target legality.
+Height and intervening terrain add no new generic hit modifier.
 
 Skill above 16 remains valuable because it absorbs these penalties. It is not capped before the
 range calculation.
 
 ## Accuracy and Aim
 
-Accuracy belongs to the weapon and applies only after Aim.
+Accuracy belongs to the weapon and applies only when an explicit ability grants the Aim state. Aim
+is not a universal command.
 
 ```text
 mobile or immediate shot -> AimBonus = 0
-one Aim Action           -> AimBonus = Acc
-two consecutive Aims     -> AimBonus = Acc + 1
-three or more Aims       -> AimBonus = Acc + 2
+first granted Aim step   -> AimBonus = Acc
+second consecutive step  -> AimBonus = Acc + 1
+third or later step      -> AimBonus = Acc + 2
 ```
 
 Aim tracks one target. Changing target, losing the legal trajectory, moving before the shot, or
-entering Stun or Knocked Down cancels the accumulated bonus. Damage may require a Will check to
-retain Aim.
+entering Stun or Knocked Down cancels the accumulated bonus. Injury threatens retention per Strike:
 
-Aim consumes Action and restricts Movement until the shot. On the firing turn, the unit fires
-before moving and may use Movement afterward.
+```text
+AimRetentionScore = Will
+                    + AimRetentionModifier
+                    - explicit state penalties
+```
+
+After each Strike causing `Injury > 0`, a unit that still has Aim rolls
+`3d6 <= AimRetentionScore`. Shock is not subtracted because this is a Will check. Success preserves
+the complete accumulated bonus; failure clears Aim immediately. A landed hit reduced to zero Injury
+by DR causes no roll. Injury plus forced movement does not create two rolls because forced movement
+already cancels Aim directly. Stun, Knocked Down, KO, loss of the tracked target, and loss of legal
+trajectory cancel directly without a retention roll. The remaining combo continues and its one
+Reaction window remains post-action.
+
+The granting ability declares its Action/Movement cost. Unless it states otherwise, movement before
+the prepared shot cancels Aim; on the firing turn, the unit fires before moving and may use
+Movement afterward.
 
 ## Free movement and shooting
 
@@ -68,20 +81,16 @@ A unit may use normal Movement and make an immediate ranged Attack without the G
 penalty, Bulk penalty, skill-9 cap, or loss of active defenses. It receives no Accuracy unless it
 previously Aimed and obeys the Aim movement restriction.
 
-This creates two valid modes:
+This creates two possible modes when the unit has access to an Aim-granting ability:
 
 - mobile shot: flexible position, base skill;
 - aimed shot: positional commitment, Accuracy bonus.
 
 ## Trajectories
 
-| Trajectory | Interaction |
-| --- | --- |
-| Arc | May pass over units and low cover when the weapon profile permits; interacts favorably with height. |
-| Direct | Intervening units and terrain block or provide cover. |
-
-Bows normally use an arcing trajectory. Crossbows and guns normally use direct trajectories. An
-individual item may override its family only through an explicit property.
+Bows, crossbows, guns, and thrown weapons use their native FFT line, height, and trajectory rules.
+The DCL does not add cover bands, partial exposure, collision redirection, or a generic high-ground
+modifier. Item metadata selects only a route supported by the native weapon behavior.
 
 ## Legal defenses
 
@@ -96,7 +105,7 @@ Dodge against gunfire represents reacting to the visible attacker before the sho
 the projectile. Back attacks deny Dodge through the facing rule. Ordinary shield DB and Block do
 not apply to gunfire.
 
-Facing, cover, elevation, and target locations are owned by
+Facing, native trajectory/height legality, and target locations are owned by
 [Facing, Reach, and Targeting](04-facing-reach-and-targeting.md).
 
 ## Knocked Down interactions
@@ -108,8 +117,8 @@ Facing, cover, elevation, and target locations are owned by
 
 ## Head shots
 
-A ranged head attack applies its location penalty in addition to range and cover. On a hit it uses
-only HeadDR. Aim and high mastery are the intended ways to make such a shot reliable.
+Only an explicit ranged ability can target the Head. It applies its authored location penalty in
+addition to range and uses only HeadDR on a hit. There is no universal head-shot command.
 
 ## Final hit chance
 
@@ -129,15 +138,16 @@ If no defense is legal, `FinalHitChance = A`.
 `A`, `C`, and `D` come from exact enumeration of the 216 outcomes of 3d6, including the attack
 critical rules and the defense roll's automatic success/failure rules. The resolver does not use a
 linear approximation such as `5% * score`, and it never computes hit chance by subtracting an
-evasion percentage from an attack percentage.
+evasion percentage from an attack percentage. Enumeration and display rounding follow the
+[Numeric Resolution Contract](17-numeric-resolution-contract.md#exact-forecast-probabilities).
 
-The detailed forecast also shows Effective Skill, distance penalty, Aim, cover, elevation, location,
-selected defense, and whether that defense will be consumed or penalized.
+The detailed forecast also shows Effective Skill, distance penalty, skill-granted Aim, explicit
+location modifier, selected defense, and whether that defense will be consumed or penalized.
 
 ### Worked hit-chance example
 
-An archer has Bow Skill 14, fires at distance 6 (`-3`), and has a clear `+1` elevation advantage.
-The shot is not Aimed, so Effective Skill is 12. The target's selected legal defense is Dodge 9.
+An archer has Bow Skill 15 and fires at distance 6 (`-3`). The shot is not Aimed, so Effective Skill
+is 12. The target's selected legal defense is Dodge 9.
 
 ```text
 A = P(attack succeeds at 12) = 160 / 216

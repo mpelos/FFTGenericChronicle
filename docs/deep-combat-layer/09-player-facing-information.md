@@ -4,6 +4,10 @@ The DCL adds rolls and derived values that must remain inspectable. A rule that 
 in the status screen, equipment screen, targeting forecast, or a visible battle state is not a
 complete DCL rule.
 
+Forecast, selected-unit detail, and AI read the same normalized action/state definitions owned by
+[Action and State Authoring Contract](19-action-and-state-authoring-contract.md). Presentation code
+does not reconstruct mechanics from native formula ids, animations, or item names.
+
 ## Unit status screen
 
 The unit screen exposes the real DCL values:
@@ -22,8 +26,13 @@ The unit screen exposes the real DCL values:
 | Move/Jump | Effective values after job, equipment, state, and encumbrance. |
 | Dodge | Final score and main penalties. |
 | Encumbrance | Band, current Load, Basic Lift, Move multiplier, and Dodge penalty. |
+| Critical | Exact HP threshold and the resulting halved final Move and Dodge. |
 
 The interface does not display a doubled compatibility Speed merely to resemble vanilla FFT.
+
+An overcast-enabled action whose MP is insufficient shows the exact `MP + HP` payment split, the
+projected pools after payment, and a textual KO warning when HP reaches zero. HP substitution is
+never hidden behind the nominal MP-cost label or represented only by an icon.
 
 ## Growth and job-change information
 
@@ -56,7 +65,8 @@ For each usable weapon, shield, and magical tradition, the player can inspect:
 - resulting Parry or Block.
 
 A magical tradition also shows its source job, source Job Level, IQ-based Tradition Skill, and each
-unlocked spell's relative Spell Modifier and final SpellScore. Faith is shown separately and never
+unlocked spell's relative Spell Modifier and BaseSpellScore. A target forecast then shows the
+target-relative Zodiac modifier and final TargetSpellScore. Faith is shown separately and never
 hidden inside the skill breakdown.
 
 A Job Level that raises Rank without crossing the next integer Skill breakpoint still shows that
@@ -66,13 +76,15 @@ progress.
 
 Every item exposes only the properties it actually uses.
 
-Weapons show damage expression, thrust/swing basis, damage type, armor divisor, Reach/range,
-Accuracy, Weight, hands, Parry modifier, balance/readiness, and special properties.
+Weapons show the final normalized damage expression, underlying thrust/swing basis, integer weapon
+modifier, damage type, armor divisor, Reach/range, Accuracy, Weight, hands, Parry modifier,
+balance/readiness, and special properties. Forecast and defense details identify Weight or an
+authored ParryLoad when it makes Parry illegal against a heavy attack.
 
 Body and head equipment show their separate DR and Weight. Shields show Block modifier, Defense
 Bonus, legal physical/magical coverage, and Weight. Foci and accessories show only their explicit
-Spell Skill, power, concentration, CastCT, MP-cost, Faith, affinity, routing, or resistance
-properties.
+Spell Skill, damage, healing, concentration, CastCT, MP-cost, Faith, affinity, routing, or
+resistance properties.
 
 Equipping an item immediately previews:
 
@@ -97,7 +109,8 @@ The breakdown shows:
 
 - base Weapon Skill;
 - Effective Skill;
-- range, cover, elevation, facing, location, Aim, Shock, and state modifiers;
+- range, facing, explicit location, skill-granted Aim, Shock, and state modifiers;
+- native FFT line, trajectory, range, and vertical legality without invented cover/elevation values;
 - critical chance;
 - selected active defense and its chance;
 - Block availability or repeated-Parry penalty;
@@ -109,11 +122,14 @@ subtracting an evasion percentage from an attack percentage.
 
 For a magical action the forecast additionally shows:
 
-- tradition skill, Difficulty, Rank, Spell Modifier, and final SpellScore;
+- tradition skill, Difficulty, Rank, Spell Modifier, BaseSpellScore, target-relative modifiers, and
+  final TargetSpellScore;
 - caster and target Faith values and resulting factor where applicable;
 - Zodiac modifier when applicable;
-- MP cost, reserved MP, overcasting HP, and failure/interruption cost;
-- CastCT, expected resolution point, Charging state, and concentration/cancellation conditions;
+- Base MP cost, combined cost multiplier, FinalMPCost, ApprovedHPCap commitment, projected
+  overcasting HP, and outcome-dependent settlement;
+- BaseCastCT, summed modifier, final frozen CastCT, expected resolution point, Charging state, and
+  concentration/cancellation conditions;
 - unit tracking or fixed-tile mode, range and vertical legality, and the absence of a LoS check;
 - Reflect route before confirmation;
 - delivery class and the target's active defense or resistance score;
@@ -125,15 +141,22 @@ For a magical action the forecast additionally shows:
 The complete state, icon, position, palette, source-link, duration, and cleanup contract is owned by
 [Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md). Knocked Down,
 Stun, Don't Act, Don't Move, Aim, Ready/Unready, lost Block, repeated-Parry penalties, Shock,
-Charging, reserved resources, tracked targets, fixed tiles, Reflect routes, QuickLock, global
+Charging, resource commitments, tracked targets, fixed tiles, Reflect routes, QuickLock, global
 duration/tick counters, and any other state that changes a future choice require visible
 representation and a clear expiry.
+
+For an area or multi-hit action, the forecast identifies the outer action, every affected target,
+per-target probability and magnitude, strike count, finite-defense spending, and whether an effect
+is deferred or immediate within the action. Reaction preview is shown only after the entire outer
+action's prospective result and follows the contract in
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md).
 
 The player must not need external notes to know:
 
 - whether an equipped weapon can attack or Parry;
 - whether Block is available;
 - which target is being Aimed at;
+- Aim's accumulated bonus, retention score, and direct cancellation conditions;
 - why Move or Dodge changed;
 - which armor location an attack will test;
 - which spell is Charging and when it resolves;

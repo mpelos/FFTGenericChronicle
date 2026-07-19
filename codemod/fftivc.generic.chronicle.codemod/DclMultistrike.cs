@@ -156,7 +156,7 @@ internal static class DclMultistrike
                 var profile = profileForState(strikeIndex, state.Parry, state.Block);
                 int defenseSuccesses = profile.Defense.Kind == DclDefenseKind.None
                     ? 0
-                    : ThreeD6SuccessCount(profile.Defense.Target);
+                    : DclSuccessRoll.SuccessOutcomeCount(profile.Defense.Target);
 
                 for (int attackRoll = 3; attackRoll <= 18; attackRoll++)
                 {
@@ -166,7 +166,7 @@ internal static class DclMultistrike
 
                     double attackProbability = stateProbability * attackMultiplicity / 216.0;
                     if (DclPhysicalContest.IsFumble(attackRoll, profile.AttackSkill) ||
-                        attackRoll > profile.AttackSkill)
+                        !DclSuccessRoll.Succeeds(attackRoll, profile.AttackSkill))
                     {
                         AddProbability(next, state, attackProbability);
                         continue;
@@ -192,19 +192,6 @@ internal static class DclMultistrike
 
         double allMissProbability = states.Values.Sum();
         return Math.Clamp((int)Math.Round((1.0 - allMissProbability) * 100.0), 0, 100);
-    }
-
-    private static int ThreeD6SuccessCount(int target)
-    {
-        if (target < 3)
-            return 0;
-        if (target >= 18)
-            return 216;
-
-        int count = 0;
-        for (int roll = 3; roll <= target; roll++)
-            count += ThreeD6Counts[roll - 3];
-        return count;
     }
 
     private static void AddProbability(

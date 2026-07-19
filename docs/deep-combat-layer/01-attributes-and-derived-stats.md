@@ -16,9 +16,20 @@ The active job, equipment, and states apply explicit additive adjustments withou
 raw values:
 
 ```text
-ST = RawPA    + JobSTAdjustment + EquipmentSTAdjustment + StateSTAdjustment
-DX = RawSpeed + JobDXAdjustment + EquipmentDXAdjustment + StateDXAdjustment
-IQ = RawMA    + JobIQAdjustment + EquipmentIQAdjustment + StateIQAdjustment
+ST = max(1, RawPA
+            + JobSTAdjustment
+            + EquipmentSTAdjustment
+            + StateSTAdjustment)
+
+DX = max(1, RawSpeed
+            + JobDXAdjustment
+            + EquipmentDXAdjustment
+            + StateDXAdjustment)
+
+IQ = max(1, RawMA
+            + JobIQAdjustment
+            + EquipmentIQAdjustment
+            + StateIQAdjustment)
 ```
 
 Ordinary weapons never add to these attributes. A rare nonweapon effect may explicitly modify an
@@ -33,7 +44,8 @@ heroic progression above the vanilla Brave range:
 HT = max(4, 10 + roundNearest((current Brave - 50) / 8))
 ```
 
-`roundNearest` rounds to the nearest integer, with exact halves away from zero. The anchors are:
+`roundNearest` follows the shared
+[Numeric Resolution Contract](17-numeric-resolution-contract.md#shared-operations). The anchors are:
 
 | Brave | HT |
 | ---: | ---: |
@@ -45,29 +57,35 @@ HT = max(4, 10 + roundNearest((current Brave - 50) / 8))
 | 112 | 18 |
 | 120 | 19 |
 
-Raw Brave remains available to mechanics that expressly use Brave percentage; those rolls clamp
-their probability to the legal `0%..100%` band and do not replace HT checks. Brave above 100 can
-therefore continue increasing HT without producing an invalid probability above 100%.
+Current Brave is the storage from which HT is derived; it is not a universal percentage chance.
+Brave above 100 therefore continues increasing HT without requiring a second probability scale.
 
 ## Secondary characteristics
 
 ```text
 BaseMaxHP  = ST + CharacterHPModifier + JobHPModifier
-MaxHP      = BaseMaxHP + explicit equipment/status HP modifiers
+MaxHP      = max(1, BaseMaxHP + explicit equipment/status HP modifiers)
 BaseMaxMP  = max(HT, IQ) + CharacterMPModifier + JobMPModifier
-MaxMP      = BaseMaxMP + explicit equipment/status MP modifiers
+MaxMP      = max(1, BaseMaxMP + explicit equipment/status MP modifiers)
 Will       = IQ + explicit Will modifiers
-BasicLift  = LiftScale(ST * ST / 5)
+BasicLift  = ST * ST / 5
 BasicSpeed = (DX + HT) / 4 + JobBasicSpeedAdjustment + explicit Basic Speed modifiers
 BasicMove  = floor(BasicSpeed) + JobMoveAdjustment + explicit Move modifiers
+BaseJump   = max(1, 3 + JobJumpAdjustment + explicit equipment/status Jump modifiers)
 BaseDodge  = floor(BasicSpeed) + 3
 ```
 
-`LiftScale` bridges GURPS-shaped ST to FFT's equipment-Weight scale. HP and MP remain on the same
-additive numeric scale as the four attributes and their character/job modifiers.
+Basic Lift uses the GURPS curve directly and retains exact rational precision when the division by
+five is not integral. Equipment Weight is authored against this scale; there is no separate lift
+multiplier. HP and MP remain on the same additive numeric scale as the four attributes and their
+character/job modifiers.
 
 Basic Speed is displayed at its actual value, including `.25`, `.50`, and `.75`. It is not doubled
 or converted back to the vanilla FFT Speed scale.
+
+ST, DX, and IQ are positive primary characteristics after their complete additive expression. This
+guarantees a legal ST/IQ damage-table lookup and nonzero Basic Lift without clamping the skills and
+situational scores derived from them. HT retains its separate Brave-derived minimum of four.
 
 Because HT is Brave-derived, Brave affects Basic Speed, Basic Move, and Dodge through HT's
 one-quarter share. This is the GURPS attribute package, not a second direct Brave bonus: four points
@@ -97,6 +115,19 @@ grants vitality must say that it modifies HP; a normal body armor or helmet does
 an HP bonus. Character, job, equipment, and status HP modifiers are additive and may be positive or
 negative.
 
+When a job, item, or state changes a maximum pool during battle, the current pool reconciles without
+creating an effect event:
+
+```text
+NewCurrentHP = min(OldCurrentHP, NewMaxHP)
+NewCurrentMP = min(OldCurrentMP, NewMaxMP)
+```
+
+Increasing a maximum does not heal or restore the difference. A downward clamp is not Injury, HP
+payment, or MP drain and triggers none of their Reactions. It still updates every dependent preview
+and commitment; a voluntary change that would violate an existing cast commitment is illegal under
+the resource rule. A unit already at zero HP remains in native KO.
+
 ## MP
 
 MP is the only extraordinary-energy pool:
@@ -124,19 +155,21 @@ Will is the resistance characteristic for mental coercion and loss of voluntary 
 from IQ, not Brave, because Brave already owns HT. This prevents Brave from simultaneously owning
 physical health and every mental resistance.
 
-The physical DCL has no Perception characteristic. Facing, line of sight, and attack direction
-determine awareness without a separate detection roll. A later subsystem may define explicit
-detection mechanics without changing the physical attribute map.
+The DCL has no Perception characteristic or detection subsystem. Facing, line of sight, attack
+direction, and native FFT target legality determine awareness without a separate roll.
 
 ## Move and Jump
 
 Effective Move starts from Basic Move and is reduced by encumbrance as defined in
 [Equipment and Encumbrance](06-equipment-and-encumbrance.md). Its use in the turn economy is defined
-by [Turns, Movement, and Actions](02-turns-movement-and-actions.md).
+by [Turns, Movement, and Actions](02-turns-movement-and-actions.md). After all ordinary Move
+modifiers and encumbrance, the Critical low-HP rule halves final Move as defined by
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md#critical-low-hp).
 
-Jump remains an FFT grid characteristic. It controls vertical traversal and receives job, ability,
-equipment, state, and encumbrance modifiers. Jump is not derived from a new GURPS characteristic and
-does not feed initiative, attack skill, or active defense.
+Jump remains an FFT grid characteristic with neutral base 3. Job, ability, equipment, state, and
+encumbrance modifiers change it through the BaseJump formula above. Jump is not derived from a new
+GURPS characteristic and does not feed initiative, attack skill, or active defense. Critical low HP
+does not halve Jump.
 
 ## Initiative and CT
 

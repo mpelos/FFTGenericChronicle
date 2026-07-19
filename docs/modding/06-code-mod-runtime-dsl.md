@@ -1492,8 +1492,8 @@ Known scope limits (as-built, before LT8):
 `DclPhysicalContestEnabled` replaces the generic percentage decision for actions selected by
 `DclPhysicalContestConditionFormula`. `DclAttackSkillFormula` supplies the attack target for a 3d6
 roll. `DclDodgeFormula`, `DclParryFormula`, and `DclBlockFormula` supply defense targets;
-`DclDefenseAllowedFormula` and `DclDefenseModifierFormula` implement facing and other policy. Block
-wins ties over Parry, and Parry wins ties over Dodge. Critical attacks bypass defense; fumbles and
+`DclDefenseAllowedFormula` and `DclDefenseModifierFormula` implement facing and other policy. Dodge
+wins ties over Parry, and Parry wins ties over Block. Critical attacks bypass defense; fumbles and
 failed attack rolls never request a defense. A normal successful attack requests the chosen defense,
 and a finite Parry or Block charge is consumed whether that defense succeeds or fails.
 

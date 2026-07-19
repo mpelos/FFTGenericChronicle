@@ -49,6 +49,10 @@ ResistanceCharacteristic
 Silence, Reflect, Faith, Magic Resistance, and spell-skill rules read this metadata instead of
 guessing from MP consumption or damage type.
 
+This list establishes conceptual independence rather than the complete storage record. Required
+fields, safe defaults, delivery unions, and fail-closed validation are owned by
+[Action and State Authoring Contract](19-action-and-state-authoring-contract.md).
+
 ## Magical traditions as controlling skills
 
 Standard GURPS treats each spell as a separate IQ-based Hard or Very Hard skill. FFT has individual
@@ -70,16 +74,22 @@ TraditionRank  = JobRankTable[traditionAptitudeTier][sourceJobLevel]
 TraditionSkill = GurpsSkillScore(IQ, traditionDifficulty, TraditionRank)
                  + explicit tradition-skill modifiers
 
-SpellScore = TraditionSkill
-             + SpellModifier
-             + FocusSkillModifier
-             + ZodiacCompatibilityModifier
-             - Shock
-             - explicit state penalties
+BaseSpellScore = TraditionSkill
+                 + SpellModifier
+                 + sum(applicable SpellSkillModifier values)
+                 - Shock
+                 - explicit caster-state penalties
+
+TargetSpellScore = BaseSpellScore
+                   + ZodiacCompatibilityModifier(caster, target)
+                   - explicit target-relative penalties
 ```
 
 Faith is not part of `SpellScore`. SpellScore measures knowledge, execution, and training; Faith
 measures supernatural potency and receptivity where an effect declares that it is Faith-sensitive.
+An action with no target-relative modifier uses TargetSpellScore equal to BaseSpellScore.
+Other DCL documents use the unqualified term `SpellScore` for the final TargetSpellScore of the
+target currently being resolved. They name BaseSpellScore explicitly when no target is bound.
 
 ## Spell Difficulty and Spell Modifier
 
@@ -138,48 +148,120 @@ Spells. Source metadata determines whether Faith, Silence, Reflect, and Magic Re
 
 ## MP costs and recovery
 
-Every MP-consuming action has a fixed authored `BaseMPCost`:
+Every MP-consuming action has a fixed authored `BaseMPCost`. Ability, equipment, and state cost
+factors are exact positive rationals and combine multiplicatively:
 
 ```text
-FinalMPCost = max(1, ceil(BaseMPCost * MPCostMultiplier))
+CombinedMPCostMultiplier = product(all applicable MPCostMultiplier values)
+
+FinalMPCost = max(1, ceil(BaseMPCost * CombinedMPCostMultiplier))
 ```
 
 An explicit zero-cost action remains zero and does not pass through the minimum. High SpellScore
 does not automatically reduce MP cost. A cost modifier exists only when an ability, status, or item
-declares it.
+declares it. A zero, negative, non-finite, or unparsable multiplier fails validation; making an
+action free requires explicit BaseMPCost zero rather than a multiplier exploit. Exact precision is
+retained until the one final ceiling.
+
+FinalMPCost is calculated and stored at declaration. A later equipment, status, attribute, or target
+change does not increase or reduce that ActionInstance's committed cost. This gives the player and
+AI one stable payment forecast while resolution-time SpellScore, defense, resistance, Faith,
+affinity, DR, and magnitude continue reading their current snapshot.
 
 There is no generic automatic MP regeneration. Ether, Manafont, drain, reactions, equipment, and
 other explicit effects may restore or transfer MP.
 
 ## Cost commitment
 
-The full possible resource cost is shown and reserved when casting begins. Settlement is:
+Declaration fixes whether HP substitution is permitted for this ActionInstance. It computes and
+stores:
+
+```text
+DeclarationMPCoverage = min(CurrentMPAtDeclaration, FinalMPCost)
+ApprovedHPCap         = FinalMPCost - DeclarationMPCoverage
+```
+
+If ApprovedHPCap is positive, declaration is legal only when the action permits overcasting,
+CurrentHP is at least ApprovedHPCap, and the player explicitly confirms the displayed HP payment.
+If current MP covers the cost, ApprovedHPCap is zero and no later event may silently authorize HP.
+
+The commitment prevents a voluntary cost or Reaction from leaving the cast unpayable within the
+approved cap. Damage, MP drain, and other hostile effects are not blocked by that commitment and may
+make the cast fail at resolution. No MP or HP is debited merely by entering Charging. Settlement is:
 
 | Outcome | Cost paid |
 | --- | --- |
 | Success | Full cost. |
-| Critical success | Full cost; critical success does not refund MP. |
-| Ordinary failure | 25% of FinalMPCost, rounded up, minimum 1 when the action costs MP. |
-| Interruption or voluntary cancellation | Same as ordinary failure. |
-| Critical failure | Full cost. |
+| Critical success | Full cost; as an intentional GURPS deviation, critical success never reduces or refunds MP/HP. |
+| ResourceFailure at resolution | Zero; no casting roll occurs. |
+| Ordinary failure | One point when FinalMPCost is positive; zero for an explicitly zero-cost action. |
+| Interruption or voluntary cancellation before resolution | Zero; FFT consumes no MP or HP before the cast resolves. |
+| Critical failure | Full cost; no universal random catastrophe is added. |
 
-Reservation prevents the unit from spending the same MP on another effect while Charging. A refund
-returns only the unpaid reserved portion.
+The settlement outcome is classified once against BaseSpellScore. TargetSpellScore, target active
+defense, target resistance, area membership, and the number of targets affected never change the
+resource outcome after that base classification. A base success pays full cost even when every
+target later avoids or resists; a base ordinary failure pays one even when a favorable target
+modifier would otherwise have produced a target-level success.
+
+Because declaration creates an authorization rather than an escrow debit, settlement refunds no
+resource that was never paid.
+
+Immediately before the casting gate, the resolver tests whether the full FinalMPCost is payable
+from current MP plus no more than ApprovedHPCap. If not, `ResourceFailure` ends Charging without a
+SpellScore roll or effect. The Action and elapsed CastCT remain spent, but current MP and HP are not
+debited and no damage-, Injury-, or payment-triggered Reaction is created.
 
 ## Overcasting with HP
 
 An action that permits overcasting may pay an MP deficit with HP on the same numeric scale:
 
 ```text
-MPDeficit     = max(0, FinalMPCost - CurrentMP)
-OvercastHPCost = MPDeficit
+CostDue        = cost selected by the settlement outcome
+MPPaid         = min(CurrentMP, CostDue)
+OvercastHPCost = CostDue - MPPaid
+PaymentLegal   = OvercastHPCost <= ApprovedHPCap
+                 and OvercastHPCost <= CurrentHP
 ```
 
-MP is always consumed before HP. The baseline does not let a unit preserve available MP by choosing
-to bleed instead. One missing MP costs one HP; there is no `3:1`, percentage-of-MaxHP, or other scale
-conversion.
+MP is always consumed before HP. When CurrentMP is insufficient, every remaining point of CostDue
+is no longer an MP debit and is paid with one HP instead. The baseline does not let a unit preserve
+available MP by choosing to bleed instead. One missing MP costs one HP; there is no `3:1`,
+percentage-of-MaxHP, or other scale conversion.
+
+There is no nonlethal floor. OvercastHPCost may equal CurrentHP, reducing the caster to zero but
+never below zero. On a successful cast, the planned spell effect completes and the payment commits
+in the same outer action; a caster reduced to zero enters native KO before the Reaction window.
+Ordinary failure and critical failure use their own CostDue from the settlement table and may
+likewise cause KO. Interruption and voluntary cancellation before resolution pay nothing and
+therefore cannot cause payment-derived KO.
 
 This specification does not create Burned HP, a separate wound pool, or an automatic SpellScore
-penalty for overcasting. HP paid this way enters the ordinary FFT HP and KO lifecycle. An individual
-ability may prohibit overcasting through explicit metadata; MP consumption alone does not silently
-answer that question.
+penalty for overcasting. `OvercastHPCost` is an HP payment rather than Injury: it directly debits
+CurrentHP, ignores DR and damage type, and does not cause Shock, Major Wound, knockback, or a
+Reaction whose trigger requires receiving damage or Injury. It still re-evaluates the derived
+Critical state and ordinary FFT KO lifecycle because both depend on current HP.
+
+An individual ability may prohibit overcasting through explicit metadata; MP consumption alone
+does not silently answer that question.
+
+### Overcasting forecast
+
+Before confirmation, the cost line displays the full-success split rather than only the nominal MP
+cost:
+
+```text
+Cost: MP {MPPaid} + HP {OvercastHPCost}
+After cast: MP {ProjectedMP}, HP {ProjectedHP}
+```
+
+The displayed HP amount is also the ActionInstance's ApprovedHPCap. At resolution, restored MP may
+reduce the actual HP payment below that cap. Lost or drained MP never raises HP payment above it; if
+the current full-cost split would exceed ApprovedHPCap, the cast fails for insufficient MP exactly
+as an MP-only cast does.
+
+When OvercastHPCost is positive, the HP portion uses the interface's existing harmful-cost emphasis
+and never relies on a new icon. When ProjectedHP is zero, the same preview displays an explicit
+`Caster enters KO` warning. Ordinary-failure details expose their one-point split separately;
+interruption and critical-failure details expose the cost selected for those outcomes. AI
+evaluation consumes the same projected resource and KO result as the player forecast.

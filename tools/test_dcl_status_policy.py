@@ -21,11 +21,12 @@ def main() -> int:
     def find(ability_id: int, status: str) -> dict[str, str]:
         return next(row for row in rows if int(row["ability_id"]) == ability_id and row["status"] == status)
 
-    check(find(28, "Poison")["resist_stat"] == "base-HP", "Poison nature must stay physical even from a spell")
-    check(find(109, "Charm")["resist_stat"] == "high-Brave", "Charm must use the mental Brave axis")
-    check(find(213, "DontMove")["resist_category"] == "physical-body" and find(213, "DontMove")["duration_policy"] == "1-target-turn",
+    check(find(28, "Poison")["resist_stat"] == "HT", "Poison nature must stay physical even from a spell")
+    check(find(109, "Charm")["resist_stat"] == "Will", "Charm must use Will rather than raw Brave")
+    check(find(213, "DontMove")["resist_category"] == "physical-health" and find(213, "DontMove")["resist_stat"] == "HT" and find(213, "DontMove")["duration_policy"] == "1-target-turn",
           "Leg Shot candidate must express physical Knockdown semantics")
-    check(find(245, "DontAct")["resist_stat"] == "inverse-Faith", "magical Disable must use inverse Faith")
+    check(find(245, "DontAct")["resist_stat"] == "design-decision-required",
+          "an unclassified magical Disable must remain an authoring gate rather than infer inverse Faith")
     check(find(14, "Petrify")["operation"] == "remove-negative" and find(14, "Petrify")["resist_stat"] == "none",
           "Esuna rows must be removal without a resistance contest")
     check(find(5, "Dead")["operation"] == "remove-ko" and find(5, "Dead")["readiness"] == "native-lifecycle-preserved" and

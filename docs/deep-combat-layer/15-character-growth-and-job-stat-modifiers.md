@@ -38,7 +38,7 @@ Normal Character Level growth may advance only these channels:
 | Character ST | Raw PA | Thrust/swing damage, MaxHP, and Basic Lift. |
 | Character DX | Raw Speed | Physical skills and one-half of Basic Speed's numerator. |
 | Character IQ | Raw MA | Will, magical skills, magical power, and the IQ route to MaxMP. |
-| Permanent Brave | Max/base Brave | HT, raw-Brave mechanics, physical resistance, Basic Speed, and the HT route to MaxMP. |
+| Permanent Brave | Max/base Brave | HT, explicit temperament modifiers, physical resistance, Basic Speed, and the HT route to MaxMP. |
 | Character HP Modifier | Reinterpreted Raw HP | MaxHP without increasing ST. |
 | Character MP Modifier | Reinterpreted Raw MP | MaxMP without increasing IQ or HT. |
 
@@ -65,9 +65,10 @@ GrowthVector(job) = {
 }
 ```
 
-A job may allocate zero to any channel and does not need to grow every attribute. Its identity comes
-from the shape of the vector, but every job at every Job Tier receives the same point-equivalent
-budget per Character Level:
+A job may allocate zero to any channel and does not need to grow every attribute. Every allocation
+and rate is nonnegative: ordinary level growth never reduces a permanent characteristic. Its
+identity comes from the shape of the vector, but every job at every Job Tier receives the same
+point-equivalent budget per Character Level:
 
 ```text
 sum(GrowthAllocation[job, channel]) = UniversalGrowthBudget
@@ -115,8 +116,26 @@ PermanentValue[channel] += gain
 GrowthProgress[channel] -= gain
 ```
 
-The implementation stores fixed-point integer units rather than binary floating-point values. A
-fraction is retained across Character Levels and job changes, so separately rounded job histories
+Growth persistence uses signed 64-bit micro-units:
+
+```text
+GrowthScale = 1,000,000
+one growth micro-unit = 1 / GrowthScale of a channel step
+
+ScaledGrowthRate = exactDecimalToInteger(JobGrowthRate * GrowthScale)
+
+GrowthProgressMicro[channel] += ScaledGrowthRate
+gain = floor(GrowthProgressMicro[channel] / GrowthScale)
+PermanentValue[channel] += gain
+GrowthProgressMicro[channel] -= gain * GrowthScale
+```
+
+Authoring decimals have at most six fractional places and convert exactly; a value requiring
+rounding fails validation. The accumulator is serialized with the character and never reconstructed
+from displayed values. Intermediate arithmetic uses a checked width sufficient for the complete
+level range; overflow fails validation rather than wrapping.
+
+A fraction is retained across Character Levels and job changes, so separately rounded job histories
 never destroy progress. The same multiset of levels in the same jobs produces the same permanent
 result regardless of order.
 
@@ -125,6 +144,34 @@ Level does not remove earned growth, and regaining an already-awarded level does
 again. Delevel/relevel cycles cannot manufacture attributes.
 
 Job Level, JP, gender, and Job Tier never change an allocation, cost, step, or accumulator.
+
+### Persistent growth record and save migration
+
+Every roster character stores one versioned DCL growth record:
+
+```text
+DclGrowthState
+    GrowthSchemaRevision
+    HighestAwardedCharacterLevel
+    GrowthProgressMicro[ST, DX, IQ, Brave, HPModifier, MPModifier]
+```
+
+`HighestAwardedCharacterLevel` is monotonic in `1..99`. A level-up grants growth only when the new
+Character Level is greater than this stored value; after the award, the field advances to that
+level. Deleveling never lowers it. If an engine operation crosses more than one previously unearned
+level, each crossed level is awarded once in ascending order using the job active for that level-up
+transaction; an operation that cannot identify that job fails rather than guessing a history.
+
+When a pre-DCL save has no growth record, migration preserves its current permanent PA, Speed, MA,
+Brave, reinterpreted HP modifier, and reinterpreted MP modifier as the character's complete imported
+baseline. It creates zero progress in every channel and sets `HighestAwardedCharacterLevel` to the
+current Character Level. Past levels are neither reconstructed from an unknowable job history nor
+awarded again. New growth begins with the next never-before-earned level.
+
+The growth record and the corresponding permanent-stat changes commit atomically with the level-up
+save transaction. A known older schema revision uses an explicit migration; an unknown newer
+revision disables new growth for that character with a visible compatibility error and never resets
+progress or silently re-awards levels.
 
 ## Earned, realized, and latent value
 
@@ -163,20 +210,13 @@ HT = max(4, 10 + roundNearest((CurrentBrave - 50) / 8))
 ```
 
 Brave 50 maps to HT 10, Brave 100 maps to HT 16, and Brave 112 maps to HT 18. Growth is awarded in
-raw Brave steps rather than hidden HT steps. Every Brave point can matter to a mechanic that
-expressly uses Brave, while crossing a conversion breakpoint changes HT and all of its derived
-consequences.
+raw Brave steps rather than hidden HT steps; crossing a conversion breakpoint changes HT and all of
+its derived consequences. Current Brave may also enter an explicitly authored temperament modifier,
+but it is not a universal percentage chance.
 
-A mechanic that interprets Brave as a probability uses:
-
-```text
-BraveChance = clamp(0, 100, CurrentBrave)%
-```
-
-Brave above 100 therefore continues to improve HT but never produces an invalid probability above
-100%. The initial point price begins from `+1 HT = 10` and approximately eight Brave per HT, or
-`1.25` points per raw Brave. Calibration may price pre-100 Brave more highly when its direct
-percentage use creates value beyond HT; that extra percentage value saturates at 100.
+The initial point price begins from `+1 HT = 10` and approximately eight Brave per HT, or `1.25`
+points per raw Brave. Calibration measures any explicitly authored temperament interaction in the
+ability or state that uses it rather than pricing a second global Brave probability mechanic.
 
 An ordinary job chassis does not grant `JobBraveAdjustment` or `JobHTAdjustment`. The active job
 shapes future Brave through its growth vector but does not instantly rewrite courage or health.
@@ -192,6 +232,12 @@ Faith is a two-sided roster trait rather than a monotonic level-up attribute:
 PermanentFaith = RecruitmentFaith + explicit permanent Faith changes
 CurrentFaith   = PermanentFaith + temporary battle changes
 ```
+
+Both values use the `0..100` domain owned by
+[Magic Resolution and Defenses](13-magic-resolution-and-defenses.md#faith-potency-and-receptivity).
+Permanent changes are summed and clamped to produce PermanentFaith; temporary battle changes are
+then summed with that value and clamped to produce CurrentFaith. Faith does not inherit Brave's
+open-ended storage.
 
 Character Level, Job Level, growth vector, and ordinary job chassis do not raise or lower Faith.
 Permanent Faith changes require an explicit, reversible, player-directed roster-shaping effect.
@@ -360,8 +406,10 @@ chassis. Its 392 growth points allocate:
 | IQ | +5 | 100 |
 | Brave | +8 | 10 |
 | Character HP Modifier | +43 | 86 |
-| Character MP Modifier | +42 | 126 |
-| Total |  | 392 |
+| Character MP Modifier | +41 | 123 |
+| Realized total |  | 389 |
+| Latent fractional value |  | 3 |
+| Earned total |  | 392 |
 
 The resulting unequipped level-99 state is:
 
@@ -371,15 +419,17 @@ DX = 13
 IQ = 15 + 3 = 18
 Brave = 58 -> HT 11
 HP = 11 + 63 = 74
-MP = max(11, 18) + 47 + 10 = 75
+MP = max(11, 18) + 46 + 10 = 74
 Basic Speed = 6
 Base Dodge = 9
 Will = 18
 ```
 
-The corresponding per-level rates are approximately `0.0102 ST`, `0.0306 DX`, `0.0510 IQ`,
-`0.0816 Brave`, `0.4388 HP Modifier`, and `0.4286 MP Modifier`. Their point-equivalent sum is exactly
-`4` per awarded Character Level.
+The corresponding exact six-decimal rates are `0.010205 ST`, `0.030613 DX`, `0.051021 IQ`,
+`0.081636 Brave`, `0.438777 HP Modifier`, and `0.428557 MP Modifier`. After 98 awards their floors
+produce the integer gains above. Using the point prices in this document, the six rates sum to
+exactly `4` point-equivalent units per award; the unspent fractions retain the remaining three
+points as latent value rather than inventing an extra integer gain.
 
 The endgame comparison suite also includes pure physical, agile, vitality, MP, and hybrid histories.
 It evaluates Character Levels 1, 10, 20, 40, 60, 80, and 99 rather than accepting a correct endpoint

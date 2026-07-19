@@ -120,8 +120,8 @@ An attack builds Effective Skill from the trained score and situational modifier
 
 ```text
 EffectiveSkill = WeaponSkill
-                 + aim/elevation/facing modifiers
-                 - range/cover/location/state penalties
+                 + explicit ability/facing modifiers
+                 - range/location/state penalties
 ```
 
 The attack succeeds on:
@@ -130,7 +130,7 @@ The attack succeeds on:
 3d6 <= EffectiveSkill
 ```
 
-Effective Skill is not capped at 16 before modifiers. Skill above 16 absorbs range, cover, target
+Effective Skill is not capped at 16 before modifiers. Skill above 16 absorbs range, explicit target
 location, Shock, and other penalties. Natural 17 and 18 still prevent automatic success.
 
 ## Critical success and failure
@@ -140,6 +140,7 @@ location, Shock, and other penalties. Natural 17 and 18 still prevent automatic 
 - 6 is critical when Effective Skill is at least 16.
 - A critical hit bypasses the active-defense roll.
 - 18 is a critical failure; 17 is also a critical failure when Effective Skill is 15 or less.
+- A roll at least 10 above Effective Skill is also a critical failure.
 - A physical critical failure is a miss unless the specific weapon or ability declares another
   visible consequence.
 
@@ -150,21 +151,36 @@ pause for a manual choice, so the resolver selects the highest legal current def
 usage penalties and facing restrictions. It never rolls Dodge, Parry, and Block sequentially for
 the same strike.
 
+Equal current scores use this deterministic priority:
+
+```text
+Dodge > Parry > Block
+```
+
+The priority preserves finite Parry and Block resources when a reusable Dodge is equally effective.
+Active defense is selected and rolled separately for every Strike. Physical multi-hit sequencing is
+owned by
+[Action Transactions and Reactions](18-action-transactions-and-reactions.md#strike-resolution).
+
 The selected defense succeeds on `3d6 <= current defense score`. A natural 3 or 4 succeeds even
 when the modified score is lower; 17 and 18 always fail. A defense score is therefore never a flat
-percentage and is not subtracted directly from attack chance.
+percentage and is not subtracted directly from attack chance. Automatic outcomes and critical
+classification are owned by the
+[Numeric Resolution Contract](17-numeric-resolution-contract.md#universal-3d6-success-roll).
 
 ## Dodge
 
 ```text
-Dodge = BaseDodge
-        + job/equipment bonuses
-        - encumbrance
-        - posture/state penalties
+DodgeBeforeCritical = BaseDodge
+                      + job/equipment bonuses
+                      - encumbrance
+                      - posture/state penalties
 ```
 
 Dodge may be attempted against every attack for which the defender is aware and physically able to
-evade. It does not deplete with use.
+evade. It does not deplete with use. The final Critical modifier, threshold, and presentation are
+owned by
+[Combat Statuses, States, and Presentation](08-status-resistance-and-posture.md#critical-low-hp).
 
 ## Parry
 
@@ -183,7 +199,55 @@ or ability may explicitly replace that repeated-Parry step.
 An Unready weapon cannot Parry. An Unbalanced weapon cannot Parry after attacking until its
 wielder's next turn.
 
+Parry never rolls for weapon breakage. Weapons have no durability or quality-based structural
+damage in the DCL; a successful or failed Parry leaves the equipment intact unless the incoming
+ability declares a separate temporary equipment-state effect.
+
+### Heavy-attack Parry limit
+
+Every Parry-eligible physical attack resolves one exact nonnegative `IncomingParryLoad`:
+
+```text
+IncomingParryLoad = skill.ParryLoad if declared
+                    otherwise attackingWeapon.Weight if a weapon supplies the strike
+                    otherwise attacker.ST / 10 for an unarmed strike
+
+ParryLimit = defender.BasicLift       for an unarmed or one-handed Parry
+             2 * defender.BasicLift   for a two-handed Parry
+
+ParryLegal = IncomingParryLoad <= ParryLimit
+```
+
+A skill override replaces rather than adds to weapon Weight. An explicit slam, rush, or
+supernaturally heavy effect declares its own ParryLoad; it does not acquire one from visual scale.
+The comparison retains exact rational precision.
+
+When the load exceeds the limit, Parry is removed from the candidate defenses before the automatic
+highest-defense selection. No Parry roll occurs and no finite Parry use is spent. Dodge and Block
+remain legal if their own rules allow them. The defender does not drop or break a weapon and does
+not suffer automatic knockback merely because Parry was illegal.
+
 Ordinary missile attacks cannot be parried.
+
+### Dual Wield and off-hand Parry
+
+The `DualWield` capability includes `DualWeaponTraining`. This removes the common `-4` penalty for
+making a coordinated two-weapon attack; it does not remove the off-hand handling penalty.
+
+```text
+MainHandWeaponSkill = WeaponSkill for the main-hand weapon
+OffHandWeaponSkill  = WeaponSkill for the off-hand weapon - 4
+
+MainHandParry = floor(MainHandWeaponSkill / 2) + 3 + applicable modifiers
+OffHandParry  = floor(OffHandWeaponSkill / 2) + 3 + applicable modifiers
+```
+
+For equal underlying skills, the off-hand penalty normally lowers Parry by two. The initial DCL has
+no `OffHandTraining`, Ambidexterity, or equivalent rule that removes this penalty.
+
+Each hand tracks its own weapon family, Difficulty, damage expression, Parry modifier, repeated-
+Parry counter, balance, and readiness. An unavailable or Unready hand cannot attack or Parry even
+when the other hand remains legal.
 
 ## Block
 
