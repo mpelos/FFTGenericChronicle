@@ -11,7 +11,8 @@ internal static class DclStatusPacket
         ReadOnlySpan<byte> oldAdd,
         ReadOnlySpan<byte> oldRemove,
         byte oldResultFlags,
-        IReadOnlyList<DclStatusWrite> writes)
+        IReadOnlyList<DclStatusWrite> writes,
+        IReadOnlyCollection<DclNativeStatusBit>? nativeOwnedBits = null)
     {
         if (oldAdd.Length != Width)
             throw new ArgumentException($"status add packet must contain {Width} bytes", nameof(oldAdd));
@@ -21,6 +22,15 @@ internal static class DclStatusPacket
 
         byte[] add = oldAdd.ToArray();
         byte[] remove = oldRemove.ToArray();
+        foreach (var bit in nativeOwnedBits ?? Array.Empty<DclNativeStatusBit>())
+        {
+            if (bit.ByteIndex is < 0 or >= Width)
+                throw new ArgumentOutOfRangeException(nameof(nativeOwnedBits), $"native status byte {bit.ByteIndex} is outside 0..4");
+
+            byte inverse = (byte)~bit.Mask;
+            add[bit.ByteIndex] &= inverse;
+            remove[bit.ByteIndex] &= inverse;
+        }
         foreach (var write in writes)
         {
             if (write.StatusByteIndex is < 0 or >= Width)

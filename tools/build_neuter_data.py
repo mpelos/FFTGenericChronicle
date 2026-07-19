@@ -49,6 +49,7 @@ import sqlite3
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from contextlib import closing
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -383,7 +384,10 @@ def ability_placeholder_xy(ability_id: int, ability_bands: dict[int, str], place
     return SENTINEL_BAND_VALUES[ability_bands.get(ability_id, "low")]
 
 
-def build_ability_neuter(placeholder_mode: str = "uniform") -> tuple[int, int, list[int]]:
+def build_ability_neuter(
+    placeholder_mode: str = "uniform",
+    output_path: Path = NEUTER_OVERRIDE_SQLITE,
+) -> tuple[int, int, list[int]]:
     """Copy the base override sqlite and force X=1,Y=1 on every damaging ability row that exists
     in the (sparse, 368-row) table. Returns (neutered, skipped_out_of_range, skipped_ids)."""
     if not BASE_OVERRIDE_SQLITE.exists():
@@ -393,8 +397,9 @@ def build_ability_neuter(placeholder_mode: str = "uniform") -> tuple[int, int, l
         )
     ability_bands = classify_damaging_ability_bands()
     damaging = set(ability_bands)
-    shutil.copyfile(BASE_OVERRIDE_SQLITE, NEUTER_OVERRIDE_SQLITE)
-    con = sqlite3.connect(NEUTER_OVERRIDE_SQLITE)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(BASE_OVERRIDE_SQLITE, output_path)
+    con = sqlite3.connect(output_path)
     cur = con.cursor()
     present = {r[0] for r in cur.execute("SELECT Key FROM OverrideAbilityActionData")}
     to_neuter = sorted(damaging & present)
@@ -423,7 +428,7 @@ def apply_dcl_instant_ko_neuter(
     unsupported = sorted(set(selected) - set(DCL_INSTANT_KO_ABILITY_IDS))
     if unsupported:
         raise ValueError(f"unsupported instant-KO ability ids: {unsupported}")
-    with sqlite3.connect(path) as con:
+    with closing(sqlite3.connect(path)) as con:
         present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
         missing = sorted(set(selected) - present)
         if missing:
@@ -450,7 +455,7 @@ def apply_dcl_status_rider_neuter(
     unsupported = sorted(set(selected) - set(DCL_STATUS_RIDER_ABILITY_IDS))
     if unsupported:
         raise ValueError(f"unsupported ordinary damage status-rider ability ids: {unsupported}")
-    with sqlite3.connect(path) as con:
+    with closing(sqlite3.connect(path)) as con:
         present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
         missing = sorted(set(selected) - present)
         if missing:
@@ -472,7 +477,7 @@ def apply_dcl_support_status_rider_neuter(
     unsupported = sorted(set(selected) - set(DCL_SUPPORT_STATUS_RIDER_ABILITY_IDS))
     if unsupported:
         raise ValueError(f"unsupported support status-rider ability ids: {unsupported}")
-    with sqlite3.connect(path) as con:
+    with closing(sqlite3.connect(path)) as con:
         present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
         missing = sorted(set(selected) - present)
         if missing:
@@ -494,7 +499,7 @@ def apply_dcl_conditional_status_rider_neuter(
     unsupported = sorted(set(selected) - set(DCL_CONDITIONAL_STATUS_RIDER_ABILITY_IDS))
     if unsupported:
         raise ValueError(f"unsupported conditional status-rider ability ids: {unsupported}")
-    with sqlite3.connect(path) as con:
+    with closing(sqlite3.connect(path)) as con:
         present = {int(row[0]) for row in con.execute("SELECT Key FROM OverrideAbilityActionData")}
         missing = sorted(set(selected) - present)
         if missing:

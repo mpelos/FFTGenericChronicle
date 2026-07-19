@@ -82,15 +82,16 @@ def render(exe: Path, catalog_path: Path, output: Path) -> tuple[str, bool]:
         anchor_rows.append((anchor, actual == anchor.expected, actual))
 
     producer_tokens = (
-        "NativeRiderPolicy='replaced-post-calc'",
+        "UsesPostCalcProducer",
         "packet ownership mismatch",
+        "NativePacketBit",
         "RequiredContestMode",
         "IsBlockedByNativeEligibility",
         "IsRandomFireFormula",
     )
     # RequiredContestMode is represented by the local requiredContestMode identifier, not a method.
-    producer_token_ok = all(token in producer_source for token in producer_tokens[:2]) and \
-        "requiredContestMode" in producer_source and all(token in producer_source for token in producer_tokens[3:])
+    producer_token_ok = all(token in producer_source for token in producer_tokens[:3]) and \
+        "requiredContestMode" in producer_source and all(token in producer_source for token in producer_tokens[4:])
     mod_tokens = (
         "BuildDclStatusProducerShimLines",
         "DclStatusProducerCallbackImpl",
@@ -104,6 +105,8 @@ def render(exe: Path, catalog_path: Path, output: Path) -> tuple[str, bool]:
         "OuterSweepReturnRva = 0x281F12",
         "ForecastTraceReturnRva = 0xEF53F14",
         "ConfirmedExecutionBattleState = 0x2A",
+        "NativeRepeatExecutionBattleState = 0x2F",
+        "IsExecutionBattleState",
         "origin == DclCalcOrigin.NestedRendAttack",
     ))
 
@@ -152,8 +155,10 @@ def render(exe: Path, catalog_path: Path, output: Path) -> tuple[str, bool]:
         "The native carrier selects and calculates one target per repeat; the producer therefore stages",
         "one fresh status packet per repeat while the hit cache retains spell-level Magic Evade per target.",
         "",
-        "For each configured `replaced-post-calc` action the loaded catalog supplies the complete native",
-        "packet bit set and native bundle mode. The producer clears/replaces every owned bit, stages the",
+        "For each configured post-calc action the loaded catalog supplies the complete native packet",
+        "bit set and native bundle mode. Ordinary replacement derives ownership from output bits; an",
+        "explicit reskin proves a separate native source bit for every DCL output. The producer clears",
+        "every owned source bit before applying output writes, stages the",
         "result through the native five-byte add/remove transaction, and caches that exact decision for",
         "pre-clamp reuse. A fully resisted or ineligible status-only action clears the packet and never",
         "needs to reach pre-clamp. Forecast percentage and AI scoring still use native read-only behavior",

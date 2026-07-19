@@ -34,7 +34,10 @@ function Resolve-AutosavePath {
 }
 
 function Assert-GameClosed {
-    $running = @(Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue)
+    $running = @(
+        Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
     if ($running.Count -gt 0) {
         throw 'FFT_enhanced.exe is running. Close the game before snapshotting or restoring its autosave container.'
     }

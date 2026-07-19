@@ -1,0 +1,30 @@
+{
+  "_note": "Job-free bounded live-probe fragment for composing the DCL Fear mechanism. Fervor 53 is only an isolated formula-0x0A technical carrier; it replaces the native Berserk execution packet with finite Fear. Fire 16 remains only the independent AoE target-authority falsifier. This assigns no job, contains no final balance content, and exists only to compose and validate the mechanism.",
+  "DclFearControlEnabled": true,
+  "DclFearLogOnly": false,
+  "DclFearForcedFleeControlEnabled": true,
+  "DclFearPlayerConfirmEnforcementEnabled": false,
+  "DclFearStatusRuleName": "dcl-fear",
+  "DclFearTargetListRva": 2629315,
+  "DclFearTargetListExpectedBytes": "E8 8C 08 00 00",
+  "DclFearPlayerConfirmRva": 2147679,
+  "DclFearPlayerConfirmExpectedBytes": "E8 94 AD FF FF",
+  "DclFearChickenDispatchRva": 3718199,
+  "DclFearChickenDispatchExpectedBytes": "F6 47 63 04 74 47",
+  "DclFearMaxLogs": 400,
+  "DclStatusRules": [
+    {
+      "Name": "dcl-fear",
+      "AbilityId": 53,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc-reskin",
+      "NativePacketByteIndex": 2,
+      "NativePacketMask": 8,
+      "ResistanceFormula": "clamp(target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 1
+    }
+  ]
+}

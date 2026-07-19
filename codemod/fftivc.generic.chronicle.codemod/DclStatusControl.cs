@@ -9,6 +9,8 @@ internal sealed class DclStatusRule
     public int StatusMask { get; set; } = 0;
     public string Operation { get; set; } = "add";
     public string NativeRiderPolicy { get; set; } = "";
+    public int NativePacketByteIndex { get; set; } = -1;
+    public int NativePacketMask { get; set; } = 0;
     public string ConditionFormula { get; set; } = "";
     public string ResistanceFormula { get; set; } = "";
     public int DurationTargetTurns { get; set; } = 0;
@@ -33,9 +35,22 @@ internal sealed class DclStatusRule
     public bool NativeRiderReplacedPostCalc =>
         NativeRiderPolicy.Equals("replaced-post-calc", StringComparison.OrdinalIgnoreCase);
 
+    public bool NativeRiderReplacedPostCalcReskin =>
+        NativeRiderPolicy.Equals("replaced-post-calc-reskin", StringComparison.OrdinalIgnoreCase);
+
+    public bool UsesPostCalcProducer =>
+        NativeRiderReplacedPostCalc || NativeRiderReplacedPostCalcReskin;
+
+    public DclNativeStatusBit NativePacketBit => NativeRiderReplacedPostCalcReskin
+        ? new DclNativeStatusBit(NativePacketByteIndex, (byte)NativePacketMask)
+        : new DclNativeStatusBit(StatusByteIndex, (byte)StatusMask);
+
     public string NormalizedContestMode => DclStatusGroups.NormalizeMode(ContestMode);
     public string NormalizedContestGroup => (ContestGroup ?? "").Trim().ToLowerInvariant();
     public bool UsesSharedContest => NormalizedContestMode != DclStatusGroups.Independent;
+    public bool UsesBaseHpResistance =>
+        (ResistanceFormula ?? "").Contains("target.baseHp", StringComparison.OrdinalIgnoreCase) ||
+        (ResistanceFormula ?? "").Contains("t.baseHp", StringComparison.OrdinalIgnoreCase);
 
     public bool TryMatches(int actionType, int abilityId, FormulaContext context, out bool matches, out string error)
     {

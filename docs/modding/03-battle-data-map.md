@@ -137,6 +137,15 @@ Confuse Blind Silence Berserk Reflect Defending Performing Stone Traitor Chicken
 Limits: status id <= 39 (fixed 40-slot table). `Counter` sets duration; `CheckFlags`/`CancelFlags`
 control interactions (e.g. FreezeCT, PoisonRegen, mutually-cancelling sets).
 
+**Proven static:** the modloader template serializes byte-for-byte to the unique 640-byte
+`StatusEffectData` table embedded in Enhanced. `StatusEffectData.Id` is a zero-based table index,
+while `StatusEffectType` is one-based; the owning relation is
+`table_index = StatusEffectType - 1`. Row 24 is therefore Poison and row 39 is Doom. Comments that
+label a template row with the same numeric `StatusEffectType` value are displaced by one and are not
+row authority. The exact nonzero native counters are Poison 36, Regen 36, Protect 32, Shell 32,
+Haste 32, Slow 24, Stop 20, Empty_32 24, Faith 32, Atheist 32, Charmed 32, Sleep 60,
+Immobilize 24, Disable 24, Reflect 32, and Doom 3.
+
 Runtime side (not data): the live status bytes — master `+0x1EF`, effective mirror `+0x61`
 (`= (+0x1EF & 0xF2) | +0x57`), innate `+0x57` — are DATA-controllable at runtime and owned by
 `04-engine-memory-model.md` §2.3 (live-confirmed bits: `0x20`=KO, `0x10`=Undead).

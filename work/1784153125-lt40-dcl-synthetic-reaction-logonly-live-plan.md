@@ -10,8 +10,10 @@ ability effect, status, stat change, or final balance value.
 ## Offline prerequisites
 
 - Runtime profile: `work/1784152418-battle-runtime-settings.synthetic-reaction-logonly.json`.
-- Autosave fixture: `work/1784152701-synthetic-reaction-carrier443-fixture.png`.
-- Fixture SHA-256: `BFD1B51AAD4DE1A941AB626B695D19CC8B696937E9A0567551D962E4E0800EE4`.
+- Autosave fixture: `work/1784157011-synthetic-reaction-carrier443-consistent-fixture.png`.
+- Fixture SHA-256: `415050EACDA681E5C24C3FF29AD41EA5E1D6FA6992A96F32499319D8BEE8EFE3`.
+- The live copies agree on equipped `unit+0x14=443`, reaction-set `unit+0x94..0x97 =
+  00 00 04 00`, and startup candidate `unit+0x1CE=0`.
 - `tools/analyze_dcl_synthetic_reaction_transaction.py`: PASS.
 - `tools/test_dcl_synthetic_reaction_live.py`: PASS.
 - Full offline check suite: PASS.
@@ -53,7 +55,7 @@ ability effect, status, stat change, or final balance value.
 ## Validation
 
 ```powershell
-python tools\analyze_dcl_synthetic_reaction_live.py <archived-log> --carrier 443 --mode log-only
+python tools\analyze_dcl_synthetic_reaction_live.py <archived-log> --carrier 443 --mode log-only --require-startup-owner --expected-reaction-set-hex 00000400
 ```
 
 The analyzer must return PASS. A clean miss, a lethal defender, or an unrelated source without an

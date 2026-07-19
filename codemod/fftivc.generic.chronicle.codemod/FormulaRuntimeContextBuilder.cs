@@ -40,7 +40,13 @@ internal static class FormulaRuntimeContextBuilder
         int oldCredit,
         int oldMpDebit = 0,
         int oldMpCredit = 0,
-        int actionPayload = -1)
+        int actionPayload = -1,
+        int activeWeaponItemId = -1,
+        int nativeRepeatCount = -1,
+        int nativeRepeatIndex = -1,
+        int nativeRightWeaponItemId = -1,
+        int nativeLeftWeaponItemId = -1,
+        int naturalResultFlags = 0)
     {
         var context = new FormulaContext(target, attacker, eventIndex, eventSeed);
         AddSettingsVariables(context, settings);
@@ -48,6 +54,11 @@ internal static class FormulaRuntimeContextBuilder
         AddUnitVariables(context, "t", target);
         AddUnitVariables(context, "attacker", attacker);
         AddUnitVariables(context, "a", attacker);
+
+        AddBaseHpVariables(context, "target", target, itemCatalog);
+        AddBaseHpVariables(context, "t", target, itemCatalog);
+        AddBaseHpVariables(context, "attacker", attacker, itemCatalog);
+        AddBaseHpVariables(context, "a", attacker, itemCatalog);
 
         var targetSlots = ReadEquipmentSlots(target, settings.EquipmentSlots, itemCatalog);
         var attackerSlots = ReadEquipmentSlots(attacker, settings.AttackerEquipmentSlots, itemCatalog);
@@ -70,11 +81,27 @@ internal static class FormulaRuntimeContextBuilder
 
         context.Set("action.type", actionType);
         context.Set("action.abilityId", abilityId);
-        AddActionPayloadVariables(context, itemCatalog, attacker, actionType, actionPayload);
+        AddActionPayloadVariables(
+            context,
+            itemCatalog,
+            attacker,
+            actionType,
+            actionPayload,
+            activeWeaponItemId,
+            nativeRepeatCount,
+            nativeRepeatIndex,
+            nativeRightWeaponItemId,
+            nativeLeftWeaponItemId);
         context.Set("dcl.oldDebit", oldDebit);
         context.Set("dcl.oldCredit", oldCredit);
         context.Set("dcl.oldMpDebit", oldMpDebit);
         context.Set("dcl.oldMpCredit", oldMpCredit);
+        int normalizedResultFlags = naturalResultFlags & 0xFF;
+        context.Set("dcl.oldResultFlags", normalizedResultFlags);
+        context.Set("dcl.nativeHpDamageResult", (normalizedResultFlags & DclResultFlags.HpDamage) != 0 ? 1 : 0);
+        context.Set("dcl.nativeHpCreditResult", (normalizedResultFlags & DclResultFlags.HpCredit) != 0 ? 1 : 0);
+        context.Set("dcl.nativeMpDebitResult", (normalizedResultFlags & DclResultFlags.MpDebit) != 0 ? 1 : 0);
+        context.Set("dcl.nativeMpCreditResult", (normalizedResultFlags & DclResultFlags.MpCredit) != 0 ? 1 : 0);
         context.Set("dcl.isSelf", target.Ptr == attacker.Ptr ? 1 : 0);
         AddDclMultistrikeVariables(context, new DclMultistrikeAggregate(
             StrikeCount: authoredStrikeCount,
@@ -95,31 +122,51 @@ internal static class FormulaRuntimeContextBuilder
         ItemCatalog itemCatalog,
         UnitSnapshot attacker,
         int actionType,
-        int actionPayload)
+        int actionPayload,
+        int activeWeaponItemId,
+        int nativeRepeatCount,
+        int nativeRepeatIndex,
+        int nativeRightWeaponItemId,
+        int nativeLeftWeaponItemId)
     {
         bool payloadKnown = actionPayload >= 0;
-        bool weaponAction = actionType == 1 && payloadKnown;
+        bool nativeWeaponKnown = actionType == 1 && activeWeaponItemId >= 0;
+        int resolvedWeaponItemId = nativeWeaponKnown ? activeWeaponItemId : actionPayload;
+        bool weaponAction = actionType == 1 && resolvedWeaponItemId >= 0;
         int rightWeapon = Math.Max(0, attacker.ReadUInt16(0x20));
         int leftWeapon = Math.Max(0, attacker.ReadUInt16(0x24));
-        bool matchesRight = weaponAction && actionPayload == rightWeapon;
-        bool matchesLeft = weaponAction && actionPayload == leftWeapon;
-        bool sideKnown = matchesRight ^ matchesLeft;
+        bool matchesRight = weaponAction && resolvedWeaponItemId == rightWeapon;
+        bool matchesLeft = weaponAction && resolvedWeaponItemId == leftWeapon;
+        bool nativeDualWieldSideKnown = nativeWeaponKnown && nativeRepeatCount == 2 &&
+                                        nativeRepeatIndex is 0 or 1;
+        bool sideKnown = nativeDualWieldSideKnown || matchesRight ^ matchesLeft;
+        int weaponSide = nativeDualWieldSideKnown
+            ? nativeRepeatIndex + 1
+            : sideKnown
+                ? (matchesRight ? 1 : 2)
+                : 0;
 
         context.Set("action.payload", actionPayload);
         context.Set("action.payloadId", actionPayload);
         context.Set("action.payloadKnown", payloadKnown ? 1 : 0);
-        context.Set("action.weaponItemId", weaponAction ? actionPayload : -1);
-        context.Set("action.weaponKnown", weaponAction && itemCatalog.TryGet(actionPayload, out var item) &&
+        context.Set("action.weaponItemId", weaponAction ? resolvedWeaponItemId : -1);
+        context.Set("action.weaponNativeKnown", nativeWeaponKnown ? 1 : 0);
+        context.Set("action.weaponRepeatCount", nativeRepeatCount);
+        context.Set("action.weaponRepeatIndex", nativeRepeatIndex);
+        context.Set("action.weaponRepeatNumber", nativeRepeatIndex >= 0 ? nativeRepeatIndex + 1 : 0);
+        context.Set("action.weaponNativeRightItemId", nativeRightWeaponItemId);
+        context.Set("action.weaponNativeLeftItemId", nativeLeftWeaponItemId);
+        context.Set("action.weaponKnown", weaponAction && itemCatalog.TryGet(resolvedWeaponItemId, out var item) &&
                                              item.IsSecondaryKind("weapon") != 0 ? 1 : 0);
         context.Set("action.weaponMatchesRight", matchesRight ? 1 : 0);
         context.Set("action.weaponMatchesLeft", matchesLeft ? 1 : 0);
         context.Set("action.weaponSideKnown", sideKnown ? 1 : 0);
-        context.Set("action.weaponSide", sideKnown ? (matchesRight ? 1 : 2) : 0);
+        context.Set("action.weaponSide", weaponSide);
 
-        if (weaponAction && itemCatalog.TryGet(actionPayload, out item) && item.IsSecondaryKind("weapon") != 0)
+        if (weaponAction && itemCatalog.TryGet(resolvedWeaponItemId, out item) && item.IsSecondaryKind("weapon") != 0)
             item.AddVariables(context, "action.weapon");
         else
-            ItemCatalogEntry.AddDefaultVariables(context, "action.weapon", weaponAction ? actionPayload : 0);
+            ItemCatalogEntry.AddDefaultVariables(context, "action.weapon", weaponAction ? resolvedWeaponItemId : 0);
     }
 
     public static void AddDclMultistrikeVariables(
@@ -347,6 +394,20 @@ internal static class FormulaRuntimeContextBuilder
         context.Set($"{prefix}.paMult", B(0x91));
         context.Set($"{prefix}.maGrowth", B(0x92));
         context.Set($"{prefix}.maMult", B(0x93));
+    }
+
+    public static void AddBaseHpVariables(
+        FormulaContext context,
+        string prefix,
+        UnitSnapshot? unit,
+        ItemCatalog itemCatalog)
+    {
+        var resolution = DclBaseHp.Resolve(unit, itemCatalog);
+        context.Set($"{prefix}.baseHp", resolution.BaseHp);
+        context.Set($"{prefix}.baseHpResolved", resolution.Resolved ? 1 : 0);
+        context.Set($"{prefix}.equipmentHpBonus", resolution.EquipmentHpBonus);
+        context.Set($"{prefix}.headItemId", resolution.HeadItemId);
+        context.Set($"{prefix}.bodyItemId", resolution.BodyItemId);
     }
 
     internal static int JobLevelFromTotalJp(int totalJp)

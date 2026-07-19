@@ -1,0 +1,63 @@
+{
+  "_note": "Job-free DCL Interrupt live gate using native Potion (ability 368, action type 6) only as a temporary probe carrier. No job, skillset, item, or production assignment is implied.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+
+  "EquipmentSlots": [],
+  "AttackerEquipmentSlots": [],
+
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "",
+  "DclHealingFormula": "",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 500,
+
+  "DclHitControlEnabled": true,
+  "DclHitChanceFormula": "100",
+  "DclHitDecisionTtlMs": 5000,
+  "DclHitForcedRoll": 0,
+  "DclHitMaxLogs": 800,
+  "DclMissClassEvadeValue": 100,
+  "DclPreviewHitPctEnabled": false,
+
+  "ItemTableEvadeZeroEnabled": true,
+  "CalcEntryEvadeStampEnabled": false,
+  "EvadeCopierOverrideEnabled": true,
+  "EvadeCopierOverrideTargetCharId": -1,
+  "EvadeCopierOverride46": 0,
+  "EvadeCopierOverride47": 0,
+  "EvadeCopierOverride48": 0,
+  "EvadeCopierOverride49": 0,
+  "EvadeCopierOverride4A": 0,
+  "EvadeCopierOverride4B": 0,
+  "EvadeCopierOverride4C": 0,
+  "EvadeCopierOverride4D": 0,
+  "EvadeCopierOverride4E": 0,
+
+  "DclMissOutputControlEnabled": false,
+  "DclMissSelectorOutcomeEnabled": false,
+  "DclMissSuppressReactionsEnabled": false,
+
+  "StagedBundleProbeRva": 2629394,
+  "DclInterruptControlEnabled": true,
+  "DclInterruptLogOnly": false,
+  "DclInterruptForcedRoll": 18,
+  "DclInterruptMaxWrites": 1,
+  "DclInterruptMaxLogs": 400,
+  "DclInterruptRules": [
+    {
+      "Name": "Potion temporary Interrupt probe carrier",
+      "AbilityId": 368,
+      "ActionType": 6,
+      "ConditionFormula": "interrupt.pending",
+      "ResistanceFormula": "clamp((target.brave + 5) / 10 + 5, 3, 18)"
+    }
+  ],
+
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampFormulaPlanEnabled": false,
+  "PreviewHitPctControlEnabled": false,
+  "ResultSelectorProbeEnabled": false
+}

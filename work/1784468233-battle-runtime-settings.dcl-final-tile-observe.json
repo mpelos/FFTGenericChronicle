@@ -1,0 +1,11 @@
+{
+  "DclFinalTileEventProbeEnabled": true,
+  "DclFinalTileEventProbeRva": 2091323,
+  "DclFinalTileEventProbeExpectedBytes": "E8 90 E9 FF FF",
+  "DclFinalTileEventProbeMaxLogs": 128,
+  "DclApproachEnabled": false,
+  "DclFearControlEnabled": false,
+  "DclFearForcedFleeControlEnabled": false,
+  "DclFearPlayerConfirmEnforcementEnabled": false,
+  "DclFearStatusRuleName": ""
+}

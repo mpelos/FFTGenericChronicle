@@ -40,6 +40,7 @@ def main() -> int:
                 "inputs": [left_rel, right_rel],
                 "resolutions": {"Shared": 3},
                 "patch": {"ProbeEnabled": False},
+                "remove": ["FormulaVariables"],
                 "output": output_rel,
                 "note": "fixture",
             },
@@ -48,7 +49,7 @@ def main() -> int:
         assert resolved_output == output
         assert [conflict.path for conflict in conflicts] == ["Shared"]
         assert result["Shared"] == 3
-        assert result["FormulaVariables"] == {"a": 1, "b": 2}
+        assert "FormulaVariables" not in result
         assert [rule["Name"] for rule in result["Rules"]] == ["A", "B"]
         assert result["ProbeEnabled"] is False
 
@@ -67,6 +68,23 @@ def main() -> int:
             assert "resolutions without a matching conflict: Unused" in str(exc)
         else:
             raise AssertionError("unused resolution was silently accepted")
+
+        write(
+            manifest,
+            {
+                "inputs": [left_rel, right_rel],
+                "resolutions": {"Shared": 3},
+                "remove": ["Missing"],
+                "output": output_rel,
+                "note": "fixture",
+            },
+        )
+        try:
+            compose_manifest(manifest)
+        except CompositionError as exc:
+            assert "remove keys are missing from composed settings: Missing" in str(exc)
+        else:
+            raise AssertionError("missing removal was silently accepted")
 
     print("runtime settings composition smoke tests passed")
     return 0

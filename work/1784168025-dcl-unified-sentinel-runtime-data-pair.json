@@ -1,0 +1,32 @@
+{
+  "note": "Fail-closed pairing contract for the unified job-free DCL sentinel profile. The action-data artifact is isolated in work/ and is not the production mod payload.",
+  "settings": "work/1784168025-battle-runtime-settings.dcl-unified-sentinel.json",
+  "action_data_sqlite": "work/1784168025-dcl-unified-sentinel-overrideabilityactiondata.sqlite",
+  "action_data_nxd": "work/1784168025-dcl-unified-sentinel-overrideabilityactiondata.nxd",
+  "ability_metadata_csv": "work/1784168025-dcl-integration-ability-metadata.csv",
+  "item_weapon_data_xml": "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml",
+  "ability_charge_aim_data_xml": "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/AbilityChargeAimData.xml",
+  "sha256": {
+    "settings": "E4B64BC4036C42218D0ABFC06BD823611D4962C189EF8DDD99BEE6955FDD573E",
+    "action_data_sqlite": "7FD98A1F08A758C8E4132CD6BD7AE67592BA145839D10492B59C86EADD57C4E1",
+    "action_data_nxd": "A172B0C41B7F526CB4D508A1837B11315E1DC46C60A954AE402D14F2CA37E63A",
+    "ability_metadata_csv": "F1C188990FF7080B461E917F4BD642AA7CEEC49C4D740D2D1F469A84F3E2136E",
+    "item_weapon_data_xml": "1C4EA8BBE087D960A2BF4D89696EFEC71DB866EB44CB31E01C1A9E66D7C0BE03",
+    "ability_charge_aim_data_xml": "34915B0939782D844D60484B960CE9613D5DC6CE66A91813FDC3C5794712E9E9"
+  },
+  "required_instant_ko_abilities": [30],
+  "required_status_neutralized_abilities": [219, 252, 277, 357],
+  "required_status_rule_abilities": [81, 84, 91, 173, 219, 241, 252, 277, 357],
+  "required_status_native_rider_policies": [
+    "retained-as-carrier",
+    "suppressed-by-data",
+    "replaced-post-calc"
+  ],
+  "required_managed_multistrike_abilities": [101],
+  "required_synthetic_reaction": {
+    "carrier_id": 443,
+    "delivery_id": 442
+  },
+  "required_reaction_rule_abilities": [442, 443, 445, 451],
+  "require_atomic_hp_mp": true
+}

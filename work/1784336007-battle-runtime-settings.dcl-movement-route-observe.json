@@ -1,0 +1,45 @@
+{
+  "_note": "Observe-only DCL movement-route probe. It reads the movement actor immediately before each per-tile X/Y arrival commit. It performs no battle, coordinate, route, status, HP, MP, action, data, or save write.",
+  "UnitPollIntervalMs": 10,
+  "MaxTrackedBattleUnits": 64,
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+  "LandmarkProbeEnabled": true,
+  "LandmarkProbeMaxLogs": 2000,
+  "LandmarkProbeStackSlots": 0,
+  "LandmarkProbes": [
+    {
+      "Name": "dcl-movement-arrival-native-a",
+      "Enabled": true,
+      "Rva": 2089321,
+      "BaseRegister": "rbx",
+      "RawBase": true,
+      "Access": "observe actor immediately before target X/Y becomes current X/Y",
+      "ExpectedBytes": "8A 8B 8C 00 00 00",
+      "InterestingOffsets": [8, 136, 137, 138, 139, 140, 141, 142, 164, 166, 168, 169, 295, 296, 328, 330, 332, 334]
+    },
+    {
+      "Name": "dcl-movement-arrival-native-b",
+      "Enabled": true,
+      "Rva": 2089966,
+      "BaseRegister": "rbx",
+      "RawBase": true,
+      "Access": "observe alternate native actor arrival before target X/Y becomes current X/Y",
+      "ExpectedBytes": "8A 83 8C 00 00 00",
+      "InterestingOffsets": [8, 136, 137, 138, 139, 140, 141, 142, 164, 166, 168, 169, 295, 296, 328, 330, 332, 334]
+    },
+    {
+      "Name": "dcl-movement-arrival-trace-a",
+      "Enabled": true,
+      "Rva": 223541204,
+      "BaseRegister": "rbx",
+      "RawBase": true,
+      "Access": "observe trace-equivalent actor arrival before target X/Y becomes current X/Y",
+      "ExpectedBytes": "8A 8B 8C 00 00 00",
+      "InterestingOffsets": [8, 136, 137, 138, 139, 140, 141, 142, 164, 166, 168, 169, 295, 296, 328, 330, 332, 334]
+    }
+  ]
+}

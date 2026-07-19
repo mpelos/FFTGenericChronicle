@@ -101,40 +101,86 @@ try {
         Invoke-Step "Python syntax" {
             $pythonFiles = @(Get-ChildItem -LiteralPath (Join-Path $repo 'tools') -Filter '*.py' |
                 Select-Object -ExpandProperty FullName)
-            if ($pythonFiles.Count -gt 0) {
-                Invoke-Native 'python' (@('-m', 'py_compile') + $pythonFiles)
+            # Passing every tool path in one Windows command eventually exceeds the process command
+            # line limit and makes Python exit 1 without identifying a source file. Compile one file
+            # at a time so this gate scales with the investigation journal/tooling surface.
+            foreach ($pythonFile in $pythonFiles) {
+                Invoke-Native 'python' @('-m', 'py_compile', $pythonFile)
             }
         }
 
         Invoke-Step "Python tooling smoke tests" {
+            Invoke-Native 'python' @('tools\test_check_docs_timeless.py')
+            Invoke-Native 'python' @('tools\check_docs_timeless.py', 'docs\modding')
             Invoke-Native 'python' @('tools\test_runtime_tooling.py')
             Invoke-Native 'python' @('tools\test_actor_probe_ct.py')
             Invoke-Native 'python' @('tools\test_action_identity_log.py')
             Invoke-Native 'python' @('tools\test_memtable_candidates.py')
             Invoke-Native 'python' @('tools\test_neuter_data.py')
+            Invoke-Native 'python' @('tools\test_dcl_integration_data_pair.py')
+            Invoke-Native 'python' @('tools\test_dcl_da_dm_action_data.py')
             Invoke-Native 'python' @('tools\test_neuter_gap_targets.py')
             Invoke-Native 'python' @('tools\test_runtime_formula_context.py')
             Invoke-Native 'python' @('tools\test_runtime_profiles.py')
             Invoke-Native 'python' @('tools\test_dcl_ability_classification.py')
             Invoke-Native 'python' @('tools\test_dcl_reaction_effect_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_reaction_delivery_validation_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_native_repeat_provenance_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_active_weapon_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_hit_parity_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_position_commit_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_movement_route_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_movement_convergence_live.py')
             Invoke-Native 'python' @('tools\test_dcl_reaction_materialization.py')
             Invoke-Native 'python' @('tools\test_dcl_reaction_materialization_live.py')
             Invoke-Native 'python' @('tools\test_dcl_reaction_order_rewrite.py')
             Invoke-Native 'python' @('tools\test_dcl_synthetic_reaction_live.py')
+            Invoke-Native 'python' @('tools\test_dcl_taunt_fallback.py')
+            Invoke-Native 'python' @('tools\test_dcl_status_counter_authority.py')
+            Invoke-Native 'python' @('tools\test_dcl_status_duration_pair.py')
+            Invoke-Native 'python' @('tools\test_dcl_status_duration_frontier.py')
             Invoke-Native 'python' @('tools\test_dcl_synthetic_reaction_transaction.py')
             Invoke-Native 'python' @('tools\test_fft_autosave_reaction_fixture.py')
+            Invoke-Native 'python' @('tools\test_fft_autosave_ct_fixture.py')
+            Invoke-Native 'python' @('tools\test_fft_autosave_status_clear_fixture.py')
             Invoke-Native 'python' @('tools\test_compose_runtime_settings.py')
             Invoke-Native 'python' @('tools\test_validate_dcl_runtime_data_pair.py')
+            Invoke-Native 'python' @('tools\test_validate_dcl_live_install.py')
+            Invoke-Native 'python' @('tools\test_install_dcl_live_bundle.py')
+            Invoke-Native 'python' @('tools\test_build_dcl_affinity_fragment.py')
             Invoke-Native 'python' @('tools\compose_runtime_settings.py', 'work\1784094553-dcl-runtime-composition-manifest.json', '--check-only')
             Invoke-Native 'python' @('tools\validate_dcl_runtime_data_pair.py', 'work\1784094553-dcl-death-runtime-data-pair.json')
+            Invoke-Native 'python' @('tools\compose_runtime_settings.py', 'work\1784168025-dcl-runtime-composition-manifest.json', '--check-only')
+            Invoke-Native 'python' @('tools\validate_dcl_runtime_data_pair.py', 'work\1784168025-dcl-unified-sentinel-runtime-data-pair.json')
+            Invoke-Native 'python' @('tools\compose_runtime_settings.py', 'work\1784397292-dcl-runtime-composition-manifest-v2.json', '--check-only')
+            Invoke-Native 'python' @('tools\validate_dcl_runtime_data_pair.py', 'work\1784397292-dcl-unified-sentinel-v2-runtime-data-pair.json')
+            Invoke-Native 'python' @('tools\validate_dcl_status_duration_pair.py', 'work\1784397292-dcl-unified-sentinel-v2-status-duration-pair.json')
+            Invoke-Native 'python' @('tools\compose_runtime_settings.py', 'work\1784470893-dcl-runtime-composition-manifest-clean-v1.json', '--check-only')
+            Invoke-Native 'python' @('tools\validate_dcl_runtime_data_pair.py', 'work\1784470893-dcl-unified-clean-v1-runtime-data-pair.json')
+            Invoke-Native 'python' @('tools\validate_dcl_status_duration_pair.py', 'work\1784470893-dcl-unified-clean-v1-status-duration-pair.json')
+            Invoke-Native 'python' @('tools\build_dcl_clean_regression_matrix.py', '--check-only')
+            Invoke-Native 'python' @('tools\validate_dcl_live_regression_matrix.py', 'work\1784470893-dcl-clean-v1-live-regression-matrix.json')
+            Invoke-Native 'python' @('tools\build_dcl_affinity_fragment.py', 'work\baseline_jobs.csv', 'work\1784403685-battle-runtime-settings.dcl-affinity-data-fragment.json', '--check-only')
+            Invoke-Native 'python' @('tools\validate_dcl_runtime_data_pair.py', 'work\1784395365-dcl-da-dm-action-data-pair.json')
+            Invoke-Native 'python' @('tools\validate_dcl_status_duration_pair.py', 'work\1784395365-dcl-da-dm-status-duration-pair.json')
+            Invoke-Native 'python' @('tools\analyze_dcl_status_duration_frontier.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_taunt_fallback.py', 'work\1784168025-battle-runtime-settings.dcl-unified-sentinel.json')
+            Invoke-Native 'python' @('tools\analyze_dcl_control_status_dispatch.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_multistrike_transactions.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_native_repeat_provenance_live.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_active_weapon_payload.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_item_special_coverage.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_ai_scoring_boundary.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_position_commit.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_movement_route.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_final_tile.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_reaction_queue.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_result_flags.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_status_transactions.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_support_transaction.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_status_roll_carriers.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_status_conditional_producer.py', '--check-only')
+            Invoke-Native 'python' @('tools\analyze_dcl_pending_cancellation.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_special_status_carriers.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_formula38_carriers.py', '--check-only')
             Invoke-Native 'python' @('tools\analyze_dcl_formula20_muramasa.py', '--check-only')
@@ -203,6 +249,8 @@ try {
                 $enhancedExe = 'D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe'
                 if (Test-Path -LiteralPath $enhancedExe) {
                     Invoke-Native 'python' @('tools\scan_static_code_patterns.py', '--strict-enhanced')
+                    Invoke-Native 'python' @('tools\analyze_dcl_reaction_delivery_validation.py')
+                    Invoke-Native 'python' @('tools\analyze_dcl_status_counter_authority.py', '--check-only')
                 }
                 else {
                     Write-Host "Skipping: $enhancedExe not found." -ForegroundColor DarkGray
@@ -249,6 +297,27 @@ try {
                 '-c',
                 'Release'
             )
+            Invoke-Native 'dotnet' @(
+                'run',
+                '--project',
+                'codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj',
+                '-c',
+                'Release',
+                '--',
+                'work\1784395365-battle-runtime-settings.dcl-da-dm-duration-mechanism.json'
+            )
+            Invoke-Native 'dotnet' @(
+                'run',
+                '--project',
+                'codemod\fftivc.generic.chronicle.codemod.settingsvalidate\fftivc.generic.chronicle.codemod.settingsvalidate.csproj',
+                '-c',
+                'Release',
+                '--',
+                'work\1784397292-battle-runtime-settings.dcl-unified-sentinel-v2.json'
+            )
+            # Unified sentinels v3+ are historical evidence for retired per-step Approach/Fear
+            # experiments. They intentionally fail current settings validation and are not active
+            # regression profiles. The pre-Fear v2 pair remains the latest valid unified sentinel.
         }
 
         Invoke-Step "Runtime settings simulator" {

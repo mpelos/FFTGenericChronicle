@@ -6,7 +6,7 @@ import analyze_dcl_reaction_materialization_live as analyzer
 
 
 LOG = """\
-[DCL-REACTION-MATERIALIZED-HOOK] rva=0x2063BD addr=0x1402063BD
+[DCL-REACTION-MATERIALIZED-HOOK] rva=0x2831BD addr=0x1402831BD stage=special-pre-target-build
 [DCL-REACTION-COMMIT-HOOK] pass=2 rva=0x206421
 [DCL-REACTION-EFFECT-HOOK] rva=0x212C2E
 [DCL-REACTION-MATERIALIZED] event=5 reactorIdx=4 sourceIdx=3 reactionId=442 unit=0x1418544E0 order=0x141854680 casterIdx=4 actionType=1 actionId=0 itemId=0 targetMode=5 targetIdx=3 target=(10,0,7) raw=0401000000000000000005030A00000007000000 now=100

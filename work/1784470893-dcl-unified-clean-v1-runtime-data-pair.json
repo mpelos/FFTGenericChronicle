@@ -1,0 +1,38 @@
+{
+  "note": "Fail-closed artifact contract for the unified job-free DCL clean-v1 mechanism profile. It preserves the v2 action-data suppressions and duration counter ownership, adds affinity-corrected formulas and the live-proven final-tile producer, and excludes all retired Approach and Fear compatibility controls.",
+  "settings": "work/1784470893-battle-runtime-settings.dcl-unified-clean-v1.json",
+  "action_data_sqlite": "work/1784397292-dcl-unified-sentinel-v2-overrideabilityactiondata.sqlite",
+  "action_data_nxd": "work/1784397292-dcl-unified-sentinel-v2-overrideabilityactiondata.nxd",
+  "ability_metadata_csv": "work/1784168025-dcl-integration-ability-metadata.csv",
+  "item_catalog_csv": "work/item_catalog.csv",
+  "ability_catalog_csv": "work/wotl_ability_action_baseline.csv",
+  "item_weapon_data_xml": "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/ItemWeaponData.xml",
+  "ability_charge_aim_data_xml": "mod/fftivc.generic.chronicle/FFTIVC/tables/enhanced/AbilityChargeAimData.xml",
+  "status_duration_pair": "work/1784470893-dcl-unified-clean-v1-status-duration-pair.json",
+  "sha256": {
+    "settings": "F9C3A5BC2B70A07AF75AA25C52DA232FC320275A36362A270C70791BF6939830",
+    "action_data_sqlite": "91D4D768BBDED63D3088DDEC0715812F1ACD2B13624CC2804111E5848B38E749",
+    "action_data_nxd": "44B1E65F33FA5AF1C0A075645B898C5BDCC543F5D2DDF832017571B5C12741A9",
+    "ability_metadata_csv": "F1C188990FF7080B461E917F4BD642AA7CEEC49C4D740D2D1F469A84F3E2136E",
+    "item_catalog_csv": "889F7C6FFFD451859E895DCFCD193E28A8E9950DB7979320E3F547EDE7DCDEE3",
+    "ability_catalog_csv": "53F73C4D9A2357A09E855FE902D4B3337D5DDF04FBA7952EEE62E5D333E0992D",
+    "item_weapon_data_xml": "1C4EA8BBE087D960A2BF4D89696EFEC71DB866EB44CB31E01C1A9E66D7C0BE03",
+    "ability_charge_aim_data_xml": "34915B0939782D844D60484B960CE9613D5DC6CE66A91813FDC3C5794712E9E9"
+  },
+  "required_instant_ko_abilities": [30],
+  "required_status_neutralized_abilities": [126, 131, 219, 252, 277, 357],
+  "required_status_rule_abilities": [37, 57, 81, 84, 91, 126, 131, 168, 173, 188, 189, 213, 214, 219, 241, 245, 252, 277, 301, 327, 357],
+  "required_status_native_rider_policies": [
+    "retained-as-carrier",
+    "suppressed-by-data",
+    "replaced-post-calc"
+  ],
+  "required_managed_multistrike_abilities": [101],
+  "required_synthetic_reaction": {
+    "carrier_id": 443,
+    "delivery_id": 442
+  },
+  "required_reaction_rule_abilities": [442, 443, 445, 451],
+  "required_interrupt_rule_abilities": [368],
+  "require_atomic_hp_mp": true
+}

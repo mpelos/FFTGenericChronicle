@@ -18,10 +18,15 @@ internal readonly record struct DclActionContext(
     int BattleState = -1,
     int SourceIdx = -1,
     long ForecastPtr = 0,
-    int ActionPayload = -1)
+    int ActionPayload = -1,
+    int ActiveWeaponItemId = -1,
+    int NativeRepeatCount = -1,
+    int NativeRepeatIndex = -1,
+    int NativeRightWeaponItemId = -1,
+    int NativeLeftWeaponItemId = -1)
 {
     public bool IsConfirmedExecution =>
-        Origin == DclCalcOrigin.OuterSweep && BattleState == DclCalcProvenance.ConfirmedExecutionBattleState;
+        Origin == DclCalcOrigin.OuterSweep && DclCalcProvenance.IsExecutionBattleState(BattleState);
 }
 
 internal static class DclCalcProvenance
@@ -31,6 +36,10 @@ internal static class DclCalcProvenance
     public const long ForecastTraceReturnRva = 0xEF53F14;
     public const int AiEvaluationBattleState = 0x05;
     public const int ConfirmedExecutionBattleState = 0x2A;
+    public const int NativeRepeatExecutionBattleState = 0x2F;
+
+    public static bool IsExecutionBattleState(int battleState)
+        => battleState is ConfirmedExecutionBattleState or NativeRepeatExecutionBattleState;
 
     public static DclCalcOrigin Classify(long returnRva)
         => returnRva switch
@@ -51,6 +60,40 @@ internal static class DclCalcProvenance
         };
 }
 
+internal static class CalcEntryProbeAddressing
+{
+    public const int UnitSlotCount = 64;
+    public const int UnitStride = 0x200;
+    public const int CalcRecordOffset = 0x1A0;
+
+    public static bool TryGetCasterSlot(long calcRecord, long unitTable, out int casterSlot)
+    {
+        casterSlot = -1;
+
+        try
+        {
+            long relative = checked(calcRecord - unitTable);
+            if (relative < CalcRecordOffset)
+                return false;
+
+            long slotRelative = relative - CalcRecordOffset;
+            if (slotRelative % UnitStride != 0)
+                return false;
+
+            long candidate = slotRelative / UnitStride;
+            if ((ulong)candidate >= UnitSlotCount)
+                return false;
+
+            casterSlot = (int)candidate;
+            return true;
+        }
+        catch (OverflowException)
+        {
+            return false;
+        }
+    }
+}
+
 internal sealed class DclActionContextCache
 {
     private const int SlotCount = 64;
@@ -69,7 +112,12 @@ internal sealed class DclActionContextCache
         int battleState = -1,
         int sourceIdx = -1,
         long forecastPtr = 0,
-        int actionPayload = -1)
+        int actionPayload = -1,
+        int activeWeaponItemId = -1,
+        int nativeRepeatCount = -1,
+        int nativeRepeatIndex = -1,
+        int nativeRightWeaponItemId = -1,
+        int nativeLeftWeaponItemId = -1)
     {
         if ((uint)targetIdx >= SlotCount)
             return;
@@ -98,7 +146,12 @@ internal sealed class DclActionContextCache
                 battleState,
                 sourceIdx,
                 forecastPtr,
-                actionPayload);
+                actionPayload,
+                activeWeaponItemId,
+                nativeRepeatCount,
+                nativeRepeatIndex,
+                nativeRightWeaponItemId,
+                nativeLeftWeaponItemId);
             _hasContext[targetIdx] = true;
         }
     }
@@ -135,5 +188,11 @@ internal sealed class DclActionContextCache
             return true;
         ctx = default;
         return false;
+    }
+
+    public void Clear()
+    {
+        lock (_gate)
+            Array.Clear(_hasContext);
     }
 }

@@ -1,0 +1,6 @@
+{
+  "DclFinalTileEventProbeEnabled": true,
+  "DclFinalTileEventProbeRva": 222667426,
+  "DclFinalTileEventProbeExpectedBytes": "48 8B 8C 24 A8 00 00 00",
+  "DclFinalTileEventProbeMaxLogs": 512
+}

@@ -1,0 +1,605 @@
+[06:16:58] [Reloaded] Create Loader | Time: 126ms
+[06:16:58] [Reloaded] Loading 1 Mod(s).
+[06:16:58] [Reloaded] 
+[06:16:58] [Reloaded] Loading: Reloaded II Shared Lib: Reloaded.Hooks
+[06:16:58] [Reloaded] - AppId   : reloaded.sharedlib.hooks
+[06:16:58] [Reloaded] - Location: C:\Reloaded-II\Mods\reloaded.sharedlib.hooks\ModConfig.json
+[06:16:58] [Reloaded] - LoadTime: 4ms
+[06:16:58] [Reloaded] Loaded via: C:\reloaded-ii\Loader\x64\Bootstrapper\Reloaded.Mod.Loader.Bootstrapper.dll
+[06:16:58] [Reloaded] Current Process Location: D:\SteamLibrary\steamapps\common\FINAL FANTASY TACTICS - The Ivalice Chronicles\FFT_enhanced.exe
+[06:16:58] [Reloaded] Loading 4 Mod(s).
+[06:16:58] [Reloaded] 
+[06:16:58] [Reloaded] Loading: Library: Reloaded.Memory.Sigscan for Reloaded II
+[06:16:58] [Reloaded] - AppId   : Reloaded.Memory.SigScan.ReloadedII
+[06:16:58] [Reloaded] - Location: C:\Reloaded-II\Mods\Reloaded.Memory.SigScan.ReloadedII\ModConfig.json
+[06:16:58] [Reloaded] - LoadTime: 4ms
+[06:16:58] [Reloaded] 
+[06:16:58] [Reloaded] Loading: FINAL FANTASY TACTICS - The Ivalice Chronicles Mod Loader
+[06:16:58] [Reloaded] - AppId   : fftivc.utility.modloader
+[06:16:58] [Reloaded] - Location: C:\Reloaded-II\Mods\fftivc.utility.modloader\ModConfig.json
+[06:16:58] [fftivc.utility.modloader] by Nenkai
+[06:16:58] - https://github.com/Nenkai
+[06:16:58] - https://twitter.com/Nenkaai
+[06:16:58] [fftivc.utility.modloader] Initializing...
+[06:16:58] [fftivc.utility.modloader] Game Version: 1.00
+[06:16:58] [fftivc.utility.modloader] Installing game transition hooks..
+[06:16:58] [fftivc.utility.modloader] Game transition hooks installed. (CreateProcessA)
+[06:16:58] [fftivc.utility.modloader] Attempting to disable anti-debug..
+[06:16:58] [fftivc.utility.modloader] Installing SetUnhandledExceptionFilter hook to prevent game from installing it..
+[06:16:58] [fftivc.utility.modloader] Installed SetUnhandledExceptionFilter hook.
+[06:16:58] [fftivc.utility.modloader] Not installing resource manager (general file logging) hooks as per config.
+[06:16:58] [fftivc.utility.modloader] Installing window hooks..
+[06:16:58] [R-II SteamHook] SteamAPI_RestartAppIfNecessary hooked successfully.
+[06:16:58] [fftivc.utility.modloader] Installing language manager hooks..
+[06:16:58] [R-II SteamHook] SteamAPI_IsSteamRunning hooked successfully.
+[06:16:58] [R-II SteamHook] Found Steam Library Entry with Id 1004640. Dropping steam_appid.txt.
+[06:16:58] [Reloaded] Setting Up Hooks (Async) | Time: 126ms
+[06:16:58] Loaded 36 pack(s).
+[06:16:58] Loaded 25 pack(s).
+[06:16:58] [Reloaded] - LoadTime: 213ms
+[06:16:58] [Reloaded] 
+[06:16:58] [Reloaded] Loading: Generic Chronicle
+[06:16:58] [Reloaded] - AppId   : fftivc.generic.chronicle
+[06:16:58] [Reloaded] - Location: C:\Reloaded-II\Mods\fftivc.generic.chronicle\ModConfig.json
+[06:16:58] [fftivc.utility.modloader] Mod 'fftivc.generic.chronicle' edits nex table 'nxd/overrideabilityactiondata.nxd.bak-dcl-bundle-1784404566' which is unrecognized.'
+[06:16:58] [fftivc.utility.modloader] Mod 'fftivc.generic.chronicle' edits nex table 'nxd/overrideabilityactiondata.nxd.bak-dcl-bundle-1784405029' which is unrecognized.'
+[06:16:58] [fftivc.utility.modloader] Mod 'fftivc.generic.chronicle' edits nex table 'nxd/overrideabilityactiondata.nxd.bak-dcl-bundle-1784412751' which is unrecognized.'
+[06:16:58] [fftivc.utility.modloader] Mod 'fftivc.generic.chronicle' edits nex table 'nxd/overrideabilityactiondata.nxd.bak-dcl-bundle-1784434551' which is unrecognized.'
+[06:16:58] [fftivc.utility.modloader] Mod 'fftivc.generic.chronicle' edits nex table 'nxd/overrideabilityactiondata.nxd.bak-dcl-v4-1784402929' which is unrecognized.'
+[06:16:58] [Reloaded] - LoadTime: 127ms
+[06:16:58] [Reloaded] 
+[06:16:58] [Reloaded] Loading: Generic Chronicle (Battle Probe)
+[06:16:58] [Reloaded] - AppId   : fftivc.generic.chronicle.codemod
+[06:16:58] [Reloaded] - Location: C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\ModConfig.json
+[06:16:58] [GC-Probe] ==== Generic Chronicle Battle Runtime Harness (iter 20) ====
+[06:16:58] [GC-Probe] settings path: C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json
+[06:16:58] [GC-Probe] [DCL-STATE-RESET] generation=0 reason=settings-reload
+[06:16:58] [GC-Probe] [RUNTIME-INIT] settings: RewriteObservedDamage=False, RewriteObservedHealing=False, RewriteObservedMpLoss=False, RewriteObservedMpGain=False, DryRunRewrites=False, ProofFinalDamage=1, ProofFinalHealing=1, ProofFinalMpLoss=1, ProofFinalMpGain=1, FlatDamageReduction=0, RewriteConditionFormula=off, FinalDamageFormula=off, DclPipelineEnabled=True, DclDamageFormula=on, DclHealingFormula=on, DclMpDebitFormula=on, DclMpCreditFormula=on, DclComputePointNumericEnabled=True, DclComputePointCacheTtlMs=5000, DclResultFlagsControl=True/preserve=0x0F, DclPhysicalContestEnabled=True, DclMagicEvadeEnabled=True, DclActionContextMaxAgeMs=5000, DclDecisionMaxLogs=1000, DclDerivedVariables=147, DclStatusControlEnabled=True, DclStatusRules=50, DclFear=True/live/flee=True/rule=dcl-fear, DclInterrupt=True/live/rules=1/maxWrites=1, DclInstantKoControlEnabled=True, DclInstantKoRules=1, DclReactionTaxonomyEnabled=True, DclReactionRules=4, DclReactionCommitProbeEnabled=True, DclReactionPreSelectorProbeEnabled=True, DclReactionProducer=False/log-only, DclReactionDeliveryValidationProbeEnabled=True, DclReactionMaterializationProbeEnabled=True, DclReactionOrderRewrite=False/log-only, DclSyntheticReaction=True/live/owner=443/delivery=442/successful-hit-survivor, DclApproach=True/owner=443/delivery=442/reach=1-2, DclReactionEffectProbeEnabled=True, DclAutoPotionConsumeProbeEnabled=False, DclWeaponLineOfFireProbeEnabled=False, DclCalcProvenanceProbeEnabled=False, DclReactionActionReplacement=False/log-only, DclReactionRetarget=False/log-only, MpRewriteConditionFormula=off, FinalMpChangeFormula=off, FormulaVariables=32, FormulaPreActionVariables=0, FormulaPreResponseVariables=0, FormulaDerivedVariables=0, FormulaTraceVariables=0, FormulaTables=4, FormulaMatrices=1, FormulaMaps=18, ItemCatalogPath=item_catalog.csv, AbilityCatalogPath=wotl_ability_action_baseline.csv, DclAbilityMetadataPath=D:\Projects\FFTGenericChronicle\work\1784168025-dcl-integration-ability-metadata.csv, ActionSignalRules=0, DamageRules=0, MpRules=0, ApplyEquipmentDr=False, EquipmentSlots=7, AttackerEquipmentSlots=2, EquipmentDrRules=0, ApplyDamageResponseRules=False, DamageResponseRules=0, DamageResponseClamp=0-10000, AffectAllies=True, AffectFoes=True, InferAttackerFromRecentUnits=False, RecentAttackerWindowMs=1500, ResolveAttackerByCt=False, CtDropWindowMs=4000, ResolveAttackerByLowCtFallback=False, CtLowFallbackMaxCt=20, CtLowFallbackWindowMs=1500, LogCtResolutionDiagnostics=False, ResolveCounterFromRecentDamage=False, CounterEventWindowMs=1500, LogAttackerCandidates=True, LogResolvedRuntimeContext=False, UnitPollIntervalMs=25, MaxTrackedBattleUnits=64, SuppressOwnRewriteEchoWindowMs=1000, MemoryTableProbes=0/0 enabled, LogUnknownFieldDiffs=True, UnknownDiff=0x44-0x17F, CaptureStructOnDeath=False, CauseDeathOnZeroHp=False, DeathStateWrites=0, MinHpFloor=0, HookRegisterProbe=False/32, HookRegisterProbeOnHpEvent=False, HookRegisterProbeOnMpEvent=False, HookRegisterProbeOnCtDrop=False, HookRegisterProbeOnActionBoundary=False, HookRegisterProbeOnPendingResolve=False, HookRegisterProbeOnTargetCache=False, HookRegisterProbeEventMaxLogs=64, HookRegisterProbeStackSlots=0, HookRegisterProbePointerScanBytes=0, HookRegisterProbePointerMaxLogs=64, HookRegisterProbePointerMaxPointersPerRoot=8, LandmarkProbeEnabled=False, LandmarkProbeMaxLogs=160, LandmarkProbeStackSlots=16, LandmarkProbes=0/0 enabled, ResultSelectorProbeEnabled=False, ResultSelectorProbeRva=0x205210, ResultSelectorProbeActorRegister=r8, ResultSelectorProbeRecordUnitOffset=0x148, ResultSelectorProbeMaxLogs=0, ResultSelectorProbeRecordDumpBytes=64, PreClampDamageRewriteEnabled=False, PreClampDamageRewriteRva=0x30A5D7, PreClampDamageRewriteTargetCharId=-1, PreClampDamageRewriteExpectedDebit=-1, PreClampDamageRewriteForcedDebit=-1, PreClampDamageRewriteMaxWrites=1, PreClampManagedCallbackEnabled=False, PreClampManagedCallbackForcedDebit=-1, PreClampManagedCallbackActorFormulaEnabled=False, PreClampManagedCallbackPaMultiplier=10, PreClampManagedCallbackStackScanBytes=256, PreClampPointerScanBytes=0, PreClampPointerMaxLogs=64, PreClampPointerMaxPointersPerRoot=8, PreClampActorStructDumpEnabled=False, PreClampActorStructDumpBytes=512, PreClampActorStructUnitOffset=0x148, PreClampActorStructDumpMaxLogs=32, PreClampResolveActorContext=False, PreClampActorActionIdOffset=0x142, PreClampActorContextMaxLogs=64, PreClampLogEquipment=False, PreClampEquipBlockOffset=0x1A, PreClampEquipMaxLogs=64, LogPreClampFormulaCandidates=False/64, PreClampFormulaCandidateRequirePendingMatch=True, PreClampFormulaCandidateAllowImmediateAction=False, PreClampImmediateActionMinScore=1800, PreClampImmediateActionMinMargin=300, PreClampImmediateActionMaxAgeMs=1500, PreClampImmediateActionRequireFreshActive=True, PreClampImmediateActionAllowZeroActionId=False, PreClampImmediateActionPlanMaxWrites=1, PreClampImmediateActionPlanRequireExpectedHp=True, PreClampImmediateActionPlanEagerTargets=False, PreClampImmediateActionNearbyUnitScanRadius=8, PreClampFormulaPlanEnabled=False, PreClampFormulaPlanSlots=16, PreClampFormulaPlanWindowMs=3000, PreClampFormulaPlanMaxWrites=1, PreClampFormulaPlanRequirePhaseZero=True, ActorProbeOnEvent=False, ActorProbe=0x40-0x44, LogHpEventProbe=False/32, HpEventProbeDiffMax=64, HpEventProbeDumpRaw=False, LogActionBoundaryProbe=False/96, ActionBoundaryProbeDiffMax=32, LogPendingActionCandidatesOnEvent=False, LogAllPendingActionCandidates=False, PendingActionCandidateMaxUnits=16, LogImmediateActionCandidatesOnEvent=False, ImmediateActionCandidateMaxUnits=16, LogActionStateChanges=False, TrackPendingActions=False, PendingActionResolveWindowMs=5000, PendingActionMaxBatchEvents=16, PendingActionStaleMs=30000
+[06:16:58] [GC-Probe] [RUNTIME-INIT] item catalog: 261 items from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\item_catalog.csv
+[06:16:58] [GC-Probe] [RUNTIME-INIT] ability catalog: 512 abilities from C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\wotl_ability_action_baseline.csv; 1 approved DCL metadata rows from D:\Projects\FFTGenericChronicle\work\1784168025-dcl-integration-ability-metadata.csv
+[06:16:58] [GC-Probe] EnabledMods: fftivc.utility.modloader, fftivc.generic.chronicle, fftivc.generic.chronicle.codemod
+[06:16:58] [GC-Probe] ACTIVE MODS (4): reloaded.sharedlib.hooks, Reloaded.Memory.SigScan.ReloadedII, fftivc.utility.modloader, fftivc.generic.chronicle
+[06:16:58] [GC-Probe] data mod fftivc.generic.chronicle loaded? True
+[06:16:58] [GC-Probe] [PRECLAMP-REWRITE-HOOK] rva=0x30A5D7 addr=0x14030A5D7 targetId=any expectedDebit=any expectedCredit=any forcedDebit=any forcedCredit=any maxWrites=1 logOnly=0 planEnabled=0 planSlots=16 managedCallback=1 managedForcedDebit=any managedActorFormula=0 dclPipeline=1 dclHpDebit=on dclHpCredit=on dclMpDebit=on dclMpCredit=on
+[06:16:58] [GC-Probe] [DCL-KIND-HOOK] rva=0x205B38 addr=0x140205B38 kind=0x06 logOnly=0 ttlMs=2500 maxAgeMs=5000
+[06:16:58] [GC-Probe] [DCL-FEAR-HOOK] targetRva=0x281EC3 confirmRva=0x20C55F chickenRva=0x38BC37 rule=dcl-fear logOnly=0 reactions=excluded forcedFlee=selector-immobilized-legal-plan armed=1
+[06:16:58] [GC-Probe] [SELECTOR-PROBE-HOOK] rva=0x205210 addr=0x140205210 actorReg=r8 recordUnitOffset=0x148 dumpBytes=64 ctxRegs=16 ctxStack=24 maxLogs=0 expected=48 89 5C 24 08 48 89 6C 24 10 (control=off, observe-only) dclOutcome=ON
+[06:16:58] [GC-Probe] [DCL-APPROACH-HOOK] boundary=0x1FE793 completion=0x211E09 resume=0xD7D0A81 owner=443 delivery=442 reach=1-2 pauseCalls=120 maxWrites=1
+[06:16:58] [GC-Probe] [DCL-REACTION-COMMIT-HOOK] pass=2 rva=0x206421 addr=0x140206421 actor=rbx maxLogs=512 expected=40 88 B3 D3 01 00 00 replacement=off retarget=off (guarded commit probe/control)
+[06:16:58] [GC-Probe] [DCL-REACTION-COMMIT-HOOK] pass=0 rva=0x2066AE addr=0x1402066AE actor=rbx maxLogs=512 expected=40 88 B3 D3 01 00 00 replacement=off retarget=off (guarded commit probe/control)
+[06:16:58] [GC-Probe] [DCL-REACTION-COMMIT-HOOK] pass=1 rva=0x206743 addr=0x140206743 actor=rdi maxLogs=512 expected=40 88 B7 D3 01 00 00 replacement=off retarget=off (guarded commit probe/control)
+[06:16:58] [GC-Probe] [DCL-REACTION-PRESELECT-HOOK] rva=0x2063A9 addr=0x1402063A9 maxLogs=512 expected=48 8D 4D D2 E8 86 CA 07 00 producer=off synthetic=live:carrier=443:delivery=442
+[06:16:58] [GC-Probe] [DCL-REACTION-DELIVERY-VALIDATION-HOOK] stage=typed-family rva=0x283019 addr=0x140283019 behavior=ExecuteFirst hookLength=-1 expected=85 C0 0F 84 33 01 00 00 E9 3A 01 00 00
+[06:16:58] [GC-Probe] [DCL-REACTION-DELIVERY-VALIDATION-HOOK] stage=typed-bonecrusher rva=0x283148 addr=0x140283148 behavior=ExecuteFirst hookLength=-1 expected=85 C0 75 14 44 88 67 01 C6 47 0A 05
+[06:16:58] [GC-Probe] [DCL-REACTION-DELIVERY-VALIDATION-HOOK] stage=final rva=0x283157 addr=0x140283157 behavior=ExecuteAfter hookLength=7 expected=E8 88 F7 FF FF 85 C0 74 5D
+[06:16:58] [GC-Probe] [DCL-REACTION-MATERIALIZED-HOOK] rva=0x2831BD addr=0x1402831BD maxLogs=512 expected=48 8B CB E8 6F F0 FF FF 0F B7 35 24 7E 5E 01 stage=special-pre-target-build rewrite=off carrier=-1 action=False:-1/-1 retargetSource=False maxWrites=1 synthetic=live:carrier=443:delivery=442
+[06:16:58] [GC-Probe] [DCL-REACTION-EFFECT-HOOK] rva=0x212C2E addr=0x140212C2E maxLogs=512 expected=66 44 01 70 0C (observe-only)
+[06:16:58] [GC-Probe] [EVADE-COPIER-HOOK] site=B/0x28531C rva=0x2854DB addr=0x1402854DB unit=rbx (target=any force[46=0x00 47=0x00 48=0x00 49=0x00 4A=0x00 4B=0x00 4C=0x00 4D=0x00 4E=0x00])
+[06:16:58] [GC-Probe] [EVADE-COPIER-HOOK] site=C/0x396518 rva=0x3966BF addr=0x1403966BF unit=rsi (target=any force[46=0x00 47=0x00 48=0x00 49=0x00 4A=0x00 4B=0x00 4C=0x00 4D=0x00 4E=0x00])
+[06:16:58] [GC-Probe] [PREVIEW-HITPCT-HOOK] rva=0x227F86 addr=0x140227F86 buf=0x3B6E290 forced=any logOnly=0 dcl=1
+[06:16:58] [GC-Probe] [DCL-CALC-INSTALL] hit=1 previewAmounts=1 seed=830343037 forcedRoll=any ttlMs=2500 missClassEvade=100 maxLogs=600 formula=on
+[06:16:58] [GC-Probe] [DCL-REACTION-TAXONOMY-TAIL] rva=0x309FA1 rules=4 expected=48 83 C4 40 41 5F 41 5E
+[06:16:58] [GC-Probe] [CALC-PROBE-HOOK] rva=0x3099AC addr=0x1403099AC probe=on buf=0x5BE6280 ring=64 provenance=off evadeStamp=off hitControl=ON previewAmounts=ON reactionTaxonomy=ON
+[06:16:58] [GC-Probe] [DCL-REACTION-HOOK] site=R1 rva=0x30BDEE idReg=r11d taxonomy=1 suppressMisses=1 expected=E8 75 D0 F6 FF
+[06:16:58] [GC-Probe] [DCL-REACTION-HOOK] site=R2 rva=0x30BE44 idReg=ebx taxonomy=1 suppressMisses=1 expected=E8 1F D0 F6 FF
+[06:16:58] [GC-Probe] [DCL-REACTION-HOOK] site=R3 rva=0x30BE9A idReg=ebx taxonomy=1 suppressMisses=1 expected=E8 C9 CF F6 FF
+[06:16:58] [GC-Probe] [DCL-REACTION-HOOK] site=R4 rva=0x30BEDA idReg=r11d taxonomy=1 suppressMisses=1 expected=E8 89 CF F6 FF
+[06:16:58] [GC-Probe] [POST-CALC-HOOK] rva=0x281F12 addr=0x140281F12 bundleProbe=0 numericWriter=1 statusProducer=1 interruptProducer=1
+[06:16:58] [Reloaded] - LoadTime: 100ms
+[06:16:58] [fftivc.utility.modloader] Entrypoint anti-debug neutralized.
+[06:16:58] [fftivc.utility.modloader] Update loop anti-debug neutralized.
+[06:16:58] [fftivc.utility.modloader] Hooked SetCursor @ 0x14001DC14
+[06:16:58] [fftivc.utility.modloader] Hooked faith::Localize::LanguageManager::SetLanguage @ 0x145F6441C
+[06:16:58] [fftivc.utility.modloader] Found AbilityData table @ 0x140787F80
+[06:16:58] [fftivc.utility.modloader] Found AbilityEffectNumberFilterData table @ 0x140683500
+[06:16:58] [fftivc.utility.modloader] Found AbilityTypeData table @ 0x140672DA0
+[06:16:58] [fftivc.utility.modloader] Found AbilityChargeAimData table @ 0x140789280
+[06:16:58] [fftivc.utility.modloader] Found AbilityJumpData table @ 0x140789260
+[06:16:58] [fftivc.utility.modloader] Found AbilityMathData table @ 0x140784688
+[06:16:58] [fftivc.utility.modloader] Could not find AbilityThrowData table!
+[06:16:58] [fftivc.utility.modloader] Found ItemData table @ 0x14080EA90
+[06:16:58] [fftivc.utility.modloader] Found ItemData extended table @ 0x140680510
+[06:16:58] [fftivc.utility.modloader] Found ItemDataTypeToItemIdRangeData table @ 0x14067FB38
+[06:16:58] [fftivc.utility.modloader] Found ItemIdRangeToCategoryData table @ 0x1406804E0
+[06:16:58] [fftivc.utility.modloader] Found ItemCategoryToDataTypeData table @ 0x14067FB78
+[06:16:58] [fftivc.utility.modloader] Found ItemEquipBonusData table @ 0x14080FEA0
+[06:16:58] [fftivc.utility.modloader] Found ItemOptionsData table @ 0x14080FBA0
+[06:16:58] [fftivc.utility.modloader] Found ItemWeaponData table @ 0x14080F690
+[06:16:58] [fftivc.utility.modloader] Found ItemShieldData table @ 0x14080FA90
+[06:16:58] [fftivc.utility.modloader] Found ItemArmorData table @ 0x14080FAB0
+[06:16:58] [fftivc.utility.modloader] Found ItemAccessoryData table @ 0x14080FB30
+[06:16:58] [fftivc.utility.modloader] Found ItemConsumableData table @ 0x14080FB70
+[06:16:58] [fftivc.utility.modloader] Found ItemShopsData table @ 0x14067F890
+[06:16:58] [fftivc.utility.modloader] Found MonsterJobCommandData table @ 0x14067F4C0
+[06:16:58] [fftivc.utility.modloader] Found MapTrapFormationData table @ 0x140783840
+[06:16:58] [fftivc.utility.modloader] Found JobCommandData table @ 0x14067E210
+[06:16:58] [fftivc.utility.modloader] Found War of the Lions job commands @ 0x14067F340
+[06:16:58] [fftivc.utility.modloader] Found JobData table @ 0x140785E30
+[06:16:58] [fftivc.utility.modloader] Found JobNeedLevelData table @ 0x14067F390
+[06:16:58] [fftivc.utility.modloader] Found StatusEffectData table @ 0x140788FE0
+[06:16:58] [fftivc.utility.modloader] Found CommandTypeData table @ 0x14067E010
+[06:16:58] [fftivc.utility.modloader] Found SpawnData table @ 0x14067F7D0
+[06:16:58] [fftivc.utility.modloader] Found SpawnVarianceData table @ 0x14067F800
+[06:16:58] [fftivc.utility.modloader] Hooked RegisterPackList @ 0x140092928
+[06:16:58] [fftivc.utility.modloader] Found RegisterPack @ 0x140092A04
+[06:16:58] [fftivc.utility.modloader] Hooked fileReadRequestOffset for fftpack.bin @ 0x14FD98FF0
+[06:16:58] [fftivc.utility.modloader] Hooked CFILE_DAT::Decode for g2d.dat @ 0x1518B08AC
+[06:16:58] [fftivc.utility.modloader] Hooked CFILE_DAT::Load for g2d.dat @ 0x15189CC5E
+[06:16:58] [GC-Probe] [FOUND] battle_base_ptr module+0x226D20
+[06:16:58] [GC-Probe] [HOOK] validation harness @ 0x140226D20 (read-only).
+[06:16:58] [fftivc.utility.modloader] Adding new pack modded (Enhanced)...
+[06:16:58] [fftivc.utility.modloader] Processing nex changes for 'overrideabilityactiondata' (Enhanced)
+[06:16:58] [fftivc.utility.modloader] fftivc.generic.chronicle - Processing 172 cell changes for nex table 'overrideabilityactiondata'
+[06:16:58] [fftivc.utility.modloader] Writing 'modded' (0 files)...
+[06:16:58] [fftivc.utility.modloader] FFTIVC Mod loader initialized with 1 pack(s).
+[06:16:58] [fftivc.utility.modloader] Applying ItemWeaponData with 126 change(s)
+[06:16:58] [Reloaded] Loading Mods (Total) | Time: 749ms
+[06:16:58] [Reloaded] Total Loader Initialization Time: 893ms
+[06:17:18] Game language has changed to English.
+[06:17:25] [fftivc.utility.modloader] Game successfully loaded modded pack.
+[06:17:32] Game language has changed to English.
+[06:22:32] [GC-Probe] [DCL-STATE-RESET] generation=1 reason=battle-started
+[06:22:32] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT4 Mv5 Jp3 Br92 Fa74
+[06:22:32] [GC-Probe] [DUMP ptr=0x141855EE0 id=0x81] 81 11 06 50 00 08 50 03 06 51 00 00 00 00 00 00 | 00 00 0B 10 C3 01 D3 01 E7 01 FF 00 FF 00 FF 00 | FF 00 FF 00 FF 00 FF 00 46 27 5C 5C 4A 4A 01 00 | 5B 00 5B 00 42 00 42 00 04 0D 08 00 00 00 04 0D | 08 04 05 03 00 00 00 00 00 00 00 05 00 00 00 07 | 00 02 81 00 06 FF 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 4F 67 1E 7C D7 | 0D 7A 11 02 C5 C8 01 64 2E 02 0C 4B 09 78 64 64 | 3C 3C 32 96 00 00 00 04 00 04 00 00 40 00 00 FF | FF 80 60 00 0C 83 04 10 88 00 80 C0 00 18 E3 00 | 40 80 00 00 CF 8F 40 24 00 40 00 00 00 C4 00 08 | 00 00 00 01 00 10 10 00 00 00 00 00 FF C0 F8 00 | 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 53 44 65 84 46 34 25 86 20 31 01 00 | FA 01 BA 01 47 03 C7 00 ED 01 73 04 F2 07 09 02 | 46 03 8F 01 72 02 B6 01 FD 00 62 04 0D 00 AD 06 | 33 00 00 00 E1 01 6F 00 00 00 00 00 00 00 66 04 | 32 02 0F 04 B5 03 97 07 73 04 22 19 99 03 46 03 | B7 06 72 02 14 03 FD 00 62 04 4D 1F AD 06 5F 01 | 00 00 E1 01 6F 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 6D | 00 79 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 11 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 08 00 | 00 00 00 00 1A FF 00 00 00 00 00 00 7D 02 00 00
+[06:22:32] [GC-Probe] [CANDIDATES ptr=0x141855EE0 id=0x81] bytes[44-83] +0x4B=5 +0x4F=7 +0x51=2 +0x52=129 +0x54=6 +0x55=255 +0x7B=79 +0x7C=103 +0x7D=30 +0x7E=124 +0x7F=215 +0x80=13 +0x81=122 +0x82=17 | words<=511 +0x52w=129 || bytes[84-C3] +0x84=197 +0x85=200 +0x86=1 +0x87=100 +0x88=46 +0x89=2 +0x8A=12 +0x8B=75 +0x8C=9 +0x8D=120 +0x8E=100 +0x8F=100 +0x90=60 +0x91=60 | words<=511 +0x9Cw=64 +0xA2w=96 +0xA8w=136 +0xAEw=227 +0xC2w=256 || bytes[C4-103] +0xC5=16 +0xC6=16 +0xCC=255 +0xCD=192 +0xCE=248 +0xD4=64 +0xE4=83 +0xE5=68 +0xE6=101 +0xE7=132 +0xE8=70 +0xE9=52 +0xEA=37 +0xEB=134 | words<=511 +0xC6w=16 +0xCEw=248 +0xD4w=64 +0xEEw=1 +0xF0w=506 +0xF2w=442 +0xF6w=199 +0xF8w=493 +0x102w=399 || bytes[104-143] +0x104=114 +0x105=2 +0x106=182 +0x107=1 +0x108=253 +0x10A=98 +0x10B=4 +0x10C=13 +0x10E=173 +0x10F=6 +0x110=51 +0x114=225 +0x115=1 +0x116=111 | words<=511 +0x106w=438 +0x108w=253 +0x10Cw=13 +0x110w=51 +0x114w=481 +0x116w=111 +0x136w=253 +0x13Ew=351 +0x142w=481 || bytes[144-17F] +0x144=111 | words<=511 +0x144w=111
+[06:22:32] [GC-Probe] [ITEMTABLE-EVADE-ZERO] sanity ok (VenetianShield 32 19) — zeroing weapon W-Ev + shield + accessory evade every poll
+[06:26:22] [GC-Probe] [CALC] n=0 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=17
+[06:26:22] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=71 outcome=hit cached=0 model=percent ax=7 ay=0 af=2 tx=6 ty=0 tf=2
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:22] [GC-Probe] [DCL-FORECAST] obj=0x141855E9E unitIdx=16 debit=0 credit=0
+[06:26:34] [GC-Probe] [DCL-FEAR-CONFIRM] casterIdx=17 turnOwner=17 type=0x00 ability=0 state=0x19 casterSource=turn-owner actor=0x140D31FE8 actorUnit=0x141855EE0 actorUnitIdx=17 actorAction=53 actorPresentation=0 actorPrimaryTarget=0 actorTargetCount=0 actorTargets=[] expandedTargetCount=1 expandedTargets=[16] listAuthoritative=1 owned=0 affected=1 opposing=0 decision=allow
+[06:27:13] [GC-Probe] [DIFF ptr=0x141855EE0 id=0x81] +0x61:00->08
+[06:28:59] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT56 Mv5 Jp3 Br92 Fa74
+[06:29:00] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT7 Mv6 Jp5 Br48 Fa60
+[06:29:00] [GC-Probe] [DUMP ptr=0x141853EE0 id=0x82] 82 01 FF 5E 03 50 20 03 DF 40 F7 01 00 00 BA 01 | 00 00 B0 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 2A 4B 30 30 3C 3C 01 00 | 6E 01 6E 01 1C 00 1C 00 11 32 0B 00 00 00 11 32 | 0B 07 06 05 00 00 00 00 00 00 00 0F 00 00 00 05 | 08 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 33 C8 54 08 12 | 07 52 77 02 94 5E 04 D9 67 0D 08 6C 1E 64 4B 77 | 23 62 07 5E 00 00 08 00 00 00 00 00 00 00 40 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 01 86 | 00 FD 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 01 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 BF 03 00 00
+[06:29:00] [GC-Probe] [CANDIDATES ptr=0x141853EE0 id=0x82] bytes[44-83] +0x4B=15 +0x4F=5 +0x50=8 +0x52=128 +0x5D=4 +0x7B=51 +0x7C=200 +0x7D=84 +0x7E=8 +0x7F=18 +0x80=7 +0x81=82 +0x82=119 +0x83=2 | words<=511 +0x50w=8 +0x52w=128 || bytes[84-C3] +0x84=148 +0x85=94 +0x86=4 +0x87=217 +0x88=103 +0x89=13 +0x8A=8 +0x8B=108 +0x8C=30 +0x8D=100 +0x8E=75 +0x8F=119 +0x90=35 +0x91=98 | words<=511 +0x96w=8 +0x9Ew=64 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[06:29:00] [GC-Probe] [CALC] n=1 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [MPLOSS ptr=0x141855EE0 id=0x81] 66 -> 50 = 16 sampleAgeMs=27
+[06:29:00] [GC-Probe] [MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=ptr=0x141853EE0/id=0x82/foe/t3/age=556ms/PA=17/opposing
+[06:29:00] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT47 Mv6 Jp5 Br48 Fa60
+[06:29:00] [GC-Probe] [CALC] n=2 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=3 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=4 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=5 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=6 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=7 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=0 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=1 target=0x80 targetIdx=16 now=282919954324
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=2 target=0x80 targetIdx=16 now=282920011174
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=3 target=0x80 targetIdx=16 now=282920062830
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=4 target=0x80 targetIdx=16 now=282920111437
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=5 target=0x80 targetIdx=16 now=282920158660
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=6 target=0x80 targetIdx=16 now=282920205752
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=7 target=0x80 targetIdx=16 now=282920321438
+[06:29:00] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT27 Mv6 Jp5 Br48 Fa60
+[06:29:00] [GC-Probe] [CALC] n=8 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=9 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=10 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=11 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=12 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=13 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=14 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [CALC] n=15 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=8 target=0x80 targetIdx=16 now=282920368603
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=9 target=0x80 targetIdx=16 now=282920415583
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=10 target=0x80 targetIdx=16 now=282920460315
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=11 target=0x80 targetIdx=16 now=282920506497
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=12 target=0x80 targetIdx=16 now=282920557277
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=13 target=0x80 targetIdx=16 now=282920608159
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=14 target=0x80 targetIdx=16 now=282920721325
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=15 target=0x80 targetIdx=16 now=282920777642
+[06:29:00] [GC-Probe] [CALC] n=16 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=1
+[06:29:00] [GC-Probe] [CALC] n=17 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=1
+[06:29:00] [GC-Probe] [CALC] n=18 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=1
+[06:29:00] [GC-Probe] [CALC] n=19 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=1
+[06:29:00] [GC-Probe] [CALC] n=20 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=1
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=16 target=0x80 targetIdx=16 now=282920833787
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:00] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=85 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:00] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:00] [GC-Probe] [MPGAIN ptr=0x141855EE0 id=0x81] 50 -> 66 = 16 sampleAgeMs=42
+[06:29:00] [GC-Probe] [MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=ptr=0x141853EE0/id=0x82/foe/t3/age=685ms/PA=17/opposing
+[06:29:00] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT7 Mv6 Jp5 Br48 Fa60
+[06:29:00] [GC-Probe] [DCL-MP-TRICKLE] target=0x82 outcome=no-credit requested=12 mp=28/28
+[06:29:01] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=1 cursor=0/2 tile=5,8,0 release=route-origin
+[06:29:02] [GC-Probe] [DCL-APPROACH-DECISION] event=2 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:02] [GC-Probe] [DCL-APPROACH-DECISION] event=3 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:05] [GC-Probe] [DIFF ptr=0x141853EE0 id=0x82] +0x4F:05->06 +0x50:08->07 +0x51:00->03
+[06:29:06] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT27 Mv6 Jp5 Br48 Fa60
+[06:29:27] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT7 Mv6 Jp5 Br62 Fa59
+[06:29:27] [GC-Probe] [DUMP ptr=0x141854AE0 id=0x82] 82 07 FF 5E 03 50 20 03 D7 40 F7 01 00 00 BA 01 | 00 00 B0 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 59 4C 3E 3E 3B 3B 01 00 | 6E 01 6E 01 1C 00 1C 00 11 35 0B 00 00 00 11 35 | 0B 07 06 05 00 00 00 00 00 00 00 0F 00 00 00 03 | 04 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 76 DF 54 2F 09 | 07 87 7B 02 28 83 04 1E 4C 0E 08 6C 1E 64 4B 77 | 23 62 07 5E 00 00 08 00 00 00 00 00 00 00 40 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 01 86 | 00 F7 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 07 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 54 03 00 00
+[06:29:27] [GC-Probe] [CANDIDATES ptr=0x141854AE0 id=0x82] bytes[44-83] +0x4B=15 +0x4F=3 +0x50=4 +0x52=128 +0x5D=4 +0x7B=118 +0x7C=223 +0x7D=84 +0x7E=47 +0x7F=9 +0x80=7 +0x81=135 +0x82=123 +0x83=2 | words<=511 +0x50w=4 +0x52w=128 || bytes[84-C3] +0x84=40 +0x85=131 +0x86=4 +0x87=30 +0x88=76 +0x89=14 +0x8A=8 +0x8B=108 +0x8C=30 +0x8D=100 +0x8E=75 +0x8F=119 +0x90=35 +0x91=98 | words<=511 +0x96w=8 +0x9Ew=64 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[06:29:34] [GC-Probe] [CALC] n=21 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=22 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=0 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [MPLOSS ptr=0x141855EE0 id=0x81] 66 -> 50 = 16 sampleAgeMs=27
+[06:29:34] [GC-Probe] [MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[06:29:34] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT27 Mv6 Jp5 Br62 Fa59
+[06:29:34] [GC-Probe] [CALC] n=23 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=24 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=25 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=26 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=27 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=28 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=29 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=30 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=31 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=32 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [CALC] n=33 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=34 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=35 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=36 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=37 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=38 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=39 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=40 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [CALC] n=41 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=42 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=43 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=44 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=45 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=46 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=47 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=48 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=49 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=50 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [CALC] n=51 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=52 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=53 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=54 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=55 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=56 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=57 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=58 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=59 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=60 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=61 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=62 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [CALC] n=63 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=64 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=65 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=66 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=67 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=68 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=69 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=70 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=71 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=72 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=73 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=74 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-MISS] reason=no-confirmed-execution-calc latest=outer-sweep:state=0x5:caster=17:type=0x10:ability=53:payload=0 miss=64 target=0x80 targetIdx=16 now=283260799650
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=60 outcome=hit cached=1 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=7 type=0xB0 ability=265 state=0x5 owned=0 affected=1 opposing=1 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x82 target=0x80 ability=265 type=0xB0 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=76 outcome=hit cached=0 model=percent ax=5 ay=0 af=0 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x82 target=0x80 ability=265 targetIdx=16 miss=0 hp=252/0->252/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[06:29:34] [GC-Probe] [MPGAIN ptr=0x141855EE0 id=0x81] 50 -> 66 = 16 sampleAgeMs=42
+[06:29:34] [GC-Probe] [MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[06:29:34] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT7 Mv6 Jp5 Br62 Fa59
+[06:29:34] [GC-Probe] [DCL-MP-TRICKLE] target=0x82 outcome=no-credit requested=13 mp=28/28
+[06:29:34] [GC-Probe] [CALC] n=75 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=0/0 targetIdx=16 casterTeam=3 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=76 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=77 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=0/0 targetIdx=16 casterTeam=3 turnOwner=7
+[06:29:34] [GC-Probe] [CALC] n=78 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=52 outcome=hit cached=0 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=7 type=0xB0 ability=265 state=0x5 owned=0 affected=1 opposing=1 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x82 target=0x80 ability=265 type=0xB0 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=38 outcome=hit cached=0 model=percent ax=6 ay=1 af=0 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x82 target=0x80 ability=265 targetIdx=16 miss=0 hp=252/0->252/0 mp=0/0->0/0 flags=0x80->0x80 cached=0
+[06:29:34] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x5 owned=0 affected=1 opposing=0 decision=allow
+[06:29:34] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=92 outcome=hit cached=0 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:29:34] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x5 caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=0
+[06:29:41] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=4 cursor=0/6 tile=3,4,0 release=new-route-origin
+[06:29:41] [GC-Probe] [DCL-APPROACH-DECISION] event=5 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:41] [GC-Probe] [DCL-APPROACH-DECISION] event=6 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:41] [GC-Probe] [DCL-APPROACH-DECISION] event=7 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:43] [GC-Probe] [DCL-APPROACH-DECISION] event=8 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:48] [GC-Probe] [DCL-APPROACH-DECISION] event=9 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:57] [GC-Probe] [DCL-APPROACH-DECISION] event=10 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:29:59] [GC-Probe] [DIFF ptr=0x141854AE0 id=0x82] +0x4F:03->05 +0x50:04->00 +0x51:00->03
+[06:30:21] [GC-Probe] [CALC] n=79 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=0/0 targetIdx=16 casterTeam=3 turnOwner=7
+[06:30:21] [GC-Probe] [DCL-HIT] caster=0x82 target=0x80 ability=265 type=0xB0 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=9 outcome=hit cached=0 model=percent ax=5 ay=0 af=3 tx=6 ty=0 tf=2
+[06:30:39] [GC-Probe] [DCL-FEAR-CONFIRM] casterIdx=7 turnOwner=7 type=0x00 ability=0 state=0x19 casterSource=turn-owner actor=0x140D31558 actorUnit=0x141854AE0 actorUnitIdx=7 actorAction=265 actorPresentation=0 actorPrimaryTarget=0 actorTargetCount=0 actorTargets=[] expandedTargetCount=1 expandedTargets=[16] listAuthoritative=1 owned=0 affected=1 opposing=1 decision=allow
+[06:30:51] [GC-Probe] [DCL-REACTION-COMMIT-NOISE] event=1 pass=1 actor=0x140D31558 reactorIdx=4 sourceIdx=7 reactionId=265 actor18C=265 actor142=265 idsAgree=True record=0x141854AE0 targetCount=0 targets=[] replacement=none retarget=none:-1 noiseReason=non-reaction-id now=284026110174
+[06:31:05] [GC-Probe] [CALC] n=80 rec=0x141854C80 casterSlot=7 casterIdx=7 type=0xB0 abilityId=265 (0x0109) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=0/0 targetIdx=16 casterTeam=3 turnOwner=7
+[06:31:05] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=7 type=0xB0 ability=265 state=0x2A owned=0 affected=1 opposing=1 decision=allow
+[06:31:05] [GC-Probe] [DCL-HIT] caster=0x82 target=0x80 ability=265 type=0xB0 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=72 outcome=hit cached=0 model=percent ax=5 ay=0 af=3 tx=6 ty=0 tf=2
+[06:31:05] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x82 target=0x80 ability=265 targetIdx=16 miss=0 hp=252/0->252/0 mp=0/0->0/0 flags=0x80->0x80 cached=1
+[06:31:07] [GC-Probe] [DCL] caster=0x82 target=0x80 abilityId=265 ability=Choco Beak actionType=0xB0 result=252 debit=252 oldDebit=252 credit=0 oldCredit=0 mpDebit=0 oldMpDebit=0 mpCredit=0 oldMpCredit=0 flags=0x80->0x80 computePoint=1
+[06:31:07] [GC-Probe] [DCL-REACTION-EFFECT] event=1 state=0x2C actor=0x140D31558 actorIdx=4 sourceIdx=7 reactionId=265 actionId=265 targetCount=1 targets=[16] now=284184968932
+[06:31:31] [GC-Probe] [DCL-REACTION-COMMIT] event=2 pass=2 actor=0x140D31AA0 reactorIdx=5 sourceIdx=7 reactionId=441 actor18C=441 actor142=441 idsAgree=True record=0x141855CE0 targetCount=0 targets=[] replacement=none retarget=none:-1 noiseReason=none now=284425916050
+[06:31:31] [GC-Probe] [DCL-REACTION-PRESELECT] event=1 sourceIdx=7 evalReactionId=0 actor=0x140D31558 actorIdx=4 actor142=265 actor18C=265 record=0x141854AE0 recordIdx=7 candidates=[16:441:active=True] producer=none:unit=-1:carrier=-1 syntheticStates=[]:carrier=443:delivery=442 now=284425916050
+[06:31:31] [GC-Probe] [DCL-REACTION-DELIVERY-VALIDATION] event=1 stage=final reactorIdx=16 sourceIdx=7 reactionId=441 result=0 accepted=1 unit=0x141855CE0 order=0x141855E80 actionType=6 actionId=441 targetMode=5 targetIdx=16 syntheticState=-1->-1 now=284425916050
+[06:31:31] [GC-Probe] [DCL-REACTION-MATERIALIZED] event=1 reactorIdx=16 sourceIdx=7 reactionId=441 unit=0x141855CE0 order=0x141855E80 casterIdx=16 actionType=6 actionId=441 itemId=240 targetMode=5 targetIdx=16 target=(6,0,0) raw=1006B90100000000F00005100600000000000000 rewrite=none originalActionType=6 originalActionId=441 rewriteWrites=0 syntheticDelivery=none now=284425916050
+[06:31:32] [GC-Probe] [CALC] n=81 rec=0x141855E80 casterSlot=16 casterIdx=16 type=0x06 abilityId=441 (0x01B9) payload=240 activeWeapon=-1 repeat=0/1 nativeWeapons=63/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:31:32] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=16 type=0x06 ability=441 state=0x2A owned=0 affected=1 opposing=0 decision=allow
+[06:31:32] [GC-Probe] [DCL-HIT] caster=0x80 target=0x80 ability=441 type=0x06 payload=240 activeWeapon=-1 repeat=0/1 pct=100 roll=58 outcome=hit cached=0 model=percent ax=6 ay=0 af=2 tx=6 ty=0 tf=2
+[06:31:32] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x80 target=0x80 ability=441 targetIdx=16 miss=0 hp=0/30->0/30 mp=0/0->0/0 flags=0x40->0x40 cached=1
+[06:31:32] [GC-Probe] [DCL] caster=0x80 target=0x80 abilityId=441 ability=Auto-Potion actionType=0x06 result=0 debit=0 oldDebit=0 credit=30 oldCredit=30 mpDebit=0 oldMpDebit=0 mpCredit=0 oldMpCredit=0 flags=0x40->0x40 computePoint=1
+[06:31:32] [GC-Probe] [DCL-REACTION-EFFECT] event=2 state=0x2C actor=0x140D31AA0 actorIdx=5 sourceIdx=7 reactionId=441 actionId=441 targetCount=1 targets=[16] now=284437794862
+[06:31:35] [GC-Probe] [DCL-REACTION-PRESELECT] event=2 sourceIdx=7 evalReactionId=441 actor=0x140D31558 actorIdx=4 actor142=265 actor18C=265 record=0x141854AE0 recordIdx=7 candidates=[] producer=none:unit=-1:carrier=-1 syntheticStates=[]:carrier=443:delivery=442 now=284466611444
+[06:31:37] [GC-Probe] [DCL-REACTION-COMMIT-NOISE] event=3 pass=1 actor=0x140D31FE8 reactorIdx=6 sourceIdx=17 reactionId=53 actor18C=53 actor142=53 idsAgree=True record=0x141855EE0 targetCount=0 targets=[] replacement=none retarget=none:-1 noiseReason=non-reaction-id now=284485936476
+[06:31:37] [GC-Probe] [MPLOSS ptr=0x141855EE0 id=0x81] 66 -> 50 = 16 sampleAgeMs=27
+[06:31:37] [GC-Probe] [MP-CTX ptr=0x141855EE0 id=0x81] resolved=none attackerCandidates=none
+[06:31:45] [GC-Probe] [CALC] n=82 rec=0x141856080 casterSlot=17 casterIdx=17 type=0x10 abilityId=53 (0x0035) payload=0 activeWeapon=-1 repeat=0/1 nativeWeapons=255/255 targetIdx=16 casterTeam=0 turnOwner=7
+[06:31:45] [GC-Probe] [DCL-FEAR-TARGET] casterIdx=17 type=0x10 ability=53 state=0x2A owned=0 affected=1 opposing=0 decision=allow
+[06:31:45] [GC-Probe] [DCL-HIT] caster=0x81 target=0x80 ability=53 type=0x10 payload=0 activeWeapon=-1 repeat=0/1 pct=100 roll=31 outcome=hit cached=0 model=percent ax=7 ay=0 af=3 tx=6 ty=0 tf=2
+[06:31:45] [GC-Probe] [DCL-COMPUTE-POINT] origin=outer-sweep battleState=0x2A caster=0x81 target=0x80 ability=53 targetIdx=16 miss=0 hp=0/0->0/0 mp=0/0->0/0 flags=0x08->0x08 cached=1
+[06:31:45] [GC-Probe] [DCL-STATUS-PRODUCER] ability=53 caster=0x81 target=0x80 targetIdx=16 origin=outer-sweep battleState=0x2A writes=1 carriesResult=1 suppressedByHit=0 flags=0x08->0x08
+[06:32:51] [GC-Probe] [DCL-REACTION-EFFECT] event=3 state=0x2C actor=0x140D31FE8 actorIdx=6 sourceIdx=17 reactionId=53 actionId=53 targetCount=1 targets=[16] now=285227185207
+[06:34:26] [GC-Probe] [DIFF ptr=0x141855EE0 id=0x81] +0x51:02->03 +0x61:08->00 +0xFC:F2->1C +0xFD:07->08 +0x12A:22->4C
+[06:34:26] [GC-Probe] [DCL-REACTION-PRESELECT] event=3 sourceIdx=17 evalReactionId=441 actor=0x140D31FE8 actorIdx=6 actor142=53 actor18C=53 record=0x141855EE0 recordIdx=17 candidates=[] producer=none:unit=-1:carrier=-1 syntheticStates=[]:carrier=443:delivery=442 now=286178523122
+[06:34:29] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT64 Mv5 Jp3 Br92 Fa74
+[06:34:29] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT38 Mv6 Jp5 Br48 Fa60
+[06:34:29] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT18 Mv6 Jp5 Br62 Fa59
+[06:34:30] [GC-Probe] [UNIT ptr=0x1418544E0 id=0x82 foe  t3] Lv68 HP459 MP12 PA14 MA46 Sp10 CT0 Mv4 Jp4 Br61 Fa51
+[06:34:30] [GC-Probe] [DUMP ptr=0x1418544E0 id=0x82] 82 04 FF 67 03 50 20 03 72 10 F1 01 EC 01 BA 01 | 00 00 B9 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 24 44 3D 3D 33 33 01 00 | CB 01 CB 01 0C 00 0C 00 0E 2E 0A 00 00 00 0E 2E | 0A 00 04 04 00 00 00 00 00 00 00 17 00 00 00 08 | 09 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 08 00 3C 20 63 E0 63 | 06 28 39 02 17 D0 03 5D AC 0C 06 74 1E 32 55 74 | 27 62 07 5B 00 00 08 00 00 00 00 00 02 10 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 04 89 | 00 FA 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 04 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 20 03 00 00
+[06:34:30] [GC-Probe] [CANDIDATES ptr=0x1418544E0 id=0x82] bytes[44-83] +0x4B=23 +0x4F=8 +0x50=9 +0x52=128 +0x5D=4 +0x79=8 +0x7B=60 +0x7C=32 +0x7D=99 +0x7E=224 +0x7F=99 +0x80=6 +0x81=40 +0x82=57 | words<=511 +0x50w=9 +0x52w=128 || bytes[84-C3] +0x84=23 +0x85=208 +0x86=3 +0x87=93 +0x88=172 +0x89=12 +0x8A=6 +0x8B=116 +0x8C=30 +0x8D=50 +0x8E=85 +0x8F=116 +0x90=39 +0x91=98 | words<=511 +0x96w=8 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[06:34:31] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=11 cursor=0/4 tile=8,9,0 release=new-route-origin
+[06:34:32] [GC-Probe] [DCL-APPROACH-DECISION] event=12 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:32] [GC-Probe] [DCL-APPROACH-DECISION] event=13 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:32] [GC-Probe] [DCL-APPROACH-DECISION] event=14 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:33] [GC-Probe] [DCL-APPROACH-DECISION] event=15 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:33] [GC-Probe] [DIFF ptr=0x1418544E0 id=0x82] +0x50:09->05
+[06:34:33] [GC-Probe] [UNIT ptr=0x1418544E0 id=0x82 foe  t3] Lv68 HP459 MP12 PA14 MA46 Sp10 CT20 Mv4 Jp4 Br61 Fa51
+[06:34:34] [GC-Probe] [UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv71 HP464 MP14 PA15 MA47 Sp10 CT0 Mv4 Jp4 Br65 Fa54
+[06:34:34] [GC-Probe] [DUMP ptr=0x1418548E0 id=0x82] 82 06 FF 67 03 50 20 03 E8 40 F1 01 EC 01 BA 01 | 00 00 B9 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 30 47 41 41 36 36 01 00 | D0 01 D0 01 0E 00 0E 00 0F 2F 0A 00 00 00 0F 2F | 0A 00 04 04 00 00 00 00 00 00 00 17 00 00 00 05 | 0A 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 08 00 C3 12 64 1D 25 | 07 50 44 02 90 FC 03 1A F2 0C 06 74 1E 32 55 74 | 27 62 07 5B 00 00 08 00 00 00 00 00 02 10 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 04 89 | 00 F8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 06 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 50 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 F9 03 00 00
+[06:34:34] [GC-Probe] [CANDIDATES ptr=0x1418548E0 id=0x82] bytes[44-83] +0x4B=23 +0x4F=5 +0x50=10 +0x52=128 +0x5D=4 +0x79=8 +0x7B=195 +0x7C=18 +0x7D=100 +0x7E=29 +0x7F=37 +0x80=7 +0x81=80 +0x82=68 | words<=511 +0x50w=10 +0x52w=128 || bytes[84-C3] +0x84=144 +0x85=252 +0x86=3 +0x87=26 +0x88=242 +0x89=12 +0x8A=6 +0x8B=116 +0x8C=30 +0x8D=50 +0x8E=85 +0x8F=116 +0x90=39 +0x91=98 | words<=511 +0x96w=8 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[06:34:36] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=16 cursor=0/4 tile=5,10,0 release=new-route-origin
+[06:34:36] [GC-Probe] [DCL-APPROACH-DECISION] event=17 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:37] [GC-Probe] [DCL-APPROACH-DECISION] event=18 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:37] [GC-Probe] [DCL-APPROACH-DECISION] event=19 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:37] [GC-Probe] [DCL-APPROACH-DECISION] event=20 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:34:37] [GC-Probe] [DIFF ptr=0x1418548E0 id=0x82] +0x50:0A->06
+[06:34:42] [GC-Probe] [UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv71 HP464 MP14 PA15 MA47 Sp10 CT20 Mv4 Jp4 Br65 Fa54
+[06:35:03] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT80 Mv5 Jp3 Br92 Fa74
+[06:35:03] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT60 Mv6 Jp5 Br48 Fa60
+[06:35:03] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT40 Mv6 Jp5 Br62 Fa59
+[06:35:03] [GC-Probe] [UNIT ptr=0x1418544E0 id=0x82 foe  t3] Lv68 HP459 MP12 PA14 MA46 Sp10 CT40 Mv4 Jp4 Br61 Fa51
+[06:35:03] [GC-Probe] [UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv71 HP464 MP14 PA15 MA47 Sp10 CT40 Mv4 Jp4 Br65 Fa54
+[06:35:18] [GC-Probe] [UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv75 HP446 MP11 PA14 MA44 Sp9 CT0 Mv3 Jp3 Br67 Fa45
+[06:35:18] [GC-Probe] [DUMP ptr=0x141853CE0 id=0x82] 82 00 FF 61 03 90 20 03 11 90 00 00 00 00 BA 01 | 00 00 B3 00 BA 01 00 00 00 00 00 00 00 00 00 00 | 00 00 FF 00 00 00 FF 00 58 4B 43 43 2D 2D 01 00 | BE 01 BE 01 0B 00 0B 00 0E 2C 09 00 00 00 0E 2C | 09 00 03 03 00 00 00 00 00 00 00 12 00 00 00 08 | 0A 00 80 00 00 00 00 00 00 00 00 00 00 04 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 20 00 0B 5B 5F A1 EF | 06 30 53 02 CA BF 03 52 F9 0C 07 75 1E 28 55 69 | 27 62 07 55 00 00 08 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 02 87 | 00 FE 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 00 00 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 90 00 | 00 00 00 00 00 FF 00 00 00 00 00 00 8D 03 00 00
+[06:35:18] [GC-Probe] [CANDIDATES ptr=0x141853CE0 id=0x82] bytes[44-83] +0x4B=18 +0x4F=8 +0x50=10 +0x52=128 +0x5D=4 +0x79=32 +0x7B=11 +0x7C=91 +0x7D=95 +0x7E=161 +0x7F=239 +0x80=6 +0x81=48 +0x82=83 | words<=511 +0x50w=10 +0x52w=128 || bytes[84-C3] +0x84=202 +0x85=191 +0x86=3 +0x87=82 +0x88=249 +0x89=12 +0x8A=7 +0x8B=117 +0x8C=30 +0x8D=40 +0x8E=85 +0x8F=105 +0x90=39 +0x91=98 | words<=511 +0x96w=8 || bytes[C4-103] none | words<=511 none || bytes[104-143] none | words<=511 none || bytes[144-17F] none | words<=511 none
+[06:36:11] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=21 cursor=0/3 tile=8,10,0 release=new-route-origin
+[06:36:20] [GC-Probe] [DCL-APPROACH-DECISION] event=22 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:36:30] [GC-Probe] [DCL-APPROACH-DECISION] event=23 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:36:42] [GC-Probe] [DCL-APPROACH-DECISION] event=24 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:36:52] [GC-Probe] [DIFF ptr=0x141853CE0 id=0x82] +0x50:0A->07
+[06:37:11] [GC-Probe] [UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv75 HP446 MP11 PA14 MA44 Sp9 CT20 Mv3 Jp3 Br67 Fa45
+[06:37:33] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP999 MP111 PA3 MA12 Sp8 CT0 Mv3 Jp3 Br94 Fa82
+[06:37:33] [GC-Probe] [DUMP ptr=0x141855CE0 id=0x80] 80 10 01 52 00 00 90 03 69 00 00 00 00 00 00 00 | 00 00 0D 0A B9 01 D3 01 F2 01 A7 00 CA 00 FF 00 | 3F 00 FF 00 FF 00 FF 00 41 26 5E 5E 52 52 01 00 | EB 02 E7 03 6F 00 6F 00 03 08 07 00 04 01 03 0C | 08 00 03 03 04 00 00 00 00 00 00 00 00 00 00 06 | 00 02 81 80 06 FF 00 00 00 00 00 00 00 00 00 00 | 00 00 00 04 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 48 04 1D 66 F0 | 0E A1 0C 02 54 EF 01 B9 B9 01 0D 46 08 7D 64 5A | 46 32 32 7D 00 00 10 00 00 04 00 00 00 08 00 FF | B0 80 60 00 1C C2 04 98 00 00 00 00 00 00 00 00 | 00 EC AC 00 8C 84 40 E5 30 30 FE 98 40 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 54 32 37 68 84 34 23 45 32 01 01 00 | 32 02 5E 01 AD 01 86 01 8B 02 99 00 8C 02 40 00 | A3 01 F4 02 E2 01 C8 02 06 01 06 02 1B 04 54 04 | A5 00 07 01 00 00 A0 00 00 00 00 00 00 00 4E 04 | 42 04 AD 01 86 01 8B 02 31 09 6E 07 26 1A 47 12 | F4 02 E2 01 C8 02 06 01 06 02 1B 04 54 04 D1 01 | 07 01 00 00 A0 00 00 00 00 00 00 00 41 72 74 68 | 75 72 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 70 | 00 78 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 01 00 00 01 00 00 02 10 00 01 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | 00 00 00 00 00 00 00 00 00 00 64 00 00 00 08 00 | 00 04 00 00 1C FF 00 00 00 00 00 00 50 01 00 00
+[06:37:33] [GC-Probe] [CANDIDATES ptr=0x141855CE0 id=0x80] bytes[44-83] +0x44=4 +0x4F=6 +0x51=2 +0x52=129 +0x53=128 +0x54=6 +0x55=255 +0x63=4 +0x7B=72 +0x7C=4 +0x7D=29 +0x7E=102 +0x7F=240 +0x80=14 | words<=511 +0x44w=4 || bytes[84-C3] +0x84=84 +0x85=239 +0x86=1 +0x87=185 +0x88=185 +0x89=1 +0x8A=13 +0x8B=70 +0x8C=8 +0x8D=125 +0x8E=100 +0x8F=90 +0x90=70 +0x91=50 | words<=511 +0x88w=441 +0x96w=16 +0xA2w=96 +0xB2w=172 +0xBCw=64 || bytes[C4-103] +0xD4=64 +0xE4=84 +0xE5=50 +0xE6=55 +0xE7=104 +0xE8=132 +0xE9=52 +0xEA=35 +0xEB=69 +0xEC=50 +0xED=1 +0xEE=1 +0xF0=50 +0xF1=2 | words<=511 +0xD4w=64 +0xECw=306 +0xEEw=1 +0xF2w=350 +0xF4w=429 +0xF6w=390 +0xFAw=153 +0xFEw=64 +0x100w=419 || bytes[104-143] +0x104=226 +0x105=1 +0x106=200 +0x107=2 +0x108=6 +0x109=1 +0x10A=6 +0x10B=2 +0x10C=27 +0x10D=4 +0x10E=84 +0x10F=4 +0x110=165 +0x112=7 | words<=511 +0x104w=482 +0x108w=262 +0x110w=165 +0x112w=263 +0x116w=160 +0x122w=429 +0x124w=390 +0x132w=482 +0x136w=262 +0x13Ew=465 || bytes[144-17F] +0x144=160 +0x14C=65 +0x14D=114 +0x14E=116 +0x14F=104 +0x150=117 +0x151=114 | words<=511 +0x144w=160
+[06:37:44] [GC-Probe] [DCL-APPROACH-BOUNDARY] event=25 cursor=0/3 tile=6,0,0 release=new-route-origin
+[06:37:44] [GC-Probe] [DCL-APPROACH-DECISION] event=26 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:37:45] [GC-Probe] [DCL-APPROACH-DECISION] event=27 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:37:45] [GC-Probe] [DCL-APPROACH-DECISION] event=28 candidates=0 release=no-eligible-reactor/no-entered-reach-owner
+[06:37:45] [GC-Probe] [DIFF ptr=0x141855CE0 id=0x80] +0x4F:06->09 +0x51:02->03
+[06:37:46] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP999 MP111 PA3 MA12 Sp8 CT20 Mv3 Jp3 Br94 Fa82
+[06:37:46] [GC-Probe] [UNIT ptr=0x141853CE0 id=0x82 foe  t3] Lv75 HP446 MP11 PA14 MA44 Sp9 CT47 Mv3 Jp3 Br67 Fa45
+[06:37:46] [GC-Probe] [UNIT ptr=0x141855CE0 id=0x80 ally t0] Lv38 HP999 MP111 PA3 MA12 Sp8 CT44 Mv3 Jp3 Br94 Fa82
+[06:37:46] [GC-Probe] [DCL-MP-TRICKLE] target=0x81 outcome=credited requested=3 credit=3 mp=50->53/66
+[06:37:46] [GC-Probe] [UNIT ptr=0x141855EE0 id=0x81 ally t0] Lv39 HP91 MP66 PA4 MA13 Sp8 CT4 Mv5 Jp3 Br92 Fa74
+[06:37:46] [GC-Probe] [UNIT ptr=0x141853EE0 id=0x82 foe  t3] Lv75 HP366 MP28 PA17 MA50 Sp11 CT93 Mv6 Jp5 Br48 Fa60
+[06:37:46] [GC-Probe] [UNIT ptr=0x141854AE0 id=0x82 foe  t3] Lv76 HP366 MP28 PA17 MA53 Sp11 CT73 Mv6 Jp5 Br62 Fa59
+[06:37:46] [GC-Probe] [UNIT ptr=0x1418544E0 id=0x82 foe  t3] Lv68 HP459 MP12 PA14 MA46 Sp10 CT70 Mv4 Jp4 Br61 Fa51
+[06:37:46] [GC-Probe] [UNIT ptr=0x1418548E0 id=0x82 foe  t3] Lv71 HP464 MP14 PA15 MA47 Sp10 CT70 Mv4 Jp4 Br65 Fa54

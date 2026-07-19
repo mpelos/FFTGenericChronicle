@@ -1,0 +1,26 @@
+{
+  "_note": "Observe-only DCL position-commit probe. It captures exact unit index, destination coordinates, and the hook-time direct caller return address at the first canonical X write. It performs no battle, coordinate, status, HP, MP, action, data, or save write.",
+  "UnitPollIntervalMs": 10,
+  "MaxTrackedBattleUnits": 64,
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+  "LandmarkProbeEnabled": true,
+  "LandmarkProbeMaxLogs": 1000,
+  "LandmarkProbeStackSlots": 0,
+  "LandmarkProbes": [
+    {
+      "Name": "dcl-position-commit",
+      "Enabled": true,
+      "Rva": 243102554,
+      "BaseRegister": "r11",
+      "BattleUnitIndexRegister": "rdi",
+      "CaptureStackOffset": 88,
+      "Access": "observe first canonical unit X/Y/layer commit",
+      "ExpectedBytes": "46 88 94 1B 2F 3D 85 01",
+      "InterestingOffsets": [3, 4, 6, 46, 65, 66, 79, 80, 81, 440, 442]
+    }
+  ]
+}

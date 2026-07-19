@@ -1,0 +1,17 @@
+{
+  "_note": "Job-free technical fixture for the DCL Taunt fallback. Existing Berserk ability 241 is only the native status carrier in this isolated sentinel profile; this does not assign Taunt to a job or define final balance content.",
+  "DclStatusControlEnabled": true,
+  "DclStatusRules": [
+    {
+      "Name": "DCL Taunt fallback via Berserk carrier",
+      "AbilityId": 241,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 1
+    }
+  ]
+}

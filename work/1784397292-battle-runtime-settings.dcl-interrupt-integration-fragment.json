@@ -1,0 +1,17 @@
+{
+  "_note": "Job-free integration fragment for the live-proven DCL Interrupt transaction. Potion 368 is only a temporary technical carrier; this fragment assigns no job and is not production ability policy. Natural 3d6 resistance is enabled and no forced probe roll remains.",
+  "DclInterruptControlEnabled": true,
+  "DclInterruptLogOnly": false,
+  "DclInterruptForcedRoll": -1,
+  "DclInterruptMaxWrites": 1,
+  "DclInterruptMaxLogs": 400,
+  "DclInterruptRules": [
+    {
+      "Name": "Potion temporary Interrupt integration carrier",
+      "AbilityId": 368,
+      "ActionType": 6,
+      "ConditionFormula": "interrupt.pending",
+      "ResistanceFormula": "clamp((target.brave + 5) / 10 + 5, 3, 18)"
+    }
+  ]
+}

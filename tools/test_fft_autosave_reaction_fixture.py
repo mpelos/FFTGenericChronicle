@@ -40,6 +40,18 @@ def main() -> int:
         assert required.is_file(), required
     source_hash = savefmt.sha256(SOURCE)
 
+    assert builder.reaction_set_bit(422) == (0x94, 0x80)
+    assert builder.reaction_set_bit(442) == (0x96, 0x08)
+    assert builder.reaction_set_bit(443) == (0x96, 0x04)
+    assert builder.reaction_set_bit(453) == (0x97, 0x01)
+    for invalid in (421, 454):
+        try:
+            builder.reaction_set_bit(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Reaction bit lookup accepted invalid id {invalid}")
+
     with tempfile.TemporaryDirectory(prefix="gc_fft_autosave_reaction_test_") as tmp:
         root = Path(tmp)
         good = root / "good"
@@ -51,6 +63,7 @@ def main() -> int:
         assert manifest.is_file()
         manifest_text = manifest.read_text(encoding="utf-8")
         assert "`442` (Counter) -> `443`" in manifest_text
+        assert "`unit+0x96 & 0x08` -> `unit+0x96 & 0x04`" in manifest_text
         assert "Stale `en01`, `en02`, and `enma` members remain byte-identical" in manifest_text
 
         source_dir = root / "source"
@@ -66,6 +79,35 @@ def main() -> int:
         audits = builder.audit_roundtrip(source_files, fixture_files, targets, 442, 443)
         changed_names = {audit.name for audit in audits if audit.changed_offsets}
         assert changed_names == set(builder.CURRENT_COMPONENTS), changed_names
+        for name, component_targets in targets.items():
+            for target in component_targets:
+                if target.kind != "live":
+                    continue
+                source_bits = source_files[name][
+                    target.record_offset + builder.LIVE_REACTION_SET_OFFSET :
+                    target.record_offset + builder.LIVE_REACTION_SET_OFFSET + builder.LIVE_REACTION_SET_SIZE
+                ]
+                fixture_bits = fixture_files[name][
+                    target.record_offset + builder.LIVE_REACTION_SET_OFFSET :
+                    target.record_offset + builder.LIVE_REACTION_SET_OFFSET + builder.LIVE_REACTION_SET_SIZE
+                ]
+                assert source_bits == bytes.fromhex("00000800")
+                assert fixture_bits == bytes.fromhex("00000400")
+
+        inconsistent = dict(source_files)
+        broken_name = "resume_en00_main.sav"
+        broken_targets = builder.find_live_targets(inconsistent[broken_name], identity, 442)
+        assert broken_targets
+        broken = bytearray(inconsistent[broken_name])
+        relative, mask = builder.reaction_set_bit(442)
+        broken[broken_targets[0].record_offset + relative] &= ~mask
+        inconsistent[broken_name] = bytes(broken)
+        try:
+            builder.stage_current_components(inconsistent, identity, 442, 443)
+        except AssertionError as error:
+            assert "does not carry Reaction 442 in its reaction-set bitfield" in str(error)
+        else:
+            raise AssertionError("fixture builder accepted an inconsistent source reaction-set")
 
         bad = root / "bad"
         bad.mkdir()

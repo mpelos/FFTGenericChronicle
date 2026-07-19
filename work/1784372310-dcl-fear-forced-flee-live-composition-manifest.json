@@ -1,0 +1,12 @@
+{
+  "note": "Bounded job-free DCL Fear forced-flee live probe composed onto the unified technical sentinel. Basic Attack 0 remains only a technical status transaction. This profile assigns no job, contains no final balance policy, and exists solely to validate target authorization, selector restoration, native route handoff, post-move continuation, and Reaction exclusion.",
+  "inputs": [
+    "work/1784168025-battle-runtime-settings.dcl-unified-sentinel.json",
+    "work/1784371639-battle-runtime-settings.dcl-fear-forced-flee-live-probe.json"
+  ],
+  "resolutions": {},
+  "patch": {
+    "DclFearMaxLogs": 1000
+  },
+  "output": "work/1784372310-battle-runtime-settings.dcl-unified-fear-forced-flee-live.json"
+}

@@ -1,0 +1,35 @@
+{
+  "_note": "Observe-only DCL movement convergence probe. It reads both native and trace movement updaters only after movement state is idle and before the next route-byte decision. It performs no battle, coordinate, route, status, HP, MP, action, data, or save write.",
+  "UnitPollIntervalMs": 10,
+  "MaxTrackedBattleUnits": 64,
+  "RewriteObservedDamage": false,
+  "RewriteObservedHealing": false,
+  "RewriteObservedMpLoss": false,
+  "RewriteObservedMpGain": false,
+  "DryRunRewrites": false,
+  "LandmarkProbeEnabled": true,
+  "LandmarkProbeMaxLogs": 4000,
+  "LandmarkProbeStackSlots": 0,
+  "LandmarkProbes": [
+    {
+      "Name": "dcl-movement-convergence-native",
+      "Enabled": true,
+      "Rva": 2090899,
+      "BaseRegister": "rbx",
+      "RawBase": true,
+      "Access": "observe idle native updater before next route-byte decision",
+      "ExpectedBytes": "0F B6 83 A8 00 00 00",
+      "InterestingOffsets": [8, 136, 137, 138, 139, 140, 141, 142, 164, 166, 168, 169, 295, 296, 328, 330, 332, 334]
+    },
+    {
+      "Name": "dcl-movement-convergence-trace",
+      "Enabled": true,
+      "Rva": 223826243,
+      "BaseRegister": "rbx",
+      "RawBase": true,
+      "Access": "observe idle trace updater before next route-byte decision",
+      "ExpectedBytes": "0F B6 83 A8 00 00 00",
+      "InterestingOffsets": [8, 136, 137, 138, 139, 140, 141, 142, 164, 166, 168, 169, 295, 296, 328, 330, 332, 334]
+    }
+  ]
+}

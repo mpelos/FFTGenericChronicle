@@ -405,7 +405,7 @@ def main() -> int:
             + ability_flag_slot * ABILITY_FLAG_BYTES_PER_JOB
             + (ability_index >> 3)
         )
-        target_mask = 1 << (ability_index & 7)
+        target_mask = 1 << (7 - (ability_index & 7))
         if source_payload[target_offset] & target_mask:
             raise AssertionError(
                 f"ability {args.ability_id} is already learned by unit {args.unit_index}"

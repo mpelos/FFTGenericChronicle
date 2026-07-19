@@ -1,0 +1,12 @@
+{
+  "note": "Unified job-free bounded live-probe DCL sentinel v6. It composes the exact v5 affinity-corrected bundle with Fear voluntary player-confirm rejection after the private native builder is live-proven complete for direct and two-target AoE actions. It assigns no job and contains no final balance content.",
+  "inputs": [
+    "work/1784403685-battle-runtime-settings.dcl-unified-sentinel-v5.json",
+    "work/1784404744-battle-runtime-settings.dcl-fear-player-confirm-arm.json"
+  ],
+  "resolutions": {},
+  "patch": {
+    "DclFearPlayerConfirmEnforcementEnabled": true
+  },
+  "output": "work/1784404744-battle-runtime-settings.dcl-unified-sentinel-v6.json"
+}

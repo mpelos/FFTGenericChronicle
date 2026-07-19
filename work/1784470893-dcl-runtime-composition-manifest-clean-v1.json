@@ -1,0 +1,41 @@
+{
+  "note": "Unified job-free DCL mechanism sentinel clean v1. It retains the affinity-corrected physical, magic, status, lifecycle, multistrike, Taunt, Reaction, and Interrupt mechanisms, adds the live-proven post-movement final-tile producer, and removes every retired mid-route Approach and Fear compatibility setting. It assigns no job, authors no final-tile ability, and contains no final balance values.",
+  "inputs": [
+    "work/1784466102-battle-runtime-settings.dcl-no-approach-no-fear.json",
+    "work/1784470893-battle-runtime-settings.dcl-final-tile-fragment.json"
+  ],
+  "resolutions": {},
+  "patch": {},
+  "remove": [
+    "DclReactionReservationArbitrationEnabled",
+    "DclApproachEnabled",
+    "DclApproachOwnerReactionId",
+    "DclApproachDeliveryReactionId",
+    "DclApproachMinimumReach",
+    "DclApproachMaximumReach",
+    "DclApproachRequireSameLayer",
+    "DclApproachMaximumPauseCalls",
+    "DclApproachDecisionTimeoutMs",
+    "DclApproachMaxWrites",
+    "DclApproachMaxLogs",
+    "DclApproachBoundaryRva",
+    "DclApproachBoundaryExpectedBytes",
+    "DclApproachCompletionGateRva",
+    "DclApproachCompletionGateExpectedBytes",
+    "DclApproachResumeRva",
+    "DclApproachResumeExpectedBytes",
+    "DclFearControlEnabled",
+    "DclFearLogOnly",
+    "DclFearForcedFleeControlEnabled",
+    "DclFearPlayerConfirmEnforcementEnabled",
+    "DclFearStatusRuleName",
+    "DclFearTargetListRva",
+    "DclFearTargetListExpectedBytes",
+    "DclFearPlayerConfirmRva",
+    "DclFearPlayerConfirmExpectedBytes",
+    "DclFearChickenDispatchRva",
+    "DclFearChickenDispatchExpectedBytes",
+    "DclFearMaxLogs"
+  ],
+  "output": "work/1784470893-battle-runtime-settings.dcl-unified-clean-v1.json"
+}

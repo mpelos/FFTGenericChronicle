@@ -1,0 +1,20 @@
+{
+  "_note": "Job-free Approach integration fragment. Owner 443 and delivery 442 are technical sentinel carriers only. First-owner-wins arbitration prevents the hit-triggered synthetic producer and the movement-triggered Approach producer from owning the shared pass-2 queue at the same time.",
+  "DclReactionReservationArbitrationEnabled": true,
+  "DclApproachEnabled": true,
+  "DclApproachOwnerReactionId": 443,
+  "DclApproachDeliveryReactionId": 442,
+  "DclApproachMinimumReach": 1,
+  "DclApproachMaximumReach": 2,
+  "DclApproachRequireSameLayer": true,
+  "DclApproachMaximumPauseCalls": 120,
+  "DclApproachDecisionTimeoutMs": 1000,
+  "DclApproachMaxWrites": 1,
+  "DclApproachMaxLogs": 512,
+  "DclApproachBoundaryRva": 2090899,
+  "DclApproachBoundaryExpectedBytes": "0F B6 83 A8 00 00 00",
+  "DclApproachCompletionGateRva": 2170377,
+  "DclApproachCompletionGateExpectedBytes": "44 38 AB 8B 00 00 00",
+  "DclApproachResumeRva": 226298497,
+  "DclApproachResumeExpectedBytes": "C7 05 41 A7 49 F3 28 00 00 00"
+}

@@ -5,7 +5,7 @@
   "ItemCatalogPath": "item_catalog.csv",
   "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
   "DclPipelineEnabled": true,
-  "DclDamageFormula": "if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, dcl.oldDebit)))",
+  "DclDamageFormula": "if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmount, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))",
   "DclActionContextMaxAgeMs": 5000,
   "DclDecisionMaxLogs": 400,
   "DclHitControlEnabled": true,
@@ -16,11 +16,11 @@
   "DclMissClassEvadeValue": 100,
   "DclPreviewHitPctEnabled": true,
   "DclPhysicalContestEnabled": true,
-  "DclPhysicalContestConditionFormula": "action.type == 1 && action.abilityId == 0",
+  "DclPhysicalContestConditionFormula": "action.type == 1 && action.abilityId == 0 && !dcl.isMagicBolt",
   "DclAttackSkillFormula": "dcl.weaponSkill + dcl.zodiacHitModifier + dcl.pointBlank * const.dclPointBlankSkillModifier",
   "DclDodgeFormula": "dcl.dodge",
-  "DclParryFormula": "if(dcl.isMissile, 0, mulDiv(dcl.targetWeaponSkill, 1, 2) + 3)",
-  "DclBlockFormula": "const.dclBlockBase + mulDiv(tslot.rightshield.shieldPhysicalEvasion, 1, const.dclShieldEvadePctPerBlockPoint)",
+  "DclParryFormula": "if(dcl.isMissile, 0, max(0, mulDiv(dcl.targetWeaponSkill, 1, 2) + 3 - dcl.flailParryPenalty))",
+  "DclBlockFormula": "max(0, const.dclBlockBase + mulDiv(tslot.rightshield.shieldPhysicalEvasion, 1, const.dclShieldEvadePctPerBlockPoint) - dcl.flailBlockPenalty)",
   "DclDefenseAllowedFormula": "!dcl.facingBack",
   "DclDefenseModifierFormula": "mulDiv(50 - t.brave, 1, 20) + dcl.facingSide * const.dclFlankDefenseModifier",
   "DclParryUsesFormula": "tslot.rightweapon.itemId > 0 && tslot.rightweapon.itemId < 255",
@@ -33,6 +33,7 @@
     "dclSwordMasterAbilityId": 481,
     "dclSwordMasterBonus": 2,
     "dclPaToStOffset": 4,
+    "dclUntrainedFistPenalty": 1,
     "dclPenFloorPermille": 200,
     "dclCrossbowOvercapDamagePermille": 250,
     "dclGunOvercapPenetrationPermille": 250,
@@ -46,6 +47,8 @@
     "dclPointBlankSkillModifier": -2,
     "dclBlockBase": 7,
     "dclShieldEvadePctPerBlockPoint": 10,
+    "dclFlailParryPenalty": 4,
+    "dclFlailBlockPenalty": 2,
     "dclFaithLowPermille": 700,
     "dclFaithBandPermille": 600,
     "dclAffinityWeakPermille": 1300,
@@ -53,6 +56,7 @@
     "dclAffinityHalvePermille": 500,
     "dclShellPermille": 500,
     "dclMagicScalePermille": 580,
+    "dclMagicBoltSpellPower": 2,
     "dclMagicStackCapPermille": 2500
   },
   "FormulaTables": {
@@ -302,7 +306,7 @@
     },
     {
       "Name": "dcl.activeWeaponIsLeft",
-      "Formula": "action.weaponMatchesLeft && !action.weaponMatchesRight"
+      "Formula": "action.weaponSideKnown && action.weaponSide == 2"
     },
     {
       "Name": "dcl.weaponFamily",
@@ -337,6 +341,22 @@
       "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillExcess, dcl.rightWeaponSkillExcess)"
     },
     {
+      "Name": "dcl.skillPrimary",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftSkillPrimary, dcl.rightSkillPrimary)"
+    },
+    {
+      "Name": "dcl.damageInput",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftDamageInput, dcl.rightDamageInput)"
+    },
+    {
+      "Name": "dcl.overcapDamageUnits",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftOvercapDamageUnits, dcl.rightOvercapDamageUnits)"
+    },
+    {
+      "Name": "dcl.overcapPenetrationUnits",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftOvercapPenetrationUnits, dcl.rightOvercapPenetrationUnits)"
+    },
+    {
       "Name": "dcl.isCut",
       "Formula": "action.weapon.category_sword || action.weapon.category_knightsword || action.weapon.category_katana || action.weapon.category_ninjablade || action.weapon.category_cloth"
     },
@@ -347,6 +367,22 @@
     {
       "Name": "dcl.isMissile",
       "Formula": "action.weapon.category_bow || action.weapon.category_crossbow || action.weapon.category_gun"
+    },
+    {
+      "Name": "dcl.isUnarmed",
+      "Formula": "action.weapon.itemId == 0"
+    },
+    {
+      "Name": "dcl.isFlail",
+      "Formula": "action.weapon.category_flail"
+    },
+    {
+      "Name": "dcl.flailParryPenalty",
+      "Formula": "dcl.isFlail * const.dclFlailParryPenalty"
+    },
+    {
+      "Name": "dcl.flailBlockPenalty",
+      "Formula": "dcl.isFlail * const.dclFlailBlockPenalty"
     },
     {
       "Name": "dcl.typeIndex",
@@ -398,23 +434,27 @@
     },
     {
       "Name": "dcl.st",
-      "Formula": "dcl.rightDamageInput + const.dclPaToStOffset"
+      "Formula": "dcl.damageInput + const.dclPaToStOffset"
     },
     {
       "Name": "dcl.base",
-      "Formula": "if(dcl.isThrust, tableClamp(gurpsThr, dcl.st), tableClamp(gurpsSw, dcl.st))"
+      "Formula": "if(dcl.isThrust || dcl.isUnarmed, tableClamp(gurpsThr, dcl.st), tableClamp(gurpsSw, dcl.st))"
     },
     {
       "Name": "dcl.overcapRaw",
-      "Formula": "mulDiv(dcl.rightOvercapDamageUnits, const.dclCrossbowOvercapDamagePermille, 1000)"
+      "Formula": "mulDiv(dcl.overcapDamageUnits, const.dclCrossbowOvercapDamagePermille, 1000)"
     },
     {
       "Name": "dcl.wmod",
-      "Formula": "aslot.rightweapon.weaponPower"
+      "Formula": "action.weapon.weaponPower"
+    },
+    {
+      "Name": "dcl.unarmedPenalty",
+      "Formula": "dcl.isUnarmed * const.dclUntrainedFistPenalty"
     },
     {
       "Name": "dcl.gross",
-      "Formula": "dcl.base + dcl.wmod + dcl.overcapRaw"
+      "Formula": "max(0, dcl.base + dcl.wmod + dcl.overcapRaw - dcl.unarmedPenalty)"
     },
     {
       "Name": "dcl.dr",
@@ -422,11 +462,11 @@
     },
     {
       "Name": "dcl.drPermille",
-      "Formula": "if(aslot.rightweapon.category_gun, const.dclGunDrPermille, if(aslot.rightweapon.category_crossbow, const.dclCrossbowDrPermille, 1000))"
+      "Formula": "if(action.weapon.category_gun, const.dclGunDrPermille, if(action.weapon.category_crossbow, const.dclCrossbowDrPermille, 1000))"
     },
     {
       "Name": "dcl.skillPenetration",
-      "Formula": "mulDiv(dcl.rightOvercapPenetrationUnits, const.dclGunOvercapPenetrationPermille, 1000)"
+      "Formula": "mulDiv(dcl.overcapPenetrationUnits, const.dclGunOvercapPenetrationPermille, 1000)"
     },
     {
       "Name": "dcl.effectiveDr",
@@ -446,7 +486,7 @@
     },
     {
       "Name": "dcl.traitPermille",
-      "Formula": "if(dcl.rightSkillPrimary, 1000, 760 + mulDiv(a.brave, 590, 100))"
+      "Formula": "if(dcl.skillPrimary, 1000, 760 + mulDiv(a.brave, 590, 100))"
     },
     {
       "Name": "dcl.weaponModel",
@@ -534,7 +574,7 @@
     },
     {
       "Name": "dcl.pointBlank",
-      "Formula": "aslot.rightweapon.weaponRange == 2 && dcl.gridDistance == 1"
+      "Formula": "action.weapon.weaponRange == 2 && dcl.gridDistance == 1"
     },
     {
       "Name": "dcl.targetWeaponSkillInvestmentMilli",
@@ -566,7 +606,7 @@
     },
     {
       "Name": "dcl.isMagicBolt",
-      "Formula": "action.abilityId == 0 && (aslot.rightweapon.category_rod || aslot.rightweapon.category_staff)"
+      "Formula": "action.abilityId == 0 && (action.weapon.category_rod || action.weapon.category_staff)"
     },
     {
       "Name": "dcl.isMagicDamage",
@@ -578,35 +618,35 @@
     },
     {
       "Name": "dcl.elementFire",
-      "Formula": "ability.element_fire || (dcl.isMagicBolt && aslot.rightweapon.element_fire)"
+      "Formula": "ability.element_fire || (dcl.isMagicBolt && action.weapon.element_fire)"
     },
     {
       "Name": "dcl.elementIce",
-      "Formula": "ability.element_ice || (dcl.isMagicBolt && aslot.rightweapon.element_ice)"
+      "Formula": "ability.element_ice || (dcl.isMagicBolt && action.weapon.element_ice)"
     },
     {
       "Name": "dcl.elementLightning",
-      "Formula": "ability.element_lightning || (dcl.isMagicBolt && aslot.rightweapon.element_lightning)"
+      "Formula": "ability.element_lightning || (dcl.isMagicBolt && action.weapon.element_lightning)"
     },
     {
       "Name": "dcl.elementWind",
-      "Formula": "ability.element_wind || (dcl.isMagicBolt && aslot.rightweapon.element_wind)"
+      "Formula": "ability.element_wind || (dcl.isMagicBolt && action.weapon.element_wind)"
     },
     {
       "Name": "dcl.elementEarth",
-      "Formula": "ability.element_earth || (dcl.isMagicBolt && aslot.rightweapon.element_earth)"
+      "Formula": "ability.element_earth || (dcl.isMagicBolt && action.weapon.element_earth)"
     },
     {
       "Name": "dcl.elementWater",
-      "Formula": "ability.element_water || (dcl.isMagicBolt && aslot.rightweapon.element_water)"
+      "Formula": "ability.element_water || (dcl.isMagicBolt && action.weapon.element_water)"
     },
     {
       "Name": "dcl.elementHoly",
-      "Formula": "ability.element_holy || (dcl.isMagicBolt && aslot.rightweapon.element_holy)"
+      "Formula": "ability.element_holy || (dcl.isMagicBolt && action.weapon.element_holy)"
     },
     {
       "Name": "dcl.elementDark",
-      "Formula": "ability.element_dark || (dcl.isMagicBolt && aslot.rightweapon.element_dark)"
+      "Formula": "ability.element_dark || (dcl.isMagicBolt && action.weapon.element_dark)"
     },
     {
       "Name": "dcl.isSpiritual",
@@ -661,12 +701,44 @@
       "Formula": "min(const.dclMagicStackCapPermille, mulDiv(mulDiv(mulDiv(dcl.faithCombinedPermille, if(dcl.isElemental, dcl.elementPermille, 1000), 1000), dcl.shellPermille, 1000), dcl.zodiacPermille, 1000))"
     },
     {
+      "Name": "dcl.rightRodMod",
+      "Formula": "aslot.rightweapon.category_rod * aslot.rightweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.leftRodMod",
+      "Formula": "aslot.leftweapon.category_rod * aslot.leftweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.rightStaffMod",
+      "Formula": "aslot.rightweapon.category_staff * aslot.rightweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.leftStaffMod",
+      "Formula": "aslot.leftweapon.category_staff * aslot.leftweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.offensiveMagicMod",
+      "Formula": "max(dcl.rightRodMod, dcl.leftRodMod)"
+    },
+    {
+      "Name": "dcl.supportMagicMod",
+      "Formula": "max(dcl.rightStaffMod, dcl.leftStaffMod)"
+    },
+    {
+      "Name": "dcl.magicBoltMod",
+      "Formula": "action.weapon.category_rod * action.weapon.weaponPower"
+    },
+    {
+      "Name": "dcl.magicMa",
+      "Formula": "if(dcl.isMagicBolt, a.rawMa + dcl.magicBoltMod, if(dcl.isMagicHeal, a.rawMa + dcl.supportMagicMod, if(dcl.isMagicDamage, a.rawMa + dcl.offensiveMagicMod, a.rawMa)))"
+    },
+    {
       "Name": "dcl.spellPower",
-      "Formula": "if(dcl.isMagicBolt, aslot.rightweapon.weaponPower, ability.y)"
+      "Formula": "if(dcl.isMagicBolt, const.dclMagicBoltSpellPower, ability.y)"
     },
     {
       "Name": "dcl.magicCore",
-      "Formula": "a.rawMa * dcl.spellPower"
+      "Formula": "dcl.magicMa * dcl.spellPower"
     },
     {
       "Name": "dcl.magicAmount",
@@ -749,10 +821,13 @@
   "PreClampDamageRewriteLogOnly": false,
   "PreClampFormulaPlanEnabled": false,
   "PreviewHitPctControlEnabled": false,
-  "DclHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), dcl.oldCredit))",
+  "DclHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, if(dcl.nativeHpDamageResult, dcl.magicAmount, 0), if(dcl.isMagicHeal, if(dcl.nativeHpCreditResult, if(t.status.undead, 0, dcl.magicAmount), 0), if(dcl.nativeHpCreditResult, dcl.oldCredit, 0)))",
   "DclPreviewAmountEnabled": true,
-  "DclPreviewDamageFormula": "if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0))",
+  "DclPreviewDamageFormula": "if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0)))",
   "DclPreviewHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), 0))",
+  "DclMpTrickleEnabled": true,
+  "DclMpTrickleFormula": "if(t.status.ko || t.maxMp == 0, 0, max(1, t.rawMa / 4))",
+  "DclMpTrickleMaxLogs": 200,
   "DclMagicEvadeEnabled": true,
   "DclMagicEvadeConditionFormula": "dcl.isMagicDamage",
   "DclMagicEvadeFormula": "t.magEvaRawMax",

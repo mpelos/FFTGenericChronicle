@@ -1,0 +1,26 @@
+{
+  "AppId": "fft_enhanced.exe",
+  "AppName": "FINAL FANTASY TACTICS - The Ivalice Chronicles",
+  "AppLocation": "D:\\SteamLibrary\\steamapps\\common\\FINAL FANTASY TACTICS - The Ivalice Chronicles\\FFT_enhanced.exe",
+  "AppArguments": "",
+  "AppIcon": "Icon.png",
+  "AutoInject": false,
+  "EnabledMods": [
+    "fftivc.utility.modloader",
+    "fftivc.generic.chronicle.codemod"
+  ],
+  "WorkingDirectory": "D:\\SteamLibrary\\steamapps\\common\\FINAL FANTASY TACTICS - The Ivalice Chronicles",
+  "PluginData": {},
+  "SortedMods": [
+    "fftivc.utility.modloader",
+    "ffttic.jobs.genericjobs",
+    "fftivc.generic.chronicle",
+    "fftivc.battles.ngplus",
+    "fftivc.generic.chronicle.codemod",
+    "ffttic.monsterkin",
+    "ffttic.katanareforged"
+  ],
+  "PreserveDisabledModOrder": true,
+  "DontInject": false,
+  "IsMsStore": false
+}

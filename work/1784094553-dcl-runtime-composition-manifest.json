@@ -6,13 +6,15 @@
     "work/1784094553-battle-runtime-settings.dcl-death-instant-ko-mechanism.json"
   ],
   "resolutions": {
-    "DclDamageFormula": "if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, dcl.oldDebit)))"
+    "DclDamageFormula": "if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmount, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))"
   },
   "patch": {
     "ResultSelectorProbeEnabled": false,
     "ResultSelectorProbeMaxLogs": 0,
     "DclResultFlagsControlEnabled": true,
-    "DclResultFlagsPreserveMask": 15
+    "DclResultFlagsPreserveMask": 15,
+    "DclPhysicalContestConditionFormula": "action.type == 1 && action.abilityId == 0 && !dcl.isMagicBolt",
+    "DclPreviewDamageFormula": "if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0)))"
   },
   "output": "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json"
 }

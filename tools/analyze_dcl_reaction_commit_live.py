@@ -161,12 +161,12 @@ def counter_checks(
     ]
 
     checks = [
-        (f"capture contains native Reaction {reaction_id}", bool(counter)),
+        (f"capture contains internal native Reaction record {reaction_id}", bool(counter)),
         ("every native Reaction commit came from pass 2", bool(native) and all(event["pass"] == 2 for event in native)),
         ("all captured Counter id copies agree", bool(counter) and all(event["agree"] for event in counter)),
-        ("Rion Counter commit owns reactor 4, source 0, target [0]", bool(rion)),
+        ("Rion 442 record owns reactor 4, source 0, early target [0]", bool(rion)),
         ("Rion survived the immediately preceding damage transaction", survived),
-        ("Counter commit is followed by two chained damage transactions", two_same_target),
+        ("442 record is followed by two temporally correlated same-target damage transactions", two_same_target),
         ("generic non-Reaction queue traffic remains isolated as pass-1 noise", any(row["pass"] == 1 and not 422 <= row["id"] <= 453 for row in noise)),
     ]
 
@@ -182,16 +182,16 @@ def counter_checks(
         effect_summary = (
             f"Before the next queue event, the same target received chained damage "
             f"`{following[0]['before']} -> {following[0]['after']}` and "
-            f"`{following[1]['before']} -> {following[1]['after']}`, matching Rion's dual-wield "
-            "native Counter execution."
+            f"`{following[1]['before']} -> {following[1]['after']}`. This temporal correlation does "
+            "not prove visible Counter execution without materialized-order, apply, and presentation evidence."
         )
     else:
         effect_summary = "Two chained native effect transactions were not found after the commit."
     interpretation = [
         damage_summary,
         effect_summary,
-        "Pass 2 at `0x206421` is therefore the accepted native Reaction commit boundary for Counter;",
-        "pass-1 ordinary queue traffic remains outside Reaction ownership.",
+        "Pass 2 at `0x206421` is therefore an accepted native Reaction-record boundary;",
+        "pass-1 ordinary queue traffic remains outside Reaction ownership, while visible execution remains a separate proof obligation.",
     ]
     return checks, interpretation
 

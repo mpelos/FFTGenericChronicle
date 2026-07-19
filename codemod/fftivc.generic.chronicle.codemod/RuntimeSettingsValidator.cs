@@ -27,6 +27,9 @@ internal sealed class SettingsValidationReport
 internal static class RuntimeSettingsValidator
 {
     private const int RawSize = 0x200;
+    private const int DclReactionPreTargetBuildRva = 0x2831BD;
+    private const string DclReactionPreTargetBuildBytes = "48 8B CB E8 6F F0 FF FF 0F B7 35 24 7E 5E 01";
+    private static readonly int[] DclReactionSpecialDeliveryIds = [434, 435, 436, 437, 440, 441, 442];
 
     public static SettingsValidationReport Validate(
         RuntimeSettings settings,
@@ -133,7 +136,8 @@ internal static class RuntimeSettingsValidator
             string.IsNullOrWhiteSpace(settings.DclHealingFormula) &&
             string.IsNullOrWhiteSpace(settings.DclMpDebitFormula) &&
             string.IsNullOrWhiteSpace(settings.DclMpCreditFormula) &&
-            !settings.DclStatusControlEnabled && !settings.DclInstantKoControlEnabled &&
+            !settings.DclStatusControlEnabled && !settings.DclInterruptControlEnabled &&
+            !settings.DclInstantKoControlEnabled &&
             !settings.DclPhysicalContestEnabled && !settings.DclMagicEvadeEnabled &&
             !settings.DclReactionTaxonomyEnabled)
             report.Warn("DclDamageFormula", "DclPipelineEnabled has no HP/MP outcome formula, status control, physical contest, or reaction taxonomy, so the DCL path falls through to legacy pre-clamp behavior.");
@@ -259,6 +263,14 @@ internal static class RuntimeSettingsValidator
             report.Error("DclStatusForcedRoll", "DclStatusForcedRoll must be -1 (use the mod RNG) or a fixed 3d6 total within 3..18.");
         if (settings.DclStatusMaxLogs < 0)
             report.Error("DclStatusMaxLogs", "DclStatusMaxLogs must be nonnegative.");
+        if (settings.DclFearMaxLogs < 0)
+            report.Error("DclFearMaxLogs", "DclFearMaxLogs must be nonnegative.");
+        if (settings.DclFearControlEnabled ||
+            settings.DclFearForcedFleeControlEnabled ||
+            settings.DclFearPlayerConfirmEnforcementEnabled ||
+            !string.IsNullOrWhiteSpace(settings.DclFearStatusRuleName) ||
+            settings.DclStatusRules.Any(rule => rule.Name.Equals("dcl-fear", StringComparison.OrdinalIgnoreCase)))
+            report.Error("DclFearControlEnabled", "Fear is retired from the active DCL and must not be configured, installed, or tested.");
         if (settings.DclStatusControlEnabled)
         {
             if (!settings.DclPipelineEnabled)
@@ -295,7 +307,7 @@ internal static class RuntimeSettingsValidator
                                                    DclStatusNativeCarrier.TryGetRequiredBits(rule.AbilityId, out _);
                     bool approvedSuppressedCarrier = rule.NativeRiderSuppressedByData &&
                                                      DclStatusGroupedCarrier.TryGetSuppressedDataBits(rule.AbilityId, out _);
-                    bool approvedPostCalcProducer = rule.NativeRiderReplacedPostCalc &&
+                    bool approvedPostCalcProducer = rule.UsesPostCalcProducer &&
                         abilityCatalog is not null &&
                         abilityCatalog.TryGet(rule.AbilityId, out var producerAbility) &&
                         DclStatusConditionalProducer.IsSupportedFormula(producerAbility.Formula);
@@ -311,17 +323,32 @@ internal static class RuntimeSettingsValidator
                         report.Error(scope, "a shared ResistanceFormula cannot reference status.* because one invariant contest is evaluated for the whole group.");
                 }
                 if (!rule.NativeRiderAbsent && !rule.NativeRiderSuppressedByData &&
-                    !rule.NativeRiderRetainedAsCarrier && !rule.NativeRiderReplacedPostCalc)
-                    report.Error(scope, "NativeRiderPolicy must be 'absent', 'suppressed-by-data', 'retained-as-carrier', or 'replaced-post-calc'; managed status authority is rejected until native ownership is explicit.");
-                if (rule.NativeRiderReplacedPostCalc)
+                    !rule.NativeRiderRetainedAsCarrier && !rule.NativeRiderReplacedPostCalc &&
+                    !rule.NativeRiderReplacedPostCalcReskin)
+                    report.Error(scope, "NativeRiderPolicy must be 'absent', 'suppressed-by-data', 'retained-as-carrier', 'replaced-post-calc', or 'replaced-post-calc-reskin'; managed status authority is rejected until native ownership is explicit.");
+                if (rule.UsesPostCalcProducer)
                 {
                     if (abilityCatalog is null || !abilityCatalog.Loaded)
-                        report.Error(scope, "replaced-post-calc requires the loaded ability catalog to verify formula family and complete native packet ownership.");
+                        report.Error(scope, "post-calc status replacement requires the loaded ability catalog to verify formula family and complete native packet ownership.");
                     else if (!abilityCatalog.TryGet(rule.AbilityId, out var producerAbility) ||
                              !DclStatusConditionalProducer.IsSupportedFormula(producerAbility.Formula))
-                        report.Error(scope, "replaced-post-calc is restricted to the statically mapped conditional-producer formula families.");
+                        report.Error(scope, "post-calc status replacement is restricted to the statically mapped conditional-producer formula families.");
                     if (rule.ActionType != -1)
-                        report.Error(scope, "replaced-post-calc rules must use ActionType=-1 so every execution owns its native packet bit.");
+                        report.Error(scope, "post-calc status replacement rules must use ActionType=-1 so every execution owns its native packet bit.");
+                }
+                if (rule.NativeRiderReplacedPostCalcReskin)
+                {
+                    if (rule.NativePacketByteIndex is < 0 or >= DclStatusPacket.Width)
+                        report.Error(scope, "replaced-post-calc-reskin requires NativePacketByteIndex within 0..4.");
+                    else if (rule.NativePacketByteIndex == 0 && rule.NativePacketMask != 0x10)
+                        report.Error(scope, "native packet byte 0 is lifecycle-sensitive: only Undead mask 0x10 can use generic reskin ownership.");
+                    if (rule.NativePacketMask is < 1 or > 255 ||
+                        (rule.NativePacketMask & (rule.NativePacketMask - 1)) != 0)
+                        report.Error(scope, "replaced-post-calc-reskin requires NativePacketMask to contain exactly one native status bit.");
+                }
+                else if (rule.NativePacketByteIndex != -1 || rule.NativePacketMask != 0)
+                {
+                    report.Error(scope, "NativePacketByteIndex and NativePacketMask are reserved for replaced-post-calc-reskin rules and must otherwise remain unset.");
                 }
                 if (rule.NativeRiderRetainedAsCarrier)
                 {
@@ -461,7 +488,7 @@ internal static class RuntimeSettingsValidator
             }
 
             foreach (var producerGroup in settings.DclStatusRules
-                         .Where(rule => rule.NativeRiderReplacedPostCalc)
+                         .Where(rule => rule.UsesPostCalcProducer)
                          .GroupBy(rule => rule.AbilityId))
             {
                 if (abilityCatalog is null || !abilityCatalog.Loaded ||
@@ -480,11 +507,47 @@ internal static class RuntimeSettingsValidator
                     report.Error("DclStatusRules", $"post-calc producer ability {producerGroup.Key} cannot mix native-rider policies.");
             }
 
-            if (settings.DclStatusRules.Any(rule => rule.NativeRiderReplacedPostCalc) &&
+            if (settings.DclStatusRules.Any(rule => rule.UsesPostCalcProducer) &&
                 settings.StagedBundleProbeRva != DclCalcProvenance.OuterSweepReturnRva)
                 report.Error("StagedBundleProbeRva", $"post-calc status production requires the proven outer-sweep completion RVA 0x{DclCalcProvenance.OuterSweepReturnRva:X}.");
 
-            report.Warn("DclStatusControlEnabled", "suppressed-by-data rules require the matching fail-closed action-data build; retained-as-carrier rules leave their approved rider intact; replaced-post-calc rules preserve native forecast/AI behavior but replace the complete execution packet at the proven outer-sweep boundary. Equipment immunity remains an automatic resist.");
+            report.Warn("DclStatusControlEnabled", "suppressed-by-data rules require the matching fail-closed action-data build; retained-as-carrier rules leave their approved rider intact; post-calc rules preserve native forecast/AI behavior but replace the complete execution packet at the proven outer-sweep boundary; reskin rules separately prove and clear the native source bits before staging distinct DCL output bits. Equipment immunity remains an automatic resist.");
+        }
+        if (settings.DclInterruptForcedRoll != -1 && settings.DclInterruptForcedRoll is < 3 or > 18)
+            report.Error("DclInterruptForcedRoll", "DclInterruptForcedRoll must be -1 (use the mod RNG) or a fixed 3d6 total within 3..18.");
+        if (settings.DclInterruptMaxWrites < 0)
+            report.Error("DclInterruptMaxWrites", "DclInterruptMaxWrites must be nonnegative; 0 means unlimited.");
+        if (settings.DclInterruptMaxLogs < 0)
+            report.Error("DclInterruptMaxLogs", "DclInterruptMaxLogs must be nonnegative.");
+        if (settings.DclInterruptControlEnabled)
+        {
+            if (!settings.DclPipelineEnabled)
+                report.Error("DclInterruptControlEnabled", "Interrupt requires DclPipelineEnabled for exact action context.");
+            if (!settings.DclHitControlEnabled)
+                report.Error("DclInterruptControlEnabled", "Interrupt requires DclHitControlEnabled so an authored miss cannot cancel a pending action.");
+            if (settings.DclInterruptRules.Count == 0)
+                report.Error("DclInterruptRules", "DclInterruptControlEnabled requires at least one exact per-ability rule.");
+            if (settings.StagedBundleProbeRva != DclCalcProvenance.OuterSweepReturnRva)
+                report.Error("StagedBundleProbeRva", $"Interrupt requires the proven outer-sweep completion RVA 0x{DclCalcProvenance.OuterSweepReturnRva:X}.");
+
+            var seenInterruptRules = new List<(int AbilityId, int ActionType)>();
+            for (int i = 0; i < settings.DclInterruptRules.Count; i++)
+            {
+                var rule = settings.DclInterruptRules[i];
+                string scope = $"DclInterruptRules.{RuleName(rule.Name, i + 1)}";
+                if (rule.AbilityId is < 0 or > 65535)
+                    report.Error(scope, "AbilityId must identify one exact action within 0..65535; wildcard abilities are not accepted.");
+                if (rule.ActionType is < -1 or > 255)
+                    report.Error(scope, "ActionType must be -1 (any) or a byte within 0..255.");
+                if (string.IsNullOrWhiteSpace(rule.ResistanceFormula))
+                    report.Error(scope, "ResistanceFormula is required for the 3d6 Interrupt contest.");
+                if (seenInterruptRules.Any(existing =>
+                        existing.AbilityId == rule.AbilityId &&
+                        (existing.ActionType < 0 || rule.ActionType < 0 || existing.ActionType == rule.ActionType)))
+                    report.Error(scope, "this rule overlaps another Interrupt owner for the same ability/action type.");
+                seenInterruptRules.Add((rule.AbilityId, rule.ActionType));
+            }
+
         }
         if (settings.DclInstantKoControlEnabled)
         {
@@ -630,9 +693,12 @@ internal static class RuntimeSettingsValidator
         ValidateDclCounterPathProbe(settings, report);
         ValidateDclReactionCommitProbe(settings, report);
         ValidateDclReactionPreSelectorProbe(settings, report);
+        ValidateDclReactionDeliveryValidationProbe(settings, report);
         ValidateDclReactionMaterializationProbe(settings, report);
         ValidateDclReactionOrderRewrite(settings, report);
         ValidateDclSyntheticReaction(settings, report);
+        ValidateDclFinalTileEventProbe(settings, report);
+        ValidateDclApproach(settings, report);
         ValidateDclReactionEffectProbe(settings, report);
         ValidateDclAutoPotionConsumeProbe(settings, report);
         ValidateDclWeaponLineOfFireProbe(settings, report);
@@ -1088,7 +1154,7 @@ internal static class RuntimeSettingsValidator
                 report.Error("DclReactionPreSelectorProbeExpectedBytes", "Expected bytes are required for the pass-2 pre-selector probe.");
             report.Warn("DclReactionPreSelectorProbeEnabled",
                 settings.DclSyntheticReactionEnabled
-                    ? "pass-2 pre-selector probe/control snapshots all candidate words and consumes the synthetic Reaction mailbox through a dynamic per-defender producer; DclSyntheticReactionLogOnly controls whether the configured carrier is staged."
+                    ? "pass-2 pre-selector probe/control snapshots all candidate words and consumes the synthetic Reaction mailbox through a dynamic per-defender producer; DclSyntheticReactionLogOnly controls whether the configured delivery id is staged."
                     : settings.DclReactionProducerEnabled
                         ? "pass-2 pre-selector probe/control snapshots all candidate words and hosts the separately guarded reaction producer."
                         : "observe-only pass-2 pre-selector probe: snapshots source/eval globals, incoming actor, and all 21 unit+0x1CE candidate words before native consumption. It never stages a carrier or mutates game memory.");
@@ -1137,8 +1203,14 @@ internal static class RuntimeSettingsValidator
 
         const string scope = "DclSyntheticReactionEnabled";
         int carrierId = settings.DclSyntheticReactionCarrierId;
+        int deliveryId = settings.DclSyntheticReactionDeliveryId;
         if (carrierId is < 422 or > 453)
-            report.Error("DclSyntheticReactionCarrierId", "synthetic Reaction carrier id must be a native Reaction id in 422..453.");
+            report.Error("DclSyntheticReactionCarrierId", "synthetic Reaction owner carrier id must be a native Reaction id in 422..453.");
+        if (deliveryId is < 422 or > 453)
+            report.Error("DclSyntheticReactionDeliveryId", "synthetic Reaction delivery id must be a native Reaction id in 422..453.");
+        else if (!DclReactionSpecialDeliveryIds.Contains(deliveryId))
+            report.Error("DclSyntheticReactionDeliveryId",
+                "synthetic Reaction delivery must use a carrier proven to traverse special materialization RVA 0x2831BD: 434, 435, 436, 437, 440, 441, or 442.");
         if (settings.DclSyntheticReactionTrigger != "successful-hit-survivor")
             report.Error("DclSyntheticReactionTrigger", "the only currently owned synthetic trigger is 'successful-hit-survivor'.");
         if (!settings.DclPipelineEnabled)
@@ -1152,7 +1224,7 @@ internal static class RuntimeSettingsValidator
             .Where(candidate => candidate.AbilityId == carrierId)
             .ToArray();
         if (carrierRules.Length != 1)
-            report.Error(scope, "synthetic Reaction requires exactly one DclReactionRules entry for its configured carrier.");
+            report.Error(scope, "synthetic Reaction requires exactly one DclReactionRules entry for its configured owner carrier.");
 
         if (!settings.DclReactionPreSelectorProbeEnabled)
             report.Error(scope, "synthetic Reaction requires the exact-byte-guarded pass-2 pre-selector producer boundary.");
@@ -1161,15 +1233,14 @@ internal static class RuntimeSettingsValidator
         if (settings.DclReactionProducerEnabled)
             report.Error(scope, "disable the fixed-index reaction test producer; the synthetic transaction owns the dynamic per-defender producer on the same hook.");
 
-        if (!settings.DclReactionMaterializationProbeEnabled || !settings.DclReactionOrderRewriteEnabled)
-            report.Error(scope, "synthetic Reaction requires the guarded accepted-order rewrite boundary.");
-        else
-        {
-            if (settings.DclReactionOrderRewriteCarrierId != carrierId)
-                report.Error(scope, "synthetic Reaction and accepted-order rewrite must use the same exact carrier id.");
-            if (!settings.DclSyntheticReactionLogOnly && settings.DclReactionOrderRewriteLogOnly)
-                report.Error(scope, "live synthetic Reaction requires a live accepted-order rewrite.");
-        }
+        if (!settings.DclReactionMaterializationProbeEnabled)
+            report.Error(scope, "synthetic Reaction requires the guarded special-delivery materialization boundary before cadence may commit.");
+        if (!settings.DclSyntheticReactionLogOnly && !settings.DclReactionDeliveryValidationProbeEnabled)
+            report.Error(scope, "live synthetic Reaction requires native delivery-validation capture so a consumed-but-rejected carrier cannot remain indistinguishable from a pending commit.");
+        if (settings.DclReactionOrderRewriteEnabled && settings.DclReactionOrderRewriteCarrierId != deliveryId)
+            report.Error(scope, "an optional accepted-order rewrite must use the configured delivery id, not the equipped owner carrier id.");
+        if (!settings.DclSyntheticReactionLogOnly && !settings.DclReactionEffectProbeEnabled)
+            report.Error(scope, "live synthetic Reaction requires state-0x2C effect capture to audit the delivered action and target.");
 
         if (settings.DclSyntheticReactionForcedRoll is < -1 or > 99)
             report.Error("DclSyntheticReactionForcedRoll", "synthetic Reaction forced roll must be -1 (RNG) or 0..99.");
@@ -1177,8 +1248,47 @@ internal static class RuntimeSettingsValidator
             report.Error("DclSyntheticReactionMaxWrites", "synthetic Reaction live producer writes must be bounded within 1..32.");
 
         report.Warn(scope, settings.DclSyntheticReactionLogOnly
-            ? "synthetic Reaction is LOG-ONLY: the managed rule and exact dynamic producer intent are audited without staging the configured carrier."
-            : "synthetic Reaction is LIVE and bounded: an exact equipped-carrier owner that survives a successful incoming hit may reserve and stage the carrier; accepted-order rewriting owns delivery, and exact pass-2 acceptance consumes cadence once.");
+            ? $"synthetic Reaction is LOG-ONLY: owner carrier {carrierId} is audited without staging delivery carrier {deliveryId}."
+            : $"synthetic Reaction is LIVE and bounded: exact equipped owner {carrierId} may stage native delivery {deliveryId}; special-path materialization publishes ownership, and only that exact pass-2 commit consumes cadence once.");
+    }
+
+    private static void ValidateDclFinalTileEventProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        const string scope = "DclFinalTileEventProbeEnabled";
+        if (settings.DclFinalTileEventProbeMaxLogs < 0)
+            report.Error("DclFinalTileEventProbeMaxLogs", "final-tile event log cap must be nonnegative.");
+        if (!settings.DclFinalTileEventProbeEnabled)
+            return;
+        if (settings.DclFinalTileEventProbeRva != 0xD45A2A2)
+            report.Error(scope, "the post-route event must use the finalizer convergence point at RVA 0xD45A2A2.");
+        if (!settings.DclFinalTileEventProbeExpectedBytes.Equals(
+                "48 8B 8C 24 A8 00 00 00", StringComparison.OrdinalIgnoreCase))
+            report.Error(scope, "the final-tile hook requires the exact finalizer convergence guard 48 8B 8C 24 A8 00 00 00.");
+        if (settings.LandmarkProbeEnabled && settings.LandmarkProbes.Any(probe =>
+                probe.Enabled && probe.Rva == settings.DclFinalTileEventProbeRva))
+            report.Error(scope, "disable a Landmark probe at RVA 0xD45A2A2; the final-tile producer owns that exact convergence site.");
+        report.Warn(scope,
+            "observe-only post-route event capture is armed; it reads the completed route and final coordinates without writing movement or battle state.");
+    }
+
+    private static void ValidateDclApproach(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclApproachMaxLogs < 0)
+            report.Error("DclApproachMaxLogs", "retired Approach log cap must be nonnegative.");
+        if (settings.DclApproachEnabled)
+            report.Error("DclApproachEnabled",
+                "per-step movement control is retired. Position-triggered effects may consume only the post-route DclFinalTile event after movement completes.");
+    }
+
+    private static void ValidateDclReactionDeliveryValidationProbe(RuntimeSettings settings, SettingsValidationReport report)
+    {
+        if (settings.DclReactionDeliveryValidationProbeMaxLogs < 0)
+            report.Error("DclReactionDeliveryValidationProbeMaxLogs", "DclReactionDeliveryValidationProbeMaxLogs must be nonnegative.");
+        if (!settings.DclReactionDeliveryValidationProbeEnabled)
+            return;
+
+        report.Warn("DclReactionDeliveryValidationProbeEnabled",
+            "special-delivery validation probe observes the shared typed-family result at 0x283019 (ids 435/436/437/442), Bonecrusher's typed result at 0x283148, and the final-validator result tested at 0x28315C through the safe call hook at 0x283157. Zero accepts; nonzero restores the old order at 0x283160. It never changes game memory and marks only an exact staged synthetic mailbox as rejected.");
     }
 
     private static void ValidateDclReactionMaterializationProbe(RuntimeSettings settings, SettingsValidationReport report)
@@ -1191,10 +1301,20 @@ internal static class RuntimeSettingsValidator
             report.Error("DclReactionMaterializationProbeRva", "DclReactionMaterializationProbeRva must be positive.");
         if (string.IsNullOrWhiteSpace(settings.DclReactionMaterializationProbeExpectedBytes))
             report.Error("DclReactionMaterializationProbeExpectedBytes", "Expected bytes are required for the accepted Reaction materialization probe.");
+        if (settings.DclReactionMaterializationProbeRva != DclReactionPreTargetBuildRva)
+            report.Error("DclReactionMaterializationProbeRva",
+                $"the materialization shim is register-bound to special-family pre-target-build boundary 0x{DclReactionPreTargetBuildRva:X}; the former 0x2063BD boundary is too late for this register contract.");
+        string normalizedExpected = string.Concat((settings.DclReactionMaterializationProbeExpectedBytes ?? string.Empty)
+            .Where(character => !char.IsWhiteSpace(character))).ToUpperInvariant();
+        string normalizedRequired = string.Concat(DclReactionPreTargetBuildBytes
+            .Where(character => !char.IsWhiteSpace(character))).ToUpperInvariant();
+        if (!normalizedExpected.Equals(normalizedRequired, StringComparison.Ordinal))
+            report.Error("DclReactionMaterializationProbeExpectedBytes",
+                "the materialization shim requires the exact pre-target-build instruction guard for its ebp/rbx/rdi register contract.");
         report.Warn("DclReactionMaterializationProbeEnabled",
             settings.DclReactionOrderRewriteEnabled
-                ? "accepted pass-2 audit hook after carrier-specific order materialization and before actor construction: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0 around the separately validated guarded rewrite controller."
-                : "observe-only accepted pass-2 probe after carrier-specific order materialization and before actor construction: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0. It never changes the order or other game memory.");
+                ? "special-family pass-2 audit hook for 434/435/436/437/440/441/442: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0 around the guarded rewrite controller. Generic carriers skip this RVA."
+                : "special-family pass-2 probe for 434/435/436/437/440/441/442: snapshots exact Reaction/reactor/source identity and all 20 bytes of unit+0x1A0. Generic carriers skip this RVA; the probe is otherwise observe-only unless it confirms a staged synthetic delivery handshake.");
     }
 
     private static void ValidateDclReactionOrderRewrite(RuntimeSettings settings, SettingsValidationReport report)
@@ -1207,6 +1327,9 @@ internal static class RuntimeSettingsValidator
                 "accepted-order rewrite requires DclReactionMaterializationProbeEnabled because it shares that exact-byte-guarded boundary and audit ring.");
         if (settings.DclReactionOrderRewriteCarrierId is < 422 or > 453)
             report.Error("DclReactionOrderRewriteCarrierId", "carrier id must be a native Reaction id in 422..453.");
+        else if (!DclReactionSpecialDeliveryIds.Contains(settings.DclReactionOrderRewriteCarrierId))
+            report.Error("DclReactionOrderRewriteCarrierId",
+                "accepted-order rewrite at 0x2831BD supports only carriers 434, 435, 436, 437, 440, 441, and 442; generic carriers skip this hook.");
         if (!settings.DclReactionOrderRewriteActionEnabled && !settings.DclReactionOrderRewriteRetargetSource)
             report.Error("DclReactionOrderRewriteEnabled", "enable action replacement, source retargeting, or both.");
         if (settings.DclReactionOrderRewriteActionEnabled)
@@ -1229,8 +1352,8 @@ internal static class RuntimeSettingsValidator
 
         report.Warn("DclReactionOrderRewriteEnabled",
             settings.DclReactionOrderRewriteLogOnly
-                ? "accepted-order rewrite is LOG-ONLY: matching carrier orders are audited at the proven post-materialization/pre-actor boundary without changing game memory."
-                : "accepted-order rewrite is LIVE: exact carrier/original-order guards and the bounded write cap apply before actor construction; use only with a controlled fixture and matching effect probe.");
+                ? "accepted-order rewrite is LOG-ONLY: matching special-family orders are audited at 0x2831BD without changing game memory."
+                : "accepted-order rewrite is LIVE: exact special-carrier/original-order guards and the bounded write cap apply at 0x2831BD; use only with a controlled fixture and matching effect probe.");
     }
 
     private static void ValidateDclAutoPotionConsumeProbe(RuntimeSettings settings, SettingsValidationReport report)
@@ -1667,6 +1790,20 @@ internal static class RuntimeSettingsValidator
             if (rule.IsAdd)
                 ValidateFormula(rule.ResistanceFormula, dclContext, $"{scope}.ResistanceFormula", report);
         }
+        dclContext.Set("interrupt.pending", 1);
+        dclContext.Set("interrupt.pendingTimer", 3);
+        dclContext.Set("interrupt.pendingActionType", 2);
+        dclContext.Set("interrupt.pendingActionId", 1);
+        dclContext.Set("interrupt.effectiveFlags", 0x08);
+        dclContext.Set("interrupt.masterFlags", 0x08);
+        dclContext.Set("interrupt.sourceFlags", 0);
+        for (int i = 0; i < settings.DclInterruptRules.Count; i++)
+        {
+            var rule = settings.DclInterruptRules[i];
+            string scope = $"DclInterruptRules.{RuleName(rule.Name, i + 1)}";
+            ValidateFormula(rule.ConditionFormula, dclContext, $"{scope}.ConditionFormula", report, allowEmpty: true);
+            ValidateFormula(rule.ResistanceFormula, dclContext, $"{scope}.ResistanceFormula", report);
+        }
         for (int i = 0; i < settings.DclInstantKoRules.Count; i++)
         {
             var rule = settings.DclInstantKoRules[i];
@@ -2070,6 +2207,11 @@ internal static class RuntimeSettingsValidator
         context.Set($"{prefix}.level", unit.Level);
         context.Set($"{prefix}.hp", unit.Hp);
         context.Set($"{prefix}.maxHp", unit.MaxHp);
+        context.Set($"{prefix}.baseHp", Math.Max(1, unit.MaxHp - 20));
+        context.Set($"{prefix}.baseHpResolved", 1);
+        context.Set($"{prefix}.equipmentHpBonus", 20);
+        context.Set($"{prefix}.headItemId", 144);
+        context.Set($"{prefix}.bodyItemId", 172);
         context.Set($"{prefix}.mp", unit.Mp);
         context.Set($"{prefix}.maxMp", unit.MaxMp);
         context.Set($"{prefix}.team", unit.Team);

@@ -27,12 +27,12 @@ def main() -> int:
     results = analyzer.validate_anchors(pe, bytes(raw))  # type: ignore[arg-type]
     assert results and all(passed for _, _, passed in results)
 
-    accepted = next(anchor for anchor in analyzer.ANCHORS if anchor.name == "accepted-boundary")
+    accepted = next(anchor for anchor in analyzer.ANCHORS if anchor.name == "special-pre-target-build-boundary")
     broken = bytearray(raw)
     broken[offsets[accepted.rva]] ^= 0x01
     results = analyzer.validate_anchors(pe, bytes(broken))  # type: ignore[arg-type]
     failures = [anchor.name for anchor, _, passed in results if not passed]
-    assert failures == ["accepted-boundary"], failures
+    assert failures == ["special-pre-target-build-boundary"], failures
 
     print("reaction materialization analyzer tests PASS")
     return 0

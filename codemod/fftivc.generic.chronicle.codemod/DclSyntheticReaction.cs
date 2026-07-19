@@ -114,4 +114,10 @@ internal sealed class DclSyntheticReactionCoordinator
         lock (_gate)
             _latestByDefender.Remove(defenderPtr);
     }
+
+    public void Clear()
+    {
+        lock (_gate)
+            _latestByDefender.Clear();
+    }
 }

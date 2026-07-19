@@ -5,6 +5,7 @@ namespace fftivc.generic.chronicle.codemod;
 internal sealed record ActionProbeState(
     int PendingFlag,
     int PendingTimer,
+    int ActionType,
     int ActionId,
     int ForecastDamage,
     int ForecastCredit,
@@ -19,6 +20,7 @@ internal sealed record ActionProbeState(
         => new(
             unit.ReadByte(0x61),
             unit.ReadByte(0x18D),
+            unit.ReadByte(0x1A1),
             unit.ReadUInt16(0x1A2),
             unit.ReadUInt16(0x1C4),
             unit.ReadUInt16(0x1C6),
@@ -35,7 +37,11 @@ internal sealed record ActionProbeState(
     public bool HasSecondaryPendingFlag => (PendingFlag2 & PendingActionBit) != 0;
     public bool IsActiveSourceMarker => ActiveMarker2 == 1;
 
-    public bool IsLivePendingAction => HasPrimaryPendingFlag && HasSecondaryPendingFlag && ActionId > 0;
+    public bool IsLivePendingAction =>
+        HasPrimaryPendingFlag &&
+        HasSecondaryPendingFlag &&
+        PendingTimer != DclPendingCancellation.CancelledTimer &&
+        ActionId > 0;
 
     public bool IsClearedPendingAction(int actionId)
         => actionId > 0 &&
@@ -71,7 +77,7 @@ internal sealed record ActionProbeState(
         PhaseMarker);
 
     public string PendingFields =>
-        $"s61={PendingFlag}/t18D={PendingTimer}/act={ActionId}/f1EF={PendingFlag2}";
+        $"s61={PendingFlag}/t18D={PendingTimer}/type={ActionType}/act={ActionId}/f1EF={PendingFlag2}";
 
     public string TargetCacheFields =>
         $"dmg1C4={ForecastDamage}/cred1C6={ForecastCredit}/chg1D8={ForecastCharge}/f1E5={ForecastFlag}/bb={PhaseMarker}";

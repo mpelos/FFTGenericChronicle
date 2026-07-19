@@ -1,0 +1,157 @@
+{
+  "_note": "Elemental affinity is resolved from canonical JobData plus all seven target equipment slots; unit+0x52..+0x56 remains non-authoritative and is not consumed by these formulas.",
+  "FormulaMaps": {
+    "dclJobAbsorbFire": {
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "138": 1,
+      "172": 1
+    },
+    "dclJobAbsorbIce": {
+      "137": 1
+    },
+    "dclJobAbsorbEarth": {
+      "124": 1,
+      "125": 1,
+      "126": 1
+    },
+    "dclJobAbsorbWater": {
+      "106": 1,
+      "107": 1,
+      "108": 1
+    },
+    "dclJobNullFire": {
+      "145": 1
+    },
+    "dclJobNullIce": {
+      "145": 1,
+      "151": 1
+    },
+    "dclJobNullWind": {
+      "145": 1
+    },
+    "dclJobNullEarth": {
+      "62": 1,
+      "65": 1,
+      "73": 1,
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "145": 1,
+      "172": 1
+    },
+    "dclJobHalveIce": {
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "172": 1
+    },
+    "dclJobHalveWind": {
+      "115": 1,
+      "116": 1,
+      "117": 1,
+      "118": 1,
+      "119": 1,
+      "120": 1
+    },
+    "dclJobWeakFire": {
+      "109": 1,
+      "110": 1,
+      "111": 1,
+      "112": 1,
+      "113": 1,
+      "114": 1,
+      "124": 1,
+      "125": 1,
+      "126": 1,
+      "137": 1,
+      "144": 1,
+      "150": 1
+    },
+    "dclJobWeakIce": {
+      "97": 1,
+      "98": 1,
+      "99": 1,
+      "115": 1,
+      "116": 1,
+      "117": 1,
+      "130": 1,
+      "131": 1,
+      "132": 1,
+      "138": 1,
+      "139": 1,
+      "140": 1,
+      "141": 1,
+      "170": 1,
+      "171": 1
+    },
+    "dclJobWeakLightning": {
+      "106": 1,
+      "107": 1,
+      "108": 1,
+      "145": 1
+    },
+    "dclJobWeakWind": {
+      "139": 1,
+      "140": 1,
+      "141": 1
+    },
+    "dclJobWeakEarth": {
+      "103": 1,
+      "104": 1,
+      "105": 1,
+      "118": 1,
+      "119": 1,
+      "120": 1,
+      "169": 1
+    },
+    "dclJobWeakWater": {
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "127": 1,
+      "128": 1,
+      "129": 1,
+      "172": 1
+    }
+  },
+  "DclDerivedVariables": [
+    {
+      "Name": "dcl.targetAbsorbResolved",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && (mapOr(dclJobAbsorbFire, t.jobId, 0) || tslot.head.absorb_fire || tslot.body.absorb_fire || tslot.accessory.absorb_fire || tslot.rightweapon.absorb_fire || tslot.rightshield.absorb_fire || tslot.leftweapon.absorb_fire || tslot.leftshield.absorb_fire)) || (dcl.elementIce && (mapOr(dclJobAbsorbIce, t.jobId, 0) || tslot.head.absorb_ice || tslot.body.absorb_ice || tslot.accessory.absorb_ice || tslot.rightweapon.absorb_ice || tslot.rightshield.absorb_ice || tslot.leftweapon.absorb_ice || tslot.leftshield.absorb_ice)) || (dcl.elementLightning && (mapOr(dclJobAbsorbLightning, t.jobId, 0) || tslot.head.absorb_lightning || tslot.body.absorb_lightning || tslot.accessory.absorb_lightning || tslot.rightweapon.absorb_lightning || tslot.rightshield.absorb_lightning || tslot.leftweapon.absorb_lightning || tslot.leftshield.absorb_lightning)) || (dcl.elementWind && (mapOr(dclJobAbsorbWind, t.jobId, 0) || tslot.head.absorb_wind || tslot.body.absorb_wind || tslot.accessory.absorb_wind || tslot.rightweapon.absorb_wind || tslot.rightshield.absorb_wind || tslot.leftweapon.absorb_wind || tslot.leftshield.absorb_wind)) || (dcl.elementEarth && (mapOr(dclJobAbsorbEarth, t.jobId, 0) || tslot.head.absorb_earth || tslot.body.absorb_earth || tslot.accessory.absorb_earth || tslot.rightweapon.absorb_earth || tslot.rightshield.absorb_earth || tslot.leftweapon.absorb_earth || tslot.leftshield.absorb_earth)) || (dcl.elementWater && (mapOr(dclJobAbsorbWater, t.jobId, 0) || tslot.head.absorb_water || tslot.body.absorb_water || tslot.accessory.absorb_water || tslot.rightweapon.absorb_water || tslot.rightshield.absorb_water || tslot.leftweapon.absorb_water || tslot.leftshield.absorb_water)))"
+    },
+    {
+      "Name": "dcl.targetNullResolved",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && (mapOr(dclJobNullFire, t.jobId, 0) || tslot.head.nullify_fire || tslot.body.nullify_fire || tslot.accessory.nullify_fire || tslot.rightweapon.nullify_fire || tslot.rightshield.nullify_fire || tslot.leftweapon.nullify_fire || tslot.leftshield.nullify_fire)) || (dcl.elementIce && (mapOr(dclJobNullIce, t.jobId, 0) || tslot.head.nullify_ice || tslot.body.nullify_ice || tslot.accessory.nullify_ice || tslot.rightweapon.nullify_ice || tslot.rightshield.nullify_ice || tslot.leftweapon.nullify_ice || tslot.leftshield.nullify_ice)) || (dcl.elementLightning && (mapOr(dclJobNullLightning, t.jobId, 0) || tslot.head.nullify_lightning || tslot.body.nullify_lightning || tslot.accessory.nullify_lightning || tslot.rightweapon.nullify_lightning || tslot.rightshield.nullify_lightning || tslot.leftweapon.nullify_lightning || tslot.leftshield.nullify_lightning)) || (dcl.elementWind && (mapOr(dclJobNullWind, t.jobId, 0) || tslot.head.nullify_wind || tslot.body.nullify_wind || tslot.accessory.nullify_wind || tslot.rightweapon.nullify_wind || tslot.rightshield.nullify_wind || tslot.leftweapon.nullify_wind || tslot.leftshield.nullify_wind)) || (dcl.elementEarth && (mapOr(dclJobNullEarth, t.jobId, 0) || tslot.head.nullify_earth || tslot.body.nullify_earth || tslot.accessory.nullify_earth || tslot.rightweapon.nullify_earth || tslot.rightshield.nullify_earth || tslot.leftweapon.nullify_earth || tslot.leftshield.nullify_earth)) || (dcl.elementWater && (mapOr(dclJobNullWater, t.jobId, 0) || tslot.head.nullify_water || tslot.body.nullify_water || tslot.accessory.nullify_water || tslot.rightweapon.nullify_water || tslot.rightshield.nullify_water || tslot.leftweapon.nullify_water || tslot.leftshield.nullify_water)))"
+    },
+    {
+      "Name": "dcl.targetHalveResolved",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && (mapOr(dclJobHalveFire, t.jobId, 0) || tslot.head.halve_fire || tslot.body.halve_fire || tslot.accessory.halve_fire || tslot.rightweapon.halve_fire || tslot.rightshield.halve_fire || tslot.leftweapon.halve_fire || tslot.leftshield.halve_fire)) || (dcl.elementIce && (mapOr(dclJobHalveIce, t.jobId, 0) || tslot.head.halve_ice || tslot.body.halve_ice || tslot.accessory.halve_ice || tslot.rightweapon.halve_ice || tslot.rightshield.halve_ice || tslot.leftweapon.halve_ice || tslot.leftshield.halve_ice)) || (dcl.elementLightning && (mapOr(dclJobHalveLightning, t.jobId, 0) || tslot.head.halve_lightning || tslot.body.halve_lightning || tslot.accessory.halve_lightning || tslot.rightweapon.halve_lightning || tslot.rightshield.halve_lightning || tslot.leftweapon.halve_lightning || tslot.leftshield.halve_lightning)) || (dcl.elementWind && (mapOr(dclJobHalveWind, t.jobId, 0) || tslot.head.halve_wind || tslot.body.halve_wind || tslot.accessory.halve_wind || tslot.rightweapon.halve_wind || tslot.rightshield.halve_wind || tslot.leftweapon.halve_wind || tslot.leftshield.halve_wind)) || (dcl.elementEarth && (mapOr(dclJobHalveEarth, t.jobId, 0) || tslot.head.halve_earth || tslot.body.halve_earth || tslot.accessory.halve_earth || tslot.rightweapon.halve_earth || tslot.rightshield.halve_earth || tslot.leftweapon.halve_earth || tslot.leftshield.halve_earth)) || (dcl.elementWater && (mapOr(dclJobHalveWater, t.jobId, 0) || tslot.head.halve_water || tslot.body.halve_water || tslot.accessory.halve_water || tslot.rightweapon.halve_water || tslot.rightshield.halve_water || tslot.leftweapon.halve_water || tslot.leftshield.halve_water)))"
+    },
+    {
+      "Name": "dcl.targetWeakResolved",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && ((mapOr(dclJobWeakFire, t.jobId, 0) || tslot.head.weak_fire || tslot.body.weak_fire || tslot.accessory.weak_fire || tslot.rightweapon.weak_fire || tslot.rightshield.weak_fire || tslot.leftweapon.weak_fire || tslot.leftshield.weak_fire || t.status.oil))) || (dcl.elementIce && (mapOr(dclJobWeakIce, t.jobId, 0) || tslot.head.weak_ice || tslot.body.weak_ice || tslot.accessory.weak_ice || tslot.rightweapon.weak_ice || tslot.rightshield.weak_ice || tslot.leftweapon.weak_ice || tslot.leftshield.weak_ice)) || (dcl.elementLightning && (mapOr(dclJobWeakLightning, t.jobId, 0) || tslot.head.weak_lightning || tslot.body.weak_lightning || tslot.accessory.weak_lightning || tslot.rightweapon.weak_lightning || tslot.rightshield.weak_lightning || tslot.leftweapon.weak_lightning || tslot.leftshield.weak_lightning)) || (dcl.elementWind && (mapOr(dclJobWeakWind, t.jobId, 0) || tslot.head.weak_wind || tslot.body.weak_wind || tslot.accessory.weak_wind || tslot.rightweapon.weak_wind || tslot.rightshield.weak_wind || tslot.leftweapon.weak_wind || tslot.leftshield.weak_wind)) || (dcl.elementEarth && (mapOr(dclJobWeakEarth, t.jobId, 0) || tslot.head.weak_earth || tslot.body.weak_earth || tslot.accessory.weak_earth || tslot.rightweapon.weak_earth || tslot.rightshield.weak_earth || tslot.leftweapon.weak_earth || tslot.leftshield.weak_earth)) || (dcl.elementWater && (mapOr(dclJobWeakWater, t.jobId, 0) || tslot.head.weak_water || tslot.body.weak_water || tslot.accessory.weak_water || tslot.rightweapon.weak_water || tslot.rightshield.weak_water || tslot.leftweapon.weak_water || tslot.leftshield.weak_water)))"
+    },
+    {
+      "Name": "dcl.targetStrongResolved",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && (tslot.head.strong_fire || tslot.body.strong_fire || tslot.accessory.strong_fire || tslot.rightweapon.strong_fire || tslot.rightshield.strong_fire || tslot.leftweapon.strong_fire || tslot.leftshield.strong_fire)) || (dcl.elementIce && (tslot.head.strong_ice || tslot.body.strong_ice || tslot.accessory.strong_ice || tslot.rightweapon.strong_ice || tslot.rightshield.strong_ice || tslot.leftweapon.strong_ice || tslot.leftshield.strong_ice)) || (dcl.elementLightning && (tslot.head.strong_lightning || tslot.body.strong_lightning || tslot.accessory.strong_lightning || tslot.rightweapon.strong_lightning || tslot.rightshield.strong_lightning || tslot.leftweapon.strong_lightning || tslot.leftshield.strong_lightning)) || (dcl.elementWind && (tslot.head.strong_wind || tslot.body.strong_wind || tslot.accessory.strong_wind || tslot.rightweapon.strong_wind || tslot.rightshield.strong_wind || tslot.leftweapon.strong_wind || tslot.leftshield.strong_wind)) || (dcl.elementEarth && (tslot.head.strong_earth || tslot.body.strong_earth || tslot.accessory.strong_earth || tslot.rightweapon.strong_earth || tslot.rightshield.strong_earth || tslot.leftweapon.strong_earth || tslot.leftshield.strong_earth)) || (dcl.elementWater && (tslot.head.strong_water || tslot.body.strong_water || tslot.accessory.strong_water || tslot.rightweapon.strong_water || tslot.rightshield.strong_water || tslot.leftweapon.strong_water || tslot.leftshield.strong_water)))"
+    },
+    {
+      "Name": "dcl.elementPermilleResolved",
+      "Formula": "if(dcl.targetNullResolved, 0, if(dcl.targetHalveResolved, const.dclAffinityHalvePermille, if(dcl.targetWeakResolved, const.dclAffinityWeakPermille, if(dcl.targetStrongResolved, const.dclAffinityStrongPermille, 1000))))"
+    },
+    {
+      "Name": "dcl.magicStackPermilleResolved",
+      "Formula": "min(const.dclMagicStackCapPermille, mulDiv(mulDiv(mulDiv(dcl.faithCombinedPermille, if(dcl.isElemental, dcl.elementPermilleResolved, 1000), 1000), dcl.shellPermille, 1000), dcl.zodiacPermille, 1000))"
+    },
+    {
+      "Name": "dcl.magicAmountResolved",
+      "Formula": "if(dcl.targetNullResolved, 0, max(1, mulDiv(mulDiv(dcl.magicCore, dcl.magicStackPermilleResolved, 1000), const.dclMagicScalePermille, 1000)))"
+    },
+    {
+      "Name": "dcl.magicAbsorbedResolved",
+      "Formula": "dcl.isMagicDamage && dcl.targetAbsorbResolved"
+    }
+  ]
+}

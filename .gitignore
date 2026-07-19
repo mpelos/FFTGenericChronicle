@@ -28,6 +28,14 @@ work/nxd_more/
 work/nxd_out/
 work/nxd_proof/
 
+# === Local live-test rollback binaries (large, machine-specific, not evidence owners) ===
+# Keep the timestamped Markdown manifest/settings/log that describe each rollback point. The copied
+# DLL/PDB and automatic pre-restore container are disposable safety backups and make the Codex Git
+# preview spawn one no-index diff process per binary in a long-running worktree.
+work/*-pre-dll.dll
+work/*-pre-pdb.pdb
+work/*-before-restore.png
+
 # === .NET build output (Reloaded-II code mod) ===
 codemod/**/bin/
 codemod/**/obj/

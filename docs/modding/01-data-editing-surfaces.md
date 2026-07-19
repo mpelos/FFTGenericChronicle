@@ -294,12 +294,28 @@ byte, Reaction/Support/Movement list positions 1 through 6 use masks `0x80`, `0x
 `0x10`, `0x08`, and `0x04`, respectively. For example, Counter is position 2 in the Monk R/S/M
 list, so its learned flag is mask `0x40` in the third Monk byte.
 
+For a generic job id `J`, its three-byte learned block starts at
+`unit+0x32 + (J - 0x4A) * 3`. Active-list position `N` (one-based) uses byte
+`(N - 1) >> 3` and MSB-first mask `1 << (7 - ((N - 1) & 7))`. For example, Mystic is
+generic job `0x55`, and Fervor is position 8 of vanilla Mystic Arts, so Fervor is mask `0x01`
+at `unit+0x53`. A data override that reorders a command also changes the learned mask associated
+with each ability.
+
 Fixture generators edit an unpacked copy, let FF16Tools rebuild the PNG/checksum, unpack the result
 again, and byte-audit the round trip. `tools/build_fft_manual_ability_fixture.py` enables one learned
 active-ability bit; `tools/build_fft_manual_reaction_fixture.py` replaces one equipped-Reaction word
 and requires the caller to provide the expected source Reaction and prove that the destination
 Reaction is learned by that unit. The live save remains untouched
 until a separate stopped-process backup/deploy/restore protocol installs the audited PNG.
+
+Enhanced autosave `resume_*_main.sav` and `resume_*_fturn.sav` current-battle unit records use a
+different layout from the manual-save roster records above. For the Josephine battle-record fixture,
+the secondary command is `unit+0x13`, and the 60-byte learned-ability block is copied byte-identically
+from manual-roster `unit+0x32` to current-battle `unit+0xA2` (**Proven**). Mystic therefore begins at
+current-battle `unit+0xC3`. The MSB-first encoding is also **Proven live**: under a temporary command
+override whose positions 1, 2, 7, and 8 are Umbra, Fervor, Quiescence, and Empowerment, the masks
+`0x80`, `0x40`, `0x02`, and `0x01` expose those exact abilities. Under the vanilla Mystic Arts order,
+Fervor remains position 8 and uses `0x01` at current-battle `unit+0xC3`.
 
 ## Sources
 

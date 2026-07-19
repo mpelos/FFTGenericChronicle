@@ -1,709 +1,334 @@
-# Reverse-Engineering Reference — Hooking the IVC Damage Engine
+# Reverse-engineering reference — hooking the IVC combat engine
 
-The single source of truth for the reverse-engineering picture of FFT: The Ivalice
-Chronicles (IVC). It states what the engine is, what ports from classic FFT and what does
-not, where the damage logic actually lives, which code anchors are stable and hookable, and
-the live-validated control levers exposed by those anchors.
+This document defines the static reverse-engineering model for Final Fantasy Tactics: The
+Ivalice Chronicles (IVC): which parts of the combat engine are native and hookable, which
+parts are virtualized, and which stable native surfaces expose combat inputs and results.
 
-Cross-references: live struct offsets, the battle actor array, and the action-context /
-attacker-resolution model are owned by `04-engine-memory-model.md`; the post-damage code-mod
-reconciler and its formula DSL are owned by `06-code-mod-runtime-dsl.md`; per-formula-id
+Live unit offsets and action ownership are owned by `04-engine-memory-model.md`. Runtime
+settings and implementation contracts are owned by `06-code-mod-runtime-dsl.md`. Formula-ID
 behavior is owned by `02-formula-id-catalog.md`.
 
 ## 1. Architectural truth
 
-IVC is `FFT_enhanced.exe`, an x86-64 from-scratch re-implementation built on the FFXVI
-"Faith" engine. The 1997 source was lost, so Square Enix rebuilt the game. The build
-faithfully reproduces the WotL ruleset and the classic ability-action data model — the same
-`Formula / X / Y / Element / CT / MP` per ability — running over a battle-unit struct whose
-layout matches the classic one.
+IVC is `FFT_enhanced.exe`, an x86-64 reimplementation built on the Faith engine. It preserves
+the classic ability-action data model and a battle-unit layout compatible with the known FFT
+model, but it does not contain the original PSX or PSP machine code.
 
-`FFT_classic.exe` is a sibling on the same Faith engine. It is NOT a PSX emulator and offers
-no easier static-RE path; Enhanced is the better-mapped target. Both executables are
-Denuvo-protected.
+Classic/WotL formulas and structures are useful conceptual maps. Classic MIPS addresses,
+patches, signatures, and binaries do not port to IVC.
 
-**Ports from classic/WotL FFT — design knowledge only:** exact formulas, data-struct layout,
-and the formula-dispatch architecture. Because the math and the struct are known, RE is
-guided rather than blind: the task is to find the function that computes *known math* over a
-*known struct*. The named PSX Ghidra decomp (`Talcall/FFT-1997-Decomp`, 606 named `BATTLE_*`
-functions — `BATTLE_calculator_routine(CurActionTargetData*)`, `CalcHitPercent`,
-`AttackEvadeCalc`, `Calculate_Stat_Real`, `Calculate_Zodiac_Sign`, struct `BattleUnitData`)
-is a conceptual function map. It is not matching/recompilable, and there is no decomp of WotL
-or the remaster engine.
+`FFT_classic.exe` is a sibling Faith-engine executable, not a PSX emulator. Enhanced is the
+primary mapped target. Both executables are Denuvo-protected.
 
-**Does NOT port — any machine code:** classic = PSX MIPS R3000 (`BATTLE.BIN`); WotL = PSP
-MIPS. IVC is x86-64. No legacy MIPS routine, byte patch, or AOB carries over. Only the design
-knowledge transfers.
+## 2. Denuvo boundary
 
-## 2. Denuvo conclusion — the damage routine cannot be AOB-hooked
+**Proven:** the central damage and accuracy arithmetic runs through Denuvo-virtualized code.
+The transient native-looking damage-apply sequence relocates between launches and is absent
+from readable executable regions as a stable signature. It cannot be treated as an AOB-hook
+target.
 
-The damage routine is **Denuvo-virtualized** (translated into a private VM bytecode). Its
-16-byte damage-apply prologue is absent from the static executable and, when momentarily
-present at runtime, relocates to a different address every launch. An in-battle full-memory
-scan over all executable-readable regions finds the x86 damage-apply pattern nowhere, while
-nothing is execute-only (nothing hidden from reading). Therefore the routine is not native
-x86 at all — it cannot be located by static signature scan and cannot be AOB-hooked.
-Arbitrary custom damage math by hooking the formula dispatcher is blocked by Denuvo by design.
+The practical boundary is:
 
-Consequences:
-- Get damage numbers the Denuvo-proof way: read a unit's HP through a stable anchor and log
-  HP deltas (an HP drop is damage taken).
-- The "damage multiplier" / `[rax+0x06]` damage-store AOBs published in community cheat tables
-  match transiently or coincidentally; they are not reliable hook targets on this build.
-- A hardware breakpoint (VEH + DRx) on the HP write is robust to relocation but lands inside
-  the Denuvo VM dispatch, where registers do not cleanly map to game state. Last resort only.
+- formula arithmetic and several combat rolls execute inside the virtual machine;
+- combat data, action records, staged results, dispatcher code, result selection, and HP/MP
+  application remain ordinary native memory or native code;
+- custom mechanics therefore author inputs before the virtualized calculation or reconcile
+  staged outputs on stable native paths.
+
+Hardware breakpoints can observe VM-mediated writes, but registers at the VM dispatcher do not
+provide a stable gameplay ABI. They are a diagnostic fallback, not a shipping integration.
 
 ## 3. Stable hookable anchors
 
-These are real-code instructions (`.text` / `.xcode`), ASLR-stable, RVA < 0x400000, image
-base `0x140000000`, module `FFT_enhanced.exe`. They are non-virtualized and hookable with a
-Reloaded-II `CreateAsmHook` / `CreateHook`. All values are Steam v1.0 (Oct 2025) Enhanced;
-a game patch shifts them — re-locate via the neighboring stable bytes.
+The following RVAs are relative to image base `0x140000000` in the mapped Steam Enhanced build.
+They are native `.text` or `.xcode` sites. A game update can move them; expected bytes and nearby
+signatures must validate before a hook is installed.
 
-### `.text` anchors
-
-```text
-battle_base_ptr    0x226D20   movzx eax, word [rcx+0x30]   rcx = battle unit; reads +0x30 HP (word)
-damage_mult_2      0x30A5ED   HP-bar / UI math (rdi = one unit; edx = MaxHP; eax = MaxHP-curHP) — NOT the formula
-jp_multiplier      0x2836DC
-xp_multiplier      0x2836EF
-min_spd_jmp_mov    0x3601E7   movzx eax, byte [rdi+0x42]   reads +0x42 Move (byte)
-```
-
-Byte signatures — the sig-scan keys to re-locate each `.text` anchor after a game patch shifts the
-RVAs (`battle_base_ptr` is also given with its full hook context in `04-engine-memory-model.md` §4.1):
+### 3.1 Native `.text` anchors
 
 ```text
-battle_base_ptr   0F B7 41 30 66 89 42 0C          read-site +0x226D20
-damage_mult_2     2B C8 8D 04 11
-jp_multiplier     03 C2 8B CF 41 3B C0
-xp_multiplier     0F B7 84 7B 1E 01 00 00
-min_brave_faith   41 0F B6 5A 2B                   reads +0x2B Brave (byte)
-min_spd_jmp_mov   0F B6 47 42 66 89 43 30          reads +0x42 Move (byte)
+battle unit read       0x226D20   movzx eax, word [rcx+0x30]
+HP-bar display math    0x30A5ED   rdi = unit; edx = MaxHP; eax = MaxHP-currentHP
+JP arithmetic          0x2836DC
+EXP arithmetic         0x2836EF
+Move read              0x3601E7   movzx eax, byte [rdi+0x42]
+action calculation     0x3099AC   rcx = order record; dl = target index
 ```
 
-The community damage-store AOB `0F B7 47 30 2B C2 85 C0 41 0F 4E CE 8A D1 E8 F2` is a non-anchor: it
-matches only transiently/coincidentally and is not a reliable hook target (see §2).
-
-The matched instruction bytes statically confirm struct offsets: +0x30 HP (word), +0x2B Brave
-(byte), +0x42 Move (byte). `damage_mult_2` is display code, not the damage formula — it sees
-only one unit and no ability/attacker.
-
-### `.xcode` anchors (outcome dispatch / apply / animation)
-
-The roll *arithmetic* (hit%, evade, damage math) is virtualized, but the **outcome dispatch,
-the result/animation selection, and the apply step run in normal hookable code**.
+Relocation signatures:
 
 ```text
-unit/result RECORD array     0x1853CE0   stride 0x200, <=21 entries (runtime 0x141853CE0).
-                             The per-unit battle struct IS this array.
-result DISPATCHER            0x38A4FC    event-queue loop; DECISION branch at 0x38A6F1
-                             (cmp edx,0x300), edx = (category<<8)|unitIdx:
-                             0x300 = apply HP/MP/stat -> 0x30A484
-                             0x200 = status | 0x100 = turn-done | 0xFF00 = terminator | 0xE000 = init
-APPLY path                   0x30A484    newHP = clamp(HP + word[unit+0x1C6] - word[unit+0x1C4], 0, MaxHP)
-                             reads staged dmg word[+0x1C4], heal word[+0x1C6]; consults NO hit-flag
-pre-clamp staged-dmg HOOK    0x30A5D7    0F BF 45 06 = movsx eax, word[rbp+6] (= word[unit+0x1C4]);
-                             the damage-rewrite hook — controls hit-vs-zero damage
-result/animation SELECTOR    0x205210    prologue 48 89 5C 24 08 48 89 6C 24 10;
-                             r8 = actor, record = [r8+0x148], cl (arg) = evade-type; reads +0x1E5, +0x1C4
-evade-type teardown copy      0x205B38   mov byte [rdi+0x1C0], r12b (real-code copy; the authoring
-                             value is produced inside the VM roll 0x30FA34, not here)
-combat-popup digit RENDER    0x266AE0    int->digit->glyph; value [rdi+0x344]; 3-digit split 0x2671BE;
-                             glyph map 0x267350; popup value mirror 0x3740200
+battle unit read       0F B7 41 30 66 89 42 0C
+HP-bar display math    2B C8 8D 04 11
+JP arithmetic          03 C2 8B CF 41 3B C0
+EXP arithmetic         0F B7 84 7B 1E 01 00 00
+Brave read             41 0F B6 5A 2B
+Move read              0F B6 47 42 66 89 43 30
 ```
 
-Virtualized neighbors (E9/E8 into `.edata`, not hookable, not needed): roll gate `0x30FA34`;
-hit%/evade helpers `0x269760 0x2759F8 0x2B8F30 0x2740A0`; result handlers `0x38ABBC 0x38BBFC`;
-staging helpers `0x30BC3C 0x30BCF8`; evade-input scratch `0x7832E6`. The category producer at
-`0x30F0C4` walks records by the global phase dword `[0x186B044]`; its 0x300 (apply) gate is the
-VM thunk `0x30FA34` (the roll lives there).
+The community pattern beginning `0F B7 47 30 2B C2` is not a stable damage-store anchor.
 
-### Table read-site
-
-The `OverrideAbilityActionData` read-site is at RVA `0xEEA6E50` (VA `0x14EEA6E50`,
-"PC/Steam patch 1"), within the module. Each `>= 0` cell in that table
-(`Flags12 Flags34 Range EffectArea Vertical Element Formula X Y InflictStatus CT MPCost`) is
-cast to byte and patches the in-memory ability-action struct just before combat math runs —
-the natural starting point for tracing toward the formula dispatcher, though the dispatcher
-itself is virtualized downstream.
-
-## 4. Live-validated evade-type enum
-
-The evade-type byte at record `+0x1C0` (also passed in `cl` to the selector `0x205210`) is the
-lever that selects hit vs. which evade animation. The full enum (**Proven**):
+### 3.2 Result dispatch and application
 
 ```text
-0x00 = HIT                         (+1BB=02 +1BE=01 +1C4=dmg +1E5=0x80 ; damage applies)
-0x01 = cloak / accessory evade     (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
-0x02 = weapon parry (RH/LH guard)  (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
-0x03 = shield parry / block (LH)   (+1BB=01 +1BE=00 +1C4=0   +1E5=00)
-0x04 = class evade ("Miss")        (+1BB=01 +1BE=00 +1C4=0   +1E5=00 ; +1C2=FF observed)
-0x06 = plain miss (failed accuracy roll, e.g. Steal/Charm) (+1BB=01 +1BE=00 +1C4=0 +1E5=00)
-0x0B = Blade Grasp (Brave%-reaction)  (+1BB=01 +1BE=00 +1C4=0 +1E5=00 ; live-observed via SELECTOR-PROBE)
+battle-unit/result array  0x1853CE0   stride 0x200; at most 21 entries
+result dispatcher          0x38A4FC    event queue; decision branch 0x38A6F1
+HP/MP apply                0x30A484    clamp(HP + credit - debit, 0, MaxHP)
+staged-debit read          0x30A5D7    movsx eax, word [rbp+6]
+result selector            0x205210    r8 = actor; record = [r8+0x148]; cl = result kind
+result-kind teardown       0x205B38    mov byte [rdi+0x1C0], r12b
+popup renderer             0x266AE0    integer-to-glyph path
 ```
 
-0x05 / 0x07–0x0A are unobserved gaps, likely unused. Hit = 0x00
-(damage applies); 0x01–0x06 and 0x0B are all no-damage outcomes (`+1C4 = 0`) that differ ONLY in
-`+0x1C0`, the byte that selects the on-screen animation. Every evade shares `+1BE=00` and `+1C4=0`;
-`+0x1E5` carries the action's effect-kind (`0x00` for a basic-attack evade, nonzero when an evaded
-ability still carries an effect). Evadable physical abilities route through 0x01–0x04 like a basic
-Attack; a failed *accuracy* roll (Steal / status hit%) routes through 0x06.
-
-### Control recipe
-
-**Proven live (2026-06-26): full hit↔miss authority against the engine's roll.** The result render
-and the HP debit are TWO INDEPENDENT paths on different call trees, so authoring an outcome needs the
-right write on EACH path:
+The dispatcher category encoded in `edx` includes:
 
 ```text
-force-HIT(D):   pre-clamp 0x30A5D7 -> word[rbp+6]=D (=target+0x1C4) ; word[rbp+8]=0 (=+0x1C6)
-                selector 0x205210  -> leave +0x1BE=01 / +0x1C0=0x00          => damage popup, HP -D
-force-EVADE(t): pre-clamp 0x30A5D7 -> word[rbp+6]=0 ; word[rbp+8]=0           (no HP change)  AND
-                selector 0x205210  -> +0x1BE=0 ; +0x1C0=t (0x04 class / 0x03 shield / 0x02 weapon
-                                      / 0x01 cloak / 0x06 miss) + force saved cl=t  => evade anim, HP kept
+0x0300  apply HP/MP/stat
+0x0200  status
+0x0100  turn done
+0xFF00  terminator
+0xE000  initialization
 ```
 
-The decisive proof: a guaranteed 100%-to-hit basic attack (Agrias→Ramza) was rendered as a
-class-evade "Miss" AND dealt 0 damage (HP 567/567) — the pre-clamp forced the staged debit `184->0`
-and the selector flipped `+0x1C0` `0x00(hit)->0x04(class-evade)`. Proof log
-`work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`; full analysis
-`work/1782517714-miss-block-parry-control-definitive.md`.
+The HP apply path reads `unit+0x1C4` as debit and `unit+0x1C6` as credit; it does not consult a
+separate hit flag. The staged-debit hook is therefore the native result-authority surface for
+damage amounts and forced zero-damage outcomes.
 
-**Proven:** formula-driven misses use a per-target decision cache to deliver the same authored
-decision to three native execution surfaces. The pre-clamp hook zeros the staged debit, selector
-`0x205210` writes `+0x1BE=0` and `+0x1C0=0x06`, and the four Counter-class Brave-roll sites force
-their chance to zero for that cached miss. The target keeps its HP, the selector takes the clean
-evade branch, and no Counter is armed. Hits and cache misses preserve the native reaction chance.
+### 3.3 Ability-action table read
 
-**Both writes are required (this corrects the earlier note).** Writing only `+0x1C0`/`+0x1BE` at the
-selector is render-complete but **damage-incomplete**: the selector render and the HP apply run on
-different frames, so the staged debit survives and HP still drops. To make a downgraded hit deal no
-damage you MUST also zero the debit at the pre-clamp. (The old "the engine still owns HP via the
-`+0x1C4` debit" held only for a NATURAL evade, which already arrives with `+0x1C4=0`.)
+The `OverrideAbilityActionData` read site is at RVA `0xEEA6E50`. Non-negative override columns
+are cast to bytes and merged into the in-memory action definition before combat calculation.
+This is the natural data-layer entry for `Flags12`, `Flags34`, `Range`, `EffectArea`, `Vertical`,
+`Element`, `Formula`, `X`, `Y`, `InflictStatus`, `CT`, and `MPCost`.
 
-**Miss → hit is impossible at the dispatcher** — a miss never stages damage (`+0x1C4=0`, no `0x300`
-apply emitted; the accuracy gate `0x30FA34` is VM). Never try to promote a miss. Instead force the
-engine to (near-)always-hit upstream, then DOWNGRADE the guaranteed hit to whatever the custom roll
-wants — collapsing control to two quadrants (keep-hit, downgrade-hit), both inside the two proven hooks.
+## 4. Result-kind and avoidance control
 
-**Neutralize the engine's avoidance** — three layers, all upstream of our hooks; each must be killed or
-a residual engine outcome pre-empts ours. (Layer C is now neutralized in MEMORY — write the defender's
-evade bytes to `0` before the roll, proven above — so the DATA edits below are only needed for the
-reaction layers A/B, or as a static fallback.)
+### 4.1 Result-kind enum
 
-- Layer A — Hamedo / First-Strike (Monk reaction): pre-empts the incoming attack before its HP-apply
-  hook. If the reaction itself deals damage, that reaction damage still routes through the normal
-  pre-clamp/selector hooks with the reaction attacker as source. For a basic incoming attack, the
-  cancelled incoming surface is also visible before apply: the defender's target cache holds the
-  interrupted debit at `+0x1C4`, and the correlated target-cache hook frame points back to the
-  original incoming source.
-- Layer B — reaction avoidance (Blade Grasp, Arrow Guard, Catch, Reflect): rolls BEFORE the evade
-  bytes; Brave%-triggered; **zeroing evade bytes does NOT stop it.**
-- Layer C — the 4 equipment/class evade bytes (class `+0x4B`, shield `+0x4A`/`+0x4E`, weapon
-  `+0x46`/`+0x47`).
-
-Levers: strip the reaction slot / blank the reaction table (kills A+B); `Evadeable` flag off and/or
-zero the evade bytes / Concentrate (kills C). Layer B is now ALSO controllable in MEMORY via the
-defender's **Brave** (`+0x2B`) — ✅ proven live (see below) — so data-disable of A+B is a static
-fallback, not the only path. (Hamedo/Blade Grasp survive zeroed *evade* bytes by canon, which is why
-they need the Brave lever or a data-disable, not evade-zeroing.)
-
-### Input-control — ✅ PROVEN LIVE 2026-06-27 (the cleaner primary path)
-
-**Write the DEFENDER's evade bytes on its live battle struct BEFORE the VM avoidance roll, and the
-Denuvo VM honors them.** Denuvo virtualizes CODE, not DATA — the unit structs the VM reads are normal
-writable memory, so planting the inputs makes the native roll produce our outcome, with the engine
-rendering everything (animation, 0 damage, forecast %) on its own. No data-gutting, no result-forging.
-
-Proof (`work/input-control-evade-PROVEN.md`, log `work/battleprobe_log.evade-override-PASS*.txt`): a
-poll wrote Ramza's class-evade `+0x4B` `0→0x64` on his live struct; the attack preview then showed
-**0% hit** and Ramza **evaded** — `[SELECTOR-PROBE evadeType=0x04(class-evade) rec+1BE=00 rec+1C0=04
-rec+1C4=0 hp=567/567]`, no pre-clamp fired. The VM read live memory, not a cached forecast copy.
-
-Byte → outcome, set on the **defender** (`unitPtr + off`, values 0–100; evade applies front/side only):
+The byte at result record `+0x1C0`, also passed in `cl` to selector `0x205210`, selects the
+rendered outcome.
 
 ```text
-+0x4B          = high   -> class evade ("Miss")  evadeType 0x04
-+0x46 / +0x47  = high   -> weapon parry          evadeType 0x02
-+0x4A / +0x4E  = high   -> shield block          evadeType 0x03
-all five       = 0      -> guaranteed HIT (neutralizes avoidance in MEMORY, no data edit)  0x00
+0x00  hit
+0x01  accessory evade
+0x02  weapon parry
+0x03  shield block
+0x04  class evade / “Miss”
+0x06  plain failed-accuracy miss
+0x0B  Blade Grasp / Shirahadori
 ```
 
-Harness: the poller writes these every ~20 ms via `EvadeOverride*` (+ `EvadeOverrideSweepSlots`, which
-sweeps the unit array so even untracked units — i.e. the actual defender — get boosted; the two earlier
-"failures" were invalid because only the attacker/idle units were boosted, never the defender). Next
-(engineering): per-action, formula-driven writes — identify the defender via the pending-action tracker,
-compute the formula for that (attacker, defender) pair, write its evade before the roll. Damage value
-stays on the proven pre-clamp.
+**Proven:** hit records carry a staged debit and apply damage. Avoidance records carry zero debit
+and differ primarily by result kind and presentation fields. Values `0x05` and `0x07..0x0A` are
+unclassified.
 
-#### AIRTIGHT delivery — hook the 3 equip/refresh copiers (✅ RE'd 2026-07-03, retires the poll race)
+### 4.2 Authored binary outcome
 
-The `EvadeOverride` poll loses ~50 % of attacks not to a per-attack writer but to a **misdiagnosis**:
-there is **no per-attack real-code writer of the evade bytes at all** (BFS from every writer never
-reaches the avoidance cluster `0x30F0C4 / 0x30FA34 / 0x3099AC / 0x205210 / 0x30A5D7`; the combat region
-has zero genuine writers; the pre-roll gather `0x30FC30` reads `+0x61/64/65/1B4`, not the evade bytes —
-the VM consumes them internally). The bytes are owned by exactly **three real-code equip/refresh
-copiers** that re-stamp them from equipment on a state edge (turn / status / menu), asynchronously to the
-poll:
+Render selection and HP application are independent native paths. A coherent authored outcome
+must control both:
 
 ```text
-Writer A  fn 0x59F550  unit ptr = RBX   copies [rdi+0x10..0x17] -> [rbx+0x48..0x4F]
-                                        (acc 0x48/49, shield 0x4A/4E, class 0x4B)  restamp after 0x59F927
-Writer B  fn 0x285394  unit ptr = RBX   weapon lookup -> [rbx+0x44..0x47] (weapon parry 0x46/47)  after 0x285550
-          fn 0x3965B0  unit ptr = RSI   twin of B                                                  after 0x39674B
+hit(D):   staged debit = D; staged credit = 0; result kind = 0x00
+miss(k):  staged debit = 0; staged credit = 0; result kind = k; result-present flag cleared
 ```
 
-Between A and B these own **every** legitimate path that changes the evade bytes. **Detour their tails and
-over-stamp our formula-computed evade bytes** → the value persists to the VM roll with **no race**; the
-`EvadeOverride` poll is retired. Shipping knob (to build): `EvadeCopierOverride*`. Two byte-families to
-keep distinct: **Family-1 INPUT** (unit `+0x46/47/48/49/4A/4B/4E`, above — what the VM rolls against,
-Phase B: 4 sources rolled separately in slot order acc→RH→LH→class, first success wins) vs **Family-2
-staged RESULT** (`+0x1D0`, `+0x1D2..+0x1D5`, `+0x1D8`, kind `+0x1C0`) — the renderer's inputs; `+0x1C0`
-sole writer = finalize `0x205B38` / fn `0x2055FC` (gated `test [rdi+0x15C],4`, unit=RDI), which runs
-AFTER compute-point `0x281F12`.
+**Proven:** writing only the result kind changes presentation but does not cancel an already staged
+debit. A forced miss must also zero `unit+0x1C4` at the pre-clamp path.
 
-#### SHIELD ≠ CLASS — shield evade has NO live single-byte lever (✅ RE'd 2026-07-03)
+**Proven:** a native miss does not stage damage or emit the same apply work as a hit. The robust
+policy is to neutralize native avoidance, let the engine produce a hit candidate, and downgrade
+that candidate when the mod's roll misses. Promoting an already-native miss at the dispatcher is
+not supported.
 
-The 2026-06-27 input-control proof only ever moved **class `+0x4B`**. LT5-A2 (Agrias→Ramza) then FAILED
-for **shield**: with `+0x4A = 0x32` planted at `0x3099AC` and the copiers zeroed, the preview still showed
-**50 % + Ramza shield-PARRIED**. Static RE (`work/dcl-shield-evade-read-path.md`, `disasm_shield_evade_*`)
-pins why:
+The runtime decision cache, selector coordination, and reaction suppression are defined in
+`06-code-mod-runtime-dsl.md`.
 
-- The roll anchors read **no** evade bytes; the values enter via **combat-input record builders**
-  (`0x284BC0` / `0x3600DC` / `0x3962F0`) that pack the block into a **separate forecast/AI record**
-  `[dst+0x44..0x52]` at action SETUP (before `0x3099AC`).
-- In that pack, **class is a 1:1 copy** — `dst+0x44 = [unit+0x4B]` — so a live `+0x4B` write is honored.
-- **Shield is DERIVED, not copied** — `dst+0x46 = MAX([unit+0x4A] shield, [unit+0x49] accessory)` and
-  `dst+0x50 = MAX([unit+0x4D],[unit+0x4E])`. A late `+0x4A := 0` neither reaches the already-built record
-  nor overrides the `+0x49` term, so shield block survives.
-- `unit+0x4A` itself is written by **only** Writer A (`[equip+0x12]→+0x4A`); no per-action re-derivation.
+### 4.3 Native avoidance inputs
 
-**Verdict:** class `+0x4B` stays a clean runtime lever; **shield has none in the unit struct.**
-LT5-A3 then REFUTED the record-builder store hooks too (`0x3602EA`/`0x39647C`/`0x284C00` + `+0x50`
-twins installed and forced 0; shield still 50% in preview and still parried — those builders do not
-feed the combat roll; the VM packs its own record). The chain that DOES work is one level deeper — see
-the item-table section below. (Also: the earlier "Writer A `0x59F550`" copier is a byte-scan FALSE
-POSITIVE — it is HID gamepad enumeration (`HidP_GetValueCaps` consumers), not combat. Only the weapon
-copiers `0x285394`/`0x3965B0` are real.)
+Physical avoidance has three semantic layers:
 
-#### ✅✅ ITEM-TABLE EVADE KILL — the proven equipment-evade lever (LIVE-PROVEN LT5-A4, 2026-07-03)
+- pre-emptive reactions such as Hamedo;
+- reaction avoidance such as Blade Grasp, Arrow Guard, Catch, and Reflect;
+- equipment/class evasion.
 
-The VM derives ALL equipment evade from **item stat tables baked at fixed VAs in a writable section**
-(RE `work/dcl-item-table-runtime-poke.md`; lookup fn `0x2B8CB8`: `ItemData row = base + (id<0x100 ?
-0x80EA90 : 0x67F910) + id*0xC`, `+4 = additional_data_id` indexing four stat sub-tables):
+**Proven:** class evade at unit `+0x4B` is a live input read by native calculation. Equipment evade
+is not reliably neutralized by late writes to the unit's derived evade bytes.
+
+**Proven:** equipment evade originates in writable item-stat tables:
 
 ```text
-Weapon     0x14080F690   stride 8   +4 = WP, +5 = W-Ev          (128 rows)
-Shield     0x14080FA90   stride 2   +0 phys evade, +1 magic     (16 rows)
-Armor      0x14080FAB0   stride 2   +0 HP, +1 MP  (untouched)   (64 rows)
-Accessory  0x14080FB30   stride 2   +0 phys evade, +1 magic     (32 rows)
-Sanity anchor: byte[0x14080FAAC] = 32 19 (Venetian Shield 50/25)
+weapon     0x14080F690   stride 8   +4 WP, +5 physical evade   128 rows
+shield     0x14080FA90   stride 2   +0 physical, +1 magical     16 rows
+armor      0x14080FAB0   stride 2   +0 HP, +1 MP                64 rows
+accessory  0x14080FB30   stride 2   +0 physical, +1 magical     32 rows
 ```
 
-Zeroing the evade bytes there (mod knob `ItemTableEvadeZero`, managed poll write, sanity-gated) makes
-the VM's own derivation produce 0 evade for every unit, both teams, preview included. **LIVE: Ninja
-(dual wield) and Agrias vs Ramza wearing 50% parry/shield gear → preview 100%, 12/12 swings hit.**
-This is the source-level kill: a VM-internal reader cannot bypass data it reads. Rows map 1:1 to
-`item_catalog.csv` columns (weapon_evasion, shield/accessory phys/magical evasion; additional_data_id
-= row index). Re-poked every poll (writable section could be re-stamped by a loader between battles).
+The item lookup uses `additional_data_id` to index the stat sub-table. Zeroing the relevant
+equipment-evade columns at their source removes equipment avoidance from native preview and
+execution. `item_catalog.csv` owns the data mapping.
 
-#### Arbitrary hit% ⇒ the MOD rolls, not the engine
+**Refuted:** the apparent copier at `0x59F550` is combat-related. It belongs to HID gamepad
+enumeration. Derived shield values in intermediate records are also not a sufficient universal
+runtime lever.
 
-`unit+0x1EA` is **display-only** (0 writers, 1 UI reader `0x3B122F`). The VM roll `roll(100, chance)` at
-`0x278EE0` takes `chance` from VM-recomputed globals (magic ← Faith `0x1407B079D`, status ← `0x1407B07AC`,
-physical ← `staging+0x2B` @ `qword[0x14186AF68]`) — **none has a real-code writer**, and poking
-`0x1407B07AC` was REFUTED live (engine overwrote it at compute). So there is no airtight input for an
-arbitrary engine-side %. Instead: **compute the DCL hit% and roll the mod's own RNG**, then force the
-binary outcome via Family-1 (all=0 ⇒ hit; chosen source=100 ⇒ that avoid type). Exact %, no dependence on
-the VM roll. Account for facing (rear nullifies class+RH+LH; only accessory survives).
+**Proven:** Brave at unit `+0x2B` controls Brave-gated reactions. Values below 10 cross the native
+Chicken threshold and must not be used as a neutral reaction-suppression value. Reaction-specific
+runtime policy is owned by `06-code-mod-runtime-dsl.md`.
 
-**DEAD ENDS (both refuted live; do not retry):**
-- Hook **`0x30F49C`** ("last real instr before the roll"): `rbx` is the **ATTACKER**, not the defender —
-  the defender is never in a register here. (Also corrects the older `0x226EBC`/`0x226F39` anchor, a UI
-  status-panel exporter with no real-code readers.)
-- Hook **`0x30F4A7`** (roll-verdict `eax` override): a per-unit CT/turn eval, `eax` is always `0`, not
-  the accuracy verdict. The avoidance roll, evade-source combine, and `+0x1C0` write all live inside the
-  one VM call `0x30FA34`; there is no real-code verdict to flip.
+### 4.4 Arbitrary hit percentage
 
-⚠️ **Reaction-roll hook REFUTED for Shirahadori (LT5-A3, 2026-07-03):** all 4 cluster sites hooked
-with forced chance 0 logged **zero fires** across a battle where Shirahadori triggered 4+ times — the
-negate-reactions roll is **VM-internal**; the real-code cluster serves OTHER reactions (LT3b's fires =
-Counter/Mana Shield class). The proven Shirahadori lever remains the **Brave write** below. Bonus
-mechanic find: Shirahadori catches only the FIRST dual-wield swing (once per action in IVC), and the
-IVC preview % folds the reaction-negate chance in (3% = 100 − Brave 97).
+`unit+0x1EA` is a forecast display source, not the authoritative execution chance. Several accuracy
+values are recomputed inside the virtual machine immediately before the native RNG trampoline.
 
-**Reactions (Layers A/B)** are controllable by the SAME live-data mechanism — ✅ **proven offline +
-confirmed live 2026-06-27**. The reaction trigger is a `roll(100, Brave)` (canonical FFT Brave%-gate),
-in the real-code cluster `0x30BDEE / 0x30BE44 / 0x30BE9A / 0x30BEDA`; write the defender's **Brave**
-(`+0x2B`) before the roll to suppress the trigger. Live: Brave 10 → Blade Grasp suppressed, 3/3 hits.
-⚠️ **Chicken floor — never write Brave < 10** (`0x30A925 cmp [+0x2B],0x0A` flips the unit to panic/
-chicken). No reaction-slot byte exists in the struct (reactions resolve via VM `0x2BB0D4` from the
-skillset object), so DATA-disable (ENTD / JobCommand R/S/M) remains the static alternative. Shipping
-knob: `BraveOverride*` (offline notes `work/reaction-input-control-offline.md`).
+**Refuted:** `0x30F49C` exposes the defender or final avoidance verdict. The register identifies the
+attacker. **Refuted:** `0x30F4A7` is a general hit-verdict surface; it belongs to CT/turn evaluation.
 
-**Proven:** the same four real-code call sites also support selective, per-action suppression without
-mutating Brave. At each site the defender is in `rax` and the native chance is in `edx`; a cached DCL
-miss for that defender returns chance `0`, while a DCL hit or missing cache entry leaves `edx`
-unchanged. This covers Counter/Mana-Shield-class reactions. Shirahadori remains VM-internal and is
-not claimed by this gate.
+The mod computes its own percentage and random decision, then authors the binary result through the
+native surfaces above. Forecast display uses the same cached percentage; execution uses the cached
+decision.
 
-The native forecast hit% follows live evade bytes, but binary DCL outcome stamps therefore make it
-flicker between 0% and 100%; they are not an honest display lever for an authored intermediate
-percentage. Formula-driven preview instead uses the copy-time output hook in §10.
+## 5. Formula fingerprints
 
-## 5. Formula fingerprint constants
-
-When tracing real (non-virtualized) code, routines are recognizable by their invariant
-constants. Highest-signal first:
+Known FFT formula constants remain useful for locating or classifying decompiled fragments even
+when the final arithmetic is virtualized:
 
 ```text
-1638400            stat-display divisor: DisplayedStat = RawStat * JobMult / 1638400 (near-unique)
-10000 (/100,/100)  Faith term: MA * Q * CasterFaith/100 * TargetFaith/100
-5/4 -> 4/3 -> 3/2 -> 3/2 -> 2/3 -> 2/3   physical XA modifier chain, truncating each step
-                   (Strengthen, Atk-UP, Martial Arts, Berserk, Def-UP, Protect) — most distinctive
-Zodiac  3/2, 5/4, 3/4, 1/2   gated on a 12x12 compatibility lookup table (applied once, after the XA chain)
-(PA+Speed)/2       knife / longbow XA
-WP*WP              gun XA            PA*PA*Brave/100   bare fists
-MA*WP              staff / magic gun
-2/3                Protect / Shell damage reduction
-element            weak *2, half /2, absorb -> negate sign
-Speed*WP           Throw            PA*WP (*3/2 if polearm)   Jump
-XA + rand(1..XA) - 1                critical hit
-8 + 2*JobLevel + Level/4            JP per action; share *1/4
-EXP base 10, +/-1 per level diff, EXP-Boost *3/2
-CT += Speed; act at CT>=100; reset 100/80/60; charged action wait = 100/Speed
+zodiac multipliers   0.50, 0.75, 1.00, 1.25, 1.50
+Faith normalization  /100 and paired caster/target Faith terms
+Brave reactions      roll against Brave
+physical scaling     PA, WP, level, and weapon-family modifiers
 ```
 
-Disambiguation: `5/4` and `3/4` appear in both the XA chain and Zodiac; Zodiac applies once,
-after the XA chain, gated on the 12x12 table. The exact damage-variance variant and truncation
-order used by the remaster's float math remain unverified in the binary.
+Fingerprint matches are clues, not hookability proof. A candidate becomes an integration surface
+only after its native bytes, arguments, and lifecycle validate.
 
-## 6. In-battle unit struct (community-mapped, live-confirmed)
+## 6. Battle-unit layout ownership
 
-Base pointer = the unit (`rcx`/`rdi` at the hook sites). Live reads at `battle_base_ptr`
-return sane values across every field. The authoritative live offset map is owned by
-`04-engine-memory-model.md`; the core fields are:
+The battle-unit array is native memory with `0x200`-byte records. Core examples include HP at
+`+0x30`, MP at `+0x34`, Brave at `+0x2B`, Faith at `+0x2D`, PA at `+0x3E`, MA at `+0x3F`, Speed at
+`+0x40`, CT at `+0x41`, Move at `+0x42`, and position/facing at `+0x4F..+0x51`.
 
-```text
-+0x00  id (byte)               +0x30  HP     (word)     +0x3E  PA   (byte)
-+0x04  team/group id (byte)    +0x32  MaxHP  (word)     +0x3F  MA   (byte)
-+0x05  friend/foe (bit 0x10)   +0x34  MP     (word)     +0x40  Speed(byte)
-+0x28  EXP (byte)              +0x36  MaxMP  (word)     +0x42  Move (byte)
-+0x29  Level (byte)            +0x2A  MaxBrave (byte)   +0x43  Jump (byte)
-+0x2B  Brave (byte)            +0x2C  MaxFaith (byte)   +0x4F/0x50/0x51  X / Y / Dir (byte)
-+0x2D  Faith (byte)
-```
+The complete authoritative offset map, confidence tags, actor resolution, target records, status
+arrays, turn ownership, equipment identity, and movement state are defined in
+`04-engine-memory-model.md`.
 
-## 7. Modding-API feasibility — custom math needs a code mod
+## 7. Modding API feasibility
 
-Arbitrary custom damage math is not available through any existing modding API; it requires a
-Reloaded-II C# code mod.
+**Proven:** the public table managers patch Nex/NXD data and do not expose a damage-calculation event
+or algorithm hook. Faith Framework provides runtime data editing and debug UI, not a combat hook
+registration API.
 
-- The loader's C# table managers (`IFFTOAbilityDataManager` and ~30 siblings, all
-  `: IFFTOTableManager`) only do data-table patching: `ApplyTablePatch`, `GetOriginal*`,
-  `Get*`, `ApplyPendingFileChanges`. It is a file/table replacement system, not a runtime hook.
-  The `Ability` model surfaces only `JPCost`, `ChanceToLearn`, `Flags`, `AbilityType`,
-  `AIBehaviorFlags`; the backing `ABILITY_COMMON_DATA` is 4 bytes. There is no
-  event/delegate/hook for damage calc.
-- `Formula / X / Y / Element` DO exist as columns in the Nex `OverrideAbilityActionData` table,
-  and the loader merges `.nxd` cells — so a data-layer mod can repoint formula/X/Y by editing
-  that file (the ~100 existing formula shapes). What is missing is a *code* API for it and any
-  *damage-routine* hook.
-- Faith Framework (`Nenkai/FaithFramework`, shared base for FFXVI + IVC) is a live Nex/NXD
-  editor plus a debug-UI (ImGui) toolkit with a Nex Runtime Interface. It has no
-  hook-registration API and no event system. Editing the *algorithm* needs Reloaded.Hooks, not
-  Faith Framework.
-- The mod loader already sig-scans and hooks `FFT_enhanced.exe`
-  (`Hooks/FFTOResourceManagerHooks.cs`, via `IStartupScanner.AddMainModuleScan` + `CreateHook<T>`),
-  proving the runtime-hook mechanism on this exact executable. Prior-art code mod FFTacticsFix
-  (cipherxof) RE'd and hooked real presentation/engine functions here — but no shipped mod
-  hooks the combat/damage routine, so a gameplay-logic code mod is first-of-its-kind for the
-  engine.
+Data patches can select existing `Formula/X/Y/Element` shapes through
+`OverrideAbilityActionData`. Arbitrary DCL math requires the Reloaded-II code mod because the
+existing catalog cannot express the new algorithm.
 
-Therefore custom damage math is achieved by the **post-damage runtime reconciler** owned by
-`06-code-mod-runtime-dsl.md`: the data layer neuters vanilla damage into safe placeholders;
-HP/MP deltas are observed through `battle_base_ptr`; the attacker is resolved from action
-context; a C# formula computes the result; and the final HP/MP value is rewritten — all
-without touching the virtualized formula routine. The data layer alone covers a full
-job/skill/weapon/status/encounter redesign with no RE required.
+The implementation uses native action/result anchors plus a managed formula engine; it does not
+attempt to replace the virtualized dispatcher. The concrete runtime contract is defined in
+`06-code-mod-runtime-dsl.md`.
 
-### Vanilla baseline data
+### 7.1 Vanilla baseline data
 
-No public dump of IVC base `Formula/X/Y` exists; `OverrideAbilityActionData` is sparse `-1` and
-exposes only overrides, not resolved base values. Use FFHacktics WotL `Ability_Data` as the
-design baseline (8-byte entry: `0x07 Element, 0x08 Formula, 0x09 X, 0x0A Y, 0x0C CT, 0x0D MP`;
-layout shared PSX -> WotL -> IVC) and apply IVC rebalances on top. Documented IVC-vs-WotL
-rebalances (community RE, unofficial, possibly incomplete): enemies take ~30% less / allies
-deal ~20% more damage (global tuning, hinting at a single multiplier near the end of the damage
-routine); CT broadly reduced; assorted MP/JP tweaks (+30% JP from own actions); Arithmeticks
-attack-spell damage reduced; Chemist innate Treasure Hunter; ribbons/perfumes no longer
-gender-locked. Same WotL ability set, value rebalances only — no ID renumbering. Documented worked
-examples (community RE, possibly incomplete): CT Protect/Shell 25->34, Bahamut 10->15, Graviga
-12->10; MP Protectja 24->20, Lich 40->50; JP Teleport 600->3000, Meteor 1500->900.
+`OverrideAbilityActionData` is a sparse override layer, not a resolved dump of stock action rows.
+WotL action data is a useful design baseline because the field model is shared, but IVC values must
+be extracted or observed before they are treated as authoritative.
 
 ## 8. Stable-touchpoint register classification
 
-The stable `battle_base_ptr` hook is non-virtualized and fires with `rcx = battle unit`. A
-read-only register snapshot at that touchpoint classifies each register against known battle
-state. This is a clue-finding layer, not a formula hook, and does not prove action identity by
-itself; the touchpoint is a UI/stat read, so registers usually show only the unit being read.
-The signal is useful when a second unit pointer or a battle-context object appears consistently
-around actions, giving a concrete next pointer to probe.
-
-Register-classification vocabulary:
+At the native battle-unit read site, `rcx` is the touched unit. Other register values can be
+classified against the known unit array and readable memory to locate surrounding controller or
+action objects.
 
 ```text
-unit:touched   register == the unit pointer that fired the hook
-unit:id=...    register == another registered battle-unit pointer
-readable       points at readable process memory, not yet identified
-unreadable     VirtualQuery does not consider the address readable
-zero           literal zero
+unit:touched  register equals the unit that triggered the hook
+unit:id=N     register equals another known battle unit
+readable      pointer targets readable memory but is not classified
+unreadable    pointer is not readable according to VirtualQuery
+zero          literal zero
 ```
 
-A pointer-scan layer follows readable non-unit register roots and scans their first bytes for
-exact known battle-unit pointers — if a register points at a battle controller / action-context
-object, the scan reveals actor/target unit pointers inside it without mutating game state. A
-stable engine context pointer found this way would supersede CT as the attacker source.
+This technique is a discovery aid. A UI/stat read does not itself prove action ownership. Native
+actor context, pending action context, selector context, and final apply targets are the accepted
+ownership surfaces; see `04-engine-memory-model.md`.
 
-## 9. CT action-resolution evidence (diagnostic only)
+## 9. CT evidence
 
-`unit+0x41` is CT and can explain some immediate physical captures: `ct-reset` means a non-target
-unit recently dropped CT, and `ct-low` means a non-target unit remains near a post-action CT value
-when polling misses the reset frame.
+`unit+0x41` is CT. It can help correlate immediate actions in diagnostics, but it is **Refuted** as
+an ownership authority: Wait changes CT without damage, delayed actions resolve after the caster's
+reset, and reactions or passive effects do not require a clean CT transition.
 
-CT is **Refuted** as DCL ownership. It is not a complete source of truth: delayed actions can land
-long after the caster's CT reset; Wait changes CT without producing damage; reactions/counters do
-not require a clean CT drop; and passive/status/trap/reflect effects need separate ownership.
-Use CT only in throwaway comparison profiles and historical log analysis. The accepted ownership
-surfaces are native actor context, pending context, selector context, and final pre-clamp HP/MP
-targets; the action-context model is owned by `04-engine-memory-model.md`.
+CT must not drive production attribution or DCL mechanics.
 
-## 10. Forecast hit-% display buffer (Layer 1 — visual control) — ✅ CONFIRMED LIVE 2026-06-27
+## 10. Forecast hit-percentage display
 
-The **displayed attack hit-%** (the number in the action forecast panel) is materialized in
-ordinary memory and is fully read/write-able from outside the process — Denuvo virtualizes
-*code*, not *data*. A Cheat-Engine-style differential scan (`work/mem_scan.py`: `find 3` →
-`filter 77` → `filter 82`) collapsed 462,950 candidates → 15 → **4 addresses** that track the
-on-screen %:
+The displayed hit percentage is materialized in native memory at RVA `0x7832C0`. The canonical
+copy path is:
 
-- `0x1407832C0` — **canonical static display buffer** (RVA `0x7832C0`), in the panel-exporter
-  region; this is the value the renderer draws.
-- three heap mirrors (`0x12DBAF3E0`, `0x12DCAF98A`, `0x436AC1C540`) — UI copies.
-
-External `WriteProcessMemory` to all four **succeeds** (write sticks). But writing while the
-panel is already drawn does **not** refresh the text: the UI is **retained-mode** — it draws
-the number once and only redraws when the panel is *dirtied* (cursor moves on/off a target),
-and dirtying **recomputes** the value, overwriting an external poke. So a naive external write
-is racy (the engine wins on the next redraw). Confirmed live: one-shot write stuck in memory
-while the cursor was static; the on-screen text stayed at the old value until a redraw.
-
-**Data flow (real code, not VM):**
-
-```
-0x227FEA  mov   rbp, [rip+0x2DCBD07]   ; rbp = *(global forecast-object ptr)  @ VA 0x142FF3CF8
-0x227FF1  test  rbp, rbp / je …        ; null-check
-0x227FFA  movzx eax, word [rbp+0x2C]   ; AX = computed hit%  (source = object+0x2C)
-0x227FFE  mov   r10d, 2
-0x228004  mov   word [0x7832C0], ax    ; copy → display buffer  (renderer reads here)
+```text
+0x227FEA  load forecast-object pointer
+0x227FFA  load word [object+0x2C]
+0x227FFE  mov r10d, 2
+0x228004  store AX to [0x7832C0]
 ```
 
-Additional real-code writers of `0x7832C0` (a second copy path, from static mirrors):
-`0x2C7F98`, `0x2C8C16`, `0x2C8E70`, `0x2C9806` (each `mov word [0x7832C0], ax`, inside a SIMD store
-block around `0x7832B0`). All are RVA < `0x610000` → **hookable** (`work/disasm_hitpct.py`
-enumerates them; the previous scan windowed `0x7832E6..` and missed `0x7832C0` just below it).
+**Proven:** hooking `0x227FFE` and replacing `AX` before the native store controls the rendered
+percentage deterministically. External writes after the panel is drawn do not update the retained
+UI until redraw, and redraw recomputes the source; polling the buffer is therefore not a robust
+presentation mechanism.
 
-**Deterministic control (no race):** hook `0x227FFE` (`mov r10d, 2`, a clean non-RIP site
-*between* the load and the store) with `AsmHookBehaviour.ExecuteFirst` and set `AX` to the
-forced value before the engine's own store at `0x228004` runs. The game then writes **our**
-value at copy time, *before* the renderer reads the buffer on the same redraw → the displayed
-% is deterministically ours, no poke race. This is the engine-side analogue of the OUTPUT-paint
-rule used for avoidance results. Mod features: the diagnostic static controls
-`PreviewHitPctControlEnabled` / `PreviewHitPctForcedValue` / `PreviewHitPctLogOnly`, plus the
-formula-driven `DclPreviewHitPctEnabled`. The default RVA is `0x227FFE` with expected bytes
-`41 BA 02 00 00 00`. In DCL mode calc-entry mirrors the percentage from the same cached decision
-used by execution into one native slot per target. The copy hook derives the target index from the
-forecast-object relation `rbp = target_unit + 0x1BE` and paints that slot into `AX`; no managed call
-runs on the UI path. The hook records [0]=fire count, [4]=last natural %,
-[8]=displayed override, [12]=site RVA, followed by 64 per-target DCL percentages; the address is
-printed at install as `[PREVIEW-HITPCT-HOOK] … buf=0x…`, so the
-result is verifiable externally without the screen.
+**Proven:** this buffer is visual only. Execution accuracy is independent. DCL forecast control
+uses the percentage from the same per-target decision cache that execution consumes.
 
-**Proven:** with the DCL hit formula authoring 50%, the forecast rendered 50% for a basic attack
-whose native panel otherwise showed 532 damage/KO and Counter. Execution reused the matching
-cached decision, rolled the deterministic value 90, produced a miss, preserved the target's 363 HP,
-and suppressed the defender's Counter chance from 69 to 0. Forecast percentage and execution
-therefore share the authored per-target decision path.
+## 11. Forecast HP amount and applied result
 
-**Live proof (2026-06-27):** force value 7 deployed; an Agrias→Ramza preview whose true odds
-were 3% (Blade Grasp) rendered **7%** on screen for every target. Memory cross-check
-(`work/read_hitpct_hook.py`) at that moment: `fireCount=1`, `lastNatural=3`, display buffer
-`0x7832C0 = 7`, natural source `object+0x2C = 3` — i.e. the engine computed 3, the hook painted
-7 into the buffer the renderer reads, and the real source was left at 3 (the actual roll is
-untouched). Both the screen and memory agree: the displayed forecast hit-% is fully ours.
+The forecast object is `target unit + 0x1BE`.
 
-**Purely visual.** The actual hit roll is computed independently inside the VM at execution
-time; painting `0x7832C0` changes only the forecast number, not the outcome. This is DCL Layer 1
-(show a custom hit-% from our own formula); the matching *outcome* control is sections 4/9.
-
-## 11. Forecast HP preview + result — the unified `+0x1C4` / `+0x1C6` levers
-
-The single most important forecast fact: **the "forecast object" is not a separate UI object — it
-is `target_unit + 0x1BE`**. Its HP amount fields are:
-
-- `obj+0x6 == unit+0x1C4`: staged HP-debit / damage.
-- `obj+0x8 == unit+0x1C6`: staged HP-credit / healing.
-
-For damage, `obj+0x6` drives **all three** of:
-
-1. the forecast **damage NUMBER** (the red "500 Damage" in the panel),
-2. the **HP-bar ghost-depletion** (how much of the target bar greys out), and
-3. the **apply path** — it is the *same* staged debit `word[unit+0x1C4]` that APPLY (`0x30A484`)
-   reads and the pre-clamp hook (`0x30A5D7`, §4) rewrites at resolution.
-
-For healing, `obj+0x8` drives the forecast **healing NUMBER** (green `+N HP`) and the **HP-bar ghost
-refill**. The same staged credit `word[unit+0x1C6]` is read by APPLY (`0x30A484`) as
-`newHP = clamp(HP + credit - debit, 0, MaxHP)`. A natural healing forecast uses `+0x1C4 = 0`,
-`+0x1C6 = heal`, and `+0x1E5 = 0x40`. The ghost refill clamps at MaxHP.
-
-The forecast object is reachable through three aliased globals that all hold the same pointer:
-`0x142FF3CF8` (used by the number formatter and hit-% copy §10), `0x14186AF70`, `0x14186AF60`.
-Companion fields on the same object: `obj+0x2C == unit+0x1EA` = the hit-% source (§10).
-
-**Retained-mode draw (the key timing fact).** The engine computes the forecast amount once when the
-preview opens and does not rewrite it per frame. The number and HP-bar ghost are drawn at open time;
-a value written after that draw shows only on the next open. This applies to both damage
-(`obj+0x6`) and healing (`obj+0x8`).
-
-### Three levers for the preview HP amount (number + bar)
-
-| Lever | What it touches | Timing | Coverage | Mod setting |
-| --- | --- | --- | --- | --- |
-| **Poke** (poll-write `obj+0x6` or `obj+0x8`) | source field → number **and** bar | shows on (re)open | **universal** (any action) | `PreviewForecastPoke*` |
-| **Finalizer hooks** (force the `obj+0x6` store) | source field → number **and** bar | **first-open clean** (no reopen) | per-formula (whack-a-mole) | `PreviewForecastSource*` |
-| **Number paint** (force the format dispatch) | display buffer `0x1407832BE` only | first-open clean | number only — **NOT the bar** | `PreviewDamage*` |
-
-1. **Universal poke — the robust catch-all (PROVEN physical + magic).** Each poll, deref
-   `[0x142FF3CF8]`; if it points cleanly into the unit table (base `0x141853CE0`, stride `0x200`,
-   `obj = unit + 0x1BE`), write our value to the configured forecast field. Use
-   `PreviewForecastDamageFieldOffset = 0x6` for damage/debit (`unit+0x1C4`) and `0x8` for
-   healing/credit (`unit+0x1C6`). Works for **every** action type because it overwrites whatever any
-   finalizer computed. Safe: at resolution the producer re-stages `+0x1C4/+0x1C6` before APPLY, so a
-   preview poke never leaks into the real result (the pre-clamp owns the result). Caveat:
-   retained-mode means it lands on the **next** open, not while held.
-
-2. **Compute-time finalizer hooks — first-open clean, but per-formula.** Hook the instruction that
-   *writes* `obj+0x6` during the forecast compute (`ExecuteFirst`, force the store register) so the
-   number+bar are correct on the very first open. Different formulas use different writers — this is
-   a whack-a-mole list, so the poke remains the guarantee:
-   - `0x30637E` `66 41 89 50 06` `mov [r8+6],dx` — **MAGIC (Fire) — confirmed firing live**.
-   - `0x308D8F` `66 89 41 06` `mov [rcx+6],ax`, `rcx = [0x14186AF70]` — Q15-scaled store, the
-     **physical-attack candidate** (found via disasm; the 4-byte store is safe to hook — followed by
-     a relocatable 5-byte `call`, no internal jump target).
-   - `0x307DC4` `mov [r10+6],dx`, `0x309664` `mov [r9+6],cx` — other formula paths.
-
-3. **Display-number paint — cosmetic, number ONLY (the bar-mismatch trap).** The forecast number
-   is materialized at display buffer **`0x1407832BE`** (RVA `0x7832BE`, two bytes below the hit-%
-   buffer `0x7832C0`). A format dispatch with ~10 branches loads a field from the object (`obj+0x6`
-   for damage, picked by flags) into `dx` and `jmp`s to the shared store `0x228488`
-   (`mov word [rip+0x55AE2F], dx`). Hook each terminal `jmp 0x228488` (`ExecuteFirst`, set `dx`) —
-   a basic attack/Fire uses branch **`0x22802F`** (`[rbp+6]`), *not* the `0x2280D7` first guessed.
-   **This paints only the on-screen number; the HP-bar reads `obj+0x6` directly, so painting the
-   number leaves the bar natural** — the exact "shows 500 but the bar says 184" symptom. Use it only
-   as a number guarantee layered on top of the poke/finalizer, never alone for coherence.
-
-### The result (actual applied HP change)
-
-Force the staged debit at the pre-clamp hook **`0x30A5D7`** (§4), bytes `0F BF 45 06`
-(`movsx eax, word[rbp+6]` = `word[unit+0x1C4]`). ⚠️ **Decimal gotcha:** `0x30A5D7` = **`3188183`**,
-not `3188695` (which is `0x30A7D7`, where the bytes are `8B D5 41 8D` — a wrong RVA silently logs
-`[PRECLAMP-REWRITE-SKIP]` and the result stays natural). **Magic damage rides the same pre-clamp**
-(the dispatcher keys on effect-kind `0x300` = apply-HP, not weapon-vs-spell), so one hook covers
-physical and magic results alike.
-
-Healing/credit uses the same pre-clamp record at `word[rbp+8] == word[unit+0x1C6]`. A coherent heal
-control writes `obj+0x8` for preview and forces the staged credit at pre-clamp for the actual HP
-gain; the native APPLY clamp still owns the MaxHP boundary. Passive/side-effect healing uses the
-same `+0x1C6` surface, so runtime formulas must distinguish explicit action heals from passive
-HP-credit events before forcing credit.
-
-### The coherent recipes
-
-```
-damage preview = poke (or finalizer) writes obj+0x6 = formula      -> damage number + ghost depletion
-damage result  = pre-clamp 0x30A5D7 forces word[+0x1C4] = formula  -> actual HP loss
-
-heal preview   = poke writes obj+0x8 = formula                     -> healing number + ghost refill
-heal result    = pre-clamp forces word[+0x1C6] = formula           -> actual HP gain
+```text
+object+0x06 == unit+0x1C4   staged HP debit / damage
+object+0x08 == unit+0x1C6   staged HP credit / healing
+object+0x2C == unit+0x1EA   forecast hit percentage source
 ```
 
-Feed both the same formula value and the preview (number **and** bar) equals the result. The forecast
-half of the DCL owns hit-% display, damage number + ghost depletion, healing number + ghost refill,
-and the applied HP amount for physical, magic, and healing actions.
+The staged debit drives the forecast damage number, ghost HP-bar depletion, and later HP apply.
+The staged credit drives healing forecast and HP apply. The native apply formula is:
 
-**Still open — magic AVOIDANCE.** Damage, preview, and the hit-% *display* are unified across
-physical/magic, but magic *avoidance* is a separate Faith roll (`0x304E33`, §9); zeroing the
-physical evade bytes does **not** make a spell always-hit. That is the remaining always-hit gap for
-magic; everything in this section is independent of it (it controls the shown/applied **amount**,
-not whether the spell connects). **Static answer found (2026-07-02, Strong-static, live-pending):**
-the roll site is inside function `0x304DF0` — spell hit-% (`obj+0x2C`) × target-Faith snapshot
-(`g_7B079D`) ÷ 100, then shared RNG `roll(range, chance)` at `0x278EE0`; a miss stamps evade-kind
-`+0x1C0 = 0x06`. Always-hit lever candidate: hook `0x304E2B`, force `edx = 100`. Full disasm
-evidence in `work/dcl-magic-status-reaction-candidates.md`.
+```text
+newHP = clamp(currentHP + credit - debit, 0, MaxHP)
+```
 
-## 12b. LT3 live results — the calc entry is PROVEN; combat rolls are VM-internal
+The forecast UI is retained-mode. Values must be authored at calculation/finalization time for a
+correct first render. A later write becomes visible only after the preview is rebuilt.
 
-Live hooks (2026-07-02, `work/lt3-calc-rng-results.md`) settled the compute architecture:
+The universal result surface is the staged debit/credit read at `0x30A5D7`. Formula-specific
+forecast writers include:
 
-- **`computeActionResult 0x3099AC` ✅ PROVEN live** — head-hookable real code; `rcx` = order record
-  at `caster+0x1A0` (`[0]` caster slot, `[1]` action type, `[2..3]` ability id), `dl` = target index.
-  Fires at preview-open, continuously during a charge, at execution, and — decisively — for **AI
-  actions including multi-target candidate sweeps** (AI same-calc PROVEN). This is the DCL's
-  per-(action,target) context spine.
-- **The shared RNG head `0x278EE0` is a Denuvo trampoline** (`E9 …` jmp into the VM); hooking the
-  head with a return-address ring maps every real caller. Live map: the Fire/Blind accuracy and
-  status rolls come from **VM-internal callers** (Blind's roll captured with `chance=71` — exact
-  match with the displayed %), so the real-code roll sites (`0x304E33`, `0x306636`) do NOT serve
-  these abilities and per-roll forcing there is refuted-in-practice. The one **real-code** combat
-  roll observed live: the reaction **Brave-gate return `0x30BDF3`** (`chance=61` = defender Brave) —
-  hookable/forceable.
-- Doctrine consequence: control stays on **data** — input the VM reads (evade bytes, immunity bits)
-  or staged output rewritten post-roll/pre-apply (`+0x1C4` debit via pre-clamp; apply-mask `+0x1D0`,
-  kind `+0x1C0` remains an outcome candidate; `+0x1A8` is an item/inventory side-effect id and must
-  not be used as status authority).
+```text
+0x30637E  mov [r8+6], dx     observed magic debit writer
+0x308D8F  mov [rcx+6], ax    physical candidate
+0x307DC4  mov [r10+6], dx    additional action family
+0x309664  mov [r9+6], cx     additional action family
+```
 
-## 12. 2026-07-02 offline sweep — static anchors pending live confirmation
+The display-number buffer at RVA `0x7832BE` affects only the printed number; it does not control
+the ghost bar. A coherent preview must author the underlying staged field, not only paint the
+formatted number.
 
-A six-agent offline sweep (static disasm + snapshot mining + decomp/cheat-table cross-reference; no
-live tests) produced **Strong (static)** anchors for every remaining doc-08 front. They are
-inventoried in `08-dcl-information-requirements.md` (updated coverage cells) and evidenced in the
-`work/dcl-*.md` deliverables; each is promoted here only after its live confirmation. Headlines:
-current-action global block `0x14186AF60..F4` (`word[0x14186AFF0]` = ability id,
-`dword[0x14186AFF4]` = caster index); pending-order record `unit+0x1A1/+0x1A2`; executor
-`actor+0x142` = copy of `+0x1A2`; full 3×5-byte status arrays `+0x57`/`+0x5C`/`+0x61`/`+0x1EF`
-(classic PSX bit layout); position/facing `+0x4F/+0x50/+0x51`; active-turn marker `+0x1B8 == 1`;
-status-proc roll `0x306636` vs staged % `g_7B07AC` (`0x1407B07AC`, pokeable); reaction bitfield
-`unit+0x94..0x97` + dispatcher `0x30B4EC` + Brave-gates; shared RNG `0x278EE0`; battle tile table
-`0x140D8DCB0` (8 B/tile, height at `+2`, map dims `0x140C6AD6A/6B`, level bit = unit `+0x51` bit 7,
-per-action AoE mark byte at `+5`; see `work/dcl-tilemap-candidates.md`). Consolidated
-live-test checklist: `work/dcl-live-test-master-plan.md`.
+## 12. Calculation entry and RNG boundary
+
+**Proven:** native function `0x3099AC` is the calculation entry for a specific action and target.
+`rcx` points to the order record at caster `+0x1A0`; `dl` is the target index. It is used by player
+preview, execution, charged-action recalculation, and AI candidate evaluation.
+
+**Proven:** the shared RNG head at `0x278EE0` is a Denuvo trampoline. Accuracy and status rolls may
+arrive from VM-internal callers, so native caller hooks do not provide complete per-action roll
+control. Brave-gated reaction sites can remain native even when the originating ability calculation
+is virtualized.
+
+The stable doctrine is data-first input control plus staged-output reconciliation. Native hooks
+must fail closed when expected bytes or contextual invariants do not match.
 
 ## Sources
 
-- PSX decomp: https://github.com/Talcall/FFT-1997-Decomp
-- Cheat table (offsets + AOBs): https://github.com/bbfox0703/Mydev-Cheat-Engine-Tables (`FFT_enhanced.CT`);
-  upstream https://fearlessrevolution.com/viewtopic.php?t=36719 , https://opencheattables.com/viewtopic.php?t=1560
-- Classic-data tooling / patches: https://github.com/Glain/FFTPatcher
-- Formula docs: https://ffhacktics.com/wiki/Formulas , https://ffhacktics.com/wiki/Battle_Stats ,
-  https://ffhacktics.com/wiki/Weapon_Damage_Calculation , https://ffhacktics.com/wiki/Ability_Data
-- AeroStar Battle Mechanics Guide: https://gamefaqs.gamespot.com/ps/197339-final-fantasy-tactics/faqs/3876
-- Read-site / layouts: https://github.com/Nenkai/fftivc-nex-layouts (`OverrideAbilityActionData.layout`)
-- Loader API: https://nenkai.github.io/ffxvi-modding/modding/mod_loader_api_fft/
-- Loader interfaces/models + hook template: https://github.com/Nenkai/fftivc.utility.modloader
-  (`Hooks/FFTOResourceManagerHooks.cs`)
-- Reloaded hooking: https://reloaded-project.github.io/Reloaded-II/CheatSheet/CallingHookingGameFunctions/
-- Reloaded sig scan: https://reloaded-project.github.io/Reloaded-II/CheatSheet/SignatureScanning/
-- FFTacticsFix (prior-art code mod): https://github.com/cipherxof/FFTacticsFix
-- FaithFramework: https://github.com/Nenkai/FaithFramework
-- IVC changes guide: https://gamefaqs.gamespot.com/pc/538659-final-fantasy-tactics-the-ivalice-chronicles/faqs/82197
-- FFHacktics IVC board: https://ffhacktics.com/smf/index.php?board=85.0
+- Talcall, `FFT-1997-Decomp` — conceptual classic-engine function and structure map
+- Nenkai, Faith Framework — Nex/NXD runtime and engine framework
+- Reloaded-II and Reloaded.Hooks documentation — native hook infrastructure
+- FFHacktics WotL action data — design baseline, not an IVC resolved-value authority

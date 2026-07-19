@@ -43,7 +43,12 @@ LIVE_LEVEL_OFFSET = 0x29
 LIVE_BRAVE_OFFSET = 0x2B
 LIVE_HP_OFFSET = 0x30
 LIVE_MAX_HP_OFFSET = 0x32
+LIVE_REACTION_SET_OFFSET = 0x94
+LIVE_REACTION_SET_SIZE = 0x04
 LIVE_MIN_SIZE = 0x200
+
+REACTION_MIN = 422
+REACTION_MAX = 453
 
 CURRENT_COMPONENTS = (
     "resume_en00_world.sav",
@@ -109,6 +114,16 @@ class ComponentAudit:
 
 def parse_int(value: str) -> int:
     return int(value, 0)
+
+
+def reaction_set_bit(reaction_id: int) -> tuple[int, int]:
+    """Return the live-unit byte offset and mask for one Reaction id."""
+    if not REACTION_MIN <= reaction_id <= REACTION_MAX:
+        raise ValueError(
+            f"Reaction id must be in [{REACTION_MIN}, {REACTION_MAX}]: {reaction_id}"
+        )
+    relative = reaction_id - REACTION_MIN
+    return LIVE_REACTION_SET_OFFSET + relative // 8, 1 << (7 - relative % 8)
 
 
 def parse_args() -> argparse.Namespace:
@@ -302,6 +317,18 @@ def stage_current_components(
         mutable = bytearray(data)
         for target in targets:
             struct.pack_into("<H", mutable, target.reaction_offset, reaction_id)
+            if target.kind == "live":
+                old_relative, old_mask = reaction_set_bit(expected_reaction_id)
+                new_relative, new_mask = reaction_set_bit(reaction_id)
+                old_offset = target.record_offset + old_relative
+                new_offset = target.record_offset + new_relative
+                if mutable[old_offset] & old_mask == 0:
+                    raise AssertionError(
+                        f"{name} live target at 0x{target.record_offset:X} does not carry "
+                        f"Reaction {expected_reaction_id} in its reaction-set bitfield"
+                    )
+                mutable[old_offset] &= ~old_mask
+                mutable[new_offset] |= new_mask
         staged[name] = bytes(mutable)
         targets_by_name[name] = targets
 
@@ -365,6 +392,34 @@ def audit_roundtrip(
                 raise AssertionError(f"{name} source target no longer contains {expected_reaction_id}")
             if struct.unpack_from("<H", after, target.reaction_offset)[0] != reaction_id:
                 raise AssertionError(f"{name} fixture target does not contain {reaction_id}")
+            if target.kind == "live":
+                old_relative, old_mask = reaction_set_bit(expected_reaction_id)
+                new_relative, new_mask = reaction_set_bit(reaction_id)
+                old_offset = target.record_offset + old_relative
+                new_offset = target.record_offset + new_relative
+                before_set = bytearray(
+                    before[
+                        target.record_offset + LIVE_REACTION_SET_OFFSET :
+                        target.record_offset + LIVE_REACTION_SET_OFFSET + LIVE_REACTION_SET_SIZE
+                    ]
+                )
+                after_set = after[
+                    target.record_offset + LIVE_REACTION_SET_OFFSET :
+                    target.record_offset + LIVE_REACTION_SET_OFFSET + LIVE_REACTION_SET_SIZE
+                ]
+                if before[old_offset] & old_mask == 0:
+                    raise AssertionError(
+                        f"{name} source live target at 0x{target.record_offset:X} lacks "
+                        f"Reaction {expected_reaction_id} in its reaction-set bitfield"
+                    )
+                before_set[old_relative - LIVE_REACTION_SET_OFFSET] &= ~old_mask
+                before_set[new_relative - LIVE_REACTION_SET_OFFSET] |= new_mask
+                if after_set != bytes(before_set):
+                    raise AssertionError(
+                        f"{name} fixture live target at 0x{target.record_offset:X} has an "
+                        "inconsistent reaction-set bitfield"
+                    )
+                allowed.update((old_offset, new_offset))
         changed = tuple(
             index
             for index, pair in enumerate(zip(before, after, strict=True))
@@ -424,6 +479,10 @@ def build_manifest(
         f"- Live fingerprint: level `{identity.level}`, Brave `{identity.brave}`, max HP `{identity.max_hp}`",
         f"- Reaction: `{expected_reaction_id}` ({reaction_names[expected_reaction_id]}) -> "
         f"`{reaction_id}` ({reaction_names[reaction_id]})",
+        f"- Live reaction-set transition: `unit+0x{reaction_set_bit(expected_reaction_id)[0]:X} "
+        f"& 0x{reaction_set_bit(expected_reaction_id)[1]:02X}` -> "
+        f"`unit+0x{reaction_set_bit(reaction_id)[0]:X} & "
+        f"0x{reaction_set_bit(reaction_id)[1]:02X}`; unrelated bits are preserved",
         "- Learned-state policy: explicit test-only bypass for reserved Reaction 443",
         "",
         "## Current-member proof",
@@ -436,9 +495,19 @@ def build_manifest(
         "| --- | --- | ---: | ---: | --- |",
     ]
     for audit in changed:
-        targets = ", ".join(
-            f"{target.kind}@0x{target.reaction_offset:X}" for target in audit.targets
-        )
+        rendered_targets: list[str] = []
+        for target in audit.targets:
+            rendered = f"{target.kind}@0x{target.reaction_offset:X}"
+            if target.kind == "live":
+                set_offsets = sorted(
+                    {
+                        target.record_offset + reaction_set_bit(expected_reaction_id)[0],
+                        target.record_offset + reaction_set_bit(reaction_id)[0],
+                    }
+                )
+                rendered += "/set@" + "+".join(f"0x{offset:X}" for offset in set_offsets)
+            rendered_targets.append(rendered)
+        targets = ", ".join(rendered_targets)
         offsets = ", ".join(f"0x{offset:X}" for offset in audit.changed_offsets)
         lines.append(
             f"| `{audit.name}` | {targets} | `0x{audit.source_checksum:08X}` | "
@@ -448,8 +517,9 @@ def build_manifest(
         [
             "",
             "Every member not listed in the table is byte-identical after pack/unpack. Every listed",
-            "member changes only its four-byte CRC field and the enumerated Reaction words. The packed",
-            "PNG was unpacked again before these claims were emitted.",
+            "member changes only its four-byte CRC field, the enumerated Reaction words, and the",
+            "enumerated live reaction-set bytes. The packed PNG was unpacked again before these",
+            "claims were emitted.",
             "",
             "## Artifact",
             "",

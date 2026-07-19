@@ -1,0 +1,27 @@
+{
+  "_note": "Job-free observe-only technical fixture for the DCL Fear mechanism. Basic Attack 0 supplies only a common successful-result transaction for the custom status bit; Chicken ability 242 is deliberately excluded because it changes Brave instead of producing a status packet. The safe target bridge replaces the complete native builder call, executes the builder first, and does not assign Fear to a job or define final balance content.",
+  "DclFearControlEnabled": true,
+  "DclFearLogOnly": true,
+  "DclFearStatusRuleName": "dcl-fear",
+  "DclFearTargetListRva": 2629315,
+  "DclFearTargetListExpectedBytes": "E8 8C 08 00 00",
+  "DclFearPlayerConfirmRva": 2147679,
+  "DclFearPlayerConfirmExpectedBytes": "E8 94 AD FF FF",
+  "DclFearChickenDispatchRva": 3718199,
+  "DclFearChickenDispatchExpectedBytes": "F6 47 63 04 74 47",
+  "DclFearMaxLogs": 200,
+  "DclStatusControlEnabled": true,
+  "DclStatusRules": [
+    {
+      "Name": "dcl-fear",
+      "AbilityId": 0,
+      "ActionType": 1,
+      "StatusByteIndex": 2,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "absent",
+      "ResistanceFormula": "clamp(target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 1
+    }
+  ]
+}

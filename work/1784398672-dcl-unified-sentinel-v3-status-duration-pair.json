@@ -1,0 +1,12 @@
+{
+  "settings": "work/1784398672-battle-runtime-settings.dcl-unified-sentinel-v3.json",
+  "status_effect_data_xml": "work/1784394860-dcl-da-dm-StatusEffectData.xml",
+  "neutralized_statuses": [
+    "Immobilize",
+    "Disable"
+  ],
+  "sha256": {
+    "settings": "6FAB187D2460390284FBCF657A9342BF81F654A5492E8D755253459B58A45392",
+    "status_effect_data_xml": "C207DF78A1BED5C19D6F0260A9D104339A81E70E781568C105A8549C511D58C9"
+  }
+}

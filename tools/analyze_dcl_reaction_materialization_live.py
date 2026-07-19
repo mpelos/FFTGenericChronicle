@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-HOOK_RE = re.compile(r"\[DCL-REACTION-MATERIALIZED-HOOK\].*rva=0x2063BD\b")
+HOOK_RE = re.compile(r"\[DCL-REACTION-MATERIALIZED-HOOK\].*rva=0x2831BD\b.*\bstage=special-pre-target-build\b")
 COMMIT_HOOK_RE = re.compile(r"\[DCL-REACTION-COMMIT-HOOK\]\s+pass=2\b.*rva=0x206421\b")
 EFFECT_HOOK_RE = re.compile(r"\[DCL-REACTION-EFFECT-HOOK\].*rva=0x212C2E\b")
 ROW_RE = re.compile(
@@ -103,7 +103,7 @@ def analyze(
         if row.reaction == reaction_id and row.reactor == expected_actor_reactor and row.source == source
     ]
     checks = [
-        ("materialization hook installed at 0x2063BD", bool(HOOK_RE.search(text))),
+        ("special-family materialization hook installed at 0x2831BD", bool(HOOK_RE.search(text))),
         ("pass-2 commit hook installed at 0x206421", bool(COMMIT_HOOK_RE.search(text))),
         ("effect hook installed at 0x212C2E", bool(EFFECT_HOOK_RE.search(text))),
         (f"exactly {expected_materialized_count} matching materialized row(s)", len(rows) == expected_materialized_count),

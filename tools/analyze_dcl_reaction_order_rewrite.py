@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed on the guarded post-materialization Reaction order rewrite."""
+"""Fail closed on the guarded special-family Reaction order rewrite."""
 from __future__ import annotations
 
 import argparse
@@ -24,11 +24,18 @@ class Anchor:
 ANCHORS = (
     Anchor("settings-switch", "mod", "public bool DclReactionOrderRewriteEnabled { get; set; } = false;", "controller is disabled by default"),
     Anchor("settings-log-only", "mod", "public bool DclReactionOrderRewriteLogOnly { get; set; } = true;", "writes are log-only by default"),
+    Anchor("pre-target-build-rva", "mod", "public int DclReactionMaterializationProbeRva { get; set; } = 0x2831BD;", "controller runs on the special accepted branch"),
+    Anchor("pre-target-build-bytes", "mod", 'public string DclReactionMaterializationProbeExpectedBytes { get; set; } = "48 8B CB E8 6F F0 FF FF 0F B7 35 24 7E 5E 01";', "hook has the exact accepted-branch instruction guard"),
+    Anchor("register-boundary-validator", "validator", "the materialization shim is register-bound to special-family pre-target-build boundary", "profiles cannot redirect the register-specific shim to the old post-selector boundary"),
     Anchor("shared-byte-guard", "validator", "accepted-order rewrite requires DclReactionMaterializationProbeEnabled", "controller requires the exact-byte-guarded audit hook"),
     Anchor("carrier-range", "validator", "carrier id must be a native Reaction id in 422..453", "one exact native carrier owns each rewrite"),
+    Anchor("special-carrier-only", "validator", "generic carriers skip this hook", "generic carriers such as 443 are rejected because they bypass 0x2831BD"),
     Anchor("bounded-writes", "validator", "maximum accepted-order writes must be within 1..32", "live writes are bounded"),
     Anchor("live-original-guards", "validator", "live accepted-order writes require exact expected native action type and ability id guards", "live mutation cannot wildcard the native order shape"),
-    Anchor("exact-carrier", "mod", '$"cmp word [rbp-2Eh], {carrierId}"', "exact Reaction id gates the controller"),
+    Anchor("reactor-index-register", "mod", '"mov r9d, ebp"', "accepted selector index is captured from ebp"),
+    Anchor("reactor-unit-register", "mod", '"mov r8, rbx"', "accepted reactor unit is captured from rbx"),
+    Anchor("order-register", "mod", '"mov rcx, rdi"', "materialized unit order is captured from rdi"),
+    Anchor("exact-carrier", "mod", '$"cmp word [rdx], {carrierId}"', "selected-id global gates the exact Reaction carrier"),
     Anchor("selected-lower-bound", "mod", '"cmp r9d, 0"', "negative selected indices fail closed"),
     Anchor("selected-upper-bound", "mod", '"cmp r9d, 20"', "selected unit-table indices stay within the native table"),
     Anchor("original-type-guard", "mod", '$"cmp byte [rcx+1], {_settings.DclReactionOrderRewriteExpectedActionType}"', "optional native type guard precedes writes"),
@@ -79,11 +86,14 @@ def render(mod_path: Path, validator_path: Path, output: Path) -> tuple[str, boo
         "",
         "## Contract",
         "",
-        "The controller runs only at accepted boundary `0x2063BD`. It matches one exact Reaction id,",
+        "The controller runs only on special-family accepted boundary `0x2831BD`, reached by ids",
+        "`434/435/436/437/440/441/442` immediately before their VM helper at `0x2831C0`. It matches one exact Reaction id,",
         "optionally verifies the carrier's native executable type/payload, and then replaces the order",
         "type/payload and/or its complete source target. Source retarget copies unit index plus x/layer/y",
         "coordinates from native unit offsets `+0x4F/+0x51.bit7/+0x50`. Invalid indices, native-order",
         "mismatch, or an exhausted write cap leave the order unchanged and produce an audited status.",
+        "The validator rejects both the old `0x2063BD` register contract and generic carriers such as",
+        "`443`, which jump directly from `0x283003` to common finalization at `0x2831CC`.",
         "",
         f"Overall offline gate: **{'PASS' if ok else 'FAIL'}**.",
         "",

@@ -1,0 +1,57 @@
+{
+  "_note": "Job-free technical Reaction fragment for the unified sentinel profile. It covers one real-code Counter chance, one neutral real-code chance, VM-owned avoidance, and the live-proven owner-443/delivery-442 synthetic transaction. The blank owner is a structural fixture only and does not define a job or managed effect.",
+  "DclReactionTaxonomyEnabled": true,
+  "DclReactionMaxLogs": 512,
+  "DclReactionRules": [
+    {
+      "Name": "Unified sentinel Counter courage chance",
+      "AbilityId": 442,
+      "Mode": "courage"
+    },
+    {
+      "Name": "Unified sentinel Mana Shield neutral chance",
+      "AbilityId": 445,
+      "Mode": "neutral",
+      "FlatChance": 50
+    },
+    {
+      "Name": "Unified sentinel Shirahadori caution chance",
+      "AbilityId": 451,
+      "Mode": "caution",
+      "VmInternalAvoidance": true
+    },
+    {
+      "Name": "Unified sentinel blank owner 443",
+      "AbilityId": 443,
+      "Mode": "neutral",
+      "FlatChance": 100,
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && reaction.incomingHitKnown && reaction.incomingHit"
+    }
+  ],
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 512,
+  "DclReactionPreSelectorProbeEnabled": true,
+  "DclReactionPreSelectorProbeRva": 2122665,
+  "DclReactionPreSelectorProbeExpectedBytes": "48 8D 4D D2 E8 86 CA 07 00",
+  "DclReactionPreSelectorProbeMaxLogs": 512,
+  "DclReactionDeliveryValidationProbeEnabled": true,
+  "DclReactionDeliveryValidationProbeMaxLogs": 512,
+  "DclReactionMaterializationProbeEnabled": true,
+  "DclReactionMaterializationProbeRva": 2634173,
+  "DclReactionMaterializationProbeExpectedBytes": "48 8B CB E8 6F F0 FF FF 0F B7 35 24 7E 5E 01",
+  "DclReactionMaterializationProbeMaxLogs": 512,
+  "DclReactionEffectProbeEnabled": true,
+  "DclReactionEffectProbeRva": 2173998,
+  "DclReactionEffectProbeExpectedBytes": "66 44 01 70 0C",
+  "DclReactionEffectProbeMaxLogs": 512,
+  "DclSyntheticReactionEnabled": true,
+  "DclSyntheticReactionLogOnly": false,
+  "DclSyntheticReactionCarrierId": 443,
+  "DclSyntheticReactionDeliveryId": 442,
+  "DclSyntheticReactionTrigger": "successful-hit-survivor",
+  "DclSyntheticReactionForcedRoll": 0,
+  "DclSyntheticReactionMaxWrites": 2,
+  "DclSyntheticReactionMaxLogs": 512
+}

@@ -1,0 +1,15 @@
+{
+  "note": "Unified job-free DCL sentinel v5. It retains the exact v4 mechanism bundle and replaces the non-authoritative unit+0x52..+0x56 elemental-affinity hypothesis with canonical JobData plus all seven target equipment slots. The profile remains a bounded technical fixture and contains no job redesign or final balance content.",
+  "inputs": [
+    "work/1784399746-battle-runtime-settings.dcl-unified-sentinel-v4.json",
+    "work/1784403685-battle-runtime-settings.dcl-affinity-data-fragment.json"
+  ],
+  "resolutions": {},
+  "patch": {
+    "DclDamageFormula": "if(t.charId == 31 && dcl.nativeMpDebitResult && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, max(1, dcl.oldMpDebit - min(t.mp, max(1, dcl.oldMpDebit / 2))), if(action.abilityId == 101, ability.dcl.power * dcl.strike.normalHitCount + mulDiv(ability.dcl.power, 3, 2) * dcl.strike.criticalCount, if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbedResolved || dcl.targetNullResolved, 0, dcl.magicAmountResolved), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmountResolved, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))))",
+    "DclHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbedResolved, if(dcl.nativeHpDamageResult, dcl.magicAmountResolved, 0), if(dcl.isMagicHeal, if(dcl.nativeHpCreditResult, if(t.status.undead, 0, dcl.magicAmountResolved), 0), if(dcl.nativeHpCreditResult, dcl.oldCredit, 0)))",
+    "DclPreviewDamageFormula": "if(action.abilityId == 101, ability.dcl.power * const.dclPummelPreviewAverageHits, if(dcl.isMagicDamage, if(dcl.magicAbsorbedResolved || dcl.targetNullResolved, 0, dcl.magicAmountResolved), if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicHeal && t.status.undead, dcl.magicAmountResolved, 0))))",
+    "DclPreviewHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbedResolved, dcl.magicAmountResolved, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmountResolved), 0))"
+  },
+  "output": "work/1784403685-battle-runtime-settings.dcl-unified-sentinel-v5.json"
+}

@@ -114,6 +114,7 @@ def compose_manifest(manifest_path: Path) -> tuple[dict[str, Any], Path, list[Co
     inputs = manifest.get("inputs")
     resolutions = manifest.get("resolutions", {})
     patch = manifest.get("patch", {})
+    remove = manifest.get("remove", [])
     output_raw = manifest.get("output")
     note = manifest.get("note")
 
@@ -121,6 +122,10 @@ def compose_manifest(manifest_path: Path) -> tuple[dict[str, Any], Path, list[Co
         raise CompositionError("manifest inputs must contain at least two repository-relative paths")
     if not isinstance(resolutions, dict) or not isinstance(patch, dict):
         raise CompositionError("manifest resolutions and patch must be JSON objects")
+    if not isinstance(remove, list) or not all(isinstance(key, str) and key for key in remove):
+        raise CompositionError("manifest remove must be a list of non-empty top-level keys")
+    if len(remove) != len(set(remove)):
+        raise CompositionError("manifest remove contains duplicate keys")
     if not isinstance(output_raw, str) or not output_raw:
         raise CompositionError("manifest output must be a repository-relative path")
     if not isinstance(note, str) or not note.strip():
@@ -152,6 +157,11 @@ def compose_manifest(manifest_path: Path) -> tuple[dict[str, Any], Path, list[Co
         merged[key] = copy.deepcopy(value)
     for key, value in patch.items():
         merged[key] = copy.deepcopy(value)
+    missing_removals = sorted(key for key in remove if key not in merged)
+    if missing_removals:
+        raise CompositionError(f"remove keys are missing from composed settings: {', '.join(missing_removals)}")
+    for key in remove:
+        del merged[key]
 
     result = {"_note": note.strip()}
     result.update(merged)

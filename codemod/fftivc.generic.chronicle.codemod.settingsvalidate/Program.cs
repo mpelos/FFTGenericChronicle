@@ -63,7 +63,7 @@ internal static class Program
         var report = RuntimeSettingsValidator.Validate(settings, catalog, abilityCatalog);
         report.Info("abilityCatalog", abilityCatalog.Describe());
         bool abilityCatalogRequired = !string.IsNullOrWhiteSpace(settings.DclAbilityMetadataPath) ||
-            (settings.DclStatusRules ?? []).Any(rule => rule.NativeRiderReplacedPostCalc);
+            (settings.DclStatusRules ?? []).Any(rule => rule.UsesPostCalcProducer);
         if (abilityCatalogRequired && !abilityCatalog.Loaded)
             report.Error("AbilityCatalogPath", $"ability catalog failed to load: {abilityCatalog.Error}");
         else if (!string.IsNullOrWhiteSpace(settings.DclAbilityMetadataPath) &&

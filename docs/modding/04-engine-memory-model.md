@@ -94,7 +94,7 @@ Offsets are relative to the unit pointer. The struct spans at least `0x200` byte
 | `+0x4B` | Physical evasion % | byte | = the job's `CharacterEvasion` |
 | `+0x4E` | Shield magick parry % | byte | Equipment-derived |
 
-These evade bytes are **live inputs to the avoidance roll** — ✅ **PROVEN 2026-06-27**: the Denuvo
+These evade bytes are **live inputs to the avoidance roll** — **Proven**: the Denuvo
 VM reads them from the unit's live struct at roll time, so **writing them before the roll controls
 hit / miss / block / parry**. Denuvo virtualizes *code*, not *data* — the struct is normal writable
 memory. Set on the **defender**: `+0x4B` high ⇒ class evade ("Miss", type `0x04`); `+0x46/+0x47` high ⇒
@@ -142,7 +142,7 @@ Their words match the ability catalog exactly; Ninja's `+0x0A = 477` also matche
 `JobData.InnateAbilityId1 = 477` (Dual Wield). `+0x98` is a derived/effect bitfield, not the canonical
 Support slot.
 
-**✅ LIVE-PROVEN (LT1/LT2 mega-probe, 2026-07-02 — evidence `work/lt1-mega-probe-plan.md`):**
+**Proven live:**
 
 - **Status arrays**: source `+0x57..0x5B`, **immunity `+0x5C..0x60`**, effective `+0x61..0x65`,
   master `+0x1EF..0x1F3`, classic PSX bit layout verbatim (Blind landed as `eff[1] |= 0x20`
@@ -166,11 +166,175 @@ Support slot.
   `+0x1C8 stagedMpDebit = 157` with result flag `+0x1E5 = 32` — reaction outcomes ride the same
   staged surface.
 
-Still Hypothesis: job-level nibbles `+0xE4..0xEE`, elemental block `+0x52..0x56`,
-equipment stat bonus `+0x3B/3C/3D` (snapshot-proven 15/15 but not
-re-checked live).
+#### Position commit boundary — **Proven**
 
-### 2.5 Battle tile table — **Proven (LT1 2026-07-02)**
+The shared battle-unit position writer is native thunk RVA `0x27192C`, which tail-jumps to body
+RVA `0xE7D721B`. Its arguments are unit-table index in `ecx`, destination X in `dl`, destination Y
+in `r8b`, the high map-level bit in `r9b`, and the low `+0x51` nibble as the fifth stack argument.
+The body addresses battle-unit table RVA `0x1853CE0` with stride `0x200` and writes X/Y/the combined
+level-facing byte at `+0x4F/+0x50/+0x51`.
+
+The first canonical write is RVA `0xE7D735A`. At this boundary `rdi` still holds the exact unit
+index, `r10b` the destination X, `r9b` the destination Y, `r14b` the shifted high level bit, and
+`r8b` the low nibble. Because the thunk tail-jumps into the body, the requesting caller's return
+address remains at `[rsp+0x58]`. The executable has 24 direct callers of the thunk. Several are
+setup, state restoration, unit-position copy/swap, or presentation synchronization, so this writer
+is authoritative for a coordinate commit but not by itself authoritative for gameplay movement.
+
+The gameplay-movement caller at RVA `0xD43CF29` commits only the accepted final tile for both
+player and AI movement (**Proven live**). Merely opening Move, changing the cursor/path preview, and
+cancelling never reaches the canonical writer. RVA `0xD8C7D18` immediately repeats the same
+destination as a post-movement active-state synchronization, while RVA `0x20BC4F` commits the
+end-turn facing state and can change only the low nibble of `+0x51`. These duplicate/facing callers
+are not independent movement events.
+
+#### Post-route final-tile boundary — **Proven live**
+
+Native movement updater RVA `0x1FE59C` sends both a zero-length route and `cursor >= length` to
+`0x1FE938`. RVA `0x1FE93B` then makes the exact five-byte call `E8 90 E9 FF FF` to finalizer thunk
+`0x1FD2D0`, whose body is `0xD45A0F0`. The body first synchronizes the movement actor, then calls
+the canonical position writer at gameplay caller `0xD43CF29` with actor current X/Y/layer. After the
+finalizer returns, the updater exits at `0x1FE940`; the dispatcher later reaches helper `0x203ED4`,
+which advances battle state `0x11` to `0x12`.
+
+All finalizer paths converge at RVA `0xD45A2A2` after the position synchronization and before the
+security-cookie check and epilogue. An `ExecuteFirst` hook at that convergence point observes the
+final actor and battle-unit coordinates after their commit and before the ordinary post-movement
+state advance. `rbx` still identifies the exact movement actor. A valid movement-complete event additionally
+requires a consumed cursor, idle actor state, actor current tile equal to actor
+target tile, and battle-unit tile equal to actor tile. Zero-length routes are settlement noise, not
+movement events.
+
+The finalizer clears route-length byte `+0xA8` before convergence but preserves consumed cursor
+`+0xA4`. A completed nonempty route therefore appears at this boundary as `cursor > 0` and
+`length = 0`; only `cursor = 0` with `length = 0` denotes a zero-length settlement. A live player
+movement and an AI movement each reach this boundary once with converged actor/target/unit tiles.
+Opening Move, changing the preview destination, cancelling, completing a turn with Wait without
+movement, and selecting the unit's current tile as a zero-distance destination do not reach this
+boundary.
+
+The route record is cleared or stale after finalization and its hash is diagnostic only. It is not
+a cross-movement identity: a later legitimate movement may reuse the same actor, cursor count,
+destination, and cleared bytes. Each ring publication sequence represents one distinct native
+finalizer convergence and must remain independently consumable.
+
+This boundary supports effects whose authored predicate is true on the accepted final tile. It does
+not expose a gameplay trigger for traversed tiles. DCL movement remains indivisible: no effect
+pauses, rewrites, truncates, or resolves during a route.
+
+#### Movement route and per-step dispatch boundary — **Proven live engine fact**
+
+The accepted-movement handler at RVA `0x20B270` asks route resolver `0x27C7B4` for a path using the
+battle-unit index and destination X/Y/layer. A successful result is copied as a 128-byte record into
+the movement actor at `+0xA8..+0x127`; this is the existing engine path, so an observer does not need
+to reproduce pathfinding.
+
+The actor's movement fields are:
+
+| Offset | Width | Meaning |
+| ---: | ---: | --- |
+| `+0x88/+0x89/+0x8A` | byte each | current logical tile X/Y/layer |
+| `+0x8B` | byte | movement animation/state; zero is idle or step-complete |
+| `+0x8C/+0x8D/+0x8E` | byte each | next/target tile X/Y/layer |
+| `+0xA4` | dword | route cursor/index |
+| `+0xA8` | byte | route length |
+| `+0xA9 + index` | byte array | inline route steps |
+| `+0x128` | byte | route byte staged for the current step |
+
+Native updater `0x1FE59C` waits for `+0x8B` to return to zero, compares `+0xA4` with `+0xA8`, loads
+one byte from `+0xA9+cursor`, increments the cursor exactly once, stages the byte at `+0x128`, and
+prepares the next tile. Its trace-equivalent implementation at `0xD574F92` uses the same layout.
+Completed-step handlers copy target X/Y into current X/Y before clearing the state, while the shared
+animation updater copies target layer `+0x8E` into current layer `+0x8A` at the tile transition.
+
+The native states reconverge at RVA `0x1FE786`; RVA `0x1FE793` is the first instruction after the
+idle-state branch and immediately before the next route-byte decision. A synchronous observer there
+sees the completed/current tile and the next route byte before it is consumed. Ordinary player and
+AI movement use this native boundary. Five controlled routes of lengths 3, 4, 4, 6, and 6 expose
+exactly `cursor=1..length`, one cardinal current-to-target edge per cursor, continuity from every
+target to the next current tile, and a zero-length terminal observation whose current and target
+both equal the final dispatched tile. The trace-equivalent boundary at `0xD575143` produces idle
+zero-length observations in this path but does not dispatch those ordinary walking routes.
+
+The generic Landmark harness captures the actor register synchronously but formats actor memory on
+the next managed poll. Its log therefore shows the immediately dispatched edge (`cursor=1..length`)
+rather than the pre-consumption cursor value at hook entry. This boundary is useful for engine
+research, but it is not a DCL gameplay hook because gameplay effects never resolve between steps.
+
+#### Movement-to-Reaction interruption surface — **Excluded from DCL gameplay**
+
+The battle dispatcher uses global state RVA `0xC6B1CC`. State `0x11` resolves the movement actor
+through `0x26079C` and calls movement updater `0x1FE59C`. When the route is complete, helper
+`0x203ED4` writes state `0x12`; the ordinary movement path does not enter the Reaction queue.
+
+State `0x1E` resets queue-pass global RVA `0x2FCE87C` and calls queue entry `0x206344`. An accepted
+pass writes state `0x29`. Post-Reaction cleanup at `0xD90CF99` calls the same queue again so multiple
+eligible Reactions can chain. When the chain is empty, the continuation reaches `0x205F28` and
+writes state `0x28`. Invoking the queue during movement without owning this continuation therefore
+does not resume the route automatically.
+
+Movement resolver `0x26079C` selects an actor from list RVA `0xD3A410` using index global
+`0xC6AD8C`. Reaction cleanup resolver `0x2607C0` walks the same list using the distinct execution
+index global `0xCF873C`. **Strong:** a Reaction can change the execution actor without inherently
+erasing the mover selected for the current route.
+
+The inactive Approach compatibility code uses `0x1FE793` as a synchronous pause point and can route
+movement through the Reaction queue. This composition requires control over movement state,
+transient target-map marks, deferred battle-unit coordinates, queue ownership, and continuation
+state. Although its guarded transaction demonstrates that the engine can resume an unchanged
+route, the mechanism is not a valid DCL gameplay surface because it interrupts the visible movement
+transaction between tiles.
+
+Counter's typed source-target helper at `0x283280` is also coupled to the transient target map.
+**Proven live:** invoking pass 2 at an entered movement tile with source index `0` and an armed
+Counter `442` reaches the helper but returns `-2` at `0x283019` when the source tile lacks dynamic
+mark bit `0x40`; no materialization or commit follows, and the ordinary mover action continues.
+**Proven static:** RVA `0x2832FE` tests tile-table byte `+5 & 0x40` before RVA `0x283321` copies the
+source index into order `+0x0B`. Target fields observed on this rejection are stale pre-helper order
+data, not evidence that the source-index global was ignored.
+
+The inactive guarded bridge returns through updater epilogue
+`0x1FE940` while a boundary decision or accepted queue transaction is owned, invokes only queue pass
+2, and uses the queue's boolean return (`1` accepted, `0` exhausted). On the terminal route step,
+returning from the updater still reaches the caller's cursor-completion tail; an exact-actor guard at
+`0x211E09` therefore bypasses that tail during pending decision, command handoff, and accepted-queue
+ownership. Release, rejection, and resumed release fall through so ordinary state-`0x12`
+completion remains intact. An inline pass-2 stamp records only an exact armed
+delivery/reactor/source tuple. The continuation shim runs after the native state-`0x28` write at
+`0xD7D0A81` and permits `0x11` only when that stamp, mover identity, route cursor, tile, terminal
+state, and bounded write budget still agree.
+
+**Proven live:** at the terminal `0x1FE793` observation, the movement actor already reports entered
+tile `5,3,0`, but its battle-unit record still reports route-origin tile `2,3,0`. The unit record
+changes to the entered X only after the bridge releases native movement. Counter's helper directly
+reads `unit+0x4F/+0x50/+0x51` both to test the dynamic mark and to write the order coordinates, so a
+mark loan on the actor tile cannot satisfy the helper at this boundary. A mark loan on the stale unit
+tile would authorize the wrong coordinate tuple. Actor/unit equality at `0x1FE793` is Refuted.
+
+**Proven live engine evidence:** pass-2 selector `0x282E38` materializes the complete order before
+queue `0x206344` allocates the Reaction actor at `0x260ABC` and returns acceptance. The bridge can
+therefore validate the deferred unit tuple and entered actor tuple independently against map bounds,
+temporarily expose the entered X/Y/level through unit `+0x4F/+0x50/+0x51`, lend entered-tile mark
+`0x40`, and restore both the mark and original unit tuple before the queue return is interpreted. The
+unit's low `+0x51` facing bits are preserved. The unmanaged control block records exact
+before/forced/restored coordinate and mark tuples. With entered tile `5,3,0` and deferred unit tile
+`2,3,0`, the live bridge restores mark `0x20 -> 0x60 -> 0x20` and unit tuple
+`2,3,0/raw51=0x03 -> 5,3,0/raw51=0x03 -> 2,3,0/raw51=0x03`; queue pass 2 accepts one `442`, both
+typed-family and final validators return zero, native action `1/0` targets the source index, two
+Dual-Wield effect states execute, and the guarded resume performs exactly one `0x28 -> 0x11` write.
+
+The runtime does not install these per-step hooks. Settings validation rejects
+`DclApproachEnabled`; DCL consumers use the post-route final-tile boundary instead.
+
+Still Hypothesis: job-level nibbles `+0xE4..0xEE` and equipment stat bonus `+0x3B/3C/3D`
+(snapshot-proven 15/15 but not re-checked live).
+
+The proposed elemental-affinity role of `+0x52..+0x56` is **Refuted**. Two ordinary human targets
+with no Fire affinity in `JobData` or their seven equipped-item records carry Fire-looking bits in
+`+0x53`, while native Fire produces HP-damage results for both. DCL affinity is resolved from the
+job table plus equipped-item bonus data, not from this block.
+
+### 2.5 Battle tile table — **Proven**
 
 Tile table at VA `0x140D8DCB0`: 8 bytes/tile, 256 tiles/level, 2 levels (`+0x800`); index =
 `(level<<8) + y*width + x`; map dims bytes at `0x140C6AD6A/6B`. Record: `+0` terrain type (`&0x3F`),
@@ -204,6 +368,14 @@ The word is the `item_id` (join `work/item_catalog.csv` for name, family, WP, el
 HP/MP bonus, equip bonus). Sentinels: empty hand on an equip-capable unit = `0x00FF` (255);
 monster / no-equipment unit = `0x0000` in all slots.
 
+Intrinsic HP for DCL physical-status resistance is reconstructed as
+`MaxHP - head.armor_hp_bonus - body.armor_hp_bonus` — **Strong**. `MaxHP` is the battle-unit word at
+`+0x32`; head/body item ids are the proven words above; `armor_hp_bonus` comes from the item catalog.
+Only head and body item families carry that field. The runtime exposes the result only when the item
+catalog contains both equipped ids and the subtraction remains positive. Otherwise it exposes an
+unresolved marker and status ownership fails closed. A controlled equipment-swap comparison remains
+the live gate for promoting the exact subtraction from Strong to Proven.
+
 Reading rules for formulas:
 
 ```text
@@ -232,8 +404,8 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 | `+0x5C..+0x60` | status-immunity array | **Proven** | five bytes, same bit positions as the status arrays; setting a bit makes the native forecast/roll reject that status |
 | `+0x61..+0x65` | effective status array (mirror) | **Proven** layout | five bytes, classic 40-bit status layout; byte 0 is recomputed at `0x30D42A` from master byte 0 and source byte 0 |
 | `+0x18D` | pending timer / charge phase | **Strong** | |
-| `+0x1A0` | action-boundary byte | **Hypothesis** | |
-| `+0x1A1` | action-boundary byte | **Hypothesis** | |
+| `+0x1A0` | pending order caster slot | **Proven** | byte 0 of the universal order record at `unit+0x1A0` |
+| `+0x1A1` | pending order action type | **Proven** | byte 1 of the universal order record |
 | `+0x1A2` | action id / last action id, u16 | **Strong** | `0` for basic attacks |
 | `+0x1A8` | item/inventory side-effect id, u16 | **Strong** | consumed by `0x30CEA0`, whose valid range is the 261-entry item catalog and whose non-VM branch increments inventory quantity for that item id; Kiyomori stages item id `0x2B` here |
 | `+0x1B8` | active marker-ish (`b8`) | **Hypothesis** | |
@@ -243,7 +415,7 @@ the catalog join; target armor → DR, and the no-attacker case still applies ta
 | `+0x1C0` | EVADE-TYPE (animation lever) | **Proven** | see enum below |
 | `+0x1C4` | forecast HP-debit / staged HP-debit / target cache | **Proven**, context-dependent | damage preview number + ghost depletion; also "staged DAMAGE (word)" at apply |
 | `+0x1C6` | forecast HP-credit / staged HP-credit / target cache | **Proven**, context-dependent | healing preview number + ghost refill; apply: `newHP = clamp(HP + heal - dmg)` |
-| `+0x1C8` | staged MP-debit (word) | **Proven** (live 2026-07-04 LT9b: zeroing it pre-apply cancelled the Mana-Shield MP drain 5/5, incl. crit-boosted values) | MP analogue of `+0x1C4` |
+| `+0x1C8` | staged MP-debit (word) | **Proven**: zeroing it before apply cancels the complete Mana-Shield MP debit, including critical-scaled values | MP analogue of `+0x1C4` |
 | `+0x1CA` | staged MP-credit (word) | **Strong** | apply: `newMP = clamp(MP + 0x1CA - 0x1C8)` |
 | `+0x1D0` | staged side-effect gates | **Strong** | bit `0x08` gates the `+0x1A8` item/inventory consumer; it is not a status-apply mask |
 | `+0x1D8` | forecast / charge / target metadata | **Strong** | charge/forecast value (word) |
@@ -258,7 +430,7 @@ Known bit / value meanings:
 ```text
 unit+0x1EF bit 0x20  = KO/dead state (durable master)
 unit+0x61  bit 0x20  = KO/dead state (effective mirror)
-unit+0x1EF bit 0x10  = Undead (live-confirmed 2026-06-27; offline "control-flip" guess was WRONG)
+unit+0x1EF bit 0x10  = Undead (Proven; the former control-flip interpretation is Refuted)
 unit+0x1EF value 0x08 = pending/charging action-ish (per-turn-cleared on +0x61 via the 0xF2 mask)
 unit+0x61  value 0x08 = pending/charging mirror/state
 ```
@@ -273,6 +445,137 @@ bit within that byte:
   `+0x57+byte` source bit only when intentionally removing an innate/equipment-granted status.
 - **Immunity / native suppression** → set the matching bit at `+0x5C+byte`; the engine produces 0%
   and rejects the native status without changing the durable arrays.
+
+#### Forced-control dispatcher — **Strong static**
+
+Real-code resolver `0x38BBFC` branches on the active unit's effective status array before ordinary
+control returns. Chicken is tested at `0x38BC37` as `unit+0x63 & 0x04`; Confusion and Charm use
+`unit+0x62 & 0x04/0x10`; Berserk is tested at `0x38BDFE` as `unit+0x63 & 0x08`. The Chicken branch
+calls `0x38E11C`, rejects return `-1`, resets a `0x240`-byte planning block, and calls planner thunk
+`0x321390` with mode arguments `0xFF,1`. The Berserk branch requests mode `2` through VM thunk
+`0x38D8E4`, commits a forced target through resolver `0x320500`, and continues through the common
+planning tail.
+
+The Chicken predicate is one indivisible six-byte control boundary: the four-byte `test` at
+`0x38BC37` followed by the two-byte `je 0x38BC84`. A replacement preserves both successors: set
+routes to `0x38BC3D`, while clear routes to `0x38BC84`. Returning unconditionally after only
+replaying the `test` sends non-Chicken units through Chicken planning. The function prologue leaves
+the stack 16-byte aligned at this boundary; eight saves require a managed wrapper frame whose size
+is a multiple of 16.
+
+The outer planner enters through thunk `0x32091C` and calls the resolver at trace RVA
+`0x1098B8B5`. Resolver return `-1` is failure; a nonzero return skips the ordinary planning path and
+goes directly to the outer function's zero-return epilogue. Only return zero continues ordinary
+planning. The Chicken selector behind thunk `0x38E11C` writes its successful destination to active
+unit offsets `+0x4F/+0x50/+0x51`; planner thunk `0x321390` then writes the winning four-byte route
+selection record. **Strong static:** native Chicken owns the forced plan and suppresses the ordinary
+voluntary plan. It is not an active DCL carrier. Fear has no current DCL definition or runtime
+requirement; the related forced-movement and target-filter code is an inactive compatibility
+experiment.
+
+The selector's candidate scratch is X at RVA `0x18724D0`, Y at `0x18724D2`, and layer at
+`0x18724D1`; the active-unit pointer is RVA `0x1872EA0`. The selector copies the final enumerated
+candidate's X/Y and high layer bit into unit `+0x4F/+0x50/+0x51`, preserving the low seven bits of
+`+0x51`, then returns zero. Treating this scratch tuple as the winning destination is **Refuted
+live**: it can equal the unit's current X/Y and produce no route even though the following native
+Chicken path moves successfully. The selector evaluates and scores candidates; planner `0x321390`
+then chooses the winner and writes its four-byte X/Y/layer record at RVA `0x1872364` (**Strong
+static**). The inactive experiment mirrors the complete selector-to-planner prefix, captures that winning record,
+and restore the unit tuple before route resolution. The ordinary accepted-movement transaction calls
+`0x27C7B4`, copies the 128-byte route into movement actor `+0xA8..+0x127`, writes actor
+`+0x44 = 0x2000`, and enters `0x203CC8`; this preserves the normal state
+`0x10 -> 0x11 -> 0x12` route lifecycle. **Proven live:** an injected Fear route restores the source
+tuple, selects a distinct destination, resolves a nonempty route, enters state `0x10`, and visibly
+moves the unit. Returning that route through the native handled continuation unchanged ends the turn
+and is not complete Fear semantics.
+
+**Strong static:** the native reachability builder tests effective Immobilize at
+`unit+0x65 & 0x08`. Its set branch bypasses range expansion and records only the unit's current tile.
+The ordinary action planner at `0x38D658` calls the same movement selector, evaluates action
+candidates, chooses a winner through `0x321390`, and publishes the composed X/Y/layer record at RVA
+`0x1872EAC`. The inactive plan-composition experiment lends the selected flee tile synchronously,
+temporarily clears effective Chicken, temporarily sets effective Immobilize, and invokes the
+ordinary planner while managed Fear target authorization remains active. A valid result must retain
+the exact flee tile, restore the original coordinate tuple and both effective-status bytes, and then
+return handled. Any mismatch falls back to untouched Chicken planning.
+
+**Proven live:** a Fear-controlled unit at `(6,0,2)` selected `(9,0,0)` as its flee destination.
+Both ordinary-planner passes published that exact destination and restored `(6,0,2)`, effective
+Chicken, and effective Immobilize byte-exactly before returning. Managed target authorization
+rejected opposing candidates during planning while allowing the unit itself. The native movement
+transaction then committed the destination and the same forced turn queued and executed the
+self-targeted `Wall` action (ability 13). Fear therefore preserves a legal post-flee action instead
+of ending the turn at the Chicken selector boundary.
+
+**Proven live enemy AI:** an enemy Chocobo with DCL-owned Fear entered the same route coordinator.
+Its hostile `Choco Beak` candidate (ability 265) was invalidated, the selected and published flee
+records matched, the original coordinate and status loans were restored byte-exactly, and the native
+movement transaction committed the new position. With no remaining legal action candidate, the
+forced turn completed after movement and the one-target-turn Fear duration expired. Enemy ownership
+therefore uses the same flee-plus-authorized-action-or-Wait contract as player-team ownership.
+
+These are native forced-movement/aggression surfaces, not complete DCL Fear/Taunt semantics. A
+one-target-turn Berserk rule is sufficient for the specified Taunt fallback: the DCL status contest
+owns inverted Brave resistance, the generic duration tracker owns expiry, and the native branch owns
+forced aggression.
+
+#### Fear target authorization — **Proven live single-target and AoE**
+
+Battle state `0x19` calls the voluntary target-input handler at `0x212173`. Its accepted-confirm path
+calls thunk `0x2072F8` at `0x20C55F`; the real confirmation body writes battle state `0x1B` at
+`0xD84440B`. Guarding that call rejects a player-selected action while leaving target selection active.
+Reaction queue and delivery states `0x29` and `0x2C` do not use this voluntary-confirm boundary.
+
+This subsection describes an inactive compatibility experiment. The runtime does not install these
+hooks, and the DCL assigns no current Fear targeting or control semantics to them.
+
+The universal action-result path calls the affected-target builder at `0x281EC3`. The expanded native
+target list is available at `0x281EC8`, before publication at `0x281EEA`. The return address is not a
+safe inline-hook boundary: the branch at `0x281DF7` targets the second return-continuation instruction
+at `0x281ECC`. The safe boundary replaces only the complete five-byte builder call at `0x281EC3`,
+invokes its original target `0x282754`, and inspects the completed list before returning to the
+untouched continuation. At that call, `r14` is the caster unit base and the calculation/order record is
+`r14+0x1A0`; `[rbp-0x28]` is the target-list base. A list entry changed to `0xFF` is skipped by the
+per-target calculation loop at `0x281EFA` and excluded from the affected-target count at `0x281F78`.
+Within the calculation/order record, `+0x00` is the caster table index, `+0x01` is action type, and
+`+0x02` is the 16-bit ability id.
+This list is the AI/execution authorization boundary for DCL Fear because it represents unit, tile,
+and area targets after native expansion. Fear rejects the whole AI or fail-closed execution candidate
+when any expanded target is opposing, preserves self/ally/empty/defensive candidates, and does not
+filter Reaction delivery. A direct player Attack reaches the calculation-entry forecast before
+`0x20C55F`, but reaches this expanded-list bridge only later in execution state `0x2A`. Therefore this
+bridge alone cannot authorize voluntary confirmation; confirmation requires a separate pre-confirm
+forecast identity/target source.
+At `0x20C55F`, `rbx` still contains the current battle actor returned by `0x2607C0` at `0x20C341`.
+The actor's action ids and linked unit are live there, but its native target count/list at
+`actor+0x1A9/+0x1AA` is still empty for a confirmed single-target Attack (**Proven live**). That list
+is therefore not a pre-confirm authorization source. The primary-target field at `actor+0x1BC` also
+reported zero for the same Attack and is not independently authoritative. Selected coordinates at
+`+0x4F/+0x50/+0x51` remain **Strong static**.
+
+The affected-target builder accepts a caller-owned output buffer in `rcx` and the actor in `rdx`.
+A synchronous call at the confirm boundary with a private 21-byte buffer returned count `1` and
+target `[16]` for Josephine slot `17` attacking Arthur slot `16`, before state `0x1B`; the visible
+execution affected Arthur and changed him to Chicken (**Proven live single-target**). The private
+buffer is therefore current and complete for the tested direct Attack without mutating the empty
+actor-owned list. For Fire `16` centered on Arthur slot `17` with Leona slot `16` inside the area,
+the same pre-confirm private builder returns count `2` and targets `[16,17]`; the execution bridge
+also reports those two targets and the native animation/result path visits both (**Proven live AoE**).
+Managed confirmation derives caster identity, DCL Fear ownership,
+and the complete opposing-target assessment directly from that private buffer; it does not use the
+retired calculation-entry forecast cache. The live turn-owner slot is the caster authority at this
+boundary. `actor+0x148` remains diagnostic: the single-target proof linked it to slot `0` while the
+turn owner and execution caster were slot `17`. Action type/id therefore come from turn-owner
+`unit+0x1A0`; an invalid slot or unreadable live unit fails open.
+`DclFearPlayerConfirmEnforcementEnabled` is a separate mutation arm. The target-authority gate is
+satisfied; a deployment profile may enable it only together with non-log-only Fear and the guarded
+forced-flee transaction.
+The player forecast path at `0xEF53DE0` temporarily derives caster `unit+0x1A0` and invokes
+`0x3099AC` for the primary target unit, but does not directly call the affected-target builder. The
+builder's only other direct caller, `0xEF48AD6`, belongs to protected reaction evaluation and consumes
+the first expanded target before reaction-order materialization.
+`tools/analyze_dcl_fear_boundaries.py` guards the execution boundary;
+`tools/analyze_dcl_fear_preconfirm.py` guards the pre-confirm actor, forecast, and builder call graph.
 
 Byte 0 has an additional native turn-boundary recompute at `0x30D42A`:
 `effective[0] = (master[0] & 0xF2) | source[0]`. The full five-byte layout is the authority; the old
@@ -294,6 +597,11 @@ channels, the paired packet, and the result byte form one rollback-protected sta
 the later native commit remains the sole durable/effective writer. This carrier applies only when
 the action independently reaches the ordinary HP-result path. Status-only and special-formula
 actions require a producer at their own calculation/finalization boundary.
+
+The post-calculation producer can preserve a native formula as a forecast/AI carrier while replacing
+its execution packet. Ordinary replacement owns the same source/output bits. A reskin declares a
+separate complete native source set, clears those bits from both packet lanes, and then stages distinct
+DCL output bits. The exact authoring and validation contract is owned by `06-code-mod-runtime-dsl.md`.
 
 **Proven for an ordinary add carrier:** a basic Attack with no native status rider preserves its
 natural `14` HP debit while the managed pre-clamp transaction stages Blind as add byte `1`, mask
@@ -375,8 +683,9 @@ object's field `+0x2C` is the computed hit-%; real code copies it to the display
 object's `+0x2C` (hit-%) is unrelated to the unit struct's `+0x2C` = Faith (§2.1) — different objects.**
 
 Control: hook `0x227FFE` (a non-RIP instruction between the load and the store) and set `AX` before the
-store → the engine writes our value at copy time, on the same redraw the renderer reads. ✅ proven live
-2026-06-27 (forced 7 shown for every target while the engine's true value was 3). **Purely visual** —
+store → the engine writes the supplied value at copy time, on the same redraw the renderer reads.
+**Proven live:** a forced value replaces the displayed percentage while the natural source remains
+unchanged. **Purely visual** —
 the real hit roll is computed independently in the VM and is unaffected. Full RE: `05` §10; mod knob
 `PreviewHitPct*` in `06`.
 
@@ -474,19 +783,40 @@ Register lessons:
 - In Ninja dual wield, `r8` often pointed to Beowulf while Agrias was the real target. Therefore
   `r8` is diagnostic only — do not treat it as target truth.
 
-#### Calc-entry order payload — **Proven**
+#### Calc-entry order payload and native active weapon — **Proven**
 
 `computeActionResult` at RVA `0x3099AC` copies the 20-byte order record and loads the word at
 `orderRecord+8`. For action type `1` (weapon Attack), the native branch validates that word as
-protected lookup kind `6`, resolves the corresponding weapon-data row at `0x2B8E00`, reads the
-row's formula byte, and dispatches that formula at `0x309F4F`. The word is therefore the exact
-weapon item id selected for this calculation.
+protected lookup kind `6`, resolves a weapon-data row at `0x2B8E00`, reads its formula byte, and
+dispatches that formula at `0x309F4F`. This makes `orderRecord+8` an Attack formula/order payload,
+not a reliable per-strike hand identity.
 
-Comparing the payload with the source unit's right and left weapon words at `+0x20` and `+0x24`
-identifies the active side when the equipped ids differ. Equal ids leave the side ambiguous but
-preserve the exact weapon identity, family, and skill route. The DCL calc-entry ring captures this
-payload synchronously; downstream action and hit-decision caches retain it so a mixed-weapon
-second strike cannot reuse the first weapon's decision.
+The active weapon uses a separate native carrier. The protected repeat initializer copies the
+source unit's right and left weapon words at `+0x20/+0x24` into normalized globals
+`word[module+0x7B0764]` and `word[module+0x7B0766]`; missing-primary normalization promotes a lone
+left weapon into the primary global. Repeat count and index are `byte[module+0x7B0762]` and
+`byte[module+0x7B0763]`. The selector at `0x309AB5..0x309AE6` uses:
+
+- repeat count greater than two: normalized right/primary weapon;
+- repeat index zero: normalized right/primary weapon;
+- otherwise: normalized left/off-hand weapon.
+
+For ordinary Dual Wield, count two therefore maps index zero to right and index one to left. This
+also preserves the side when both equipped item ids are equal. There is no direct reference to the
+repeat index between calc entry and the selector, including the only pre-selector helper path that
+can continue into it; the outer result producer advances the index only after its calculation
+sweep. The calc-entry value is therefore the value consumed by the native selector on that
+invocation.
+
+**Proven live:** completed mixed Iga Blade (`17`) / Koga Blade (`18`) Dual Wield pairs retain payload
+`18` in both calculation rows while carrying index/item `0/17` then `1/18`. A synthetic Counter pair
+can retain the preceding Throw payload `124`. Payload equality is therefore not hand equality.
+Battle state `0x2F` is also not hand identity by itself: a position-changing first result can be
+followed by a zero-native-debit `0x2F` calculation whose repeat carrier has been reinitialized to
+index zero. That follow-up carries result flags `0x01`, without the native HP-debit bit `0x80`; it is
+a non-HP result, not a zero-magnitude weapon hit. Only the repeat carrier identifies the selected hand, and a completed two-hand proof
+requires an applied result for both indices. The DCL calc-entry ring captures payload, count, index,
+and both normalized weapons synchronously and derives the active weapon independently.
 
 ### 4.2 Native Pre-Clamp Hook — **Proven**, the primary formula-write hook
 
@@ -527,8 +857,8 @@ ability (`oldDebit=205`, `actionId=159`). The same bridge also resolved delayed 
 time (`caster=0x32`, `target=0x1F`, `oldDebit=153`, `actionId=257`) and wrote formula debit `89`.
 Broader action-family coverage remains separate validation work.
 
-**Proven live (2026-06-26):** forcing `word[rbp+6]=0` here zeros a guaranteed hit's damage — a
-100%-to-hit attack left the target at full HP (567/567). Paired with the selector evade-type write
+**Proven live:** forcing `word[rbp+6]=0` here zeros a guaranteed hit's damage and leaves the target
+at full HP. Paired with the selector evade-type write
 (`05-reverse-engineering.md` §4, Control recipe) this gives full hit→miss control: debit-zero on this
 path + evade animation on the selector path are independent and both required. Proof log
 `work/battleprobe_log.hit-to-miss-v2-PASS.*.txt`.
@@ -617,9 +947,10 @@ reaction cadence.
 The 82 status actions in conditional formula families use a different carrier. Formula `0x0A`,
 `0x0B`, and ten special families can skip their native packet finalizer when a prerequisite or
 chance gate fails. The outer target sweep nevertheless returns from `computeActionResult` at
-`0x281F12` for every evaluated target. **Proven:** confirmed player execution reaches that return in
-battle state `0x2A`, while player forecast calls return through `.trace` at `0xEF53F14` in state
-`0x19`. The runtime accepts only the outer-return/state-`0x2A` pair, evaluates the complete
+`0x281F12` for every evaluated target. **Proven:** the first confirmed execution reaches that return
+in battle state `0x2A`, a native repeated execution reaches it in state `0x2F`, and player forecast
+calls return through `.trace` at `0xEF53F14` in state `0x19`. The runtime accepts only outer-return
+rows in either execution state, evaluates the complete
 per-ability DCL packet once, and stores that decision for reuse at pre-clamp. A successful packet
 sets the native result carrier; a resisted, immune, or ineligible action clears every owned bit and
 does not need to enter apply. The loaded catalog fixes the complete bit set, add/remove operation,
@@ -746,6 +1077,37 @@ caster+0x1EF = 8               caster+0x1EF = 0
 `+0x18D` behaves like a pending countdown/phase: Braver `2`; Cross Slash started `3` and reached `1`
 before execution. Critical rule: action id alone is not pending state — it remains after resolution.
 Pending state requires the flags/timer (`+0x61`, `+0x18D`, `+0x1EF`).
+
+#### Pending cancellation contract — **Strong (static)**
+
+`unit+0x18D = 0xFF` is the native non-runnable/cancelled timer sentinel. The scheduler admits a
+pending action only at timer zero, decrements values `1..254`, and deliberately preserves `0xFF`.
+When rebuilding the timer it reloads action metadata only while effective Charging bit `0x08` is
+set; without Charging, the preloaded `0xFF` sentinel is retained.
+
+Native incapacitation writes the same timer sentinel when its result carries cancellation bit
+`0x4000`. Normal charged-action resolution also writes `0xFF`, clears mutually-exclusive state bits
+with mask `0xF2`, and rebuilds the effective byte from durable and source state. Performance cleanup
+uses mask `0xF6` on both Charging mirrors. Those broad masks own lifecycle families in addition to
+Charging and are not a generic Interrupt primitive.
+
+The dedicated DCL cancellation transaction is therefore:
+
+```text
+unit+0x18D = 0xFF
+unit+0x1EF &= ~0x08
+unit+0x61  &= ~0x08
+```
+
+It is eligible only when both effective and durable mirrors contain `0x08`, source byte `+0x57`
+does not contribute `0x08`, the timer is not `0xFF`, and `+0x1A2` contains a nonzero action id. It
+retains `+0x1A1/+0x1A2` as historical identity and preserves every unrelated status bit. The current
+executable's predicate, timer writers, resolution cleanup, scheduler countdown/reconstruction, and
+performance cleanup are fail-closed anchors in `tools/analyze_dcl_pending_cancellation.py`.
+
+The memory transaction is **Strong (static)**. Presentation cleanup, absence of a protected VM-side
+queue mirror, and the interrupted unit's ability to take a later normal action require one focused
+live confirmation before unrestricted delivery.
 
 Forecast target fields appear on the selected/primary target:
 
@@ -1128,7 +1490,8 @@ The current `computeActionResult` entry at RVA `0x3099AC` has three direct calle
 sections (**Proven**). RVA `0x281F0D` is the ordinary affected-target sweep call. RVA `0x307ED0` is a nested
 call from formula handler `0x25`, used by Rend Helm, Rend Armor, Rend Shield, and Rend Weapon. RVA
 `0xEF53F0F` is the player-forecast call in executable `.trace` code; it returns at `0xEF53F14` in
-battle state `0x19`, while confirmed execution returns at `0x281F12` in battle state `0x2A`. That
+battle state `0x19`, while confirmed execution returns at `0x281F12` in battle state `0x2A` for the
+first result and `0x2F` for a native repeated result. That
 handler saves the outer order type/id, temporarily writes Attack `(type=1, id=0)`, re-enters the
 calculation for the same target, and restores the outer order record. A latest-per-target cache that
 records every entry can therefore replace the outer Rend identity with the synthetic inner Attack
@@ -1137,8 +1500,9 @@ identity. The UI forecast pointer does not distinguish this at entry: its builde
 outer identity until live Rend coverage establishes whether the fallback requires a distinct inner
 decision.
 
-The action-queue entry has one direct caller, `0x2121F7 -> 0x206344`, and iterates three actor
-construction passes:
+The action-queue entry has one real-code dispatcher caller, `0x2121F7 -> 0x206344`, and one
+additional executable VM/trace caller, `0xD90CF99 -> 0x206344`, used to chain another Reaction after
+delivery cleanup. It iterates three actor construction passes:
 
 | Pass | Selection | Actor | Exact action-id source | First post-store RVA | Classification |
 | ---: | --- | --- | --- | ---: | --- |
@@ -1151,20 +1515,38 @@ Every path switches battle state to `0x29` and mirrors its exact action id to `a
 Reaction commits. Pass 1 fires for ordinary queued abilities, including Claw `280`, and therefore
 cannot own Reaction cadence without an exact Reaction-id guard. Pass 2 walks the 21-unit battle
 array, stages an order at `unit+0x1A0`, and consumes/clears the exact Reaction id at `unit+0x1CE`.
+Before reading that candidate, the selector compares the scan index with source-index global RVA
+`0x186AFF4`; an equal index skips directly to the loop increment. A candidate on the excluded source
+therefore persists without being read or cleared in that pass (**Proven static**). Candidate presence
+or persistence is not an accepted Reaction commit.
 It has explicit real-code delivery branches for Bonecrusher `434`, Magick Counter `435`, Counter
 Tackle `436`, Nature's Wrath `437`, reserved Reflect `440`, Auto-Potion `441`, and Counter `442`.
 RVA `0x206421` is the **Proven** accepted native Reaction commit boundary. Counter `442` and
 Auto-Potion `441` commit there with the reactor and incoming source. The actor target list at this
 early boundary is not authoritative: it can be empty or retain the preceding target until the native
-delivery branch materializes the final source target. Each visible Reaction produces one pass-2
-commit; ordinary queue traffic remains on pass 1.
+delivery branch materializes the final source target. A pass-2 row proves an internally accepted
+Reaction order, not visible presentation or effect delivery; those require correlation with the
+materialized order, state-`0x2C` rows, native apply, and presentation. Ordinary queue traffic remains
+on pass 1. The commit hook's actor value is an actor object,
+not a battle-unit pointer; its captured `actor+0x148` record is the reactor's battle-unit pointer as
+defined by the actor layout above (**Proven live**).
 
 State `0x2C` at RVA `0x212C2E` is a **Proven per-execution effect boundary**, not a one-row-per-
 Reaction cadence boundary. Native Counter preserves the presentation id `actor+0x18C = 442`, but
 its executable id is Basic Attack `actor+0x142 = 0`; a Dual Wield Counter produces two state-`0x2C`
-rows for the same accepted commit and final source target. The pass-2 commit owns Reaction
-cardinality. State `0x2C` owns delivered native transaction/strike cardinality and requires an
-idempotence token before any once-per-Reaction persistent mutation.
+rows for the same accepted commit and final source target. The pass-2 commit owns accepted-order
+cardinality. State `0x2C` owns delivered native transaction/strike cardinality, but neither boundary
+alone proves a visible animation. An idempotence token is required before any once-per-Reaction
+persistent mutation.
+
+**Proven live:** the two Dual Wield calculation transactions are an outer-sweep state-`0x2A` row
+followed by an outer-sweep state-`0x2F` row with the same caster, action type, ability, order payload,
+and target. This pairing occurs both for Counter `442` and for an ordinary Basic Attack; `0x2F` is
+therefore native repeated-execution provenance rather than Reaction-specific state. Each row owns
+its own staged numeric result and passes independently through DCL calculation and native apply; a
+one-point sentinel rewrites both rows and both apply as one-point HP deltas. The engine-calculated
+native debit is not part of repeat identity and can differ between the two rows even when the exact
+action tuple agrees. Hit, status, and Guard ownership must follow the same per-result boundary.
 
 The pass-2 helper at RVA `0x283280` writes a typed order at reactor `unit+0x1A0` and derives target
 coordinates from the unit selected by global RVA `0x186AFF4` (**Strong**). Counter `442` and
@@ -1201,13 +1583,53 @@ not equivalent to a transient DCL Dodge modifier for the current attack.
 
 Blank reaction id `443` has generic-selector flag byte `0x06`, so the pass-2 generic route accepts it,
 but the dispatcher does not test its corresponding `unit+0x96 & 0x04` reaction-set bit. It is a valid
-carrier only when a custom producer stages `unit+0x1CE = 443`. The generic route targets the reactor's
-own tile. RVA `0x2063BD` is the accepted-only boundary after the selector returns and before the actor
-constructor at `0x2063CA`. `eax` is the reactor index, `word[rbp-0x2E]` is the exact Reaction id, and
-the carrier-specific 20-byte order is complete at reactor `unit+0x1A0`. RVA `0x186AFF4` still owns the
-incoming source index. Source retargeting at this boundary writes order target index `+0x0B` and the
-source x/layer/y coordinates at `+0x0C/+0x0E/+0x10`; the later actor target list is not authoritative
-at commit (**Proven live**).
+owner only when a custom producer supplies a native delivery. When `443` itself is staged, the generic
+route writes `actionType=0`, `actionId=443`, target mode `5`, and the reactor's own tile (**Proven
+static/live**). It then jumps from RVA `0x283003` directly to common finalization `0x2831CC`, skipping
+the special-family boundary `0x2831BD` and helper call `0x2831C0` (**Proven static/live**).
+
+RVA `0x2831BD` is reached only by accepted ids `434`, `435`, `436`, `437`, `440`, `441`, and `442`.
+At that boundary `ebp` is the reactor index, `rbx` is the reactor battle unit, `rdi` is its complete
+`unit+0x1A0` order, word RVA `0x186AFF0` is the exact Reaction id, and dword RVA `0x186AFF4` is the
+incoming source index (**Proven static**). The immediately following helper call belongs to this
+special branch. Both special and generic paths publish their result at common selector finalization
+`0x2831CC` and then return to RVA `0x2063BD`, before actor resolution at `0x2063CA`.
+
+Special-family candidate consumption precedes delivery acceptance. The selector clears
+`unit+0x1CE` at RVA `0x282F29`, then dispatches a path-specific native order builder. Counter `442`
+shares typed-helper result RVA `0x283019` with ids `435/436/437`; Bonecrusher `434` uses a separate
+typed-helper result at RVA `0x283148`. At either site zero continues and nonzero restores the
+previous 20-byte order. The surviving order then passes a VM-owned final validator whose result is
+tested at RVA `0x28315C`; again, only zero reaches `0x2831BD`, while nonzero restores at `0x283160`
+(**Proven static/live**). For Counter `442`, a distant source returns `-2` at the shared typed-family
+site and never reaches the final validator, materialization, or pass-2 commit. An adjacent source
+returns `0` at both `0x283019` and `0x28315C`, then materializes once and executes against that
+source (**Proven live**). The typed-family helper is therefore the native Counter reach/legality
+gate; candidate consumption alone is not delivery acceptance.
+
+The safe final-result instrumentation boundary begins at validator call RVA `0x283157`, relocates
+exactly the seven-byte `call` plus `test eax,eax`, and executes the probe after those instructions.
+It ends before the conditional branch at `0x28315E` and the externally targeted restore path at
+`0x283160` (**Proven static/live**). A Reloaded assembly hook must not begin directly at `0x28315C`:
+its minimum stolen span includes `0x283160`, so the earlier typed-rejection jump can enter the middle
+of the detour and fault at that restore RVA (**Refuted live**).
+The typed-family sites use Reloaded's automatic complete-instruction sizing; an explicit hook length
+of zero is invalid and fails installation before the battle begins. All three hooks coexist live:
+the two typed sites install with automatic sizing and the final site installs with the exact seven-
+byte span without covering the restore entry.
+
+Source retargeting writes order target index `+0x0B` and the source x/layer/y coordinates at
+`+0x0C/+0x0E/+0x10`. A live write at the post-selector `0x2063BD` boundary changed those order fields
+and produced a source target in the early pass-2 actor snapshot, but state `0x2C` still resolved the
+reactor as target (**Proven live**). The generic `443` native effect semantics therefore remain
+self-directed downstream of actor construction. An order edit cannot turn a blank/generic owner into
+Counter delivery merely by copying the source tuple.
+
+Counter `442` is selected from `unit+0x96 & 0x08`: RVA `0x30B837` loads mask `0x08`, RVA
+`0x30B958` tests it against reaction-set byte `unit+0x96`, and RVA `0x30B977` selects exact id `442`
+(**Proven static**). An autosave fixture that replaces equipped Reaction `442` with `443` in a live
+unit must also change this derived bit from `0x08` to `0x04`; editing only `unit+0x14` leaves native
+Counter eligibility active.
 
 The selected unit-table index in `eax`/order `+0x00` is a different namespace from the later actor's
 `reactorIdx`/`actorIdx`. A live Counter materialized with selected/caster index `3` and then
@@ -1215,21 +1637,44 @@ committed/delivered through actor index `1`. Correlation across this boundary us
 incoming source, temporal order, and the selected unit/order pointer; it never assumes that the two
 index values are equal.
 
-The runtime binds a fail-closed accepted-order controller to this boundary. It matches one exact
-Reaction id, optionally checks the native order type/payload, and can replace executable
+The runtime binds a fail-closed special-family order controller to boundary `0x2831BD`. It accepts
+only ids `434/435/436/437/440/441/442`, matches one exact Reaction id, optionally checks the native
+order type/payload, and can replace executable
 `+0x01/+0x02` and/or copy the complete incoming-source target tuple. Live writes require exact
 native-order guards and a bounded write count; invalid indices, mismatched orders, and exhausted
-caps preserve the native order (**Implemented offline, live-gated**).
+caps preserve the native order. Exact-original rejection with zero order writes is **Proven live**;
+the retired post-selector controller at `0x2063BD` successfully replaced native `0/443` by
+executable `1/0`, wrote one bounded source-target tuple, and reached producer-owned cadence commit
+(**Proven live**). Final source delivery from that late write is **Refuted** for generic carrier
+`443`. Generic ids are rejected by the current special-family controller because they do not execute
+its hook.
 
 `OverrideAbilityActionData` contains keys `0..367`, so reaction id `443` cannot receive an ordinary
 formula/status rider through that NXD surface. The dispatcher never evaluates the reaction-set bit
-corresponding to `443`; it is therefore a useful blank-carrier probe for code-mod trigger production.
-The generic synthetic-Reaction owner checks an exact equipped carrier at the successful incoming-result
-commit instead of waiting for a native callback that cannot occur. It admits only a valid non-self
-source, a surviving defender, and committed hit/action identity; it evaluates the configured taxonomy
-rule and reserves a per-defender pass-2 producer request. Accepted-order rewriting owns any action or
-target transformation; the producer contains no ability-specific effect (**Strong/offline-tested,
-live-gated**).
+corresponding to `443`; it is therefore a useful blank **owner identity** for code-mod trigger
+production, not a source-target delivery identity. The synthetic transaction checks that exact
+equipped owner at the committed successful incoming result, requires valid non-self source/action and
+a surviving defender, evaluates the configured taxonomy rule, and reserves a per-defender request.
+The request stages a separately configured native delivery id. Only ids proven to traverse special
+materialization `0x2831BD` are accepted for this handshake. Post-helper probes at `0x283019`,
+`0x283148`, and the safe `0x283157` call/result boundary for the test at `0x28315C` classify native
+delivery rejection and mark only the private staged
+mailbox as rejected;
+materialization marks the exact surviving delivery as producer-owned, and only its agreeing pass-2
+commit may consume cadence. The adjacent owner-`443` / delivery-`442` vertical slice is **Proven
+live**: final validation returns zero, materialization owns native action `1/0` targeting the source,
+one agreeing pass-2 commit consumes cadence once, and a Dual Wield reactor emits two state-`0x2C`
+rows that both retain presentation id `442` and target the source. Direct live classification of the
+path-specific typed result remains a separate gate.
+
+The exact `443` owner state, accepted gate, one-shot mailbox, empty candidate slot, log-only intent,
+one live stage, source-target materialization, once-per-Reaction cadence commit, and per-strike
+delivery are **Proven live**. Two negative delivery facts are also
+**Proven live**: rewriting its post-selector order to `1/0` does not prevent final self-targeting, and
+staging `443` never reaches `0x2831BD`. Native Counter `442` is the proven source-target basic-strike
+delivery: it reaches that boundary with type `1`, payload `0`, and source coordinates. The runtime
+therefore models owner and delivery as distinct configured identities; neither id nor effect is
+hard-coded into the mechanism.
 
 Auto-Potion `441` has a fixed three-word eligible-item table at RVA `0x7154B8`: Potion `240`,
 Hi-Potion `241`, and X-Potion `242` (**Proven-data/Strong-code**). The selector scans in that order

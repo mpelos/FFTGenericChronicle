@@ -26,7 +26,7 @@ scaling).** Requires a code mod. The direct formula routine is Denuvo-virtualize
 located by static AOB scan — **but Denuvo virtualizes *code*, not *data*:** the unit struct and UI
 buffers the VM reads/writes are ordinary, externally read/write-able memory. So the code mod controls
 combat by hooking stable `.text` touchpoints and reading/writing that memory, never by hooking the
-virtualized math. Proven control (2026-06-27):
+virtualized math. **Proven:** the controllable surfaces are:
 
 - **Damage / MP magnitude** — rewrite the engine's staged debit at the pre-clamp hook (`0x30A5D7`)
   just before HP/MP application; even lethal damage lands in the SAME hit through vanilla's own HP
@@ -72,7 +72,7 @@ The mod has four distinct editing surfaces:
 - **Arbitrary math is not possible in data.** Data picks from the fixed catalog of ~100 hardcoded
   routines and feeds two byte parameters (X, Y) + element/status. Free math requires the Layer-A
   code mod, via the same-hit pre-clamp staged-debit hook in `06` (not a direct damage-routine hook).
-- **Denuvo virtualizes code, not data — combat is PROVEN controllable (2026-06-27).** The damage
+- **Denuvo virtualizes code, not data — combat is Proven controllable.** The damage
   routine can't be hooked, but the memory it reads/writes can: damage/MP via the pre-clamp hook
   (`0x30A5D7`, same-hit), hit/miss/block/parry via the defender's live evade bytes (input-control) or
   the result selector (`0x205210`, output-control), status via `+0x1EF/+0x61`, reactions via Brave

@@ -134,10 +134,15 @@ Strike outcome counts are zero before a managed decision exists and contain the 
 aggregate during execution.
 
 - `dcl.isSelf`
+- `dcl.nativeHpCreditResult`
+- `dcl.nativeHpDamageResult`
+- `dcl.nativeMpCreditResult`
+- `dcl.nativeMpDebitResult`
 - `dcl.oldCredit`
 - `dcl.oldDebit`
 - `dcl.oldMpCredit`
 - `dcl.oldMpDebit`
+- `dcl.oldResultFlags`
 - `dcl.strike.anyHit`
 - `dcl.strike.attackMissCount`
 - `dcl.strike.blockAttempts`

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<StatusEffectTable>
+  <Version>1</Version>
+  <Entries>
+    <StatusEffect>
+      <Id>36</Id>
+      <Counter>0</Counter>
+    </StatusEffect>
+    <StatusEffect>
+      <Id>37</Id>
+      <Counter>0</Counter>
+    </StatusEffect>
+  </Entries>
+</StatusEffectTable>

@@ -36,7 +36,8 @@ if ([IO.Path]::GetFullPath([string]$appConfig.AppLocation) -ne [IO.Path]::GetFul
     throw "Reloaded-II profile targets '$($appConfig.AppLocation)', not '$resolvedGame'."
 }
 
-$runningGame = @(Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue)
+$runningGame = @(Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue |
+    Where-Object { -not $_.HasExited })
 if ($runningGame.Count -gt 0) {
     throw 'FFT_enhanced.exe is already running. Close it before starting a deterministic test launch.'
 }
@@ -46,8 +47,8 @@ if ($AutosaveSnapshot) {
     $resolvedSnapshot = Resolve-RequiredFile -Path $AutosaveSnapshot -Label 'Autosave snapshot'
     $autosaveManager = Join-Path $PSScriptRoot 'manage_fft_enhanced_autosave.ps1'
     & $autosaveManager -Action Restore -SnapshotPath $resolvedSnapshot
-    if ($LASTEXITCODE -ne 0) {
-        throw "Autosave restore failed with exit code $LASTEXITCODE."
+    if (-not $?) {
+        throw 'Autosave restore failed.'
     }
     $restoredSnapshot = $resolvedSnapshot
 }
@@ -76,7 +77,9 @@ Start-Process -FilePath $resolvedReloaded -ArgumentList @('--launch', ('"' + $re
 $deadline = [DateTime]::UtcNow.AddSeconds($ProcessWaitSeconds)
 $process = $null
 while ([DateTime]::UtcNow -lt $deadline) {
-    $process = Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $process = Get-Process -Name 'FFT_enhanced' -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited } |
+        Select-Object -First 1
     if ($process) {
         break
     }

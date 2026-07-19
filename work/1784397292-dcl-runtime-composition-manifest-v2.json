@@ -1,0 +1,21 @@
+{
+  "note": "Unified job-free DCL sentinel v2. It extends the existing paired physical, magic, status, lifecycle, multistrike, Taunt, and Reaction profile with the complete source-specific Disable/Immobilize duration mechanism and the live-proven Interrupt transaction. Potion is only an Interrupt technical carrier; all numerical values are bounded fixtures, no job is assigned, and this is not the final production policy.",
+  "inputs": [
+    "work/1784168025-battle-runtime-settings.dcl-unified-sentinel.json",
+    "work/1784395365-battle-runtime-settings.dcl-da-dm-duration-mechanism.json",
+    "work/1784397292-battle-runtime-settings.dcl-interrupt-integration-fragment.json"
+  ],
+  "resolutions": {
+    "DclDamageFormula": "if(t.charId == 31 && dcl.nativeMpDebitResult && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, max(1, dcl.oldMpDebit - min(t.mp, max(1, dcl.oldMpDebit / 2))), if(action.abilityId == 101, ability.dcl.power * dcl.strike.normalHitCount + mulDiv(ability.dcl.power, 3, 2) * dcl.strike.criticalCount, if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmount, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))))",
+    "DclDecisionMaxLogs": 1000,
+    "DclStatusMaxLogs": 1000
+  },
+  "patch": {
+    "DclStatusForcedRoll": -1,
+    "DclHitForcedRoll": -1,
+    "DclAttackForcedRoll": -1,
+    "DclDefenseForcedRoll": -1,
+    "DclInterruptForcedRoll": -1
+  },
+  "output": "work/1784397292-battle-runtime-settings.dcl-unified-sentinel-v2.json"
+}

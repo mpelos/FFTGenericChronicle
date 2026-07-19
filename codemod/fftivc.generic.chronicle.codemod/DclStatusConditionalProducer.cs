@@ -111,19 +111,61 @@ internal static class DclStatusConditionalProducer
             error = "no post-calc producer rules are configured";
             return false;
         }
-        if (rules.Any(rule => !rule.NativeRiderReplacedPostCalc || rule.ActionType != -1))
+        if (rules.Any(rule => !rule.UsesPostCalcProducer || rule.ActionType != -1))
         {
-            error = "every producer rule must use NativeRiderPolicy='replaced-post-calc' and ActionType=-1";
+            error = "every producer rule must use a post-calc NativeRiderPolicy and ActionType=-1";
             return false;
         }
 
-        var ownedBits = rules.Select(rule => new DclNativeStatusBit(rule.StatusByteIndex, (byte)rule.StatusMask)).ToHashSet();
+        bool reskin = rules.First().NativeRiderReplacedPostCalcReskin;
+        if (rules.Any(rule => rule.NativeRiderReplacedPostCalcReskin != reskin))
+        {
+            error = "a producer ability cannot mix replaced-post-calc and replaced-post-calc-reskin rules";
+            return false;
+        }
+        if (!reskin && rules.Any(rule => rule.NativePacketByteIndex != -1 || rule.NativePacketMask != 0))
+        {
+            error = "replaced-post-calc derives native ownership from the output bit; NativePacketByteIndex/NativePacketMask must remain unset";
+            return false;
+        }
+        if (reskin && rules.Any(rule =>
+                rule.NativePacketByteIndex is < 0 or >= DclStatusPacket.Width ||
+                rule.NativePacketMask is < 1 or > 255 ||
+                (rule.NativePacketMask & (rule.NativePacketMask - 1)) != 0))
+        {
+            error = "replaced-post-calc-reskin requires one explicit native packet bit per rule";
+            return false;
+        }
+
+        var ownedBits = rules.Select(rule => rule.NativePacketBit).ToHashSet();
+        if (ownedBits.Count != rules.Count)
+        {
+            error = "each producer rule must own a distinct native packet bit";
+            return false;
+        }
         if (!ownedBits.SetEquals(requiredBits))
         {
             string expected = string.Join(", ", requiredBits.Select(bit => $"{bit.ByteIndex}/0x{bit.Mask:X2}"));
             string actual = string.Join(", ", ownedBits.Select(bit => $"{bit.ByteIndex}/0x{bit.Mask:X2}"));
             error = $"packet ownership mismatch; expected [{expected}], got [{actual}]";
             return false;
+        }
+        if (reskin)
+        {
+            var outputBits = rules
+                .Select(rule => new DclNativeStatusBit(rule.StatusByteIndex, (byte)rule.StatusMask))
+                .ToHashSet();
+            if (outputBits.Count != rules.Count)
+            {
+                error = "each reskin rule must write a distinct DCL output bit";
+                return false;
+            }
+            if (rules.All(rule => rule.NativePacketBit ==
+                                  new DclNativeStatusBit(rule.StatusByteIndex, (byte)rule.StatusMask)))
+            {
+                error = "replaced-post-calc-reskin requires at least one native-to-DCL bit change";
+                return false;
+            }
         }
         if (rules.Any(rule => !rule.Operation.Equals(operation, StringComparison.OrdinalIgnoreCase)))
         {
@@ -145,5 +187,12 @@ internal static class DclStatusConditionalProducer
             }
         }
         return true;
+    }
+
+    public static IReadOnlyCollection<DclNativeStatusBit> NativeOwnedBits(
+        IReadOnlyCollection<DclStatusRule> rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        return rules.Select(rule => rule.NativePacketBit).Distinct().ToArray();
     }
 }

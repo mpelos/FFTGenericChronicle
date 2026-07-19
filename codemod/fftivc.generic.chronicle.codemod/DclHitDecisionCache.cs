@@ -40,11 +40,22 @@ internal sealed class DclHitDecisionCache
         int ActionPayload,
         DclHitDecision Decision,
         long TimestampTicks,
+        long CasterTurnEpoch = 0,
         bool DamageConsumed = false,
         bool OutcomeConsumed = false,
         bool DefenseCommitted = false);
 
-    public bool TryGet(int targetIdx, int casterIdx, int abilityId, int actionType, int actionPayload, long nowTicks, long ttlTicks, out DclHitDecision decision)
+    public bool TryGet(
+        int targetIdx,
+        int casterIdx,
+        int abilityId,
+        int actionType,
+        int actionPayload,
+        long nowTicks,
+        long ttlTicks,
+        out DclHitDecision decision,
+        long? requiredCasterTurnEpoch = null,
+        bool retainUnconsumedForCasterTurn = false)
     {
         decision = default;
         if ((uint)targetIdx >= SlotCount)
@@ -59,22 +70,47 @@ internal sealed class DclHitDecisionCache
             if (entry.CasterIdx != casterIdx || entry.AbilityId != abilityId || entry.ActionType != actionType ||
                 entry.ActionPayload != actionPayload)
                 return false;
-            if (ttlTicks <= 0 || nowTicks - entry.TimestampTicks > ttlTicks)
+            if (requiredCasterTurnEpoch is { } requiredEpoch && entry.CasterTurnEpoch != requiredEpoch)
+                return false;
+
+            bool expired = ttlTicks <= 0 || nowTicks - entry.TimestampTicks > ttlTicks;
+            bool canRetain = retainUnconsumedForCasterTurn &&
+                requiredCasterTurnEpoch.HasValue &&
+                !entry.DamageConsumed &&
+                !entry.OutcomeConsumed;
+            if (expired && !canRetain)
                 return false;
 
             decision = entry.Decision;
+            if (expired)
+                _entries[targetIdx] = entry with { TimestampTicks = nowTicks };
             return true;
         }
     }
 
-    public void Record(int targetIdx, int casterIdx, int abilityId, int actionType, int actionPayload, DclHitDecision decision, long nowTicks)
+    public void Record(
+        int targetIdx,
+        int casterIdx,
+        int abilityId,
+        int actionType,
+        int actionPayload,
+        DclHitDecision decision,
+        long nowTicks,
+        long casterTurnEpoch = 0)
     {
         if ((uint)targetIdx >= SlotCount)
             return;
 
         lock (_gate)
         {
-            _entries[targetIdx] = new Entry(casterIdx, abilityId, actionType, actionPayload, decision, nowTicks);
+            _entries[targetIdx] = new Entry(
+                casterIdx,
+                abilityId,
+                actionType,
+                actionPayload,
+                decision,
+                nowTicks,
+                casterTurnEpoch);
             _hasEntry[targetIdx] = true;
         }
     }
@@ -225,5 +261,11 @@ internal sealed class DclHitDecisionCache
             _entries[targetIdx] = entry with { DefenseCommitted = true };
             return true;
         }
+    }
+
+    public void Clear()
+    {
+        lock (_gate)
+            Array.Clear(_hasEntry);
     }
 }

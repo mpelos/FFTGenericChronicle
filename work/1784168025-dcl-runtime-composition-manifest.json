@@ -1,0 +1,44 @@
+{
+  "note": "Unified job-free DCL sentinel profile. It composes the live-proven physical, magic, Instant-KO, status-carrier, status-producer, one-turn Taunt fallback, atomic HP/MP, managed-multistrike, and synthetic/native Reaction mechanisms. Every special value is a bounded technical fixture rather than final balance policy. The profile requires its paired neutralized action-data artifact and must not be deployed as the final mod.",
+  "inputs": [
+    "work/1784094553-battle-runtime-settings.dcl-integration-scaffold.json",
+    "work/1784019928-battle-runtime-settings.dcl-status-only-carrier-mechanism.json",
+    "work/1784068197-battle-runtime-settings.dcl-custom-damage-riders.json",
+    "work/1784068553-battle-runtime-settings.dcl-dragon-gift-rider.json",
+    "work/1784068927-battle-runtime-settings.dcl-self-destruct-rider.json",
+    "work/1784072793-battle-runtime-settings.lt33-dcl-performance-status-producer.json",
+    "work/1784074257-battle-runtime-settings.lt34-dcl-randomfire-status-producer.json",
+    "work/1784017665-battle-runtime-settings.dcl-result-flags-mechanism.json",
+    "work/1784363754-battle-runtime-settings.dcl-taunt-fallback-mechanism.json",
+    "work/1784168025-battle-runtime-settings.dcl-integration-reaction-fragment.json"
+  ],
+  "resolutions": {
+    "DclDamageFormula": "if(t.charId == 31 && dcl.nativeMpDebitResult && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, max(1, dcl.oldMpDebit - min(t.mp, max(1, dcl.oldMpDebit / 2))), if(action.abilityId == 101, ability.dcl.power * dcl.strike.normalHitCount + mulDiv(ability.dcl.power, 3, 2) * dcl.strike.criticalCount, if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmount, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))))",
+    "DclHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, if(dcl.nativeHpDamageResult, dcl.magicAmount, 0), if(dcl.isMagicHeal, if(dcl.nativeHpCreditResult, if(t.status.undead, 0, dcl.magicAmount), 0), if(dcl.nativeHpCreditResult, dcl.oldCredit, 0)))",
+    "DclDecisionMaxLogs": 1000,
+    "DclStatusMaxLogs": 1000
+  },
+  "patch": {
+    "DclAbilityMetadataPath": "D:\\Projects\\FFTGenericChronicle\\work\\1784168025-dcl-integration-ability-metadata.csv",
+    "DclPreviewDamageFormula": "if(action.abilityId == 101, ability.dcl.power * ability.dcl.strike_count, if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0))))",
+    "DclPhysicalContestConditionFormula": "(action.type == 1 && action.abilityId == 0 && !dcl.isMagicBolt) || action.abilityId == 101",
+    "DclAttackSkillFormula": "if(action.abilityId == 101, 12 - dcl.strike.index, dcl.weaponSkill + dcl.zodiacHitModifier + dcl.pointBlank * const.dclPointBlankSkillModifier)",
+    "DclDodgeFormula": "if(action.abilityId == 101, 8, dcl.dodge)",
+    "DclParryFormula": "if(action.abilityId == 101, 11, if(dcl.isMissile, 0, mulDiv(dcl.targetWeaponSkill, 1, 2) + 3))",
+    "DclBlockFormula": "if(action.abilityId == 101, 13, const.dclBlockBase + mulDiv(tslot.rightshield.shieldPhysicalEvasion, 1, const.dclShieldEvadePctPerBlockPoint))",
+    "DclDefenseAllowedFormula": "if(action.abilityId == 101, 1, !dcl.facingBack)",
+    "DclDefenseModifierFormula": "if(action.abilityId == 101, 0, mulDiv(50 - t.brave, 1, 20) + dcl.facingSide * const.dclFlankDefenseModifier)",
+    "DclParryUsesFormula": "if(action.abilityId == 101, 1, tslot.rightweapon.itemId > 0 && tslot.rightweapon.itemId < 255)",
+    "DclBlockUsesFormula": "if(action.abilityId == 101, 1, tslot.rightshield.isShield)",
+    "DclStatusForcedRoll": -1,
+    "DclHitForcedRoll": -1,
+    "DclAttackForcedRoll": -1,
+    "DclDefenseForcedRoll": -1,
+    "ResultSelectorProbeEnabled": false,
+    "ResultSelectorProbeMaxLogs": 0,
+    "CalcEntryProbeEnabled": false,
+    "DclCalcProvenanceProbeEnabled": false,
+    "StagedBundleProbeEnabled": false
+  },
+  "output": "work/1784168025-battle-runtime-settings.dcl-unified-sentinel.json"
+}

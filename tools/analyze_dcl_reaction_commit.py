@@ -146,11 +146,12 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "  `[rbp-0x2E]` is the exact Reaction id; `actor+8` carries the selected unit index.",
         "- This boundary is downstream of chance evaluation and upstream of reaction action execution.",
         "  It is therefore the accepted-Reaction cardinality authority and the correct cadence key.",
-        "  It is not an executable-action or final-target rewrite site: those fields are materialized",
-        "  from the accepted unit order afterward.",
-        "- The accepted post-selector boundary at `0x2063BD` owns the complete carrier order before",
-        "  actor construction. Replacement/retarget controls must bind there, while this commit remains",
-        "  the deduplication authority for once-per-action/own-cycle state.",
+        "  It is not an executable-action or final-target rewrite site.",
+        "- Special carriers `434/435/436/437/440/441/442` expose their complete order at `0x2831BD`",
+        "  before helper call `0x2831C0`. Generic carriers such as `443` skip both and join common",
+        "  finalization at `0x2831CC`. The post-selector boundary at `0x2063BD` remains useful for",
+        "  observation, while this commit remains the deduplication authority",
+        "  for once-per-action/own-cycle state.",
         "",
     ]
     return "\n".join(lines), anchors_ok and call_graph_ok and selector_boundary_ok

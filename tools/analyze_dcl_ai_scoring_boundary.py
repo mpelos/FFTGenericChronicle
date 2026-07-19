@@ -131,7 +131,7 @@ def render(
     source_checks = {
         "the existing staged-bundle probe owns RVA `0x281F12`": "StagedBundleProbeRva { get; set; } = 0x281F12" in mod_source,
         "the execution damage rewrite owns RVA `0x30A5D7`": "PreClampDamageRewriteRva { get; set; } = 0x30A5D7" in mod_source,
-        "the post-calc status producer explicitly rejects non-execution state": "battleState != DclCalcProvenance.ConfirmedExecutionBattleState" in mod_source,
+        "the post-calc status producer explicitly rejects non-execution state": "!DclCalcProvenance.IsExecutionBattleState(battleState)" in mod_source,
         "the permanent numeric writer is separately gated": "DclComputePointNumericEnabled { get; set; } = false" in mod_source,
         "confirmed execution results are cached at compute point": "_dclComputePointCache.Record(" in mod_source,
         "pre-clamp refuses to evaluate an ambiguous compute-point miss twice": 'QueueDclCacheMiss(settings, "no-compute-point-result"' in mod_source,

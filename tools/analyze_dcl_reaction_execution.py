@@ -163,9 +163,10 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "  executable carrier action. Counter retains `442` at `+0x18C` and resolves Basic Attack `0`",
         "  at `+0x142`; Dual Wield emits two state-`0x2C` rows for one accepted commit.",
         "- **Proven static:** `0x206421` is the accepted pass-2 commit/cardinality boundary, not the",
-        "  final action/target rewrite site. RVA `0x2063BD` occurs earlier, after the selector has",
-        "  materialized the complete unit order and before actor construction; replacement and source",
-        "  retargeting bind to that order, while state `0x2C` audits delivered strike transactions.",
+        "  final action/target rewrite site. Special carriers `434/435/436/437/440/441/442` expose",
+        "  their complete order at `0x2831BD`; generic carriers such as `443` bypass that hook and",
+        "  join common finalization at `0x2831CC`. State `0x2C` audits",
+        "  delivered strike transactions.",
         "",
     ]
     return "\n".join(lines), anchors_ok and state_targets_ok

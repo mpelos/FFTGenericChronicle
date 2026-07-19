@@ -1,0 +1,1303 @@
+{
+  "_note": "Bounded job-free DCL Fear forced-flee live probe composed onto the unified technical sentinel. Basic Attack 0 remains only a technical status transaction. This profile assigns no job, contains no final balance policy, and exists solely to validate target authorization, selector restoration, native route handoff, post-move continuation, and Reaction exclusion.",
+  "UnitPollIntervalMs": 25,
+  "MaxTrackedBattleUnits": 64,
+  "ItemCatalogPath": "item_catalog.csv",
+  "AbilityCatalogPath": "wotl_ability_action_baseline.csv",
+  "DclPipelineEnabled": true,
+  "DclDamageFormula": "if(t.charId == 31 && dcl.nativeMpDebitResult && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, max(1, dcl.oldMpDebit - min(t.mp, max(1, dcl.oldMpDebit / 2))), if(action.abilityId == 101, ability.dcl.power * dcl.strike.normalHitCount + mulDiv(ability.dcl.power, 3, 2) * dcl.strike.criticalCount, if(dcl.isMagicDamage, if(dcl.nativeHpDamageResult, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), 0), if(action.type == 1 && action.abilityId == 0, if(dcl.nativeHpDamageResult, dcl.weaponModel, 0), if(dcl.isMagicHeal && t.status.undead, if(dcl.nativeHpCreditResult, dcl.magicAmount, 0), if(dcl.nativeHpDamageResult, dcl.oldDebit, 0))))))",
+  "DclActionContextMaxAgeMs": 5000,
+  "DclDecisionMaxLogs": 1000,
+  "DclHitControlEnabled": true,
+  "DclHitChanceFormula": "100",
+  "DclHitDecisionTtlMs": 2500,
+  "DclHitForcedRoll": -1,
+  "DclHitMaxLogs": 600,
+  "DclMissClassEvadeValue": 100,
+  "DclPreviewHitPctEnabled": true,
+  "DclPhysicalContestEnabled": true,
+  "DclPhysicalContestConditionFormula": "(action.type == 1 && action.abilityId == 0 && !dcl.isMagicBolt) || action.abilityId == 101",
+  "DclAttackSkillFormula": "if(action.abilityId == 101, 12 - dcl.strike.index, dcl.weaponSkill + dcl.zodiacHitModifier + dcl.pointBlank * const.dclPointBlankSkillModifier)",
+  "DclDodgeFormula": "if(action.abilityId == 101, 8, dcl.dodge)",
+  "DclParryFormula": "if(action.abilityId == 101, 11, if(dcl.isMissile, 0, mulDiv(dcl.targetWeaponSkill, 1, 2) + 3))",
+  "DclBlockFormula": "if(action.abilityId == 101, 13, const.dclBlockBase + mulDiv(tslot.rightshield.shieldPhysicalEvasion, 1, const.dclShieldEvadePctPerBlockPoint))",
+  "DclDefenseAllowedFormula": "if(action.abilityId == 101, 1, !dcl.facingBack)",
+  "DclDefenseModifierFormula": "if(action.abilityId == 101, 0, mulDiv(50 - t.brave, 1, 20) + dcl.facingSide * const.dclFlankDefenseModifier)",
+  "DclParryUsesFormula": "if(action.abilityId == 101, 1, tslot.rightweapon.itemId > 0 && tslot.rightweapon.itemId < 255)",
+  "DclBlockUsesFormula": "if(action.abilityId == 101, 1, tslot.rightshield.isShield)",
+  "DclAttackForcedRoll": -1,
+  "DclDefenseForcedRoll": -1,
+  "DclGuardMaxLogs": 400,
+  "FormulaVariables": {
+    "dclWeaponSkillCap": 16,
+    "dclSwordMasterAbilityId": 481,
+    "dclSwordMasterBonus": 2,
+    "dclPaToStOffset": 4,
+    "dclUntrainedFistPenalty": 1,
+    "dclPenFloorPermille": 200,
+    "dclCrossbowOvercapDamagePermille": 250,
+    "dclGunOvercapPenetrationPermille": 250,
+    "dclCrossbowDrPermille": 750,
+    "dclGunDrPermille": 500,
+    "dclGlobalScalePermille": 1000,
+    "dclDodgeBase": 7,
+    "dclEvadePctPerDodgePoint": 10,
+    "dclWeightPerDodgePenalty": 10,
+    "dclFlankDefenseModifier": -2,
+    "dclPointBlankSkillModifier": -2,
+    "dclBlockBase": 7,
+    "dclShieldEvadePctPerBlockPoint": 10,
+    "dclFlailParryPenalty": 4,
+    "dclFlailBlockPenalty": 2,
+    "dclFaithLowPermille": 700,
+    "dclFaithBandPermille": 600,
+    "dclAffinityWeakPermille": 1300,
+    "dclAffinityStrongPermille": 700,
+    "dclAffinityHalvePermille": 500,
+    "dclShellPermille": 500,
+    "dclMagicScalePermille": 580,
+    "dclMagicBoltSpellPower": 2,
+    "dclMagicStackCapPermille": 2500
+  },
+  "FormulaTables": {
+    "weaponSkillBaseByGrade": [
+      5,
+      7,
+      9,
+      11,
+      13
+    ],
+    "weaponSkillRatePermilleByGrade": [
+      200,
+      320,
+      500,
+      720,
+      1000
+    ],
+    "gurpsSw": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "gurpsThr": [
+      0,
+      0,
+      1,
+      2,
+      2,
+      3,
+      4,
+      4,
+      5,
+      6,
+      7,
+      7,
+      8,
+      9,
+      9,
+      10,
+      11,
+      11,
+      12,
+      13,
+      14,
+      14,
+      15,
+      16,
+      16,
+      17,
+      18,
+      18,
+      19,
+      20,
+      21,
+      21,
+      22,
+      23,
+      23,
+      24,
+      25,
+      25,
+      26,
+      27
+    ]
+  },
+  "FormulaMatrices": {
+    "drMatrix": [
+      [
+        9,
+        8,
+        3,
+        8
+      ],
+      [
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "FormulaMaps": {
+    "weaponGradeByJobFamily": {
+      "2850": 4,
+      "2861": 2,
+      "2863": 3
+    },
+    "equipmentWeightByItemId": {
+      "11": 3,
+      "71": 6,
+      "77": 4,
+      "142": 5,
+      "172": 26
+    }
+  },
+  "DclDerivedVariables": [
+    {
+      "Name": "dcl.weaponSkillInvestmentMilli",
+      "Formula": "2500 * max(0, a.jobLevel - 1) + mulDiv(250 * max(1, a.jobLevel), max(0, a.level - 1), 8)"
+    },
+    {
+      "Name": "dcl.hasSwordMaster",
+      "Formula": "a.supportAbilityId == const.dclSwordMasterAbilityId || a.innateAbilityId1 == const.dclSwordMasterAbilityId || a.innateAbilityId2 == const.dclSwordMasterAbilityId || a.innateAbilityId3 == const.dclSwordMasterAbilityId || a.innateAbilityId4 == const.dclSwordMasterAbilityId"
+    },
+    {
+      "Name": "dcl.weaponSkillBonus",
+      "Formula": "dcl.hasSwordMaster * const.dclSwordMasterBonus"
+    },
+    {
+      "Name": "dcl.rightWeaponFamily",
+      "Formula": "if(aslot.rightweapon.itemId == 0 || aslot.rightweapon.category_none, 0, if(aslot.rightweapon.category_knife, 1, if(aslot.rightweapon.category_ninjablade, 2, if(aslot.rightweapon.category_sword, 3, if(aslot.rightweapon.category_knightsword, 4, if(aslot.rightweapon.category_fellsword, 5, if(aslot.rightweapon.category_katana, 6, if(aslot.rightweapon.category_axe, 7, if(aslot.rightweapon.category_flail, 8, if(aslot.rightweapon.category_rod, 9, if(aslot.rightweapon.category_staff, 10, if(aslot.rightweapon.category_pole, 11, if(aslot.rightweapon.category_polearm, 12, if(aslot.rightweapon.category_crossbow, 13, if(aslot.rightweapon.category_bow, 14, if(aslot.rightweapon.category_gun, 15, if(aslot.rightweapon.category_book, 16, if(aslot.rightweapon.category_instrument, 17, if(aslot.rightweapon.category_bag, 18, if(aslot.rightweapon.category_cloth, 19, if(aslot.rightweapon.category_throwing, 20, if(aslot.rightweapon.category_bomb, 21, -1))))))))))))))))))))))"
+    },
+    {
+      "Name": "dcl.leftWeaponFamily",
+      "Formula": "if(aslot.leftweapon.itemId == 0 || aslot.leftweapon.category_none, 0, if(aslot.leftweapon.category_knife, 1, if(aslot.leftweapon.category_ninjablade, 2, if(aslot.leftweapon.category_sword, 3, if(aslot.leftweapon.category_knightsword, 4, if(aslot.leftweapon.category_fellsword, 5, if(aslot.leftweapon.category_katana, 6, if(aslot.leftweapon.category_axe, 7, if(aslot.leftweapon.category_flail, 8, if(aslot.leftweapon.category_rod, 9, if(aslot.leftweapon.category_staff, 10, if(aslot.leftweapon.category_pole, 11, if(aslot.leftweapon.category_polearm, 12, if(aslot.leftweapon.category_crossbow, 13, if(aslot.leftweapon.category_bow, 14, if(aslot.leftweapon.category_gun, 15, if(aslot.leftweapon.category_book, 16, if(aslot.leftweapon.category_instrument, 17, if(aslot.leftweapon.category_bag, 18, if(aslot.leftweapon.category_cloth, 19, if(aslot.leftweapon.category_throwing, 20, if(aslot.leftweapon.category_bomb, 21, -1))))))))))))))))))))))"
+    },
+    {
+      "Name": "dcl.rightWeaponGrade",
+      "Formula": "mapOr(weaponGradeByJobFamily, a.jobId * 32 + dcl.rightWeaponFamily, 0)"
+    },
+    {
+      "Name": "dcl.leftWeaponGrade",
+      "Formula": "mapOr(weaponGradeByJobFamily, a.jobId * 32 + dcl.leftWeaponFamily, 0)"
+    },
+    {
+      "Name": "dcl.rightWeaponSkillBase",
+      "Formula": "table(weaponSkillBaseByGrade, dcl.rightWeaponGrade)"
+    },
+    {
+      "Name": "dcl.leftWeaponSkillBase",
+      "Formula": "table(weaponSkillBaseByGrade, dcl.leftWeaponGrade)"
+    },
+    {
+      "Name": "dcl.rightWeaponSkillRatePermille",
+      "Formula": "table(weaponSkillRatePermilleByGrade, dcl.rightWeaponGrade)"
+    },
+    {
+      "Name": "dcl.leftWeaponSkillRatePermille",
+      "Formula": "table(weaponSkillRatePermilleByGrade, dcl.leftWeaponGrade)"
+    },
+    {
+      "Name": "dcl.rightWeaponSkillGrowth",
+      "Formula": "mulDiv(dcl.weaponSkillInvestmentMilli, dcl.rightWeaponSkillRatePermille, 1000000)"
+    },
+    {
+      "Name": "dcl.leftWeaponSkillGrowth",
+      "Formula": "mulDiv(dcl.weaponSkillInvestmentMilli, dcl.leftWeaponSkillRatePermille, 1000000)"
+    },
+    {
+      "Name": "dcl.rightWeaponSkillRaw",
+      "Formula": "dcl.rightWeaponSkillBase + dcl.rightWeaponSkillGrowth + dcl.weaponSkillBonus"
+    },
+    {
+      "Name": "dcl.leftWeaponSkillRaw",
+      "Formula": "dcl.leftWeaponSkillBase + dcl.leftWeaponSkillGrowth + dcl.weaponSkillBonus"
+    },
+    {
+      "Name": "dcl.rightWeaponSkill",
+      "Formula": "min(const.dclWeaponSkillCap, dcl.rightWeaponSkillRaw)"
+    },
+    {
+      "Name": "dcl.leftWeaponSkill",
+      "Formula": "min(const.dclWeaponSkillCap, dcl.leftWeaponSkillRaw)"
+    },
+    {
+      "Name": "dcl.rightWeaponSkillExcess",
+      "Formula": "max(0, dcl.rightWeaponSkillRaw - const.dclWeaponSkillCap)"
+    },
+    {
+      "Name": "dcl.leftWeaponSkillExcess",
+      "Formula": "max(0, dcl.leftWeaponSkillRaw - const.dclWeaponSkillCap)"
+    },
+    {
+      "Name": "dcl.rightSkillPrimary",
+      "Formula": "aslot.rightweapon.category_crossbow || aslot.rightweapon.category_gun"
+    },
+    {
+      "Name": "dcl.leftSkillPrimary",
+      "Formula": "aslot.leftweapon.category_crossbow || aslot.leftweapon.category_gun"
+    },
+    {
+      "Name": "dcl.rightDamageInput",
+      "Formula": "if(dcl.rightSkillPrimary, dcl.rightWeaponSkill, a.rawPa)"
+    },
+    {
+      "Name": "dcl.leftDamageInput",
+      "Formula": "if(dcl.leftSkillPrimary, dcl.leftWeaponSkill, a.rawPa)"
+    },
+    {
+      "Name": "dcl.rightOvercapDamageUnits",
+      "Formula": "aslot.rightweapon.category_crossbow * dcl.rightWeaponSkillExcess"
+    },
+    {
+      "Name": "dcl.leftOvercapDamageUnits",
+      "Formula": "aslot.leftweapon.category_crossbow * dcl.leftWeaponSkillExcess"
+    },
+    {
+      "Name": "dcl.rightOvercapPenetrationUnits",
+      "Formula": "aslot.rightweapon.category_gun * dcl.rightWeaponSkillExcess"
+    },
+    {
+      "Name": "dcl.leftOvercapPenetrationUnits",
+      "Formula": "aslot.leftweapon.category_gun * dcl.leftWeaponSkillExcess"
+    },
+    {
+      "Name": "dcl.activeWeaponIsLeft",
+      "Formula": "action.weaponSideKnown && action.weaponSide == 2"
+    },
+    {
+      "Name": "dcl.weaponFamily",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponFamily, dcl.rightWeaponFamily)"
+    },
+    {
+      "Name": "dcl.weaponGrade",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponGrade, dcl.rightWeaponGrade)"
+    },
+    {
+      "Name": "dcl.weaponSkillBase",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillBase, dcl.rightWeaponSkillBase)"
+    },
+    {
+      "Name": "dcl.weaponSkillRatePermille",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillRatePermille, dcl.rightWeaponSkillRatePermille)"
+    },
+    {
+      "Name": "dcl.weaponSkillGrowth",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillGrowth, dcl.rightWeaponSkillGrowth)"
+    },
+    {
+      "Name": "dcl.weaponSkillRaw",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillRaw, dcl.rightWeaponSkillRaw)"
+    },
+    {
+      "Name": "dcl.weaponSkill",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkill, dcl.rightWeaponSkill)"
+    },
+    {
+      "Name": "dcl.weaponSkillExcess",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftWeaponSkillExcess, dcl.rightWeaponSkillExcess)"
+    },
+    {
+      "Name": "dcl.skillPrimary",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftSkillPrimary, dcl.rightSkillPrimary)"
+    },
+    {
+      "Name": "dcl.damageInput",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftDamageInput, dcl.rightDamageInput)"
+    },
+    {
+      "Name": "dcl.overcapDamageUnits",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftOvercapDamageUnits, dcl.rightOvercapDamageUnits)"
+    },
+    {
+      "Name": "dcl.overcapPenetrationUnits",
+      "Formula": "if(dcl.activeWeaponIsLeft, dcl.leftOvercapPenetrationUnits, dcl.rightOvercapPenetrationUnits)"
+    },
+    {
+      "Name": "dcl.isCut",
+      "Formula": "action.weapon.category_sword || action.weapon.category_knightsword || action.weapon.category_katana || action.weapon.category_ninjablade || action.weapon.category_cloth"
+    },
+    {
+      "Name": "dcl.isThrust",
+      "Formula": "action.weapon.category_knife || action.weapon.category_polearm"
+    },
+    {
+      "Name": "dcl.isMissile",
+      "Formula": "action.weapon.category_bow || action.weapon.category_crossbow || action.weapon.category_gun"
+    },
+    {
+      "Name": "dcl.isUnarmed",
+      "Formula": "action.weapon.itemId == 0"
+    },
+    {
+      "Name": "dcl.isFlail",
+      "Formula": "action.weapon.category_flail"
+    },
+    {
+      "Name": "dcl.flailParryPenalty",
+      "Formula": "dcl.isFlail * const.dclFlailParryPenalty"
+    },
+    {
+      "Name": "dcl.flailBlockPenalty",
+      "Formula": "dcl.isFlail * const.dclFlailBlockPenalty"
+    },
+    {
+      "Name": "dcl.typeIndex",
+      "Formula": "if(dcl.isCut, 0, if(dcl.isThrust, 1, if(dcl.isMissile, 3, 2)))"
+    },
+    {
+      "Name": "dcl.woundNum",
+      "Formula": "if(dcl.isCut, 3, if(dcl.isThrust, 2, 1))"
+    },
+    {
+      "Name": "dcl.woundDen",
+      "Formula": "if(dcl.isCut, 2, 1)"
+    },
+    {
+      "Name": "armor.heavy",
+      "Formula": "tslot.body.category_armor"
+    },
+    {
+      "Name": "armor.clothes",
+      "Formula": "tslot.body.category_clothing"
+    },
+    {
+      "Name": "armor.robe",
+      "Formula": "tslot.body.category_robe"
+    },
+    {
+      "Name": "armor.classIndex",
+      "Formula": "if(armor.heavy, 0, if(armor.clothes, 1, 2))"
+    },
+    {
+      "Name": "dcl.zodiacValid",
+      "Formula": "a.zodiac < 12 && t.zodiac < 12"
+    },
+    {
+      "Name": "dcl.zodiacDelta",
+      "Formula": "if(dcl.zodiacValid, abs(a.zodiac - t.zodiac), 0)"
+    },
+    {
+      "Name": "dcl.zodiacDistance",
+      "Formula": "if(dcl.zodiacValid, min(dcl.zodiacDelta, 12 - dcl.zodiacDelta), -1)"
+    },
+    {
+      "Name": "dcl.zodiacPermille",
+      "Formula": "if(dcl.zodiacDistance == 6, 1200, if(dcl.zodiacDistance == 3, 900, if(dcl.zodiacDistance == 0 || dcl.zodiacDistance == 4, 1100, 1000)))"
+    },
+    {
+      "Name": "dcl.zodiacHitModifier",
+      "Formula": "dcl.zodiacDistance == 6"
+    },
+    {
+      "Name": "dcl.st",
+      "Formula": "dcl.damageInput + const.dclPaToStOffset"
+    },
+    {
+      "Name": "dcl.base",
+      "Formula": "if(dcl.isThrust || dcl.isUnarmed, tableClamp(gurpsThr, dcl.st), tableClamp(gurpsSw, dcl.st))"
+    },
+    {
+      "Name": "dcl.overcapRaw",
+      "Formula": "mulDiv(dcl.overcapDamageUnits, const.dclCrossbowOvercapDamagePermille, 1000)"
+    },
+    {
+      "Name": "dcl.wmod",
+      "Formula": "action.weapon.weaponPower"
+    },
+    {
+      "Name": "dcl.unarmedPenalty",
+      "Formula": "dcl.isUnarmed * const.dclUntrainedFistPenalty"
+    },
+    {
+      "Name": "dcl.gross",
+      "Formula": "max(0, dcl.base + dcl.wmod + dcl.overcapRaw - dcl.unarmedPenalty)"
+    },
+    {
+      "Name": "dcl.dr",
+      "Formula": "matrixClamp(drMatrix, armor.classIndex, dcl.typeIndex)"
+    },
+    {
+      "Name": "dcl.drPermille",
+      "Formula": "if(action.weapon.category_gun, const.dclGunDrPermille, if(action.weapon.category_crossbow, const.dclCrossbowDrPermille, 1000))"
+    },
+    {
+      "Name": "dcl.skillPenetration",
+      "Formula": "mulDiv(dcl.overcapPenetrationUnits, const.dclGunOvercapPenetrationPermille, 1000)"
+    },
+    {
+      "Name": "dcl.effectiveDr",
+      "Formula": "max(0, mulDiv(dcl.dr, dcl.drPermille, 1000) - dcl.skillPenetration)"
+    },
+    {
+      "Name": "dcl.penFloor",
+      "Formula": "mulDiv(dcl.gross, const.dclPenFloorPermille, 1000)"
+    },
+    {
+      "Name": "dcl.penetrating",
+      "Formula": "max(dcl.penFloor, dcl.gross - dcl.effectiveDr)"
+    },
+    {
+      "Name": "dcl.wounded",
+      "Formula": "mulDiv(dcl.penetrating, dcl.woundNum, max(1, dcl.woundDen))"
+    },
+    {
+      "Name": "dcl.traitPermille",
+      "Formula": "if(dcl.skillPrimary, 1000, 760 + mulDiv(a.brave, 590, 100))"
+    },
+    {
+      "Name": "dcl.weaponModel",
+      "Formula": "max(1, mulDiv(mulDiv(mulDiv(dcl.wounded, dcl.traitPermille, 1000), dcl.zodiacPermille, 1000), const.dclGlobalScalePermille, 1000))"
+    },
+    {
+      "Name": "dcl.weightHead",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.head.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightBody",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.body.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightAccessory",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.accessory.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightRightWeapon",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.rightweapon.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightRightShield",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.rightshield.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightLeftWeapon",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.leftweapon.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightLeftShield",
+      "Formula": "mapOr(equipmentWeightByItemId, tslot.leftshield.itemId, 0)"
+    },
+    {
+      "Name": "dcl.weightTotal",
+      "Formula": "dcl.weightHead + dcl.weightBody + dcl.weightAccessory + dcl.weightRightWeapon + dcl.weightRightShield + dcl.weightLeftWeapon + dcl.weightLeftShield"
+    },
+    {
+      "Name": "dcl.movePenalty",
+      "Formula": "if(dcl.weightTotal <= 14, 0, if(dcl.weightTotal <= 28, 1, if(dcl.weightTotal <= 40, 2, 3)))"
+    },
+    {
+      "Name": "dcl.dodgeWeightPenalty",
+      "Formula": "mulDiv(dcl.weightTotal, 1, const.dclWeightPerDodgePenalty)"
+    },
+    {
+      "Name": "dcl.dodge",
+      "Formula": "max(3, const.dclDodgeBase + mulDiv(t.physEva, 1, const.dclEvadePctPerDodgePoint) + mulDiv(tslot.accessory.accessoryPhysicalEvasion, 1, const.dclEvadePctPerDodgePoint) - dcl.dodgeWeightPenalty)"
+    },
+    {
+      "Name": "dcl.facingDx",
+      "Formula": "a.x - t.x"
+    },
+    {
+      "Name": "dcl.facingDy",
+      "Formula": "a.y - t.y"
+    },
+    {
+      "Name": "dcl.facingSeparated",
+      "Formula": "abs(dcl.facingDx) + abs(dcl.facingDy) > 0"
+    },
+    {
+      "Name": "dcl.sourceDirection",
+      "Formula": "if(!dcl.facingSeparated, t.facing, if(abs(dcl.facingDx) > abs(dcl.facingDy), if(dcl.facingDx > 0, 3, 1), if(dcl.facingDy > 0, 2, 0)))"
+    },
+    {
+      "Name": "dcl.oppositeFacing",
+      "Formula": "if(t.facing == 0, 2, if(t.facing == 1, 3, if(t.facing == 2, 0, 1)))"
+    },
+    {
+      "Name": "dcl.facingFront",
+      "Formula": "dcl.sourceDirection == t.facing"
+    },
+    {
+      "Name": "dcl.facingBack",
+      "Formula": "dcl.facingSeparated && dcl.sourceDirection == dcl.oppositeFacing"
+    },
+    {
+      "Name": "dcl.facingSide",
+      "Formula": "dcl.facingSeparated && !dcl.facingFront && !dcl.facingBack"
+    },
+    {
+      "Name": "dcl.gridDistance",
+      "Formula": "abs(dcl.facingDx) + abs(dcl.facingDy)"
+    },
+    {
+      "Name": "dcl.pointBlank",
+      "Formula": "action.weapon.weaponRange == 2 && dcl.gridDistance == 1"
+    },
+    {
+      "Name": "dcl.targetWeaponSkillInvestmentMilli",
+      "Formula": "2500 * max(0, t.jobLevel - 1) + mulDiv(250 * max(1, t.jobLevel), max(0, t.level - 1), 8)"
+    },
+    {
+      "Name": "dcl.targetWeaponFamily",
+      "Formula": "if(tslot.rightweapon.itemId == 0 || tslot.rightweapon.category_none, 0, if(tslot.rightweapon.category_knife, 1, if(tslot.rightweapon.category_ninjablade, 2, if(tslot.rightweapon.category_sword, 3, if(tslot.rightweapon.category_knightsword, 4, if(tslot.rightweapon.category_fellsword, 5, if(tslot.rightweapon.category_katana, 6, if(tslot.rightweapon.category_axe, 7, if(tslot.rightweapon.category_flail, 8, if(tslot.rightweapon.category_rod, 9, if(tslot.rightweapon.category_staff, 10, if(tslot.rightweapon.category_pole, 11, if(tslot.rightweapon.category_polearm, 12, if(tslot.rightweapon.category_crossbow, 13, if(tslot.rightweapon.category_bow, 14, if(tslot.rightweapon.category_gun, 15, if(tslot.rightweapon.category_book, 16, if(tslot.rightweapon.category_instrument, 17, if(tslot.rightweapon.category_bag, 18, if(tslot.rightweapon.category_cloth, 19, if(tslot.rightweapon.category_throwing, 20, if(tslot.rightweapon.category_bomb, 21, -1))))))))))))))))))))))"
+    },
+    {
+      "Name": "dcl.targetWeaponGrade",
+      "Formula": "mapOr(weaponGradeByJobFamily, t.jobId * 32 + dcl.targetWeaponFamily, 0)"
+    },
+    {
+      "Name": "dcl.targetWeaponSkillBase",
+      "Formula": "table(weaponSkillBaseByGrade, dcl.targetWeaponGrade)"
+    },
+    {
+      "Name": "dcl.targetWeaponSkillRatePermille",
+      "Formula": "table(weaponSkillRatePermilleByGrade, dcl.targetWeaponGrade)"
+    },
+    {
+      "Name": "dcl.targetWeaponSkillGrowth",
+      "Formula": "mulDiv(dcl.targetWeaponSkillInvestmentMilli, dcl.targetWeaponSkillRatePermille, 1000000)"
+    },
+    {
+      "Name": "dcl.targetWeaponSkill",
+      "Formula": "min(const.dclWeaponSkillCap, dcl.targetWeaponSkillBase + dcl.targetWeaponSkillGrowth)"
+    },
+    {
+      "Name": "dcl.isMagicBolt",
+      "Formula": "action.abilityId == 0 && (action.weapon.category_rod || action.weapon.category_staff)"
+    },
+    {
+      "Name": "dcl.isMagicDamage",
+      "Formula": "ability.formula == 8 || dcl.isMagicBolt"
+    },
+    {
+      "Name": "dcl.isMagicHeal",
+      "Formula": "ability.formula == 12"
+    },
+    {
+      "Name": "dcl.elementFire",
+      "Formula": "ability.element_fire || (dcl.isMagicBolt && action.weapon.element_fire)"
+    },
+    {
+      "Name": "dcl.elementIce",
+      "Formula": "ability.element_ice || (dcl.isMagicBolt && action.weapon.element_ice)"
+    },
+    {
+      "Name": "dcl.elementLightning",
+      "Formula": "ability.element_lightning || (dcl.isMagicBolt && action.weapon.element_lightning)"
+    },
+    {
+      "Name": "dcl.elementWind",
+      "Formula": "ability.element_wind || (dcl.isMagicBolt && action.weapon.element_wind)"
+    },
+    {
+      "Name": "dcl.elementEarth",
+      "Formula": "ability.element_earth || (dcl.isMagicBolt && action.weapon.element_earth)"
+    },
+    {
+      "Name": "dcl.elementWater",
+      "Formula": "ability.element_water || (dcl.isMagicBolt && action.weapon.element_water)"
+    },
+    {
+      "Name": "dcl.elementHoly",
+      "Formula": "ability.element_holy || (dcl.isMagicBolt && action.weapon.element_holy)"
+    },
+    {
+      "Name": "dcl.elementDark",
+      "Formula": "ability.element_dark || (dcl.isMagicBolt && action.weapon.element_dark)"
+    },
+    {
+      "Name": "dcl.isSpiritual",
+      "Formula": "dcl.isMagicDamage && (dcl.elementHoly || dcl.elementDark)"
+    },
+    {
+      "Name": "dcl.isElemental",
+      "Formula": "dcl.isMagicDamage && !dcl.isSpiritual && (dcl.elementFire || dcl.elementIce || dcl.elementLightning || dcl.elementWind || dcl.elementEarth || dcl.elementWater)"
+    },
+    {
+      "Name": "dcl.targetAbsorb",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && t.element.absorb.fire) || (dcl.elementIce && t.element.absorb.ice) || (dcl.elementLightning && t.element.absorb.lightning) || (dcl.elementWind && t.element.absorb.wind) || (dcl.elementEarth && t.element.absorb.earth) || (dcl.elementWater && t.element.absorb.water))"
+    },
+    {
+      "Name": "dcl.targetNull",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && t.element.null.fire) || (dcl.elementIce && t.element.null.ice) || (dcl.elementLightning && t.element.null.lightning) || (dcl.elementWind && t.element.null.wind) || (dcl.elementEarth && t.element.null.earth) || (dcl.elementWater && t.element.null.water))"
+    },
+    {
+      "Name": "dcl.targetHalve",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && t.element.halve.fire) || (dcl.elementIce && t.element.halve.ice) || (dcl.elementLightning && t.element.halve.lightning) || (dcl.elementWind && t.element.halve.wind) || (dcl.elementEarth && t.element.halve.earth) || (dcl.elementWater && t.element.halve.water))"
+    },
+    {
+      "Name": "dcl.targetWeak",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && (t.element.weak.fire || t.status.oil)) || (dcl.elementIce && t.element.weak.ice) || (dcl.elementLightning && t.element.weak.lightning) || (dcl.elementWind && t.element.weak.wind) || (dcl.elementEarth && t.element.weak.earth) || (dcl.elementWater && t.element.weak.water))"
+    },
+    {
+      "Name": "dcl.targetStrong",
+      "Formula": "dcl.isElemental && ((dcl.elementFire && t.element.strengthen.fire) || (dcl.elementIce && t.element.strengthen.ice) || (dcl.elementLightning && t.element.strengthen.lightning) || (dcl.elementWind && t.element.strengthen.wind) || (dcl.elementEarth && t.element.strengthen.earth) || (dcl.elementWater && t.element.strengthen.water))"
+    },
+    {
+      "Name": "dcl.elementPermille",
+      "Formula": "if(dcl.targetNull, 0, if(dcl.targetHalve, const.dclAffinityHalvePermille, if(dcl.targetWeak, const.dclAffinityWeakPermille, if(dcl.targetStrong, const.dclAffinityStrongPermille, 1000))))"
+    },
+    {
+      "Name": "dcl.shellPermille",
+      "Formula": "if(dcl.isElemental && t.status.shell, const.dclShellPermille, 1000)"
+    },
+    {
+      "Name": "dcl.casterFaithPermille",
+      "Formula": "const.dclFaithLowPermille + mulDiv(a.maxFaith, const.dclFaithBandPermille, 100)"
+    },
+    {
+      "Name": "dcl.targetFaithPermille",
+      "Formula": "const.dclFaithLowPermille + mulDiv(t.maxFaith, const.dclFaithBandPermille, 100)"
+    },
+    {
+      "Name": "dcl.faithCombinedPermille",
+      "Formula": "mulDiv(dcl.casterFaithPermille, dcl.targetFaithPermille, 1000)"
+    },
+    {
+      "Name": "dcl.magicStackPermille",
+      "Formula": "min(const.dclMagicStackCapPermille, mulDiv(mulDiv(mulDiv(dcl.faithCombinedPermille, if(dcl.isElemental, dcl.elementPermille, 1000), 1000), dcl.shellPermille, 1000), dcl.zodiacPermille, 1000))"
+    },
+    {
+      "Name": "dcl.rightRodMod",
+      "Formula": "aslot.rightweapon.category_rod * aslot.rightweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.leftRodMod",
+      "Formula": "aslot.leftweapon.category_rod * aslot.leftweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.rightStaffMod",
+      "Formula": "aslot.rightweapon.category_staff * aslot.rightweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.leftStaffMod",
+      "Formula": "aslot.leftweapon.category_staff * aslot.leftweapon.weaponPower"
+    },
+    {
+      "Name": "dcl.offensiveMagicMod",
+      "Formula": "max(dcl.rightRodMod, dcl.leftRodMod)"
+    },
+    {
+      "Name": "dcl.supportMagicMod",
+      "Formula": "max(dcl.rightStaffMod, dcl.leftStaffMod)"
+    },
+    {
+      "Name": "dcl.magicBoltMod",
+      "Formula": "action.weapon.category_rod * action.weapon.weaponPower"
+    },
+    {
+      "Name": "dcl.magicMa",
+      "Formula": "if(dcl.isMagicBolt, a.rawMa + dcl.magicBoltMod, if(dcl.isMagicHeal, a.rawMa + dcl.supportMagicMod, if(dcl.isMagicDamage, a.rawMa + dcl.offensiveMagicMod, a.rawMa)))"
+    },
+    {
+      "Name": "dcl.spellPower",
+      "Formula": "if(dcl.isMagicBolt, const.dclMagicBoltSpellPower, ability.y)"
+    },
+    {
+      "Name": "dcl.magicCore",
+      "Formula": "dcl.magicMa * dcl.spellPower"
+    },
+    {
+      "Name": "dcl.magicAmount",
+      "Formula": "if(dcl.targetNull, 0, max(1, mulDiv(mulDiv(dcl.magicCore, dcl.magicStackPermille, 1000), const.dclMagicScalePermille, 1000)))"
+    },
+    {
+      "Name": "dcl.magicAbsorbed",
+      "Formula": "dcl.isMagicDamage && dcl.targetAbsorb"
+    }
+  ],
+  "AttackerEquipmentSlots": [
+    {
+      "Name": "RightWeapon",
+      "Offset": 32,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "LeftWeapon",
+      "Offset": 36,
+      "Width": "UInt16"
+    }
+  ],
+  "EquipmentSlots": [
+    {
+      "Name": "Head",
+      "Offset": 26,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "Body",
+      "Offset": 28,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "Accessory",
+      "Offset": 30,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "RightWeapon",
+      "Offset": 32,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "RightShield",
+      "Offset": 34,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "LeftWeapon",
+      "Offset": 36,
+      "Width": "UInt16"
+    },
+    {
+      "Name": "LeftShield",
+      "Offset": 38,
+      "Width": "UInt16"
+    }
+  ],
+  "DclMissOutputControlEnabled": true,
+  "DclMissKindValue": 6,
+  "DclMissKindLogOnly": false,
+  "DclMissSelectorOutcomeEnabled": true,
+  "DclMissSuppressReactionsEnabled": true,
+  "ResultSelectorProbeEnabled": false,
+  "ResultSelectorProbeMaxLogs": 0,
+  "ItemTableEvadeZeroEnabled": true,
+  "CalcEntryEvadeStampEnabled": false,
+  "EvadeCopierOverrideEnabled": true,
+  "EvadeCopierOverrideTargetCharId": -1,
+  "EvadeCopierOverride46": 0,
+  "EvadeCopierOverride47": 0,
+  "EvadeCopierOverride48": 0,
+  "EvadeCopierOverride49": 0,
+  "EvadeCopierOverride4A": 0,
+  "EvadeCopierOverride4B": 0,
+  "EvadeCopierOverride4C": 0,
+  "EvadeCopierOverride4D": 0,
+  "EvadeCopierOverride4E": 0,
+  "PreClampDamageRewriteLogOnly": false,
+  "PreClampFormulaPlanEnabled": false,
+  "PreviewHitPctControlEnabled": false,
+  "DclHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, if(dcl.nativeHpDamageResult, dcl.magicAmount, 0), if(dcl.isMagicHeal, if(dcl.nativeHpCreditResult, if(t.status.undead, 0, dcl.magicAmount), 0), if(dcl.nativeHpCreditResult, dcl.oldCredit, 0)))",
+  "DclPreviewAmountEnabled": true,
+  "DclPreviewDamageFormula": "if(action.abilityId == 101, ability.dcl.power * ability.dcl.strike_count, if(dcl.isMagicDamage, if(dcl.magicAbsorbed || dcl.targetNull, 0, dcl.magicAmount), if(action.type == 1 && action.abilityId == 0, dcl.weaponModel, if(dcl.isMagicHeal && t.status.undead, dcl.magicAmount, 0))))",
+  "DclPreviewHealingFormula": "if(dcl.isMagicDamage && dcl.magicAbsorbed, dcl.magicAmount, if(dcl.isMagicHeal, if(t.status.undead, 0, dcl.magicAmount), 0))",
+  "DclMpTrickleEnabled": true,
+  "DclMpTrickleFormula": "if(t.status.ko || t.maxMp == 0, 0, max(1, t.rawMa / 4))",
+  "DclMpTrickleMaxLogs": 200,
+  "DclMagicEvadeEnabled": true,
+  "DclMagicEvadeConditionFormula": "dcl.isMagicDamage",
+  "DclMagicEvadeFormula": "t.magEvaRawMax",
+  "DclMagicEvadeCapPct": 50,
+  "DclComputePointNumericEnabled": true,
+  "DclComputePointCacheTtlMs": 5000,
+  "DclInstantKoControlEnabled": true,
+  "DclInstantKoRules": [
+    {
+      "Name": "Death inverse-Faith 3d6",
+      "AbilityId": 30,
+      "ActionType": -1,
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "ZeroDamageOnFailure": true,
+      "NativeKoSuppressedByData": true
+    }
+  ],
+  "DclResultFlagsControlEnabled": true,
+  "DclResultFlagsPreserveMask": 15,
+  "DclStatusControlEnabled": true,
+  "DclStatusMaxLogs": 1000,
+  "DclStatusRules": [
+    {
+      "Name": "Kiyomori Protect carrier bit",
+      "AbilityId": 81,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Kiyomori Shell carrier bit",
+      "AbilityId": 81,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Masamune Regen carrier bit",
+      "AbilityId": 84,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 64,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Masamune Haste carrier bit",
+      "AbilityId": 84,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Crushing Blow Stop",
+      "AbilityId": 219,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 2,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Unholy Sacrifice Slow",
+      "AbilityId": 357,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "clamp(18 - target.maxFaith / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Darkness",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Confusion",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 16,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Silence",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Oil",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 128,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Berserk",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Frog",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 2,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Poison",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 128,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Stop",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 2,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Sleep",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 16,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Don't Move",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 8,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Dragon's Gift Don't Act",
+      "AbilityId": 252,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 4,
+      "Operation": "remove",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ResistanceFormula": "",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "Self-Destruct victim Oil",
+      "AbilityId": 277,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 128,
+      "Operation": "add",
+      "NativeRiderPolicy": "suppressed-by-data",
+      "ConditionFormula": "dcl.isSelf == 0",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 0
+    },
+    {
+      "Name": "LT33 Nameless Song Reraise",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Regen",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 64,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Protect",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Shell",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT33 Nameless Song Haste",
+      "AbilityId": 91,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt33-nameless-song",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Darkness",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 32,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Confusion",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Silence",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 1,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Frog",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 2,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Poison",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 128,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Slow",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 3,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "LT34 Celestial Void Sleep",
+      "AbilityId": 173,
+      "ActionType": -1,
+      "StatusByteIndex": 4,
+      "StatusMask": 16,
+      "Operation": "add",
+      "NativeRiderPolicy": "replaced-post-calc",
+      "ResistanceFormula": "0",
+      "DurationTargetTurns": 0,
+      "ContestGroup": "lt34-celestial-void",
+      "ContestMode": "random-one"
+    },
+    {
+      "Name": "DCL Taunt fallback via Berserk carrier",
+      "AbilityId": 241,
+      "ActionType": -1,
+      "StatusByteIndex": 2,
+      "StatusMask": 8,
+      "Operation": "add",
+      "NativeRiderPolicy": "retained-as-carrier",
+      "ResistanceFormula": "clamp(18 - target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 1
+    },
+    {
+      "Name": "dcl-fear",
+      "AbilityId": 0,
+      "ActionType": 1,
+      "StatusByteIndex": 2,
+      "StatusMask": 4,
+      "Operation": "add",
+      "NativeRiderPolicy": "absent",
+      "ResistanceFormula": "clamp(target.brave / 10, 3, 18)",
+      "DurationTargetTurns": 1
+    }
+  ],
+  "DclStatusForcedRoll": -1,
+  "DclMpDebitFormula": "if(t.charId == 31 && dcl.nativeMpDebitResult && dcl.oldDebit == 0 && dcl.oldMpDebit > 1, min(t.mp, max(1, dcl.oldMpDebit / 2)), if(dcl.nativeMpDebitResult, dcl.oldMpDebit, 0))",
+  "DclMpCreditFormula": "if(dcl.nativeMpCreditResult, dcl.oldMpCredit, 0)",
+  "DclReactionTaxonomyEnabled": true,
+  "DclReactionMaxLogs": 512,
+  "DclReactionRules": [
+    {
+      "Name": "Unified sentinel Counter courage chance",
+      "AbilityId": 442,
+      "Mode": "courage"
+    },
+    {
+      "Name": "Unified sentinel Mana Shield neutral chance",
+      "AbilityId": 445,
+      "Mode": "neutral",
+      "FlatChance": 50
+    },
+    {
+      "Name": "Unified sentinel Shirahadori caution chance",
+      "AbilityId": 451,
+      "Mode": "caution",
+      "VmInternalAvoidance": true
+    },
+    {
+      "Name": "Unified sentinel blank owner 443",
+      "AbilityId": 443,
+      "Mode": "neutral",
+      "FlatChance": 100,
+      "ConditionFormula": "reaction.sourceValid && reaction.incomingActionValid && reaction.incomingHitKnown && reaction.incomingHit"
+    }
+  ],
+  "DclReactionCommitProbeEnabled": true,
+  "DclReactionCommitProbeRva": 2122785,
+  "DclReactionCommitProbeExpectedBytes": "40 88 B3 D3 01 00 00",
+  "DclReactionCommitProbeMaxLogs": 512,
+  "DclReactionPreSelectorProbeEnabled": true,
+  "DclReactionPreSelectorProbeRva": 2122665,
+  "DclReactionPreSelectorProbeExpectedBytes": "48 8D 4D D2 E8 86 CA 07 00",
+  "DclReactionPreSelectorProbeMaxLogs": 512,
+  "DclReactionDeliveryValidationProbeEnabled": true,
+  "DclReactionDeliveryValidationProbeMaxLogs": 512,
+  "DclReactionMaterializationProbeEnabled": true,
+  "DclReactionMaterializationProbeRva": 2634173,
+  "DclReactionMaterializationProbeExpectedBytes": "48 8B CB E8 6F F0 FF FF 0F B7 35 24 7E 5E 01",
+  "DclReactionMaterializationProbeMaxLogs": 512,
+  "DclReactionEffectProbeEnabled": true,
+  "DclReactionEffectProbeRva": 2173998,
+  "DclReactionEffectProbeExpectedBytes": "66 44 01 70 0C",
+  "DclReactionEffectProbeMaxLogs": 512,
+  "DclSyntheticReactionEnabled": true,
+  "DclSyntheticReactionLogOnly": false,
+  "DclSyntheticReactionCarrierId": 443,
+  "DclSyntheticReactionDeliveryId": 442,
+  "DclSyntheticReactionTrigger": "successful-hit-survivor",
+  "DclSyntheticReactionForcedRoll": 0,
+  "DclSyntheticReactionMaxWrites": 2,
+  "DclSyntheticReactionMaxLogs": 512,
+  "DclAbilityMetadataPath": "D:\\Projects\\FFTGenericChronicle\\work\\1784168025-dcl-integration-ability-metadata.csv",
+  "CalcEntryProbeEnabled": false,
+  "DclCalcProvenanceProbeEnabled": false,
+  "StagedBundleProbeEnabled": false,
+  "DclFearControlEnabled": true,
+  "DclFearLogOnly": false,
+  "DclFearForcedFleeControlEnabled": true,
+  "DclFearStatusRuleName": "dcl-fear",
+  "DclFearTargetListRva": 2629320,
+  "DclFearTargetListExpectedBytes": "44 8A 65 D0 0F 10 45 D8",
+  "DclFearPlayerConfirmRva": 2147679,
+  "DclFearPlayerConfirmExpectedBytes": "E8 94 AD FF FF",
+  "DclFearChickenDispatchRva": 3718199,
+  "DclFearChickenDispatchExpectedBytes": "F6 47 63 04",
+  "DclFearMaxLogs": 1000
+}

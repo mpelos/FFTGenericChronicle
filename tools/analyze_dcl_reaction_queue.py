@@ -12,6 +12,7 @@ import pefile
 from capstone import CS_ARCH_X86, CS_MODE_64, Cs
 
 import analyze_dcl_reaction_dispatch as dispatch
+import analyze_dcl_calc_provenance as provenance
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,8 +47,11 @@ ANCHORS = (
     Anchor("phase1-id-18c", 0x206736, "89 8F 8C 01 00 00", "pass 1 mirrors the payload at actor+0x18C"),
     Anchor("phase1-id-142", 0x20673C, "66 89 8F 42 01 00 00", "pass 1 mirrors the payload at actor+0x142"),
     Anchor("phase1-commit", 0x206743, "40 88 B7 D3 01 00 00", "first instruction after the pass-1 id stores"),
+    Anchor("phase2-source-index-load", 0x282E55, "44 8B 15 98 81 5E 01", "loads the source/excluded unit index before scanning"),
+    Anchor("phase2-source-exclusion-skip", 0x282E87, "41 3B EA 0F 84 F4 02 00 00", "excluded index branches directly to the loop increment"),
     Anchor("phase2-unit-reaction-id", 0x282E9A, "48 0F BF B3 CE 01 00 00", "selector reads signed word unit+0x1CE"),
     Anchor("phase2-consume-reaction-id", 0x282F29, "66 44 89 BB CE 01 00 00", "selector clears unit+0x1CE after staging"),
+    Anchor("phase2-loop-increment", 0x283184, "41 03 EC 83 FD 15", "increments the scan index after an exclusion or processed unit"),
     Anchor("source-exclusion-write", 0x30C72D, "89 05 C1 E8 55 01", "counter path writes the source/excluded unit index global"),
 )
 
@@ -89,15 +93,28 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
             f"| `{anchor.name}` | `0x{anchor.rva:X}` | {result} | `{anchor.expected}` | {anchor.meaning} |"
         )
 
-    queue_callers = dispatch.direct_callers(pe, raw, QUEUE_ENTRY_RVA)
-    selector_callers = {
+    queue_real_code_callers = dispatch.direct_callers(pe, raw, QUEUE_ENTRY_RVA)
+    queue_all_callers = provenance.all_direct_callers(pe, raw, QUEUE_ENTRY_RVA)
+    selector_real_code_callers = {
         "pass 0": dispatch.direct_callers(pe, raw, PHASE0_SELECTOR_RVA),
         "pass 1": dispatch.direct_callers(pe, raw, PHASE1_CLASSIFIER_RVA),
         "pass 2": dispatch.direct_callers(pe, raw, PHASE2_SELECTOR_RVA),
     }
-    callers_ok = queue_callers == [0x2121F7] and all(
+    selector_all_callers = {
+        "pass 0": provenance.all_direct_callers(pe, raw, PHASE0_SELECTOR_RVA),
+        "pass 1": provenance.all_direct_callers(pe, raw, PHASE1_CLASSIFIER_RVA),
+        "pass 2": provenance.all_direct_callers(pe, raw, PHASE2_SELECTOR_RVA),
+    }
+    callers_ok = (
+        queue_real_code_callers == [0x2121F7]
+        and queue_all_callers == [0x2121F7, 0xD90CF99]
+        and all(
         callers == [expected]
-        for callers, expected in zip(selector_callers.values(), (0x206615, 0x2064A1, 0x2063AD))
+        for callers, expected in zip(selector_real_code_callers.values(), (0x206615, 0x2064A1, 0x2063AD))
+        )
+        and selector_all_callers["pass 0"] == [0x206615]
+        and selector_all_callers["pass 1"] == [0x2064A1, 0x10C8B061]
+        and selector_all_callers["pass 2"] == [0x2063AD, 0x10C8B2EE, 0x10C8B326]
     )
 
     lines = [
@@ -119,12 +136,17 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "",
         "## Call graph",
         "",
-        f"- Queue callers: {', '.join(f'`0x{rva:X}`' for rva in queue_callers) or 'none'}.",
+        f"- Queue real-code callers: {', '.join(f'`0x{rva:X}`' for rva in queue_real_code_callers) or 'none'}.",
+        f"- Queue callers across all executable sections: {', '.join(f'`0x{rva:X}`' for rva in queue_all_callers) or 'none'}.",
     ]
-    for name, callers in selector_callers.items():
-        lines.append(f"- {name} helper callers: {', '.join(f'`0x{rva:X}`' for rva in callers) or 'none'}.")
+    for name, callers in selector_real_code_callers.items():
+        lines.append(f"- {name} helper real-code callers: {', '.join(f'`0x{rva:X}`' for rva in callers) or 'none'}.")
+        lines.append(
+            f"- {name} helper callers across all executable sections: "
+            f"{', '.join(f'`0x{rva:X}`' for rva in selector_all_callers[name]) or 'none'}."
+        )
     lines.extend([
-        f"- Expected single-caller graph: **{'PASS' if callers_ok else 'FAIL'}**.",
+        f"- Expected real-code and trace/VM caller graph: **{'PASS' if callers_ok else 'FAIL'}**.",
         "",
         "## Three queue passes",
         "",
@@ -137,6 +159,11 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "The queue iterates its pass counter from 0 through 2. A successful pass changes battle state",
         "to `0x29`; all three accepted paths mirror an action id to `actor+0x18C` and `actor+0x142`.",
         "Therefore a probe at only `0x206421` observes pass 2, not the complete queue.",
+        "The dispatcher state-`0x1E` call at `0x2121F7` is not the only executable caller. The",
+        "VM/trace cleanup path calls the same queue again at `0xD90CF99` to chain another accepted",
+        "Reaction before falling through to post-Reaction cleanup. The selector helpers likewise have",
+        "separate executable-section callers used by broader evaluation/simulation paths; the former",
+        "single-caller statement applied only to the bounded real-code scan.",
         "",
         "## Pass-2 special deliveries",
         "",
@@ -153,7 +180,10 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "Pass 2 walks the 21-unit battle array with stride `0x200`, reads the candidate exact id from",
         "`unit+0x1CE`, stages an order at `unit+0x1A0`, then clears `unit+0x1CE`. The selector excludes",
         "the unit index held in global RVA `0x186AFF4`; the counter path writes that global from its",
-        "current result context. The special branches show that writing an id alone is not yet proven",
+        "current result context. At `0x282E87`, an excluded index branches directly to the loop",
+        "increment at `0x283184`, before the candidate read at `0x282E9A` and the clear at `0x282F29`.",
+        "A candidate on the excluded source therefore survives that selector pass without being read",
+        "or consumed. The special branches show that writing an id alone is not yet proven",
         "sufficient for every carrier: delivery helpers also consume current action globals/unit fields.",
         "The typed-order helper at `0x283280` reads the source-index global and copies that unit's tile",
         "coordinates into the reactor's order record. Counter `442` therefore supplies the native basic",
@@ -176,8 +206,11 @@ def render_report(exe: Path, output: Path) -> tuple[str, bool]:
         "- **Proven live:** the bounded pass-2 producer can stage an empty `unit+0x1CE` slot and the",
         "  pass-2 commit identifies accepted Reaction cardinality; pass 1 remains generic queue noise.",
         "- **Proven static:** the accepted selector output leaves the carrier-specific 20-byte order at",
-        "  `unit+0x1A0`. RVA `0x2063BD` exposes it before actor construction and is the next observe-only",
-        "  correlation point for executable type/payload and final target coordinates.",
+        "  `unit+0x1A0`. Special ids `434/435/436/437/440/441/442` expose it at `0x2831BD` before",
+        "  helper call `0x2831C0`; generic ids such as `443` jump directly to common finalization",
+        "  `0x2831CC`. The post-selector boundary `0x2063BD` sees both families before actor creation.",
+        "- **Proven static:** source exclusion happens before `unit+0x1CE` is read. A candidate on the",
+        "  excluded unit persists through that pass; persistence alone is not a Reaction commit or effect.",
         "",
     ])
     return "\n".join(lines), anchors_ok and callers_ok
@@ -187,16 +220,26 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--exe", type=Path, default=DEFAULT_EXE)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="validate the current executable without creating a work/ report",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    output = args.output or ROOT / "work" / f"{int(time.time())}-dcl-reaction-queue-analysis.md"
+    output = (
+        Path("(check-only)")
+        if args.check_only
+        else args.output or ROOT / "work" / f"{int(time.time())}-dcl-reaction-queue-analysis.md"
+    )
     report, ok = render_report(args.exe, output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(report, encoding="utf-8", newline="\n")
-    print(f"wrote {output}")
+    if not args.check_only:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(report, encoding="utf-8", newline="\n")
+        print(f"wrote {output}")
     print("all reaction-queue anchors and call-graph checks PASS" if ok else "one or more reaction-queue checks FAIL")
     return 0 if ok else 1
 

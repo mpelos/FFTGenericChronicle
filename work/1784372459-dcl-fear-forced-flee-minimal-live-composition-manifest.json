@@ -1,0 +1,25 @@
+{
+  "note": "Minimal job-free DCL Fear forced-flee live probe composed from the live-proven LT32 ordinary status transaction. Basic Attack 0 preserves native HP damage and supplies only the successful-result carrier for one-turn Fear. This profile assigns no job, changes no action data, and contains no final balance policy.",
+  "inputs": [
+    "work/1784019532-battle-runtime-settings.lt32-dcl-native-status-packet.json",
+    "work/1784371639-battle-runtime-settings.dcl-fear-forced-flee-live-probe.json"
+  ],
+  "resolutions": {},
+  "patch": {
+    "DclStatusForcedRoll": 18,
+    "DclStatusRules": [
+      {
+        "Name": "dcl-fear",
+        "AbilityId": 0,
+        "ActionType": 1,
+        "StatusByteIndex": 2,
+        "StatusMask": 4,
+        "Operation": "add",
+        "NativeRiderPolicy": "absent",
+        "ResistanceFormula": "clamp(target.brave / 10, 3, 18)",
+        "DurationTargetTurns": 1
+      }
+    ]
+  },
+  "output": "work/1784372459-battle-runtime-settings.dcl-fear-forced-flee-minimal-live.json"
+}

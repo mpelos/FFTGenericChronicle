@@ -5,7 +5,8 @@ internal readonly record struct DclPreparedStatusPlan(
     int ActionType,
     int AbilityId,
     long TimestampTicks,
-    IReadOnlyList<DclStatusWrite> Writes);
+    IReadOnlyList<DclStatusWrite> Writes,
+    bool LoggedAtProducer = false);
 
 internal sealed class DclStatusPlanCache
 {
@@ -25,7 +26,7 @@ internal sealed class DclStatusPlanCache
         }
     }
 
-    public bool TryGet(
+    public bool TryTake(
         int targetIdx,
         int casterIdx,
         int actionType,
@@ -42,9 +43,15 @@ internal sealed class DclStatusPlanCache
             if (!_hasPlan[targetIdx])
                 return false;
             var candidate = _plans[targetIdx];
-            if (candidate.CasterIdx != casterIdx || candidate.ActionType != actionType ||
-                candidate.AbilityId != abilityId || maxAgeTicks >= 0 && nowTicks - candidate.TimestampTicks > maxAgeTicks)
+            if (maxAgeTicks >= 0 && nowTicks - candidate.TimestampTicks > maxAgeTicks)
+            {
+                _hasPlan[targetIdx] = false;
                 return false;
+            }
+            if (candidate.CasterIdx != casterIdx || candidate.ActionType != actionType ||
+                candidate.AbilityId != abilityId)
+                return false;
+            _hasPlan[targetIdx] = false;
             plan = candidate;
             return true;
         }
@@ -62,5 +69,11 @@ internal sealed class DclStatusPlanCache
             if (candidate.CasterIdx == casterIdx && candidate.ActionType == actionType && candidate.AbilityId == abilityId)
                 _hasPlan[targetIdx] = false;
         }
+    }
+
+    public void Clear()
+    {
+        lock (_gate)
+            Array.Clear(_hasPlan);
     }
 }

@@ -1,0 +1,34 @@
+{
+  "settings": "work/1784395365-battle-runtime-settings.dcl-da-dm-duration-mechanism.json",
+  "action_data_sqlite": "work/1784395365-dcl-da-dm-action-data.sqlite",
+  "action_data_nxd": "work/1784395365-dcl-da-dm-overrideabilityactiondata.nxd",
+  "sha256": {
+    "settings": "87650DE0290B77C1F9EA1AB251669FCDD023AA6EC814E702DE04C23D70763564",
+    "action_data_sqlite": "6AFDA36FEECA41B484CF41276D3A07450AC3917F300C0ECC04CB6D6FD2D749D7",
+    "action_data_nxd": "51C402D02237FB32EBAFEE47491F3FBC33985C76A8C522CC3600617BFDA11C74"
+  },
+  "required_instant_ko_abilities": [],
+  "required_status_neutralized_abilities": [
+    126,
+    131
+  ],
+  "required_status_rule_abilities": [
+    37,
+    57,
+    126,
+    131,
+    168,
+    188,
+    189,
+    213,
+    214,
+    245,
+    301,
+    327
+  ],
+  "required_status_native_rider_policies": [
+    "replaced-post-calc",
+    "suppressed-by-data",
+    "retained-as-carrier"
+  ]
+}
