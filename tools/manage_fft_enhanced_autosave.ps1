@@ -6,7 +6,13 @@ param(
 
     [string]$SavePath,
 
-    [string]$WorkRoot
+    [string]$WorkRoot,
+
+    [string]$FixtureKind,
+
+    [string]$FixtureLabel,
+
+    [string]$RequireFixtureKind
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,6 +62,62 @@ function Get-FileSummary {
     }
 }
 
+function Get-FixtureMetadataPath {
+    param([string]$Path)
+
+    return "$Path.fixture.json"
+}
+
+function Write-FixtureMetadata {
+    param(
+        [string]$Path,
+        [string]$Kind,
+        [string]$Label
+    )
+
+    if (-not $Kind) {
+        return
+    }
+
+    $summary = Get-FileSummary -Path $Path
+    $metadata = [ordered]@{
+        FixtureKind = $Kind
+        FixtureLabel = $Label
+        SnapshotPath = $summary.Path
+        Length = $summary.Length
+        Sha256 = $summary.Sha256
+        CreatedUnixTime = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    }
+    $metadataPath = Get-FixtureMetadataPath -Path $Path
+    $metadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $metadataPath -Encoding UTF8
+}
+
+function Assert-FixtureMetadata {
+    param(
+        [string]$Path,
+        [string]$RequiredKind
+    )
+
+    if (-not $RequiredKind) {
+        return
+    }
+
+    $metadataPath = Get-FixtureMetadataPath -Path $Path
+    if (-not (Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+        throw "Autosave snapshot metadata is required for fixture kind '$RequiredKind': $metadataPath"
+    }
+
+    $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+    if ([string]$metadata.FixtureKind -ne $RequiredKind) {
+        throw "Autosave snapshot fixture kind '$($metadata.FixtureKind)' does not match required kind '$RequiredKind'."
+    }
+
+    $currentHash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    if ([string]$metadata.Sha256 -ne $currentHash) {
+        throw "Autosave snapshot hash does not match its fixture metadata: $Path"
+    }
+}
+
 $resolvedSavePath = Resolve-AutosavePath -ExplicitPath $SavePath
 $resolvedWorkRoot = if ($WorkRoot) {
     [IO.Path]::GetFullPath($WorkRoot)
@@ -87,7 +149,11 @@ if ($Action -eq 'Snapshot') {
     }
 
     Copy-Item -LiteralPath $resolvedSavePath -Destination $destination
+    Write-FixtureMetadata -Path $destination -Kind $FixtureKind -Label $FixtureLabel
     Get-FileSummary -Path $destination | Format-List
+    if ($FixtureKind) {
+        Get-Content -LiteralPath (Get-FixtureMetadataPath -Path $destination)
+    }
     exit 0
 }
 
@@ -104,6 +170,7 @@ $sourceInfo = Get-Item -LiteralPath $resolvedSnapshotPath
 if ($sourceInfo.Length -le 0) {
     throw "Restore source is empty: $resolvedSnapshotPath"
 }
+Assert-FixtureMetadata -Path $resolvedSnapshotPath -RequiredKind $RequireFixtureKind
 
 $backupPath = Join-Path $resolvedWorkRoot "$timestamp-fft-autoenhanced-before-restore.png"
 Copy-Item -LiteralPath $resolvedSavePath -Destination $backupPath

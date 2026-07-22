@@ -34,6 +34,16 @@ An overcast-enabled action whose MP is insufficient shows the exact `MP + HP` pa
 projected pools after payment, and a textual KO warning when HP reaches zero. HP substitution is
 never hidden behind the nominal MP-cost label or represented only by an icon.
 
+A ResourceChange forecast names HP or MP, target credit/debit or Drain, the complete magnitude
+range, both pool caps, and the explicit target/source Undead routes. Drain shows expected target
+loss and expected source gain or loss separately. Player forecast and AI retain their correlated
+distribution, including no-delivery, target KO, source KO, and excess lost to either cap.
+
+A ForcedMovement forecast shows authored direction/distance, the native-resolved destination,
+actual tiles moved, edge/fall result, delivery probability, and expected moved tiles. Forecast and
+AI consume the same map verdict used by confirmed execution; neither estimates a different path or
+scores intermediate tiles as separate events.
+
 ## Growth and job-change information
 
 Character Level results show the active job's growth allocation, the equal point-equivalent budget,
@@ -150,6 +160,17 @@ per-target probability and magnitude, strike count, finite-defense spending, and
 is deferred or immediate within the action. Reaction preview is shown only after the entire outer
 action's prospective result and follows the contract in
 [Action Transactions and Reactions](18-action-transactions-and-reactions.md).
+For an Immediate Damage combo, later-Strike percentages and expected magnitude include the exact
+Major-Wound HT branches and any resulting Stun or Knocked Down defense penalties; they are not
+computed as independent copies of the first Strike.
+
+Reaction preview distinguishes activation from the Reaction effect itself. `AutomaticTrigger`
+shows certain activation, `SkillResponse` names its natural effect gate without adding another
+percentage, and `ActivationRoll` shows the exact 3d6 chance from its single authored reference and
+modifier. A failed trigger, eligibility, awareness, cost/use, or native-cardinality gate shows zero
+activation and its blocking reason. Player forecast and AI use this same unsampled result.
+The preview also names the resolved effect source and target; an area action keeps the exact target
+result that created each `ReactorToTarget` candidate.
 
 The player must not need external notes to know:
 

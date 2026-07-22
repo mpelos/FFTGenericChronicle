@@ -34,7 +34,7 @@ def main() -> int:
     check(by_id[28]["candidate_status_category"] == "physical",
           "Poison's DCL resistance category is physical even when spell-delivered")
     check(by_id[53]["candidate_status_category"] == "mental",
-          "Berserk must move to the DCL mental/Brave category")
+          "Berserk must move to the DCL mental-Will category")
     check(by_id[203]["candidate_status_category"] == "physical" and
           "then_status_contest" in by_id[203]["candidate_avoidance_policy"],
           "Bio's Poison rider must get its own physical status contest after Magic Evade")

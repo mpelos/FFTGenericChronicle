@@ -194,7 +194,8 @@ Parry = floor(WeaponSkill / 2) + 3
 
 The first Parry with a given weapon or limb is unpenalized. Each additional Parry with that same
 weapon or limb before the defender's next turn receives a cumulative `-4`. A skill, weapon family,
-or ability may explicitly replace that repeated-Parry step.
+or ability may explicitly replace that repeated-Parry step. The counter spans separate enemy
+ActionInstances and every Strike within them; only the defender's own turn boundary resets it.
 
 An Unready weapon cannot Parry. An Unbalanced weapon cannot Parry after attacking until its
 wielder's next turn.
@@ -263,7 +264,8 @@ arcs and against attacks the shield can react to. Ranged Block legality is defin
 [Ranged Combat](07-ranged-combat.md).
 
 Using Block spends the Block attempt, not the shield itself. The shield remains Ready, and its
-Defense Bonus may still assist a later legal Dodge or Parry before the reset.
+Defense Bonus may still assist a later legal Dodge or Parry before the reset. The spent attempt
+remains spent across separate enemy ActionInstances.
 
 ## Defense reset
 

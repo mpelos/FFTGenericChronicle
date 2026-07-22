@@ -20,11 +20,10 @@ internal readonly record struct DclHitDecision(
     int MagicEvade = 0,
     DclMultistrikeAggregate Multistrike = default);
 
-// Per-target decision cache for DCL hit control. Calc-entry (0x3099AC) refires for the same
-// (caster, target, ability, type) during preview, charge and AI evaluation; within the TTL those
-// refires must reuse ONE rolled decision so the forced outcome stays stable across the whole
-// action (preview, charge and execution all see the same hit/miss). A different key (new action)
-// or an expired entry recomputes and re-rolls.
+// Per-target execution-decision cache for DCL hit control. Forecast, help, and AI evaluation never
+// create entries: only the proven confirmed-execution provenance pair may sample and record a roll.
+// Re-entry by downstream execution consumers reuses that one result until the two-sided delivery
+// handshake retires it or the bounded TTL expires.
 internal sealed class DclHitDecisionCache
 {
     private const int SlotCount = 64;
@@ -54,8 +53,7 @@ internal sealed class DclHitDecisionCache
         long nowTicks,
         long ttlTicks,
         out DclHitDecision decision,
-        long? requiredCasterTurnEpoch = null,
-        bool retainUnconsumedForCasterTurn = false)
+        long? requiredCasterTurnEpoch = null)
     {
         decision = default;
         if ((uint)targetIdx >= SlotCount)
@@ -73,17 +71,10 @@ internal sealed class DclHitDecisionCache
             if (requiredCasterTurnEpoch is { } requiredEpoch && entry.CasterTurnEpoch != requiredEpoch)
                 return false;
 
-            bool expired = ttlTicks <= 0 || nowTicks - entry.TimestampTicks > ttlTicks;
-            bool canRetain = retainUnconsumedForCasterTurn &&
-                requiredCasterTurnEpoch.HasValue &&
-                !entry.DamageConsumed &&
-                !entry.OutcomeConsumed;
-            if (expired && !canRetain)
+            if (ttlTicks <= 0 || nowTicks - entry.TimestampTicks > ttlTicks)
                 return false;
 
             decision = entry.Decision;
-            if (expired)
-                _entries[targetIdx] = entry with { TimestampTicks = nowTicks };
             return true;
         }
     }

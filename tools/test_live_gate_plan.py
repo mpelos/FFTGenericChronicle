@@ -36,8 +36,9 @@ def main() -> int:
     for text in stale_or_unsafe:
         check(text not in generated, f"live gate plan contains stale death-gate text: {text}")
 
-    check(plan.OUT.exists(), f"live gate plan missing: {plan.OUT}")
-    actual = plan.OUT.read_text(encoding="utf-8")
+    output = plan.latest_output()
+    check(output is not None and output.exists(), "timestamped live gate plan missing")
+    actual = output.read_text(encoding="utf-8")
     check(actual == generated, "live gate plan is stale; run python tools/report_live_gate_plan.py")
     print("live gate plan smoke test passed")
     return 0

@@ -38,7 +38,7 @@ validation; forecast and confirmed execution never use different revisions of th
 
 ```text
 SourceProfile
-    Source: Physical | Spell | Ki | Divine | Spiritual | Equipment | MonsterPower | Other
+    Source: Physical | Spell | Ki | Divine | Spiritual | Equipment | MonsterPower | PeriodicEffect | Other
     Verbal: boolean
 
 SkillProfile
@@ -58,6 +58,11 @@ skill gate, such as Reequip. It never means that an unknown or missing skill sho
 
 `Verbal` is explicit. Silence reads this source property directly; a missing boolean does not
 silently mean that Silence is ineffective.
+
+`PeriodicEffect` identifies an action delivered by a persistent state's scheduler rather than by a
+unit command. It consumes no action, movement, MP, CastCT, or concentration. Its target and effect
+resolution still use the ordinary normalized action, transaction, forecast, AI, native-carrier,
+apply, presentation, and Reaction contracts.
 
 ### Resource and timing
 
@@ -205,6 +210,36 @@ target states independently from allegiance.
 The array order cannot bypass the staged-state and target-batch transaction in
 [Action Transactions and Reactions](18-action-transactions-and-reactions.md).
 
+A generic HP/MP `ResourceChange` adds one explicit route profile:
+
+```text
+ResourceChangeProfile
+    Route: TargetCredit | TargetDebit | DrainTargetToSource
+    SourceUndeadInteraction: Normal | Reverse | Harm | Heal | Reject | EffectOwned
+```
+
+Its `FixedResourceMagnitude` uses the exact `Xd6+Y` grammar and its only effect is one Carrier.
+`Effects[0].UndeadInteraction` owns the target-side table row. `SourceUndeadInteraction` owns the
+source-side row for Drain and is `Normal` for a route that does not touch the source. Generic
+ResourceChange owns HP and MP only; CT uses `CTChange`, while `Other` requires a named
+mechanism-owned executor. `EffectOwned` is invalid for the generic resolver and requires that
+named executor. ResourceChange is a pool mutation, not Injury.
+
+A generic `ForcedMovement` effect adds one explicit movement profile:
+
+```text
+ForcedMovementProfile
+    DistanceTiles
+    Direction: AwayFromSource | TowardSource | SourceFacing | ExplicitVector
+    DeltaX? | DeltaY?
+```
+
+Distance is positive. Only `ExplicitVector` supplies a nonzero normalized `-1..1` vector. The native
+map remains the owner of tile, height, obstruction, edge, landing, and fall legality; the normalized
+action owns requested distance/direction and consumes one immutable native verdict across forecast,
+AI, and execution. Multi-Strike Immediate ForcedMovement is invalid until its carrier reprojects
+the settled map position before later Strikes. Forced movement never implies a mid-route trigger.
+
 ### Transaction and critical profiles
 
 ```text
@@ -228,7 +263,10 @@ target and Strike. Departures are explicit and receive unique random-site identi
 
 `WithinActionApplication` defaults to Deferred. Immediate setup is legal only when forecast,
 capacity scoring, target snapshots, and later-Strike behavior all model it. Reactions never acquire
-a per-Strike or per-target window.
+a per-Strike or per-target window. A multi-Strike Immediate Damage profile also requires exact
+per-target MaxHP and HT consequence inputs so execution, forecast, and AI can branch a surviving
+Major Wound and reproject the resulting posture before the next Strike. A carrier family without
+that reprojection is invalid for Immediate authoring.
 
 Critical delivery defaults are owned by the delivery's combat document. Direct healing uses
 MaximizeOneHealingDie. Critical success never modifies MP/HP cost. Failure defaults to MissOnly;
@@ -278,6 +316,11 @@ DclStateDefinition
     DurationClock
     DurationFormula
     TickProfile?
+        Interval
+        EffectActionId
+        EffectAbilityId
+        ActionSource: OriginalSource | Target
+        ImmediatePayload
     EffectStrengthFormula?
     RemoveOnTargetKo
     RemoveOnSourceKo
@@ -300,6 +343,30 @@ state uses the corresponding explicit duration clock rather than an absent durat
 no ticks omits TickProfile. Missing data never means immune, permanent, invisible, or harmless.
 StackToCap requires StackCap and ContributionKey; other policies reject those fields unless their
 own named extension consumes them.
+
+`TickProfile` references both a normalized `PeriodicEffect` action and the native ability that
+carries that exact action. The action must be zero-cost and unit-targeted; the ability binding must
+match its `ActionId` and revision. `ActionSource = OriginalSource` additionally requires a mandatory
+source and remove-on-source-loss lifecycle, while `Target` makes the affected unit both source and
+target of the periodic action. The interval is positive and periodic states use the GlobalCT clock.
+
+An immediate payload and every scheduled tick reserve distinct outer ActionInstances. Re-entering a
+pending delivery returns the same identity rather than duplicating it. A scheduled cursor advances,
+or an immediate payload becomes complete, only after the exact native carrier has finished all
+target strikes, source payment, its declared Reaction policy, and settlement. Expiry cannot overtake
+an unsettled tick at the same timestamp.
+
+`DurationFormula` is a closed normalized value rather than a general expression language. A timed
+state uses exactly one of:
+
+- a positive integer for fixed units;
+- `resolved-at-application` when another normalized mechanism owns the positive unit count; or
+- `clamp(MinimumDuration, BaseDuration + floor(margin / DurationBand), MaximumDuration)` for the
+  winning-margin rule defined in [Magic Effects and Persistence](14-magic-effects-and-persistence.md#duration-from-margin).
+
+Permanent and ExplicitCommand clocks omit the formula. The runtime recomputes fixed and
+winning-margin durations when materializing the state and rejects a supplied unit count that does
+not match; forecast and AI transform the same exact winning-margin distribution through this rule.
 
 ## Defaults and fail-closed validation
 

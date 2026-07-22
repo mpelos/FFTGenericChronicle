@@ -137,7 +137,7 @@ add("0x32", fc(
     "Native Pummel multiplies one staged HP debit by Rdm(1..X); DCL needs a managed strike loop for per-strike hit and Guard depletion plus an authored once-per-action reaction policy."))
 add("0x33 0x3F 0x40 0x50", fc(
     "physical_status", "dcl_status_contest", "surface-ready", "medium",
-    "Physical status skills route to the DCL status contest with authored base-HP or other resistance."))
+    "Physical status skills route to the DCL status contest with authored HT or another explicit resistance."))
 add("0x34", fc(
     "hp_mp_healing", "dcl_hp_mp_channels", "surface-ready", "medium",
     "Dual HP/MP restoration channels are proven; Chakra needs an authored non-Faith amount rule."))

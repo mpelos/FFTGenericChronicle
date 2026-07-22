@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,7 +19,25 @@ import report_runtime_profiles
 
 
 REPO = Path(__file__).resolve().parents[1]
-OUT = REPO / "work" / "offline_readiness_audit.md"
+OUT_GLOB = "*-offline-readiness-audit.md"
+LIVE_GATE_PLAN_GLOB = "*-live-gate-plan.md"
+
+
+def default_output() -> Path:
+    return REPO / "work" / f"{int(time.time())}-offline-readiness-audit.md"
+
+
+def latest_matching(glob: str) -> Path | None:
+    matches = sorted((REPO / "work").glob(glob), key=lambda path: path.name)
+    return matches[-1] if matches else None
+
+
+def latest_output() -> Path | None:
+    return latest_matching(OUT_GLOB)
+
+
+def latest_live_gate_plan() -> Path:
+    return latest_matching(LIVE_GATE_PLAN_GLOB) or REPO / "work" / "missing-live-gate-plan.md"
 
 
 @dataclass(frozen=True)
@@ -140,7 +159,7 @@ def stale_death_gate_text_check() -> Check:
         REPO / "tools" / "report_neuter_coverage.py",
         REPO / "work" / "neuter_coverage.md",
         REPO / "work" / "runtime_formula_context.md",
-        REPO / "work" / "live_gate_plan.md",
+        latest_live_gate_plan(),
         REPO / "work" / "battle-runtime-settings.death-flag-capture.json",
         REPO / "work" / "battle-runtime-settings.death-test.json",
         REPO / "work" / "battle-runtime-settings.death-test-killflag.json",
@@ -240,7 +259,7 @@ def build_checks() -> list[Check]:
         ),
         file_check(
             "live gate runbook",
-            REPO / "work" / "live_gate_plan.md",
+            latest_live_gate_plan(),
             "The remaining live-only gates have an ordered, generated runbook with preparation helpers, watcher commands, and pass evidence.",
             "prepare-custom-formula-demo.ps1",
             "prepare-sentinel-coarse.ps1",
@@ -359,29 +378,34 @@ def build_report() -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate the offline-readiness audit report.")
     parser.add_argument("--check", action="store_true", help="Fail if the checked-in report is stale or has hard failures.")
-    parser.add_argument("--output", type=Path, default=OUT, help=f"Output path. Default: {OUT}")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Output path. Default: work/<unix-timestamp>-offline-readiness-audit.md",
+    )
     args = parser.parse_args()
 
     report = build_report()
     hard_fail = "Overall offline status: FAIL" in report
+    output = args.output or (latest_output() if args.check else default_output())
 
     if args.check:
-        if not args.output.exists():
-            print(f"missing report: {args.output}", file=sys.stderr)
+        if output is None or not output.exists():
+            print(f"missing report matching work/{OUT_GLOB}", file=sys.stderr)
             return 1
-        actual = args.output.read_text(encoding="utf-8")
+        actual = output.read_text(encoding="utf-8")
         if actual != report:
-            print(f"stale report: {args.output} (run python tools/report_offline_readiness.py)", file=sys.stderr)
+            print(f"stale report: {output} (run python tools/report_offline_readiness.py)", file=sys.stderr)
             return 1
         if hard_fail:
-            print(f"offline readiness has hard failures: {args.output}", file=sys.stderr)
+            print(f"offline readiness has hard failures: {output}", file=sys.stderr)
             return 1
         print("offline readiness report is current")
         return 0
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report, encoding="utf-8", newline="\n")
-    print(f"wrote {args.output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(report, encoding="utf-8", newline="\n")
+    print(f"wrote {output}")
     return 1 if hard_fail else 0
 
 

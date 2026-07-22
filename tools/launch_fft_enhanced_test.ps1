@@ -5,6 +5,8 @@ param(
 
     [string]$AutosaveSnapshot,
 
+    [string]$RequireAutosaveFixtureKind,
+
     [switch]$ValidateOnly,
 
     [ValidateRange(1, 60)]
@@ -46,7 +48,14 @@ $restoredSnapshot = $null
 if ($AutosaveSnapshot) {
     $resolvedSnapshot = Resolve-RequiredFile -Path $AutosaveSnapshot -Label 'Autosave snapshot'
     $autosaveManager = Join-Path $PSScriptRoot 'manage_fft_enhanced_autosave.ps1'
-    & $autosaveManager -Action Restore -SnapshotPath $resolvedSnapshot
+    $restoreArgs = @{
+        Action = 'Restore'
+        SnapshotPath = $resolvedSnapshot
+    }
+    if ($RequireAutosaveFixtureKind) {
+        $restoreArgs.RequireFixtureKind = $RequireAutosaveFixtureKind
+    }
+    & $autosaveManager @restoreArgs
     if (-not $?) {
         throw 'Autosave restore failed.'
     }

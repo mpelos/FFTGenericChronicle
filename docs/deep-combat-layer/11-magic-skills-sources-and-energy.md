@@ -171,6 +171,13 @@ affinity, DR, and magnitude continue reading their current snapshot.
 There is no generic automatic MP regeneration. Ether, Manafont, drain, reactions, equipment, and
 other explicit effects may restore or transfer MP.
 
+HP/MP ResourceChange uses an authored target credit, target debit, or target-to-source Drain route.
+It directly changes the named pool and never becomes Injury: DR, wound multipliers, Shock, Major
+Wound, knockback, concentration incidents, and damage-triggered Reactions do not apply. Drain
+transfers only the target debit that actually fit inside the target's current pool, then caps the
+source side independently; excess is lost. Target and source Undead behavior are separate explicit
+table rows. The source-side effect resolves before the action's separately committed MP/HP cost.
+
 ## Cost commitment
 
 Declaration fixes whether HP substitution is permitted for this ActionInstance. It computes and

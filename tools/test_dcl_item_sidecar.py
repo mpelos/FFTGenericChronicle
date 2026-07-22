@@ -2,6 +2,7 @@
 """Smoke test for the complete DCL item sidecar classification."""
 from __future__ import annotations
 
+import csv
 from collections import Counter
 
 import report_dcl_item_sidecar as report
@@ -14,6 +15,8 @@ def check(condition: bool, message: str) -> None:
 
 def main() -> int:
     rows, errors = report.load_manifest(report.DEFAULT_CATALOG)
+    with report.DEFAULT_CATALOG.open(newline="", encoding="utf-8-sig") as handle:
+        native_rows = list(csv.DictReader(handle))
     check(not errors, "classification errors:\n" + "\n".join(errors))
     check(len(rows) == 261, f"expected 261 items, got {len(rows)}")
     check(len({row["item_id"] for row in rows}) == 261, "item ids must be unique")
@@ -54,6 +57,33 @@ def main() -> int:
     check(routes["consumable-external"] == 14 and routes["thrown-payload-external"] == 6,
           "external item category count drift")
     check(routes["reserved"] == 2, "only two terminal records should remain reserved")
+
+    native_by_id = {row["item_id"]: row for row in native_rows}
+    ranged_expectations = {
+        "Bow": ("Arc", "arc_trajectory", "Bow", "none"),
+        "Crossbow": ("Direct", "straight_line", "Crossbow", "raw-damage"),
+        "Gun": ("Direct", "straight_line", "Guns", "penetration"),
+    }
+    for category, (native_flag, special_rule, skill_family, overcap_route) in ranged_expectations.items():
+        category_rows = [row for row in rows if row["category"] == category]
+        check(category_rows, f"missing {category} rows")
+        for row in category_rows:
+            native = native_by_id[row["item_id"]]
+            check(native_flag in native["weapon_attack_flags"].split(", "),
+                  f"{row['name']} must retain native {native_flag} trajectory flag")
+            check(row["route"] == "equipped-weapon" and row["reach_policy"] == "native-projectile",
+                  f"{row['name']} must be an equipped native projectile")
+            check(row["dcl_range"] == native["weapon_range"],
+                  f"{row['name']} DCL range must mirror native weapon range until authored otherwise")
+            check(row["special_rule"] == special_rule and row["skill_family"] == skill_family,
+                  f"{row['name']} ranged DCL identity drift")
+            check(row["overcap_route"] == overcap_route,
+                  f"{row['name']} overcap route drift")
+
+    thrown_payloads = [row for row in rows if row["category"] in {"Throwing", "Bomb"}]
+    check(thrown_payloads and all(row["route"] == "thrown-payload-external" for row in thrown_payloads),
+          "Throwing/Bomb SKUs must stay out of equipped native projectile routing")
+
     print("DCL item sidecar smoke test passed")
     return 0
 

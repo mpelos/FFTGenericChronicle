@@ -53,6 +53,12 @@ internal static class DclSuccessRoll
         return count;
     }
 
+    public static int OutcomeMultiplicity(int roll)
+    {
+        Validate(roll);
+        return ThreeD6Counts[roll - MinRoll];
+    }
+
     public static void Validate(int roll)
     {
         if (roll is < MinRoll or > MaxRoll)

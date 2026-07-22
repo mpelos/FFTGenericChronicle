@@ -11,7 +11,7 @@ from typing import Any
 from validate_dcl_runtime_data_pair import PairValidationError, ROOT, validate_pair
 
 
-DEFAULT_MATRIX = ROOT / "work/1784470893-dcl-clean-v1-live-regression-matrix.json"
+DEFAULT_MATRIX = ROOT / "work/1784683300-dcl-active-integrated-live-regression-matrix.json"
 REQUIRED_TAGS = {
     "preflight",
     "player-forecast",
@@ -200,9 +200,17 @@ def validate_matrix(path: Path, *, validate_runtime_pair: bool = True) -> list[s
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("matrix", type=Path, nargs="?", default=DEFAULT_MATRIX)
+    parser.add_argument(
+        "--skip-runtime-pair-validation",
+        action="store_true",
+        help="validate matrix structure/settings binding without validating the historical runtime/data pair",
+    )
     args = parser.parse_args()
     try:
-        details = validate_matrix(args.matrix.resolve())
+        details = validate_matrix(
+            args.matrix.resolve(),
+            validate_runtime_pair=not args.skip_runtime_pair_validation,
+        )
     except MatrixError as error:
         print(f"ERROR: {error}")
         return 1

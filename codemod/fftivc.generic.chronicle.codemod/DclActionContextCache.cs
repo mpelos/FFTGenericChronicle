@@ -41,6 +41,9 @@ internal static class DclCalcProvenance
     public static bool IsExecutionBattleState(int battleState)
         => battleState is ConfirmedExecutionBattleState or NativeRepeatExecutionBattleState;
 
+    public static bool IsConfirmedExecution(long returnRva, int battleState)
+        => Classify(returnRva) == DclCalcOrigin.OuterSweep && IsExecutionBattleState(battleState);
+
     public static DclCalcOrigin Classify(long returnRva)
         => returnRva switch
         {

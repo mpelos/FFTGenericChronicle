@@ -108,6 +108,37 @@ Runtime knobs:
 
 This registry is the foundation for target detection, DR lookup, stat reads, and HP/MP correction.
 
+### Canonical selected-unit information
+
+The DCL selected-unit information projection consumes the same synchronized native unit projection,
+equipment snapshot, explicit non-equipment characteristic inputs, raw PA/Speed/MA, and current Brave
+used by forecast and execution. It exposes the DCL 09 status-screen contract as named components:
+ST/DX/IQ base, job, equipment, state, and final values; Brave-derived HT; Faith; HP/MP current,
+base maximum, final maximum, and character/job/equipment-status terms; Basic Lift; Basic Speed;
+Basic Move, Jump, and Dodge; exact encumbrance band/load/multiplier/penalty; and Critical's final
+Move/Dodge adjustment. UI presentation binds to this projection instead of reconstructing DCL values
+from native formula ids, item names, animations, or draft job assumptions.
+
+Native selected-unit screen binding remains a live adapter responsibility.
+
+### Canonical equipment information
+
+The DCL equipment information projection consumes normalized item metadata and selected-unit
+information projections. Item detail exposes only authored properties that the item actually uses:
+weapon skill family, Difficulty, final damage expression, damage basis, damage type, armor divisor,
+reach or range, Accuracy, Weight, hands, Parry load/modifier, balance/readiness, route, shield
+coverage, focus modifiers, DR, attributes, pool terms, elemental properties, immunities, and
+special properties. ST-based weapon damage requires the source ST used by the preview; fixed damage
+uses the authored `Xd6+Y` expression.
+
+An equipment-change preview compares before/after selected-unit projections and exposes total Load,
+encumbrance band, the next encumbrance threshold, effective Move/Jump/Dodge, BodyDR, HeadDR, MaxHP,
+MaxMP, Magic Resistance, and optional tradition-specific focus modifiers. The preview uses the same
+canonical selected-unit and equipment snapshots as mechanics, so it does not infer values from item
+names, native formula ids, or draft job balance.
+
+Native equipment-screen binding remains a live adapter responsibility.
+
 ## Event detector
 
 The base detector compares current vs. previous HP for the same registered unit pointer and
@@ -621,6 +652,21 @@ ordinary physical branch, excludes it from physical defense, and includes it in 
 The composed preview formula uses the same active-hand `dcl.weaponModel` for physical Attack and the
 same `dcl.magicAmount` for a Rod/Staff bolt; preview does not depend on staged result flags because no
 native result exists yet.
+
+The canonical skill-training contract joins explicit inputs without reading job design content:
+the weapon or shield owns `DclSkillDifficulty`, the job/family policy supplies `DclAptitudeTier`,
+the current native job level selects the shared Rank table, and explicit skill modifiers apply only
+after the base GURPS score is resolved. Missing Difficulty or invalid Tier/Job Level fails closed.
+Physical Strike inputs may carry the resolved `DclSkillTrainingResult`; when present, the canonical
+physical evaluator/executor requires it to equal the Strike's base weapon skill before ranged
+distance, Aim, location, or state modifiers are applied.
+The native physical composer can build this training result from the synchronized source snapshot,
+weapon metadata, and explicit job/family policy inputs (`DclAptitudeTier`, native Job Level, and
+post-training modifier). The composer does not infer Aptitude Tier from job design.
+The synchronized unit projection retains the native progression slice needed by that contract:
+JobId, JobIndex, spendable JP, total JP, and derived Job Level. The shared JP threshold helper is
+used by both formula context and canonical Skill training. A `DclSkillTrainingPolicy` maps explicit
+`(JobId, SkillFamily)` rows to `DclAptitudeTier`; missing rows fail before Strike construction.
 
 Item id zero is an explicit common-unarmed route rather than an ordinary zero-power weapon. It uses
 the thrust base table, subtracts `const.dclUntrainedFistPenalty`, remains crush for DR and wound
@@ -1335,6 +1381,12 @@ changes character id resets its edge state. `DryRunRewrites` logs without writin
 This feature is independent of action-result `DclPipelineEnabled`: it is poll/turn driven rather than
 an HP/MP staged-outcome formula. An empty formula while enabled is a settings-validation error.
 
+Overcast forecast is a pure projection over the declaration cost commitment. It exposes
+`FinalMpCost`, the declaration-time MP payment, HP payment, `ApprovedHPCap`, projected MP/HP,
+confirmation requirement, legality, reason, and a textual warning when the approved HP payment
+reduces the caster to zero HP. The HP portion is not hidden behind the nominal MP label and the
+forecast does not add a nonlethal floor.
+
 ### DCL battle-generation lifecycle
 
 Battle-unit pointers are table slots and can be reused. `DclBattleLifecycle` therefore tracks the
@@ -1344,7 +1396,7 @@ tracked pointer is a hard generation boundary; forgetting the last current-gener
 the battle.
 
 Every hard boundary clears the complete mod-owned transient combat set: pending actions, action
-contexts, compute-point results, prepared status plans, hit decisions, status durations, finite Guard
+contexts, compute-point results, canonical post-apply tickets, prepared status plans, hit decisions, status durations, finite Guard
 pools, MP-trickle edges, Reaction cadence, synthetic-Reaction reservations/mailbox state, preview
 amount/hit caches, final-tile event identities, and legacy pre-clamp plans. A runtime-settings reload uses the same reset path so a
 decision produced by an older formula cannot survive hot reload. Per-unit removal also clears all
@@ -1379,6 +1431,665 @@ The pipeline joins native calculation context to the final staged-result boundar
 2. Managed formulas produce a normalized HP/MP result and metadata.
 3. The pre-clamp callback at RVA `0x30A5D7` consumes the exact cached execution result and
    rewrites staged debit/credit before native clamp, KO, animation, and cleanup.
+4. A terminal canonical target/Strike may reserve one post-apply ticket. The guarded epilogue at
+   RVA `0x30AB4D` verifies the exact native HP/MP result, then commits a nonlethal source-side
+   ResourceChange and the separate nonlethal source payment in that order.
+5. The payment-committed action owns one completion ticket. Each accepted Reaction actor reaches
+   state `0x2C` at RVA `0x212C2E` after VM execution and before cleanup. The callback requires the
+   exact reactor plus the independently bound presentation/dispatch id at `actor+0x18C` and effect
+   ability id at `actor+0x142`, then consumes one normalized effect Strike. A multi-Strike effect
+   produces multiple completion events but remains one accepted Reaction.
+6. The state-`0x2F` native queue eventually returns empty at RVA `0xD90CFA2`. That terminal
+   boundary refuses to acknowledge the window until every Strike of every accepted effect is
+   complete, then settles the application and retires it from the battle ledger.
+
+`DclCanonicalPostApplyEnabled` requires the canonical runtime and compute-point writer. It is an
+explicit, disabled-by-default integration gate. The post-apply callback never manufactures an
+ActionInstance and never advances a nonterminal target/Strike. Lethal source/payment HP routes
+remain disabled because a direct `unit+0x30 = 0` write bypasses the native KO lifecycle.
+
+The canonical runtime loads five strict artifacts atomically: normalized action/state/Reaction
+authoring, item metadata, native action-ability bindings, native Reaction bindings, and state
+presentation profiles. Each native
+Reaction binding joins one `ReactionId` to a native presentation/dispatch ability id, a separate
+native effect ability id, and the exact normalized effect `ActionId`/profile revision. The effect
+ability must already resolve to that Action through the action-ability registry. Missing entries,
+unknown fields, duplicate logical owners, stale revisions, and cross-action effect ids reject the
+complete candidate runtime. This separation is required because FFT retains the two native ids in
+different actor fields and they need not describe the same semantics.
+
+The same atomic load classifies every bound ability into exactly one executable canonical family:
+physical Damage, direct numeric, Area numeric or pure status/ForcedMovement Carrier, status application, named status removal, Dispel,
+Quick, Revive, standalone ForcedMovement, or an explicitly preserved native special. Classification
+validates the ordered delivery/magnitude/effect shape, native carrier, rewrite policy, supported
+within-action timing, referenced Rider gates, and the standalone status Carrier's delivery/state
+resistance agreement, including the Area delivery/state-gate agreement for a pure status Carrier. A schema-valid combination without one complete forecast/AI/execution owner
+is authoring vocabulary only and cannot enter the battle runtime. In particular, an unnamed
+`Explicit` Rider, a multi-Strike `Immediate` status Rider, or Damage plus ForcedMovement Rider fails
+before battle instead of reaching a family executor partway through an action.
+
+Ability bindings normally require the profile's exact `StrikeCount`. The native normal-Attack
+binding may explicitly use `SingleOrProfileMaximum` for a physical profile whose maximum is two.
+That binding accepts one single-hand sweep or the complete two-sweep Dual Wield form under the same
+ability, ActionId, and revision. The effective count belongs to that ActionInstance and is validated
+again by admission, composition, forecast, AI, state projection, transaction planning, and
+confirmed execution. Other repeat carriers remain exact; Barrage cannot silently collapse to one.
+
+Player forecast and AI enter those families through one RNG-free dispatcher keyed by the retained
+ability family. It accepts only that family's exact evaluation input and returns the evaluator plus
+its player and AI projections under the same ability identity. Physical, direct numeric, Area
+numeric, status application/removal, Dispel, Quick, Revive, and ForcedMovement route to their
+canonical exact evaluator; a preserved native special returns an explicit native-passthrough
+result. A retained composed evaluation wrapper carries ability id, family, and family input across
+forecast/AI call boundaries; the dispatcher re-resolves the ability family from the runtime catalog
+and rejects a retained-family mismatch before invoking any evaluator or projection. A native formula
+id, animation, or mismatched input object cannot select another family.
+
+Native forecast/AI composition shares the confirmed native composition boundary. It consumes the
+same classified admission, synchronized snapshot batch, and explicit family-policy input, projects
+the deterministic request into the corresponding RNG-free evaluation input, and returns the retained
+composed evaluation wrapper. Execution-only ActionInstance ownership, Reaction candidates, sampled
+rolls, and state materialization side effects do not enter evaluation. Missing native map verdicts
+for movement-capable Injury remain fail-closed instead of being inferred.
+
+A native composed plan may retain both products together: the confirmed-execution wrapper and the
+forecast/AI evaluation wrapper. The pair is valid only when both wrappers retain the same ability id
+and canonical family, so production policy providers cannot accidentally build forecast from one
+snapshot/policy set and execution from another.
+
+Confirmed execution uses the matching family dispatcher. Its input contains deterministic
+snapshots only; the selected physical, direct numeric, Area numeric, status/removal, Dispel, Quick,
+Revive, or ForcedMovement coordinator receives the battle owner and therefore retains every random
+site, state mutation, resource settlement, native publication, and Reaction identity. Families whose
+request already contains Reaction candidates reject a second dispatcher-level list; auxiliary
+families receive their list only at this boundary. Family/input/ability mismatch fails before RNG or
+publication. A preserved native special returns native passthrough and creates no canonical
+application.
+
+Native unit capture is batched per source action. Each row must match a current observed UnitKey and
+contributes its native row, explicit non-equipment characteristic inputs, tile height, and requested
+Parry resource keys. The batch derives equipment from the same catalog revision, custom states from
+the battle registry, and finite defenses from the battle cadence before projecting the unit. It
+rejects duplicate slots, missing/stale source identity, stale character replacement, unknown
+equipment, and HP/MP maxima that do not equal the supplied canonical characteristic model. Job and
+state modifiers are never inferred from vanilla effective stats; their explicit providers remain a
+separate integration input.
+
+Confirmed outer-action admission uses the complete native target list after its builder and before
+the first per-target calculation. The static batch-ready boundary is `0x281EF7`; the guarded live
+hook installs at `0x281EFA`, after `rbx` has been initialized and before a target-index read. Since
+that anchor executes inside the 21-slot native target loop, managed admission suppresses identical
+sweep keys inside a short duplicate window before allocating the monotonic sweep serial. A strictly
+increasing battle-generation sweep serial, not the reusable `unit+0x1A0`
+order-record pointer, owns invocation identity. Nonrepeat
+carriers reserve one ActionInstance in state `0x2A`. `NativeRepeat` index zero reserves one
+ActionInstance and exact source/action/count/target batch; contiguous state-`0x2F` indexes reuse that
+identity and expose their native index as the Strike index. A skipped index, changed source/action,
+changed batch, wrong execution state, stale UnitKey, or count different from normalized StrikeCount
+fails before canonical resolution. Native repeated projections publish Strike-major and then native
+target order, matching one target sweep per repeat. `RandomFireRepeat` is not an executable canonical
+carrier until a DCL-owned selector can fix the complete repeated target sequence before resolution.
+Complete captured outer actions are retained in a battle-generation ledger under their
+ActionInstance before family-policy composition. The ledger accepts only current observed UnitKeys,
+complete frozen unit rows, and one publication per ActionInstance; admission errors clear both the
+partial sweep state and retained complete actions.
+
+Snapshot policy input has its own provider boundary. `DclCanonicalNativeUnitPolicyProvider` accepts
+one explicit source per frozen row, validates exact retained-row coverage and duplicate UnitKeys,
+and materializes `DclCanonicalNativeUnitPolicyInput` without inferring job modifiers, tile height,
+eligibility, or defense resource keys. Equipment attribute channels remain owned by equipment
+projection and cannot be prepopulated by unit policy.
+
+Single-target native magic declaration policy has a shared provider boundary.
+`DclCanonicalNativeSingleTargetMagicPolicyProvider` materializes only the common casting facts for
+one complete unit-targeted nonrepeat admitted action, using the complete TargetBatch as the
+declared-target authority. The retained selected-unit global is not authoritative for
+DirectNumeric unit-target identity when it diverges from the TargetBatch.
+`DclCanonicalNativeDirectActionPolicyProvider` extends that boundary for
+DirectNumeric policy by carrying the explicit defense, optional status riders, Reaction candidates,
+Touch route, state penalties, and authored movement branches. These providers do not infer
+family-specific resistance, materialization, timeline, revive, dispel, movement, or state policy.
+`DclCanonicalNativeAuxiliaryMagicPolicyProvider` uses the same shared declaration boundary for
+StatusApplication, StatusRemoval, Quick, Revive, Dispel, and ForcedMovement while keeping their
+state materialization, target CT/QuickLock controller, Undead table, Dispel selection, and final
+native movement verdict explicit.
+
+Physical native policy has its own declaration provider boundary.
+`DclCanonicalNativePhysicalActionPolicyProvider` consumes a complete contiguous PhysicalDamage
+admission sequence, derives either the declared unit target or fixed tile from the normalized
+target mode and captured native selection, and preserves weapon identity, route checks, defense
+candidates, Strike policy, protection redirects, and skill-training policy as explicit inputs.
+
+Area native policy mirrors that boundary for `AreaNumeric`.
+`DclCanonicalNativeAreaActionPolicyProvider` consumes the complete contiguous Area admission
+sequence, derives unit-target, fixed-tile, or caster declaration identity from the normalized target
+mode and captured native selection, and preserves per-target Dodge/resistance/status/movement/Injury
+policy plus Reaction candidates as explicit inputs.
+
+Retained native execution has one bridge from admission to publication.
+`DclCanonicalNativeRetainedActionBridge` retrieves a complete admitted action by ActionInstance,
+materializes unit policy from explicit sources, composes the classified family request, dispatches
+confirmed execution, verifies that native publication keeps the same ActionInstance, and retires
+the retained admission only after successful publication. Failed policy validation leaves the
+retained admission, RNG ledger, and native action ledger untouched.
+`DclCanonicalNativeFamilyPolicyProvider` is the production-facing family-policy source router:
+it reuses the classified ability family to select exactly one policy-source provider and rejects
+source objects from any other family before request construction.
+`DclCanonicalNativePolicySourceLedger` stores one validated policy-source ticket per retained
+ActionInstance. Publishing a ticket validates retained admission existence, exact unit-policy row
+coverage, and family-source compatibility without drawing RNG or publishing native carriers.
+`TryPublishForRetainedAdmission` is the production intake boundary: a missing retained admission or
+duplicate retained ticket returns an explicit no-write status, while invalid policy facts remain
+strict errors for new tickets. Duplicate detection precedes candidate validation so live callback
+retries cannot mutate or fail after one valid ticket is already retained.
+`TryResolvePublishAndRetirePolicyTicket` is the production callback readiness gate: a missing
+admission or missing ticket returns an explicit no-write status, while a present ticket publishes
+the canonical execution and retires both the ticket and admitted action only after success.
+`ResolvePublishAndRetirePolicyTicket` remains the strict publishing path for callers that already
+know the ticket is present.
+`TryPublishTicketAndResolve` is the combined producer handshake: it accepts one candidate ticket,
+publishes it only if the retained admission is ready, and immediately settles the ActionInstance
+when both halves are present. An early ticket, a duplicate after settlement, or a missing admission
+cannot resurrect or mutate an ActionInstance.
+`TryPublishAdmissionAndResolve` is the symmetrical admission-side handshake: it retains a complete
+admission when no ticket is present, settles an already-retained admission once a ticket exists, and
+returns an explicit already-published status if native carriers for the ActionInstance already
+exist.
+`DclCanonicalNativePolicyTicketTemplateJsonLoader` loads a strict schema-revisioned policy-ticket
+template bundle for explicit producer-side facts. Implemented template families are
+`DirectNumeric`, `PhysicalDamage`, `AreaNumeric`, property-payload `StatusApplication`, `StatusRemoval`, `Dispel`, `Quick`, `Revive`, and standalone `ForcedMovement`. DirectNumeric
+supplies source/target tile heights, shared single-target magic policy, and the direct-only policy
+fields needed to construct a validated `DclCanonicalNativePolicySourceTicket` from a retained
+admitted action. PhysicalDamage supplies an explicit complete physical policy source for a complete
+NativeRepeat admission sequence: weapon identity, range/vertical verdicts, target contexts, per-Strike
+weapon-skill/defense/ranged/status/Injury facts, optional Reaction candidates, universal-normal-attack
+flag, explicit per-Strike weapon overrides, optional Protection redirect, and optional Skill Training
+policy. AreaNumeric supplies an explicit complete area policy source for a complete
+NativeRepeat admission sequence: tradition, source gates, caster penalty, per-target dodge,
+resistance/status/movement/Injury facts, optional fixed-tile height, and optional Reaction
+candidates. StatusApplication supplies the shared single-target magic policy, resistance
+modifiers, and a concrete `DclPropertyStatePayload` materialization template; it deliberately does
+not accept arbitrary `DclStatePayload` polymorphism. StatusRemoval supplies the shared single-target
+magic policy. Dispel supplies the shared single-target magic policy, final Dispel score, and
+optional selected stored-state instance id. Quick supplies the shared single-target magic policy,
+pre-turn target CT, an empty QuickLock controller, and a concrete property-payload lock
+materialization. Revive supplies the shared single-target magic policy, nonnegative Faith
+multiplier, complete Undead interaction table, optional resistance/immunity facts, and optional
+property-payload Stored-Reraise materialization; it deliberately does not accept arbitrary lifecycle
+payload polymorphism. Standalone ForcedMovement supplies the shared single-target magic policy,
+defense option, resistance/immunity facts, and one explicit final native movement verdict; it does
+not infer pathfinding or intermediate tiles. Missing templates return a no-write status; unsupported
+families, invalid tile heights, invalid property materialization, invalid Dispel score, Quick CT
+outside the pre-turn range, negative Revive Faith, incomplete Undead tables, unresolved/invalid
+ForcedMovement verdicts, empty or invalid Physical/Area target or Strike policy, and malformed strict JSON fail before a ticket can be
+published. The canonical runtime loader publishes these templates as an immutable optional registry; an empty
+`DclCanonicalPolicyTicketTemplatesPath` yields an empty registry, and a non-empty path must load as
+part of the same all-or-nothing canonical runtime snapshot. The template registry is
+infrastructure for policy-ticket producers; callback use still depends on a loaded template for
+the admitted ability.
+`TryPublishAdmissionBuildTemplateAndResolve` is the admission-side producer path for that registry.
+It first publishes the complete admission through the normal admission handshake. If the action
+still waits on `MissingPolicyTicket`, it asks the runtime template registry to build the explicit
+ticket and immediately enters the ticket-side handshake. No template keeps the retained admission
+and reports `MissingTemplate`; a built template settles the ActionInstance through the same strict
+ticket ledger, dispatcher, same-ActionInstance publication check, and retirement path as an
+externally supplied ticket. The guarded admission callback uses this producer path, so a configured
+template can settle a complete admission while an unconfigured ability remains fail-closed. The
+template producer path is family-generic; DirectNumeric and standalone ForcedMovement have
+end-to-end producer-handshake smoke coverage.
+The native action ledger keeps a battle-scoped tombstone for retired ActionInstance ids. A settled
+and retired ActionInstance cannot be published again by late native replay, and admission-side
+handshake checks the same published-or-retired identity set before retaining an admission.
+The guarded admission callback uses the template producer handshake rather than writing directly to
+the retained-admission ledger. Without a loaded template or externally retained policy ticket it
+retains the complete admission and reports `MissingPolicyTicket`/`MissingTemplate`; if a validated
+ticket is already retained, or a loaded template builds one, the same callback path settles the
+ActionInstance through the strict bridge. Settings validation warns when `DclCanonicalAdmissionEnabled`
+is true without `DclCanonicalPolicyTicketTemplatesPath`, because the hook can otherwise retain
+complete admissions while waiting for externally retained policy tickets. The canonical admission
+sentinel emitter writes a strict policy-ticket template bundle beside authoring, item metadata,
+ability bindings, and Reaction bindings, and points the generated runtime settings at that bundle.
+
+The same admission snapshots the staged order coordinates as `DclBattleTile(X,Y,Layer)` from
+`order+0x0C/+0x10/+0x0E`. This tuple is declaration/epicenter identity, not an inferred victim tile.
+It is immutable across a native repeat sequence. Unit-target classified composition requires the
+declared target from the complete TargetBatch, its frozen projected tile, and the selected tuple to
+agree. The captured selected-unit row is retained separately when present. Fixed-tile composition
+requires the family declaration to equal the captured tuple. These checks occur before a coordinator
+request exists.
+
+The guarded managed admission hook is installed only when both `DclCanonicalRuntimeEnabled` and
+`DclCanonicalAdmissionEnabled` are true; the latter defaults false. Its byte guard covers
+`49 8B DD 8A 54 1D D8 80 FA FF 74 0F`. At this boundary `r14` is the source order record and
+`[rbp-0x28]` is the completed target list. The shim preserves flags, every volatile integer
+register, and `xmm0..xmm5` while the callback verifies execution state, maps the order record back
+to the live source UnitKey, validates every target row and character identity, and feeds the battle
+admission ledger. A live row not yet seen by the poller is registered synchronously; an already-
+observed slot with another character identity fails closed. A complete-sequence collector exposes a nonrepeat action
+immediately and withholds `NativeRepeat` until its final contiguous Strike. Any identity or sequence
+divergence disables further admission for the process while leaving the native sweep untouched.
+The collector deep-copies the source, admitted target, selected-unit, and explicitly supplied
+auxiliary `0x200` rows at index zero. Auxiliary rows must still match current observed UnitKeys and
+need one policy record before composition; Cover/Bodyguard uses this path for a protector that is
+not part of the native selected target list.
+It also retains the optional selected unit read from RVA `0x7B0792` and the mandatory selected
+X/Y/map-level order tuple separately from the affected target list, and includes the selected-unit
+row in the same frozen batch when present. Unbound native abilities are ignored by the admission
+hook rather than disabling the hook.
+Continuation rows validate the same UnitKeys, but cannot replace that frozen pre-Strike batch.
+Projection requires exactly one explicit non-equipment characteristic, tile-height, and finite-
+defense policy record for every frozen row; missing or extra policy rows fail before composition.
+Family-policy capture, request composition, and publication remain separate gates; admission alone
+does not replace a native result.
+
+One classified native composition entry consumes the completed captured action, projects its
+frozen rows from exactly one explicit unit-policy record per identity, and selects the family-
+specific composer from the immutable ability-family registry. It accepts only that family's exact
+explicit-policy input type and never
+reclassifies from native formula, animation, result kind, or object shape. Mixed ability admissions,
+the wrong policy-input type, and a repeated sequence supplied to a nonrepeat family fail before a
+coordinator request exists.
+
+For a nonrepeat `DirectNumeric` admission, one composer joins the admitted source and resolution
+target to the same synchronized snapshot batch. A unit-target Direct action requires its explicit
+declared target from the complete TargetBatch to have a frozen tile equal to the native selected
+X/Y/map-level tuple; the selected-unit global may diverge and remains separate policy/diagnostic
+input. Reflection may still produce a different resolution target in the affected batch. It derives
+characteristic pools, IQ magnitude,
+Faith, focus modifiers, affinities, Shell/Oil/Reflect, equipment plus Bulwark DR, native Silence,
+Injury context, and declaration timing/cost inputs exactly once. Tradition skill, learned access,
+prerequisites, Zodiac compatibility, selected defense, and other inputs that cannot be derived
+without job or command policy remain explicit. The resulting deterministic execution request keeps
+the admitted ActionInstance and passes unchanged through the confirmed family dispatcher, the
+battle-owned RNG resolver, and native publication. Missing/stale batch identities, Area or repeat
+shape, hybrid pools, and family mismatches fail before resolution.
+
+The confirmed dispatcher can consume the retained `DclCanonicalNativeComposedExecution` wrapper
+directly. It re-resolves the ability's atomic runtime family and rejects any wrapper whose retained
+family diverges before execution RNG, state mutation, or native publication.
+
+`PhysicalDamage` composition accepts the complete admitted sweep sequence. A single-result action
+has one sweep; `NativeRepeat` contributes one contiguous sweep per normalized Strike. The composer
+retains the exact native target batch and the captured active item/hand pair for every sweep. Each
+Strike resolves its own synchronized equipment slot, weapon metadata, damage type and expression,
+ranged route, Weapon Skill input, readiness, and slot-bound state projection. An explicit hand
+policy may fill actions whose native carrier has no weapon identity, but it cannot override a
+different captured pair. A normalized Primary weapon promoted from the left equipment slot retains
+that left-slot state identity. Native item zero resolves the authored unarmed metadata and a limb
+resource without requiring a fake equipped item. The composer derives ST, target pools/revisions, Injury context,
+state-aware location DR, and ranged Aim/Shock terms, and emits every target/Strike with no execution
+roll. Base Weapon Skill, defense candidates, route verdicts, and Rider materialization remain
+explicit because their final owners include command and equipment-slot policy. Forecast, AI, and
+confirmed execution consume the same per-Strike mapping. Distinct hand states commit once at outer
+action settlement, turn resources are paid once, and the Reaction window opens once after the full
+sequence. When explicit Cover/Bodyguard policy is present, the request preserves the native selected
+unit as the declaration target while every final target/context/Strike row names the protector.
+Resolution and publication reuse the first sweep's ActionInstance exactly once.
+
+`AreaNumeric` composition uses the same complete-sequence rule. The admitted target list is the
+immutable native geometric membership. Canonical allegiance and eligible-state filtering produces
+the stable TargetBatch, while one synchronized batch supplies current center candidates and each
+target's Faith, affinity, Shell/Oil, DR, Injury, pools, and custom-state revision. Casting is shared
+once per action; target gates and magnitude retain their normalized per-target/per-Strike
+cardinality. The published native result remains Strike-major.
+
+A magnitude-free Area `StatusApplication` Carrier uses the Area target gate as its only Carrier
+gate. `QuickContest` therefore requires the referenced state to declare `QuickContest` and reuses
+that same per-target contest; it never resolves a second Rider contest. `None` and `Dodge` require
+the state to declare no resistance because Dodge already owns delivery avoidance. Immunity precedes
+the Quick Contest and consumes no resistance draw. Exact evaluation removes an immune target from
+the delivered-target distribution, while confirmed execution materializes each winning state in
+the outer commit and publishes empty numeric channels plus the exact state mutation. Numeric Area
+Carriers with a status Rider remain distinct: the Rider may own its separate authored resistance
+gate after the numeric Carrier lands.
+
+Physical, direct-magic, and Area Injury execution validate the target's Charging snapshot against
+the battle-owned timeline before RNG. Each landed Strike resolves at most one concentration
+incident across Injury and its authored or critical displacement. A failed check cancels the exact
+pending `ActionInstanceId`; KO, Stun, or Knocked Down cancel it directly without a concentration
+roll. The cancellation commits before status Riders and the terminal Reaction window. Later Strikes
+observe the target as no longer Charging, while a preserved result retains the same pending action
+and due CT.
+
+**Implemented offline:** Injury displacement freezes one native map verdict for each reachable
+positive requested distance. Physical, direct-magic, and Area execution select the branch only
+after damage type, critical success, final Injury, survival, and authored displacement are settled.
+KO suppresses movement. A blocked zero-tile verdict preserves Aim and creates no concentration
+incident; positive actual displacement cancels Aim and shares the originating Strike's single
+concentration incident. Physical, direct-magic, and Area evaluation expose exact moved-tile
+expectation and fall probability from the same branches. Native projection supports one positive
+settled movement per Strike. For multi-Strike physical and Area Damage, each Strike owns a frozen
+branch forest keyed by every reachable origin tile. Forecast and execution carry the selected tile
+in a movement-only target state, so it chooses later map verdicts without changing deferred combat
+gates. Native publication requires each later movement origin to equal the preceding destination,
+and the auxiliary writer validates every origin/destination readback in Strike order. A missing
+origin branch or a discontinuous published path fails before partial native movement.
+
+A magnitude-free Area `ForcedMovement` Carrier consumes the Area delivery gate once per target and
+one immutable final native map verdict for each delivered target. The target identity, origin,
+requested distance, direction, final destination, moved distance, and fall result are frozen before
+execution RNG; forecast, AI, confirmed execution, and native projection consume that same verdict.
+The player forecast exposes the authored direction, native origin, native destination, delivered
+moved-tile count, expected moved tiles, fall outcome, and concentration-interruption probability
+from that immutable verdict rather than recomputing a presentation-only path.
+Carrier immunity precedes the per-target Quick Contest and consumes no resistance draw. A resisted
+or immune target publishes an empty numeric carrier without movement, while a delivered target
+publishes the completed displacement as auxiliary data. Only positive final displacement creates
+Aim/concentration consequences. Confirmed execution plans the exact target Aim instance removal,
+revalidates its target revision with the TargetBatch, removes it inside the outer commit, and
+projects that same InstanceId beside the movement carrier. Intermediate tiles never enter the
+action ledger, change later target resolution, or open a Reaction window; the TargetBatch retains
+one terminal post-action Reaction window. The battle owns exactly one attached charged-action
+timeline. Confirmed standalone and Area Forced Movement validate the target-owned Charging snapshot
+before consuming RNG. Positive delivered displacement resolves exactly one concentration incident
+per target/Strike: preservation keeps the exact pending `ActionInstanceId` and due CT, while failure
+cancels that exact pending action before Reaction dispatch. Resistance, immunity, and zero
+displacement do not roll concentration. Native timeline and Charging-status mutation remain binding
+responsibilities of the live adapter.
+
+An Area `ResourceChange` uses that same family without entering Injury. Each target HP/MP pool
+advances in stable target/Strike order, while Drain shares one evolving source pool across the
+entire TargetBatch. Execution therefore caps the aggregate source credit or debit against the
+source only once, rather than restarting its cap for every target. RNG-free evaluation conditions
+on the single caster roll and dynamically convolves target gates, magnitude rolls, KO
+short-circuits, target caps, and the shared source cap. Player and AI receive exact target HP/MP
+marginals and the correlated aggregate source-effect distribution. The player-facing
+ResourceChange projection names the HP/MP resource, TargetCredit/TargetDebit/Drain route,
+target/source Undead routes, rolled magnitude range, target and source pool caps, no-delivery,
+target/source KO, rejection, expected target/source debit or credit, and expected excess lost to
+each cap. Native projection publishes each target carrier, one aggregate source carrier, one
+separate payment, and one terminal Reaction window under the same ActionInstance.
+
+Generic physical and Area families execute `PerTargetPerStrike` magnitude cardinality. A
+single-Strike `PerTarget` profile is equivalent and accepted. `Shared`, multi-Strike `PerTarget`,
+and `Explicit` are not reinterpreted by these executors; capability loading rejects them until a
+named cardinality owner implements their distinct random-site identity.
+
+One shared nonrepeat unit-target declaration composer owns source/target identity, native Silence,
+focus, cost, CastCT, SpellScore, Zodiac, and pool inputs without interpreting job content. Standalone
+StatusApplication uses it to derive immunity and the named resistance characteristic from the exact
+target equipment/state snapshot. Named StatusRemoval keeps selection in the revisioned registry.
+Dispel freezes either the complete `AllEligible` instance set or one explicit eligible InstanceId;
+effect-resistance rolls remain battle-owned. These auxiliary paths preserve their admitted
+ActionInstance through state mutation and publication.
+
+Quick uses the same admitted declaration but retains the target `DclCtState` and
+`DclQuickLockController` as explicit timeline-owned identities; successful execution grants the
+exact authored CT and materializes QuickLock once. Revive composition derives target KO/Undead and
+MaxHP from the synchronized row while retaining the authored Faith multiplier, Undead interaction
+table, and optional Stored-Reraise materialization as explicit lifecycle policy. Standalone
+ForcedMovement requires one immutable native map verdict whose target and origin equal the
+synchronized snapshot; the final destination enters the action without creating a per-tile window.
+
+Quick validates the complete QuickLock registry application, including its duration and stacking
+contract, before casting RNG or CT/controller mutation. Delivery commits CT, controller lock, and
+persistent state under the same callback. A persistent-state failure defensively removes the
+controller lock and reverses the exact CT grant before propagating the failure, so the controller,
+clock, and registry cannot expose a partial Quick result. Granted-turn completion first reserves
+the exact controller/state pair before target/source-turn expiry runs. A missing, duplicate, or
+changed persistent lock therefore fails before turn-completion mutation; the reserved exact
+instance and its controller clear together only after the battle turn completes.
+
+Confirmed physical, direct-magic, Area, status application, named status removal, Dispel, Quick,
+Revive, and standalone ForcedMovement coordinators all construct an explicit battle-owned
+Reaction request, including when the ordered candidate set is empty. The exact window result
+crosses execution and native projection under the same ActionInstance. ResourceFailure still
+publishes no window. The later KO-triggered Stored Reraise transaction is deliberately a lifecycle
+continuation with no payment and no new Reaction window.
+
+Before any confirmed-execution random draw, resource mutation, state commit, or native publication,
+the ordered candidate set is preflighted against the current battle generation, observed reactor
+identities, normalized Reaction definitions, native bindings, effect Action revisions, response
+routes, activation-mode cardinality, and duplicate ownership. Preflight consumes no RNG. A failure
+therefore leaves the execution, state, and native-action ledgers unchanged; commit repeats the same
+validation as a final invariant guard.
+
+Canonical Reaction activation references are a closed authoring set: DX, HT, IQ, Will, or one named
+Skill. `ActivationRoll` definitions with any other reference fail validation before execution or
+forecast. Brave is not a canonical Reaction chance input; it may affect DCL through Brave-derived
+HT or authored temperament terms, but not as a raw activation percentage.
+
+Reaction player forecast and AI projection read the same RNG-free evaluation result. The player
+forecast exposes native order, reactor identity, Reaction id, activation mode, rounded activation
+chance, natural-effect-gate flag, blocking reason, effect Action id, and resolved effect
+source/target. The AI projection consumes the same exact activation probabilities and expected
+accepted-activation mass rather than rebuilding a separate candidate model.
+
+Native publication treats the declared-window flag and the resolved window result as one atomic
+pair: both are absent for a no-window action, or both are present for the same ActionInstance. A
+plan with only the boolean flag cannot enter the battle ledger, including when the accepted set is
+empty.
+
+The immutable canonical state snapshot exposes custom-state mechanics through typed projections,
+not through `MechanicalRules` text. Taunt produces one shared action-legality result for movement,
+the universal normal Attack, target identity, target legality, and invalid-source expiry. Guard
+Broken, per-slot Weapon Bound, and Bulwark produce one defense-state record containing exact Block,
+Parry, weapon-attack, weapon-Reaction, Weapon Skill, DR, displacement-resistance, and passability
+terms. Location DR adds the Bulwark modifier at this same snapshot revision and floors only the
+final DR at zero. Fear is not part of this projection.
+
+The canonical battle owns one `DclCanonicalPreparedStateRuntime`. Its `DclStateRegistry` is the
+sole persistent lifetime and remaining-use owner for Overwatch, Cover/Bodyguard, and Bulwark;
+prepared controllers are reconstructed from the current registry instance when a trigger is
+evaluated. Confirmed physical, direct-magic, Area, and standalone status application validates
+the prepared payload, duration clock, initial use count, and Overwatch effect Action identity
+before registry mutation. Materializing Overwatch reserves one ordered outer `ActionInstanceId` per
+authored trigger in the persistent payload; callers cannot supply those battle-owned identities.
+Replacement, exact-instance removal, KO cleanup, expiry, and checkpoint
+restore therefore cannot leave an independent prepared controller alive after its state disappears.
+Movement that has not settled returns before trigger revalidation or mutation. A settled final tile,
+current source/target identity, weapon, range, trajectory, and an unused declared reservation remain required
+before Overwatch can fire.
+
+The battle consumes one accepted `DclFinalTileSnapshot` as a complete Overwatch batch. The snapshot
+must match the current observed mover `UnitKey` and the native actor/target/unit final tile. Candidate
+states are unique and resolve in ascending `StateInstanceId`; each binds its exact owner, current
+source tile, prepared weapon slot, target eligibility, range, vertical, trajectory, and authored
+trigger verdict. The battle rejects a duplicate or stale movement sequence before state mutation.
+Every firing candidate consumes one persistent use and materializes the next previously reserved
+immediate zero-MP unit-target `ActionInstance`; a nonmatching trigger preserves its state and consumes
+no reservation. The declaration carries the mover as tracked target and the prepared owner tile as
+declaration tile. Triggered declarations enter one battle-owned queue in state-instance order. Only
+the queue head may enter the confirmed family dispatcher, its deterministic input must recreate the
+exact reserved declaration before publication, and the next entry remains blocked until that exact
+native application settles and retires. Timeline advancement, a later final-tile event, and checkpoint
+capture all reject a nonempty prepared queue. The persistent payload names both `EffectAbilityId` and `EffectActionId`; loading, application,
+checkpoint restoration, trigger planning, and commit require that native ability to retain the exact
+Action and profile revision. A checkpoint preserves every unused reservation and requires all of them
+to be unique, positive, earlier than the saved Action cursor, and distinct from pending charged
+Actions. Native effect application and presentation follow the queued publication after the
+final-tile event; no intermediate route tile enters this contract.
+
+Removing or replacing a current `UnitKey` cancels every still-reserved prepared queue ticket whose
+source or tracked target is that identity; its declared Action identity remains burned. Identity
+loss cannot overtake a ticket whose native application is already published, because that outer
+Action must settle before unit removal.
+
+Cover/Bodyguard materialization requires a source-owned state whose target/source are the protector
+and whose typed payload names a different protected `UnitKey` in the same battle generation. Its
+eligible delivery set is limited to `PhysicalAttack`; tracked spell deliveries, including
+`ExternalProjectile`, ignore physical cover and use their own magical routing such as Reflect. The
+battle-owned redirect boundary accepts the exact state, attacker, declared target, protector,
+range/adjacency verdict, and protector eligibility. Identity/link disagreement fails before
+mutation. A physical action declares the originally selected unit, plans the redirect without
+mutation, and builds the final target batch from the planned protector. The native physical composer
+accepts the same explicit protection candidate from the synchronized batch and produces a request
+whose declaration still names the original target while every target context and Strike names the
+protector. The physical planning coordinator accepts the same immutable plan for player forecast and
+AI, validates that every snapshot/context/Strike targets the planned final unit, and consumes no
+state or RNG. Confirmed execution consumes or cancels the protection state immediately before the
+first physical execution RNG site. A legal trigger consumes one persistent intercept and returns the
+protector as the final target; failed current legality removes the invalid link and preserves the
+declared target. Native projection carries the exact removed protection state beside the published
+physical carrier. The boundary resolves one link once and does not recurse through redirected
+targets.
+
+Physical planning captures source and target custom-state revisions once and uses one transformed
+Strike list for player forecast, AI, and confirmed execution. Per-slot Weapon Bound changes the
+source Weapon Skill or makes that weapon's attack illegal; target Guard Broken and Weapon Bound
+change only their named Parry/Block channels; Bulwark changes Block and DR; Dodge is unchanged.
+The confirmed physical coordinator and every confirmed direct-magic, Area, status, removal,
+Dispel, Quick, Revive, and standalone ForcedMovement coordinator revalidate Taunt before their
+first RNG site. Only a physical request explicitly identified as the universal normal Attack can
+pass Taunt, and only when its selected target is the active provocateur and native range,
+vertical, and trajectory checks are legal.
+
+Every confirmed target-batch commit receives the battle state registry and compares each captured
+`CombatStateRevision` with the current target revision before planning effects or invoking commit
+callbacks. Direct, Area, physical, auxiliary, ForcedMovement, and system-command coordinators also
+reject stale deterministic snapshots before their first execution RNG site. Lower-level offline
+evaluation may use synthetic snapshots only when it supplies no confirmed battle owner.
+
+Target Aim retention is planned without mutating the registry. Direct magic plans its single
+retention/cancellation result and physical and Area multi-Strike resolution retain a target-local
+prospective Aim flag, so a failed retention or direct cancellation suppresses later same-action
+checks while leaving the registry unchanged. Every exact Aim instance removal occurs inside the
+outer transaction commit after the revision guard and before the Reaction window. Reachable direct
+magic Aim-retention RNG is therefore sampled before commit, never as a post-commit side effect.
+
+Bulwark's typed projection exposes its authored displacement-resistance and passability-policy
+values. The DCL specification does not define either the displacement contest/formula or the
+concrete map-passability semantics, so no runtime consumer may interpret those fields until their
+canonical rule or native owner is established.
+
+Ready, Reequip, and Stand Up have a confirmed semantic coordinator even though they are not
+invented native abilities. It resolves registered per-weapon state, current defense resources,
+turn resources, custom-state revision, Taunt legality, deterministic command mutation, and the
+single post-action Reaction window from one battle owner. Ready changes only an already-registered
+Unready weapon; Reequip captures and preserves the battle-owned Block, repeated-Parry, readiness,
+and post-Unbalanced-attack state; Stand Up removes the current Knocked Down instance and spends
+both resources. A pure command-availability resolver exposes the same legal surface before UI/AI
+selection: Ready is per registered weapon, Reequip consumes an explicit equipment-policy verdict
+rather than inferring job/slot/inventory rules, Stand Up requires the current Knocked Down state and
+both turn resources, and Taunt suppresses all three because they are Action commands but not the
+universal normal Attack. Native menu-row binding, selected equipment presentation, and result
+carriers remain separate integration bindings.
+
+Persistent-state presentation keeps unit icons and timeline/equipment detail as separate channels.
+The pure resolver still maps ailment-like custom states to symbolic existing native icons, but
+technical turn/equipment resources such as QuickLock, Ready/Unready, spent Block, and
+repeated-Parry counters do not receive an above-unit status icon by fallback. QuickLock exposes its
+visible lock through the CT timeline's existing Haste icon asset, while Ready/Unready and defensive
+resource state remain selected-equipment/defensive-panel facts. The channel snapshot keeps
+above-unit icons, CT timeline icons, selected-state details, and detail-only technical states in
+stable state-instance order, and missing display names fail closed before UI binding. Normalized
+authoring also links state materialization to presentation: every `StatusApplication` and
+`StoredReraise` action must list the presentation profile of each persistent state it can create in
+`PresentationProfile.StatePresentationIds`. State presentation profiles are a separate loaded
+catalog: each profile owns the display name, symbolic unit/timeline icon, position, palette,
+entry-feedback reference, selected-unit detail terms, source/magnitude/expiry/stacking visibility,
+and cure-family detail. State definitions fail closed when their `PresentationProfile` id is absent
+from that catalog. The presentation channel resolver can consume this loaded catalog directly and
+rejects persisted state instances whose `PresentationId` no longer matches the owning state
+definition. A unit-presentation snapshot composes active state instances with the loaded catalog and
+native presentation facts to resolve body position, palette, invisibility layering, unit icons,
+timeline icons, selected-state detail, and detail-only technical state kinds as one immutable
+presentation request. Native KO and transformation remain higher-priority body states, and KO
+suppresses temporary DCL palettes without deleting the underlying states. A native-surface audit
+derives the pose, palette, transparency, above-unit icon, CT timeline icon, selected-state detail,
+equipment detail, defensive panel, command-disablement, and entry-feedback surfaces required by
+that snapshot. Each required surface must carry an explicit binding status; `PureSnapshotReady` is
+not accepted as a native UI proof, `NativeBindingLiveGated` keeps the boundary honest, and
+`NativeBindingProven` requires a stable proof id. Ready/Unready and spent-defense technical states
+stay out of the above-unit icon channel but still require selected-equipment and defensive-panel
+native bindings.
+
+RNG-free nonphysical planning uses the same Taunt and target-revision gate before invoking its
+family evaluator. An illegal action produces no evaluation object, so neither player forecast nor
+AI can project an action that confirmed execution rejects. A legal action retains the single exact
+family evaluation object from which both consumers project their result.
+
+A weapon-delivered Reaction candidate carries its exact equipment slot. Before confirmed
+preflight or battle-aware Reaction evaluation, the reactor's current custom-state revision projects
+slot-bound Weapon Bound into candidate eligibility. `SuppressWeaponReactions` disables only the
+matching slot; candidates without a weapon slot and candidates from other slots remain unchanged.
+The native candidate producer must supply the proven slot identity rather than infer it from the
+Reaction name or effect Action.
+
+Permanent Character Growth uses one strict per-character persistence record. The current JSON
+schema contains the growth revision, highest awarded Character Level, and exactly six signed
+64-bit micro-unit accumulators in fixed channel order. Current-schema records reject unknown or
+duplicate fields, invalid levels, and values outside one retained step. Serialization is
+deterministic. A record from an unknown newer revision remains opaque and byte-for-byte reusable,
+with new growth disabled, so an older runtime cannot erase fields it does not understand. The
+native roster identity and atomic save/stat writer remain integration owners.
+
+The normalized area schema accepts only `TrackedUnit`, `FixedTile`, or `Caster` center ownership
+and only `None`, `Dodge`, or `QuickContest` target delivery gates. The retired generic `Explicit`
+center and delivery-gate enum values are not deserializable because the DCL defines no executor for
+either behavior. Named explicit policies remain legal only on fields whose canonical contract
+defines such an extension.
+
+Delivery legality is rejected during normalization rather than deferred to execution. External
+Projectile cannot author ordinary Parry; Touch cannot author Block or a resistance gate;
+Beneficial cannot author hostile active defense or a per-Strike target gate; Rider cannot author a
+second active defense; and Physical Attack, External Projectile, Touch, and Beneficial cannot
+author a resistance characteristic. Internal Direct and Area QuickContest retain their explicitly
+required resistance owners. This matrix prevents a validator-clean action that no family executor
+can resolve.
+
+Direct `ExternalProjectile` magic validates its selected defense against authored Dodge/Block
+flags and the current battle-owned defense snapshot in execution and evaluation. Dodge never
+depletes a resource; ordinary Parry is illegal; Block requires the authored Defense Bonus policy
+and the defender's available one-per-turn Block. A reachable noncritical casting result spends
+Block on the attempt whether the Block succeeds or fails, commits the updated defense revision,
+and exposes the exact correlated spend probability to player forecast and AI. Critical delivery
+bypasses the defense and does not spend Block.
+
+Standalone `ForcedMovement` with `ExternalProjectile` delivery uses the same policy and exact
+probability owner. Its outer transaction records the spent Block snapshot before the Reaction
+window, and the battle cadence commits the new defense revision before native publication.
+
+`Touch` has a separate exact attack-gate core. It rolls SpellScore as the per-Strike attack skill,
+permits only authored Dodge or Parry, bypasses active defense on a critical attack, and spends a
+named cumulative-Parry attempt on every reachable Parry whether successful or failed. The current
+Parry count applies its `-4` step before selecting the best legal defense, so a later Strike may
+select reusable Dodge instead. One enumerated 3d6 space owns execution parity, player percentages,
+AI rationals, defense-attempt probability, and Parry-spend probability.
+
+The direct numeric coordinator composes that gate with the shared Damage, Healing, ResourceChange,
+status-Rider, Injury, Aim, payment, and Reaction transaction. It requires one immutable native
+`NativeDirect`/`NativeArc` range-and-trajectory verdict before RNG, captures every named Parry key,
+commits the resulting battle defense revision once, and publishes both the translated magic
+delivery and original physical Touch outcome. `ResourceFailure` remains before Attack, defense,
+magnitude, Parry spend, and Reaction creation. Player forecast and AI use the same effect and
+payment distributions plus exact Parry-spend mass. Producing the route/defense snapshots from the
+native Touch carriers remains an integration binding.
+
+Generic status Riders read `ResistanceGate` from the referenced normalized state definition.
+`None` applies after a landed nonimmune Carrier without a resistance draw. `SuccessRoll` makes one
+target roll and applies only when that roll fails. `QuickContest` compares the retained Carrier
+margin with one target roll and awards ties to resistance. Immunity precedes every gate. `Explicit`
+requires its named mechanism owner and is rejected by the generic execution and evaluation paths.
+Direct, Touch, and Area coordination therefore sample a Rider roll only when the authored gate
+requires one. Their exact player/AI evaluations use the same gate and retain the correlation with
+the shared casting or Touch attack roll; direct numeric projections expose application probability
+for every ordered Rider.
+
+Physical Damage actions may order normalized status Riders after their one Carrier. Each landed
+Strike reuses that Strike's successful Effective Skill and attack roll as the acting side of the
+Rider Quick Contest; it does not roll another attack. A missed, defended, or KO-short-circuited
+Strike consumes no Rider resistance RNG. Confirmed execution owns every reachable resistance draw,
+materializes the state inside the outer commit, projects the exact state instance beside the same
+native Strike, and opens only the action's one final Reaction window. Exact forecast and AI
+enumeration expose the same per-Strike Rider application marginals while retaining correlated
+Parry, Block, HP, and KO state. The generic physical owner accepts `None`, `SuccessRoll`, and
+`QuickContest` state definitions with their distinct rules; `Explicit` requires a named owner and
+fails closed here.
+Multi-Strike Immediate status Riders likewise fail closed because the runtime has no defined
+between-Strike status reprojection for them.
+
+`DclCanonicalReactionEffectCompletionEnabled` and
+`DclCanonicalReactionCompletionEnabled` require the canonical runtime and post-apply owner and are
+disabled by default. The effect callback requires dispatcher state `0x2C`, one exact singleton
+completion ticket, an observed reactor UnitKey, and both native ids. Its RVA conflicts with the
+observe-only Reaction-effect probe, so the validator forbids enabling both. The terminal callback
+runs before native post-chain cleanup only when the queue's first or terminal scan returned zero,
+requires dispatcher state `0x2F`, and accepts the same ticket only after all accepted effects are
+complete. It does not use current-actor/source equality because a completed chain leaves the final
+reactor as the execution actor. Missing, multiple, stale, wrong-generation, wrong-id, out-of-order,
+or incomplete ownership preserves native execution without retiring a canonical action. Battle
+reset and disposal clear post-apply, effect-completion, and terminal-completion ownership.
 
 `DclDamageFormula` is required for numeric damage ownership. Its context includes attacker and
 target, equipment resolved through `ItemCatalog`, action metadata through `AbilityCatalog`,
@@ -1396,21 +2107,21 @@ file I/O.
 
 ## DCL hit-decision control (`DclHitControlEnabled`)
 
-The controller computes one authored percentage and random decision for an exact action/target
-transaction. Forecast and execution share the cached percentage; execution consumes the matching
-binary decision.
+The controller computes one authored percentage for an exact action/target evaluation. Forecast and
+AI evaluation are read-only: they publish the percentage without sampling execution RNG or creating
+an execution decision. A call is allowed to sample and cache the binary outcome only when the
+calc-entry return address identifies the outer execution sweep and the battle state is an execution
+state.
 
 `DclHitChanceFormula` returns a percentage clamped to `0..100`. `DclHitForcedRoll` accepts
 `0..99` for deterministic validation and `-1` for runtime RNG. A hit is
 `roll < percentage`. Hit formulas run before the staged HP/MP result exists and therefore cannot
 depend on `dcl.oldDebit` or `dcl.oldCredit`.
 
-The cache key includes the caster's own-turn epoch, caster, target, action type, ability, and
-payload. Native repeat and active weapon provenance extend this identity where the action family
-exposes them. An unconsumed forecast remains reusable for the complete caster-turn epoch even after
-the short delivery TTL; reuse refreshes that TTL for the immediate execution consumers. A new
-caster-turn epoch cannot reuse the old decision, and a partially consumed execution cannot receive
-forecast-style lifetime extension. Unknown or ambiguous provenance is a no-write outcome.
+The execution-cache key includes the caster's own-turn epoch, caster, target, action type, ability,
+and payload. Native repeat and active weapon provenance extend this identity where the action family
+exposes them. The short delivery TTL bounds every cached entry. A new caster-turn epoch cannot reuse
+an old decision. Unknown or ambiguous provenance is evaluation-only and cannot write the cache.
 
 The native baseline removes equipment evasion at the item-table source. A connected candidate can
 then be downgraded after calculation. This avoids the frontal-arc limitation of class-evade input
@@ -1418,17 +2129,24 @@ stamps and keeps mod-owned hit decisions independent of the virtualized native p
 
 A miss suppresses every owned numeric channel, including MP redirection, and suppresses the
 matching reaction chance. Delivery uses a two-consumer handshake between staged-result application
-and result presentation; duplicate callbacks are idempotent and TTL is a delivery/cleanup backstop,
-not a limit on how long the player may inspect an unconsumed forecast.
+and result presentation; duplicate callbacks are idempotent and TTL is the execution decision's
+delivery and cleanup backstop.
 
 Settings reload, battle-generation change, and unit removal clear all cached decisions. Hook
 installation is fail-closed: missing expected bytes or a partial hook family disables authored
 outcome control and preserves native behavior.
 
-`DclPreviewHitPctEnabled` publishes the cached authored percentage through the native forecast
+`DclPreviewHitPctEnabled` publishes the authored evaluation percentage through the native forecast
 copy hook. It cannot compose with a fixed `PreviewHitPctForcedValue`.
 
 ### DCL physical contest and managed physical multistrikes
+
+This subsection describes the earlier compatibility controller. Its calc/output hooks and exact 3d6
+enumeration remain reusable engine carriers. Its finite Parry pool and aggregate managed-multistrike
+state are not the canonical DCL transaction: the canonical model uses cumulative repeated-Parry
+penalties, one Block attempt, per-Strike state, target-local KO short-circuiting, and one outer
+Reaction window. A new integrated profile cannot treat the compatibility Guard pool as final DCL
+behavior.
 
 `DclPhysicalContestEnabled` replaces the generic percentage decision for actions selected by
 `DclPhysicalContestConditionFormula`. `DclAttackSkillFormula` supplies the attack target for a 3d6
@@ -1505,6 +2223,12 @@ Formula `0x6A` Barrage is marked `native_multistrike`: its fixed four native res
 this aggregate route, which would otherwise multiply four managed contests into each native repeat.
 
 ### DCL Magic Evade (`DclMagicEvadeEnabled`)
+
+This subsection describes an earlier compatibility experiment. The canonical DCL has no universal
+Magic Evade percentage. Magical defense is selected by the normalized delivery profile through
+casting classification, target SpellScore, Internal Direct Quick Contests, explicit active-defense
+legality, DR, Shell, and Reflect. `DclMagicEvadeEnabled` remains outside the canonical integrated
+profile.
 
 Magic Evade is an explicit hit-decision model for offensive magic. It runs after the physical-model
 applicability check and before the generic `DclHitChanceFormula` fallback.
@@ -1635,11 +2359,14 @@ patch that neutralizes the shared native counters plus complete DCL rule coverag
 of those bits. `build_dcl_status_counter_patch.py` requires the candidate runtime settings and calls
 the complete producer/category/policy validator before writing any XML; missing, duplicate, zero-turn,
 or semantically incompatible owners fail before a counter patch exists. The paired artifact validator
-then binds the runtime settings and minimal `StatusEffectData` patch by hash. The Disable/Immobilize
-pair owns fourteen ability/status producers across twelve abilities. This is exclusive mechanism
-ownership even when final per-source duration values remain balance inputs. Doom is a lifecycle
-exception: its native counter ends in KO and cannot use the generic clear-on-expiry transaction;
-`Empty_32` is a system row and is also excluded from generic transfer.
+then binds the runtime settings and minimal `StatusEffectData` patch by hash. **Proven
+fail-closed:** generic Disable/Immobilize counter transfer is inactive while any producer of the
+shared bits lacks an authored status nature, resistance category, and positive owned duration. The
+active integrated profile therefore omits a `status_duration_pair`; DCL-owned custom durations may
+still clear their own authored state bits, while the native Disable/Immobilize counters remain
+engine-owned. Doom is a lifecycle exception: its native counter ends in KO and cannot use the
+generic clear-on-expiry transaction; `Empty_32` is a system row and is also excluded from generic
+transfer.
 
 Physical-status resistance formulas use `target.baseHp`, not `target.maxHp`. The runtime derives it
 from the `+0x32` MaxHP word minus the catalog HP bonuses of the proven head/body item words; the

@@ -272,6 +272,13 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
 
+    if args.pair is None:
+        print(
+            "ERROR: no active integrated runtime/data pair is defined; "
+            "pass --pair explicitly after building a current pair"
+        )
+        return 1
+
     pair_path = args.pair.resolve()
     try:
         validate_pair(pair_path)

@@ -95,49 +95,41 @@ internal static class DclPhysicalContest
             defense.Kind, defense.Target, defense.Kind == DclDefenseKind.None ? -1 : defenseRoll);
     }
 
-    public static int HitChancePercent(int attackSkill, DclDefenseOption defense)
+    public static DclExactProbability HitProbability(int attackSkill, DclDefenseOption defense)
     {
         int hits = 0;
-        int outcomes = 0;
-        for (int a = 1; a <= 6; a++)
-        for (int b = 1; b <= 6; b++)
-        for (int c = 1; c <= 6; c++)
+        int defenseOutcomes = defense.Kind == DclDefenseKind.None ? 1 : 216;
+        int defenseSuccesses = defense.Kind == DclDefenseKind.None
+            ? 0
+            : DclSuccessRoll.SuccessOutcomeCount(defense.Target);
+        for (int attackRoll = DclSuccessRoll.MinRoll;
+             attackRoll <= DclSuccessRoll.MaxRoll;
+             attackRoll++)
         {
-            int attackRoll = a + b + c;
+            int attackMultiplicity = DclSuccessRoll.OutcomeMultiplicity(attackRoll);
             if (IsCritical(attackRoll, attackSkill))
             {
-                int multiplicity = defense.Kind == DclDefenseKind.None ? 1 : 216;
-                hits += multiplicity;
-                outcomes += multiplicity;
+                hits += attackMultiplicity * defenseOutcomes;
                 continue;
             }
 
-            if (IsFumble(attackRoll, attackSkill) || !DclSuccessRoll.Succeeds(attackRoll, attackSkill))
-            {
-                outcomes += defense.Kind == DclDefenseKind.None ? 1 : 216;
+            if (!DclSuccessRoll.Succeeds(attackRoll, attackSkill))
                 continue;
-            }
 
             if (defense.Kind == DclDefenseKind.None)
             {
-                hits++;
-                outcomes++;
+                hits += attackMultiplicity;
                 continue;
             }
 
-            for (int d = 1; d <= 6; d++)
-            for (int e = 1; e <= 6; e++)
-            for (int f = 1; f <= 6; f++)
-            {
-                int defenseRoll = d + e + f;
-                if (!DclSuccessRoll.Succeeds(defenseRoll, defense.Target))
-                    hits++;
-                outcomes++;
-            }
+            hits += attackMultiplicity * (216 - defenseSuccesses);
         }
 
-        return outcomes == 0 ? 0 : (hits * 100 + outcomes / 2) / outcomes;
+        return new DclExactProbability(hits, 216 * defenseOutcomes);
     }
+
+    public static int HitChancePercent(int attackSkill, DclDefenseOption defense)
+        => HitProbability(attackSkill, defense).RoundWholePercent();
 }
 
 internal sealed class DclGuardPool

@@ -808,6 +808,16 @@ can continue into it; the outer result producer advances the index only after it
 sweep. The calc-entry value is therefore the value consumed by the native selector on that
 invocation.
 
+Canonical outer-action admission captures both the selected item id and normalized hand for every
+weapon sweep. `NativeRepeat` index zero is `Primary`; index one of a two-Strike sequence is
+`OffHand`; sequences longer than two remain `Primary`. Keeping the hand as a separate identity is
+required even when both equipment slots contain the same item id. Composition maps the normalized
+hand back to the frozen physical equipment slot: a lone left-slot weapon promoted by the native
+initializer remains bound to `left-weapon`, not a fabricated right slot. Native item zero is the
+explicit unarmed profile and retains a limb resource rather than becoming an absent identity. The
+captured pair is immutable within that Strike and must agree with the synchronized equipment
+snapshot before physical composition.
+
 **Proven live:** completed mixed Iga Blade (`17`) / Koga Blade (`18`) Dual Wield pairs retain payload
 `18` in both calculation rows while carrying index/item `0/17` then `1/18`. A synthetic Counter pair
 can retain the preceding Throw payload `124`. Payload equality is therefore not hand equality.
@@ -874,6 +884,28 @@ This is stronger than any forecast target, `r8`, CT guess, or UI focus state.
 Noise: the hook can also see credit/heal-like staged events where `oldDebit=0` and `oldCredit>0`.
 Damage code must explicitly require a positive staged debit unless intentionally handling
 healing/credit events.
+
+#### Post-target state-apply convergence — **Strong / static-proven**
+
+The same state-apply routine has a common epilogue at RVA `0x30AB4D`:
+
+```text
+Expected bytes: 48 8B 5C 24 60 48 8B 6C 24 70
+r14d = exact battle-unit slot supplied to state-apply
+HP/MP clamp, writes, status/lifecycle tail = complete before this boundary
+```
+
+The entry rejects slots outside `0..20`, derives the live unit at `BattleUnitTable + slot*0x200`,
+and converges on this epilogue after either the ordinary HP/MP/status tail or a guarded early exit.
+The canonical post-apply owner therefore requires a terminal target/Strike ticket reserved at
+pre-clamp and exact post-write HP/MP readback. An unmatched state-apply call is ignored. A mismatch
+in battle generation, unit identity, action identity, Strike order, or expected pools fails closed.
+
+This boundary orders a Drain source transfer and the action's source payment after the final target
+result. It does not acknowledge the later native Reaction window or presentation boundary. Direct
+live HP writes do not own the engine's KO lifecycle, so the runtime rejects a source effect or
+payment whose exact post-write HP is zero until a native lethal source-pool carrier is bound.
+`DclCanonicalPostApplyEnabled` is disabled by default while this epilogue callback awaits live proof.
 
 #### Staged target-CT delta — **Strong**
 
@@ -943,6 +975,59 @@ original one-target selection remains active. Each repeated calculation enters t
 formula and ordinary normal-attack postprocessor. **Strong:** Barrage is a target-stable four-result
 weapon transaction; live validation covers only downstream apply, presentation, hand identity, and
 reaction cadence.
+
+**Strong:** function `0x281CE8..0x282231` owns one complete native result-production sweep. It calls
+target-list builder `0x282754` with its local 21-byte list and reaches `0x281EF7` after that builder
+returns but before the first `computeActionResult` call. The loop then skips `0xFF` entries and
+calculates each retained target at `0x281F0D`. `0x281EF7` is therefore the earliest mapped boundary
+that exposes the complete native target batch for one sweep. After the loop, `0x2821EC` increments
+repeat index `0x7B0763`, compares repeat count `0x7B0762`, stores the new index, and publishes the
+continuation flag. The pre-increment index is the native Strike identity for that sweep.
+
+The order-record pointer passed to `computeActionResult` is `source unit + 0x1A0` and is reused by
+successive actions; it is not an outer-action identity. Canonical admission uses a battle-generation
+sweep serial instead. A nonrepeat state-`0x2A` sweep reserves one ActionInstance. A repeat index-zero
+state-`0x2A` sweep reserves one ActionInstance and exact count/source/action/target batch; contiguous
+state-`0x2F` indexes reuse it or fail closed. `RandomFire` cannot use this canonical admission until
+the DCL owns the complete repeated target sequence before the first result, because its native
+selector chooses only one target immediately before each separate sweep.
+
+**Proven live:** execution reads the selected-unit byte at RVA `0x7B0792` at `0x281E36`,
+immediately before affected-target expansion. This value is distinct from the expanded TargetBatch:
+it can name the selected unit or area-center unit, while the builder produces every affected unit.
+Unit-targeted Fire can publish `selected=<slot A>` while the complete TargetBatch publishes
+`targets=<slot B>` for the admitted target. Canonical admission retains the selected-unit value as
+diagnostic/policy input, but unit-target composition uses the complete TargetBatch as
+declared-target authority unless a family explicitly owns stricter selected-unit semantics. Area
+membership and reflected resolution targets remain separate identities.
+
+**Proven:** the source order record carries the separately selected tile as three signed words:
+X at `unit/order+0x1AC` (`order+0x0C`), map level at `+0x1AE` (`order+0x0E`), and Y at
+`+0x1B0` (`order+0x10`). Native source retargeting copies `unit+0x4F`, `unit+0x51.bit7`, and
+`unit+0x50` into those fields. Canonical admission retains the normalized `DclBattleTile` across
+every native repeat. A changed tuple fails repeat continuity. For `TargetMode=Unit`, classified
+composition requires the tuple to equal the frozen declared target's tile. Reflection may change the
+affected resolution target, but it does not change this declaration identity.
+
+At `0x281EF7`, `r14` is the source `unit+0x1A0` order record and `[rbp-0x28]` addresses the complete
+21-byte local target list. The disabled-by-default canonical admission hook installs at `0x281EFA`,
+after `rbx` has been loaded from `r13` and before a target-index read, validates the fixed bytes
+beginning `8A 54 1D D8 80 FA FF 74 0F`, and preserves the native registers, flags, and target list.
+**Proven live:** one ordinary Fire admission can publish exactly one complete nonrepeat
+ActionInstance through the DirectNumeric template bridge with `Published` admission, `Built`
+template, `Published` ticket, and `Published` bridge status.
+Because that anchor is inside the 21-slot loop, the managed admission callback suppresses an
+identical source/action/repeat/selected-target/TargetBatch key seen again inside a short duplicate
+window; one native sweep can therefore publish only one canonical admission. Unbound native
+abilities are ignored by the admission hook rather than treated as identity divergence.
+The callback accepts only execution states `0x2A/0x2F`, live unit identities, a valid selected
+X/Y/map-level tuple, a complete item/hand pair for weapon Attack sweeps, and exact repeat
+continuity. A live identity absent from the battle registry is registered synchronously; a slot
+already owned by a different character fails closed. It copies each complete `0x200` source/target
+row at index zero and retains that
+deep copy for the whole outer action. Continuation sweeps validate identity but never replace the
+pre-calculation rows with pools or states already changed by an earlier Strike. It does not modify
+native selection or calculation.
 
 The 82 status actions in conditional formula families use a different carrier. Formula `0x0A`,
 `0x0B`, and ten special families can skip their native packet finalizer when a prerequisite or
@@ -1538,6 +1623,21 @@ rows for the same accepted commit and final source target. The pass-2 commit own
 cardinality. State `0x2C` owns delivered native transaction/strike cardinality, but neither boundary
 alone proves a visible animation. An idempotence token is required before any once-per-Reaction
 persistent mutation.
+
+The terminal Reaction-window boundary is the empty-queue convergence at RVA `0xD90CFA2`
+(**Strong / static-proven**). Dispatcher state `0x2F` enters trace handler `0xD90CDD2`, which calls
+queue `0x206344` at `0xD90CF99`. An accepted queue result returns `eax=1` and branches away; a zero
+result falls through to the sole call of post-chain cleanup `0x206050` at `0xD90CFA2`. That cleanup
+resolves the current execution actor, calls resume owner `0x205F28`, and writes dispatcher state
+`0x28`. The same handler runs after the ordinary outer action and after each delivered Reaction, so
+the first empty scan and the terminal empty scan after a chain share this boundary. Pass-2 cannot
+replace it because an empty window has no accepted commit.
+
+At `0xD90CFA2`, `rbx` retains the current execution actor and `eax` is zero; actor/list cleanup has
+not started. After a Reaction chain the current actor is the final reactor rather than necessarily
+the original source. A canonical completion guard therefore uses the battle generation and one
+already-payment-committed ledger ticket, not source/actor equality. The exact hook-and-return anchor
+bytes are `E8 A9 90 8F F2 48 8B 5C 24`. Live installation remains disabled by default.
 
 **Proven live:** the two Dual Wield calculation transactions are an outer-sweep state-`0x2A` row
 followed by an outer-sweep state-`0x2F` row with the same caster, action type, ability, order payload,

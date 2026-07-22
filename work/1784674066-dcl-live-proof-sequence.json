@@ -1,0 +1,77 @@
+{
+  "schemaRevision": 1,
+  "note": "Job-free DCL live proof sequence. Live tests are allowed only after offline gates pass; jobs and draft balance are out of scope.",
+  "job_free": true,
+  "ignores_jobs": true,
+  "live_tests_only_after_offline_exhausted": true,
+  "retired_controls_forbidden": [
+    "DclApproachEnabled",
+    "DclFearControlEnabled",
+    "DclFearForcedFleeControlEnabled",
+    "DclFearPlayerConfirmEnforcementEnabled"
+  ],
+  "proofs": [
+    {
+      "id": "canonical-admission-template-bridge",
+      "status": "proven-live",
+      "stage": "live-observe",
+      "job_free": true,
+      "writes_save": false,
+      "depends_on": [],
+      "purpose": "Prove that the guarded 0x281EFA native admission callback captures one complete ordinary Fire target sweep, builds the DirectNumeric policy-ticket template, and publishes it through the retained bridge.",
+      "fixture": "Enhanced through Reloaded-II, tagged autosave fixture work/1784092904-fft-autoenhanced-snapshot.png, sentinel settings work/1784673033-battle-runtime-settings.canonical-admission-sentinel.json, exactly one ordinary Fire ability 16 on one target.",
+      "preflight_commands": [
+        "python tools/analyze_dcl_canonical_admission_probe_readiness.py --check-only",
+        "powershell -ExecutionPolicy Bypass -File codemod/prepare-canonical-admission-live.ps1 -DryRun"
+      ],
+      "prepare_command": "powershell -ExecutionPolicy Bypass -File codemod/prepare-canonical-admission-live.ps1 -AutosaveSnapshot work/1784092904-fft-autoenhanced-snapshot.png",
+      "collect_command": "python tools/collect_dcl_canonical_admission_live_log.py",
+      "analysis_command": "python tools/analyze_dcl_canonical_admission_template_live.py work/<timestamp>-raw-canonical-admission-live.log",
+      "expected_artifacts": [
+        "work/<timestamp>-raw-canonical-admission-live.log",
+        "work/<timestamp>-canonical-admission-template-live-analysis.md"
+      ],
+      "pass_evidence": [
+        "[DCL-CANONICAL-ADMISSION-HOOK] rva=0x281EFA appears in the fresh log.",
+        "[DCL-STATE-RESET] reports canonicalBattle=1.",
+        "Exactly one complete ability=16 targetCount=1 strikes=1 admission appears.",
+        "The completed admission reports admissionStatus=Published, templateStatus=Built, ticketStatus=Published, and bridgeStatus=Published.",
+        "No [DCL-CANONICAL-ADMISSION-ERR] appears.",
+        "Passing artifacts: work/1784693279-raw-canonical-admission-live.log and work/1784693279-canonical-admission-template-live-analysis.md."
+      ],
+      "blocks": [
+        "integrated-clean-regression"
+      ]
+    },
+    {
+      "id": "integrated-clean-regression",
+      "status": "planned",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "depends_on": [
+        "canonical-admission-template-bridge"
+      ],
+      "purpose": "Run the broad job-free active integrated regression only after native admission has live proof and a current integrated runtime/data pair exists.",
+      "fixture": "Active integrated runtime/data pair work/1784683300-dcl-active-integrated-runtime-data-pair.json and live regression matrix work/1784683300-dcl-active-integrated-live-regression-matrix.json; retired duration-transfer pairs and historical clean-v1 profiles are excluded from active live gates.",
+      "preflight_commands": [
+        "python tools/validate_dcl_live_proof_sequence.py",
+        "python tools/analyze_dcl_status_duration_frontier.py --check-only",
+        "python tools/validate_dcl_live_regression_matrix.py work/1784683300-dcl-active-integrated-live-regression-matrix.json"
+      ],
+      "prepare_command": "",
+      "collect_command": "",
+      "analysis_command": "python tools/validate_dcl_live_regression_matrix.py work/1784683300-dcl-active-integrated-live-regression-matrix.json",
+      "expected_artifacts": [
+        "work/1784683300-dcl-active-integrated-live-regression-matrix.json",
+        "work/1784683300-dcl-active-integrated-runtime-data-pair.json"
+      ],
+      "pass_evidence": [
+        "The active integrated live regression matrix validates against the current DCL status-duration frontier.",
+        "The active runtime/data pair validates without retired Fear/Approach controls or historical Disable/Immobilize duration-transfer manifests.",
+        "All required job-free mechanism tags are covered by passing case evidence."
+      ],
+      "blocks": []
+    }
+  ]
+}

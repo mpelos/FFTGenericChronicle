@@ -15,7 +15,8 @@ internal readonly record struct DclComputedNumericResult(
     int HpCredit,
     int MpDebit,
     int MpCredit,
-    byte ResultFlags);
+    byte ResultFlags,
+    DclCanonicalNativeApplyReservation? CanonicalReservation = null);
 
 /// <summary>
 /// Holds the one consumer-visible numeric result produced for a confirmed execution target at the

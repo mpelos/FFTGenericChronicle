@@ -2,8 +2,6 @@ namespace fftivc.generic.chronicle.codemod;
 
 internal static class FormulaRuntimeContextBuilder
 {
-    private static readonly int[] JobLevelTotalJpThresholds = [0, 200, 400, 700, 1100, 1600, 2200, 3000];
-
     private static readonly (string Name, int ByteIndex, int Mask)[] StatusBits =
     [
         ("crystal", 0, 0x40), ("ko", 0, 0x20), ("undead", 0, 0x10), ("charging", 0, 0x08),
@@ -323,7 +321,7 @@ internal static class FormulaRuntimeContextBuilder
         context.Set($"{prefix}.jobIndex", Math.Max(0, jobIndex));
         context.Set($"{prefix}.jobJp", spendableJp);
         context.Set($"{prefix}.jobTotalJp", totalJp);
-        context.Set($"{prefix}.jobLevel", jobIndex is >= 0 and < 23 ? JobLevelFromTotalJp(totalJp) : 0);
+        context.Set($"{prefix}.jobLevel", jobIndex is >= 0 and < 23 ? DclSkillRules.NativeJobLevelFromTotalJp(totalJp) : 0);
         context.Set($"{prefix}.innateAbilityId1", U16(0x0A));
         context.Set($"{prefix}.innateAbilityId2", U16(0x0C));
         context.Set($"{prefix}.innateAbilityId3", U16(0x0E));
@@ -411,15 +409,5 @@ internal static class FormulaRuntimeContextBuilder
     }
 
     internal static int JobLevelFromTotalJp(int totalJp)
-    {
-        totalJp = Math.Max(0, totalJp);
-        int level = 1;
-        for (int i = 1; i < JobLevelTotalJpThresholds.Length; i++)
-        {
-            if (totalJp < JobLevelTotalJpThresholds[i])
-                break;
-            level = i + 1;
-        }
-        return level;
-    }
+        => DclSkillRules.NativeJobLevelFromTotalJp(totalJp);
 }

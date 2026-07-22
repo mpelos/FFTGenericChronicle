@@ -1,0 +1,33 @@
+{
+  "schemaRevision": 1,
+  "bindings": [
+    {
+      "reactionId": "canonical.reaction.activation-roll",
+      "nativeReactionAbilityId": 442,
+      "nativeEffectAbilityId": 358,
+      "effectActionId": "physical.barrage.test",
+      "effectProfileRevision": 1
+    },
+    {
+      "reactionId": "canonical.reaction.automatic",
+      "nativeReactionAbilityId": 442,
+      "nativeEffectAbilityId": 358,
+      "effectActionId": "physical.barrage.test",
+      "effectProfileRevision": 1
+    },
+    {
+      "reactionId": "canonical.reaction.native-cardinality",
+      "nativeReactionAbilityId": 442,
+      "nativeEffectAbilityId": 358,
+      "effectActionId": "physical.barrage.test",
+      "effectProfileRevision": 1
+    },
+    {
+      "reactionId": "canonical.reaction.skill-response",
+      "nativeReactionAbilityId": 442,
+      "nativeEffectAbilityId": 358,
+      "effectActionId": "physical.barrage.test",
+      "effectProfileRevision": 1
+    }
+  ]
+}

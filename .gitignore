@@ -40,6 +40,8 @@ work/*-before-restore.png
 codemod/**/bin/
 codemod/**/obj/
 codemod/**/_build/
+codemod/**/.dcl-smoke-*/
+codemod/**/artifacts/
 
 # === Regenerable reviewer outputs (re-created by running work/*_check.py) ===
 work/claude-*.json

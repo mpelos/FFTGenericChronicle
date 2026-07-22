@@ -1,0 +1,2091 @@
+{
+  "schemaRevision": 4,
+  "actions": [
+    {
+      "actionId": "spell.targeting.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "externalProjectile",
+        "dodgeable": true,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "manifestation",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": true,
+        "shellSensitive": true
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "fixed",
+        "fixedExpression": "2d6",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "crushing",
+        "element": "fire",
+        "elementBoostMultiplier": "1",
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.healing.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "beneficial",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "healing",
+        "basis": "fixed",
+        "fixedExpression": "3d6\u002B2",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "healing",
+          "role": "carrier",
+          "eligibleTargetStates": "alive, undead",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "maximizeOneHealingDie",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.status.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "internalDirect",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "will",
+        "armorPolicy": "internalSpiritual",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "statusApplication",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-status-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.damage-rider.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "externalProjectile",
+        "dodgeable": true,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "manifestation",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": true,
+        "shellSensitive": true
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "fixed",
+        "fixedExpression": "2d6",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "crushing",
+        "element": "fire",
+        "elementBoostMultiplier": "1",
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        },
+        {
+          "kind": "statusApplication",
+          "role": "rider",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-status-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.dispel.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "internalDirect",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "authored",
+        "armorPolicy": "internalSpiritual",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "dispel",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "explicit",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": {
+        "scope": "allEligible",
+        "eligibleCureFamilies": [
+          "dispel"
+        ],
+        "sourceMatchedOnly": false
+      },
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.status-removal.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "beneficial",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "statusRemoval",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-status-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "spell.quick.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "beneficial",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "fixedResource",
+        "resource": "ct",
+        "expression": "100"
+      },
+      "effects": [
+        {
+          "kind": "ctChange",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        },
+        {
+          "kind": "statusApplication",
+          "role": "independent",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-quick-lock-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTarget",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "system.ready.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "other",
+        "verbal": false
+      },
+      "skillProfile": {
+        "governingSkillId": null,
+        "skillModifier": 0,
+        "sourceJobId": null,
+        "zodiacSensitive": false
+      },
+      "resourceProfile": {
+        "baseMpCost": 0,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "forbidden"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 0,
+        "castCtModifier": 0,
+        "concentrationRequired": false
+      },
+      "targetProfile": {
+        "targetMode": "caster",
+        "allegiancePolicy": "casterSide",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 0,
+        "rangeMax": 0,
+        "verticalTolerance": 0,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "other",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "effectOwned",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "mechanismOwned",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": "universal.ready"
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "none",
+        "targetGateCardinality": "perAction",
+        "magnitudeRollCardinality": "shared",
+        "withinActionApplication": "immediate"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "ready",
+        "chargePresentation": null,
+        "resultText": "Ready",
+        "forecastTerms": [],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "ready"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "system.reequip.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "other",
+        "verbal": false
+      },
+      "skillProfile": {
+        "governingSkillId": null,
+        "skillModifier": 0,
+        "sourceJobId": null,
+        "zodiacSensitive": false
+      },
+      "resourceProfile": {
+        "baseMpCost": 0,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "forbidden"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 0,
+        "castCtModifier": 0,
+        "concentrationRequired": false
+      },
+      "targetProfile": {
+        "targetMode": "caster",
+        "allegiancePolicy": "casterSide",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 0,
+        "rangeMax": 0,
+        "verticalTolerance": 0,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "other",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "effectOwned",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "reequip",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "none",
+        "targetGateCardinality": "perAction",
+        "magnitudeRollCardinality": "shared",
+        "withinActionApplication": "immediate"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "reequip",
+        "chargePresentation": null,
+        "resultText": "Reequip",
+        "forecastTerms": [],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "ready"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "system.stand-up.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "other",
+        "verbal": false
+      },
+      "skillProfile": {
+        "governingSkillId": null,
+        "skillModifier": 0,
+        "sourceJobId": null,
+        "zodiacSensitive": false
+      },
+      "resourceProfile": {
+        "baseMpCost": 0,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "forbidden"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": true,
+        "baseCastCt": 0,
+        "castCtModifier": 0,
+        "concentrationRequired": false
+      },
+      "targetProfile": {
+        "targetMode": "caster",
+        "allegiancePolicy": "casterSide",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 0,
+        "rangeMax": 0,
+        "verticalTolerance": 0,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "other",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "effectOwned",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": null,
+      "effects": [
+        {
+          "kind": "mechanismOwned",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": "universal.stand-up"
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "none",
+        "targetGateCardinality": "perAction",
+        "magnitudeRollCardinality": "shared",
+        "withinActionApplication": "immediate"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "stand-up",
+        "chargePresentation": null,
+        "resultText": "Stand Up",
+        "forecastTerms": [],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "ready"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "physical.barrage.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "physical",
+        "verbal": false
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 0,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "forbidden"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 0,
+        "castCtModifier": 0,
+        "concentrationRequired": false
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 1,
+        "verticalTolerance": 3,
+        "visionRequired": true,
+        "physicalRoute": "nativeDirect",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "physicalAttack",
+        "dodgeable": true,
+        "parryable": true,
+        "blockable": true,
+        "usesDefenseBonus": true,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "swing",
+        "fixedExpression": null,
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "cutting",
+        "element": null,
+        "elementBoostMultiplier": null,
+        "faithPolicy": "none"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 4,
+        "castingRollCardinality": "none",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "physical.ranged.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "physical",
+        "verbal": false
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 0,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "forbidden"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 0,
+        "castCtModifier": 0,
+        "concentrationRequired": false
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": true,
+        "physicalRoute": "nativeArc",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "physicalAttack",
+        "dodgeable": true,
+        "parryable": true,
+        "blockable": true,
+        "usesDefenseBonus": true,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "thrust",
+        "fixedExpression": null,
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "impaling",
+        "element": null,
+        "elementBoostMultiplier": null,
+        "faithPolicy": "none"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "none",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "magic.area.multi.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": {
+          "centerMode": "trackedUnit",
+          "shape": "diamond",
+          "size": 1,
+          "deliveryGate": "dodge"
+        }
+      },
+      "deliveryProfile": {
+        "delivery": "area",
+        "dodgeable": true,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "manifestation",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": true,
+        "shellSensitive": true
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "fixed",
+        "fixedExpression": "1d6",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "crushing",
+        "element": "lightning",
+        "elementBoostMultiplier": "1",
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 3,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "magic.area.healing.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": {
+          "centerMode": "trackedUnit",
+          "shape": "diamond",
+          "size": 1,
+          "deliveryGate": "none"
+        }
+      },
+      "deliveryProfile": {
+        "delivery": "area",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "healing",
+        "basis": "fixed",
+        "fixedExpression": "3d6\u002B2",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "healing",
+          "role": "carrier",
+          "eligibleTargetStates": "alive, undead",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTarget",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "maximizeOneHealingDie",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "magic.area.status-rider.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "enemiesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": {
+          "centerMode": "trackedUnit",
+          "shape": "diamond",
+          "size": 1,
+          "deliveryGate": "dodge"
+        }
+      },
+      "deliveryProfile": {
+        "delivery": "area",
+        "dodgeable": true,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "manifestation",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": true,
+        "shellSensitive": true
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "damage",
+        "basis": "fixed",
+        "fixedExpression": "1d6",
+        "integerModifier": 0,
+        "wholeDiceModifier": 0,
+        "damageType": "crushing",
+        "element": "lightning",
+        "elementBoostMultiplier": "1",
+        "faithPolicy": "both"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        },
+        {
+          "kind": "statusApplication",
+          "role": "rider",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-status-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 3,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perStrike",
+        "magnitudeRollCardinality": "perTargetPerStrike",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "deliveryDefault",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": null,
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "lifecycle.raise.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "ko, undead",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "beneficial",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "fixedResource",
+        "resource": "hp",
+        "expression": "2d6\u002B2"
+      },
+      "effects": [
+        {
+          "kind": "revive",
+          "role": "carrier",
+          "eligibleTargetStates": "ko, undead",
+          "undeadInteraction": "normal",
+          "referencedStateKind": null,
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTarget",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": {
+        "eligibleTargetStates": "ko, undead",
+        "mode": "immediate",
+        "faithAxis": "restoredHp",
+        "paysForBothFaithAxes": false,
+        "undeadFamily": "raiseOrArise"
+      },
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    },
+    {
+      "actionId": "lifecycle.reraise.test",
+      "profileRevision": 1,
+      "sourceProfile": {
+        "source": "spell",
+        "verbal": true
+      },
+      "skillProfile": {
+        "governingSkillId": 1,
+        "skillModifier": 0,
+        "sourceJobId": 2,
+        "zodiacSensitive": true
+      },
+      "resourceProfile": {
+        "baseMpCost": 10,
+        "mpCostMultiplier": "1",
+        "overcastPolicy": "allowed"
+      },
+      "timingProfile": {
+        "consumesAction": true,
+        "consumesMovement": false,
+        "baseCastCt": 4,
+        "castCtModifier": 0,
+        "concentrationRequired": true
+      },
+      "targetProfile": {
+        "targetMode": "unit",
+        "allegiancePolicy": "alliesOnly",
+        "eligibleTargetStates": "alive",
+        "rangeMin": 1,
+        "rangeMax": 5,
+        "verticalTolerance": 3,
+        "visionRequired": false,
+        "physicalRoute": "none",
+        "area": null
+      },
+      "deliveryProfile": {
+        "delivery": "beneficial",
+        "dodgeable": false,
+        "parryable": false,
+        "blockable": false,
+        "usesDefenseBonus": false,
+        "resistanceCharacteristic": "none",
+        "armorPolicy": "none",
+        "armorDivisor": null,
+        "locationPolicy": "normalCombined",
+        "reflectable": false,
+        "shellSensitive": false
+      },
+      "magnitudeProfile": {
+        "magnitudeKind": "fixedResource",
+        "resource": "hp",
+        "expression": "2d6\u002B2"
+      },
+      "effects": [
+        {
+          "kind": "revive",
+          "role": "carrier",
+          "eligibleTargetStates": "alive",
+          "undeadInteraction": "normal",
+          "referencedStateKind": "canonical-reraise-test",
+          "mechanismId": null
+        }
+      ],
+      "transactionProfile": {
+        "strikeCount": 1,
+        "castingRollCardinality": "perAction",
+        "targetGateCardinality": "perTarget",
+        "magnitudeRollCardinality": "perTarget",
+        "withinActionApplication": "deferred"
+      },
+      "criticalProfile": {
+        "successEffect": "none",
+        "failureEffect": "missOnly"
+      },
+      "presentationProfile": {
+        "actionAnimation": "test-spell",
+        "chargePresentation": "charging",
+        "resultText": "Test spell",
+        "forecastTerms": [
+          "SpellScore",
+          "Cost",
+          "CastCT"
+        ],
+        "statePresentationIds": []
+      },
+      "aiProfile": {
+        "legalUsePolicy": "standard",
+        "outcomeTags": [
+          "damage"
+        ],
+        "expectedValuePolicy": "exact",
+        "friendlyFirePolicy": "forbidden"
+      },
+      "reviveProfile": {
+        "eligibleTargetStates": "alive",
+        "mode": "storedReraise",
+        "faithAxis": "success",
+        "paysForBothFaithAxes": false,
+        "undeadFamily": "reraise"
+      },
+      "dispelProfile": null,
+      "resourceChangeProfile": null,
+      "forcedMovementProfile": null
+    }
+  ],
+  "states": [
+    {
+      "kind": "canonical-status-test",
+      "nativeStatusBit": {
+        "byteIndex": 1,
+        "mask": 2
+      },
+      "sourceRequired": true,
+      "resistanceGate": "quickContest",
+      "immunityFamily": "canonical-status-test",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-status-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "globalCt",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [
+        "dispel"
+      ],
+      "payloadSchema": "payload.canonical-status-test",
+      "mechanicalRules": "mechanics.canonical-status-test",
+      "presentationProfile": "presentation.canonical-status-test",
+      "aiProfile": "ai.canonical-status-test"
+    },
+    {
+      "kind": "canonical-reraise-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-reraise-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "usesOrTriggers",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [
+        "dispel"
+      ],
+      "payloadSchema": "payload.canonical-reraise-test",
+      "mechanicalRules": "mechanics.canonical-reraise-test",
+      "presentationProfile": "presentation.canonical-reraise-test",
+      "aiProfile": "ai.canonical-reraise-test"
+    },
+    {
+      "kind": "canonical-dispel-weak-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "strongestWins",
+      "stackKey": "canonical-dispel-weak-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "globalCt",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": "resolved-strength",
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [
+        "dispel"
+      ],
+      "payloadSchema": "payload.canonical-dispel-weak-test",
+      "mechanicalRules": "mechanics.canonical-dispel-weak-test",
+      "presentationProfile": "presentation.canonical-dispel-weak-test",
+      "aiProfile": "ai.canonical-dispel-weak-test"
+    },
+    {
+      "kind": "canonical-dispel-strong-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "strongestWins",
+      "stackKey": "canonical-dispel-strong-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "globalCt",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": "resolved-strength",
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [
+        "dispel"
+      ],
+      "payloadSchema": "payload.canonical-dispel-strong-test",
+      "mechanicalRules": "mechanics.canonical-dispel-strong-test",
+      "presentationProfile": "presentation.canonical-dispel-strong-test",
+      "aiProfile": "ai.canonical-dispel-strong-test"
+    },
+    {
+      "kind": "canonical-quick-lock-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-quick-lock-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "explicitCommand",
+        "formula": null
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [],
+      "payloadSchema": "payload.canonical-quick-lock-test",
+      "mechanicalRules": "mechanics.canonical-quick-lock-test",
+      "presentationProfile": "presentation.canonical-quick-lock-test",
+      "aiProfile": "ai.canonical-quick-lock-test"
+    },
+    {
+      "kind": "canonical-knocked-down-test",
+      "nativeStatusBit": null,
+      "sourceRequired": false,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-knocked-down-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "explicitCommand",
+        "formula": null
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [],
+      "payloadSchema": "payload.canonical-knocked-down-test",
+      "mechanicalRules": "mechanics.canonical-knocked-down-test",
+      "presentationProfile": "presentation.canonical-knocked-down-test",
+      "aiProfile": "ai.canonical-knocked-down-test"
+    },
+    {
+      "kind": "canonical-overwatch-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-overwatch-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "usesOrTriggers",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [],
+      "payloadSchema": "payload.canonical-overwatch-test",
+      "mechanicalRules": "mechanics.canonical-overwatch-test",
+      "presentationProfile": "presentation.canonical-overwatch-test",
+      "aiProfile": "ai.canonical-overwatch-test"
+    },
+    {
+      "kind": "canonical-protection-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-protection-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "usesOrTriggers",
+        "formula": "resolved-at-application"
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [],
+      "payloadSchema": "payload.canonical-protection-test",
+      "mechanicalRules": "mechanics.canonical-protection-test",
+      "presentationProfile": "presentation.canonical-protection-test",
+      "aiProfile": "ai.canonical-protection-test"
+    },
+    {
+      "kind": "canonical-bulwark-test",
+      "nativeStatusBit": null,
+      "sourceRequired": true,
+      "resistanceGate": "none",
+      "immunityFamily": "none",
+      "stackPolicy": "refresh",
+      "stackKey": "canonical-bulwark-test",
+      "stackCap": null,
+      "contributionKey": null,
+      "contributionReapplicationPolicy": null,
+      "duration": {
+        "clock": "explicitCommand",
+        "formula": null
+      },
+      "tickProfile": null,
+      "effectStrengthFormula": null,
+      "removeOnTargetKo": false,
+      "removeOnSourceKo": false,
+      "removeOnSourceLoss": false,
+      "cureFamilies": [],
+      "payloadSchema": "payload.canonical-bulwark-test",
+      "mechanicalRules": "mechanics.canonical-bulwark-test",
+      "presentationProfile": "presentation.canonical-bulwark-test",
+      "aiProfile": "ai.canonical-bulwark-test"
+    }
+  ],
+  "reactions": [
+    {
+      "reactionId": "canonical.reaction.automatic",
+      "trigger": "outer-action-committed",
+      "activationMode": "automaticTrigger",
+      "activationReference": null,
+      "activationModifier": 0,
+      "eligibilityAndAwareness": "reactor-eligible-and-aware",
+      "binding": "reactorToSource",
+      "effectActionId": "physical.barrage.test",
+      "legalDelivery": "physical-attack",
+      "cardinality": "oncePerWindow",
+      "cost": {
+        "mp": 0,
+        "hp": 0,
+        "itemUses": 0,
+        "cooldownUses": 0,
+        "isFree": true
+      },
+      "finiteUses": null,
+      "failureBehavior": "no-effect",
+      "presentation": "automatic-test"
+    },
+    {
+      "reactionId": "canonical.reaction.skill-response",
+      "trigger": "outer-action-committed",
+      "activationMode": "skillResponse",
+      "activationReference": null,
+      "activationModifier": 0,
+      "eligibilityAndAwareness": "reactor-eligible-and-aware",
+      "binding": "reactorToSource",
+      "effectActionId": "physical.barrage.test",
+      "legalDelivery": "physical-attack",
+      "cardinality": "oncePerWindow",
+      "cost": {
+        "mp": 0,
+        "hp": 0,
+        "itemUses": 0,
+        "cooldownUses": 0,
+        "isFree": true
+      },
+      "finiteUses": null,
+      "failureBehavior": "no-effect",
+      "presentation": "skill-response-test"
+    },
+    {
+      "reactionId": "canonical.reaction.activation-roll",
+      "trigger": "outer-action-committed",
+      "activationMode": "activationRoll",
+      "activationReference": {
+        "kind": "dx",
+        "namedSkillId": null
+      },
+      "activationModifier": 1,
+      "eligibilityAndAwareness": "reactor-eligible-and-aware",
+      "binding": "reactorToSource",
+      "effectActionId": "physical.barrage.test",
+      "legalDelivery": "physical-attack",
+      "cardinality": "oncePerWindow",
+      "cost": {
+        "mp": 0,
+        "hp": 0,
+        "itemUses": 0,
+        "cooldownUses": 0,
+        "isFree": true
+      },
+      "finiteUses": null,
+      "failureBehavior": "no-effect",
+      "presentation": "activation-roll-test"
+    },
+    {
+      "reactionId": "canonical.reaction.native-cardinality",
+      "trigger": "outer-action-committed",
+      "activationMode": "automaticTrigger",
+      "activationReference": null,
+      "activationModifier": 0,
+      "eligibilityAndAwareness": "reactor-eligible-and-aware",
+      "binding": "reactorToSource",
+      "effectActionId": "physical.barrage.test",
+      "legalDelivery": "physical-attack",
+      "cardinality": "native",
+      "cost": {
+        "mp": 0,
+        "hp": 0,
+        "itemUses": 0,
+        "cooldownUses": 0,
+        "isFree": true
+      },
+      "finiteUses": null,
+      "failureBehavior": "no-effect",
+      "presentation": "native-cardinality-test"
+    }
+  ]
+}

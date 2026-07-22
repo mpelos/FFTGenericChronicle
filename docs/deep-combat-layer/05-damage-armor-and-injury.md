@@ -285,6 +285,10 @@ The DCL omits GURPS's post-knockback balance roll. A displaced target makes no D
 knockback never applies Knocked Down. Tile legality, displacement over an edge, landing, and fall
 damage retain native FFT behavior; such vertical movement is not the DCL Knocked Down posture.
 
+The requested critical-knockback distance enters the same settled ForcedMovement carrier as an
+authored displacement. Forecast, AI, and execution consume one native map verdict; native path
+resolution cannot be replayed once per tile and cannot open an intermediate Reaction window.
+
 Forced movement exists only when the resolved skill or attack property declares it explicitly. It
 is a separate effect component rather than a consequence inferred from damage magnitude. The
 authored component supplies its direction, distance, and interaction with invalid destinations,

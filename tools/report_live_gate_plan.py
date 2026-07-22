@@ -4,10 +4,20 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-OUT = REPO / "work" / "live_gate_plan.md"
+OUT_GLOB = "*-live-gate-plan.md"
+
+
+def default_output() -> Path:
+    return REPO / "work" / f"{int(time.time())}-live-gate-plan.md"
+
+
+def latest_output() -> Path | None:
+    matches = sorted((REPO / "work").glob(OUT_GLOB), key=lambda path: path.name)
+    return matches[-1] if matches else None
 
 
 def build_report() -> str:
@@ -174,24 +184,29 @@ def build_report() -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate the controlled live-gate plan.")
     parser.add_argument("--check", action="store_true", help="Fail if the checked-in plan is stale.")
-    parser.add_argument("--output", type=Path, default=OUT, help=f"Output path. Default: {OUT}")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Output path. Default: work/<unix-timestamp>-live-gate-plan.md",
+    )
     args = parser.parse_args()
 
     report = build_report()
+    output = args.output or (latest_output() if args.check else default_output())
     if args.check:
-        if not args.output.exists():
-            print(f"missing report: {args.output}", file=sys.stderr)
+        if output is None or not output.exists():
+            print(f"missing report matching work/{OUT_GLOB}", file=sys.stderr)
             return 1
-        actual = args.output.read_text(encoding="utf-8")
+        actual = output.read_text(encoding="utf-8")
         if actual != report:
-            print(f"stale report: {args.output} (run python tools/report_live_gate_plan.py)", file=sys.stderr)
+            print(f"stale report: {output} (run python tools/report_live_gate_plan.py)", file=sys.stderr)
             return 1
         print("live gate plan is current")
         return 0
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report, encoding="utf-8", newline="\n")
-    print(f"wrote {args.output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(report, encoding="utf-8", newline="\n")
+    print(f"wrote {output}")
     return 0
 
 

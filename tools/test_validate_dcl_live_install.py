@@ -16,8 +16,12 @@ def digest(path: Path) -> str:
 
 def main() -> int:
     assert live.DEFAULT_PAIR == (
+        live.ROOT / "work/1784683300-dcl-active-integrated-runtime-data-pair.json"
+    )
+    assert live.HISTORICAL_CLEAN_V1_PAIR == (
         live.ROOT / "work/1784470893-dcl-unified-clean-v1-runtime-data-pair.json"
     )
+    assert live.DEFAULT_PAIR != live.HISTORICAL_CLEAN_V1_PAIR
     with tempfile.TemporaryDirectory() as raw:
         temp = Path(raw)
         settings = temp / "settings.json"

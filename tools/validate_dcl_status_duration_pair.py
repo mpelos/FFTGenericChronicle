@@ -219,20 +219,20 @@ def _validate_duration_owners(settings: dict[str, Any], neutralized: set[str]) -
         formula_lower = formula.lower()
         category = catalog_row["resist_category"]
         duration = int(rule.get("DurationTargetTurns", 0))
-        if category == "physical-body":
-            if "target.basehp" not in formula_lower and "t.basehp" not in formula_lower:
-                raise DurationPairError(f"physical duration owner {pair} must resist on target.baseHp")
-            if "target.maxhp" in formula_lower or "t.maxhp" in formula_lower:
-                raise DurationPairError(f"physical duration owner {pair} cannot resist on total MaxHP")
-            if duration != 1:
-                raise DurationPairError(f"physical Stun/Knockdown owner {pair} must last one target turn")
-        elif category == "magical-inverted":
-            has_faith = "target.maxfaith" in formula_lower or "t.maxfaith" in formula_lower
-            has_caster_ma = "attacker.ma" in formula_lower or "a.ma" in formula_lower
-            if not has_faith or not has_caster_ma:
-                raise DurationPairError(
-                    f"magical duration owner {pair} must combine inverse target Faith with caster MA"
-                )
+        if category == "physical-health":
+            if "target.ht" not in formula_lower and "t.ht" not in formula_lower:
+                raise DurationPairError(f"physical-health duration owner {pair} must resist on target HT")
+            if duration_policy := catalog_row.get("duration_policy"):
+                if duration_policy == "1-target-turn" and duration != 1:
+                    raise DurationPairError(
+                        f"physical Stun/Knockdown owner {pair} must last one target turn"
+                    )
+        elif category == "mental-will":
+            if "target.will" not in formula_lower and "t.will" not in formula_lower:
+                raise DurationPairError(f"mental-will duration owner {pair} must resist on target Will")
+        elif category == "beneficial":
+            if str(rule.get("ResistanceFormula", "")).strip():
+                raise DurationPairError(f"beneficial duration owner {pair} must not roll resistance")
         else:
             raise DurationPairError(f"duration owner {pair} has unsupported category {category}")
     return len(expected)

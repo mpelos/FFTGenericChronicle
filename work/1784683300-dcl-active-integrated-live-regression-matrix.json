@@ -1,0 +1,603 @@
+{
+  "note": "Canonical job-free exact clean active integrated technical regression matrix; it validates DCL combat mechanisms with retired Approach and Fear compatibility controls absent, native Disable/Immobilize counter transfer absent, and preserves no final balance or job-design claims.",
+  "runtime_data_pair": "work/1784683300-dcl-active-integrated-runtime-data-pair.json",
+  "runtime_data_pair_sha256": "AFE16C6D90E0C803B37A25477F15133F9D8093A7EC91E906C79E8E9AF2354EFE",
+  "settings_sha256": "F9C3A5BC2B70A07AF75AA25C52DA232FC320275A36362A270C70791BF6939830",
+  "preflight_command": "python tools/validate_dcl_live_install.py --pair work/1784683300-dcl-active-integrated-runtime-data-pair.json",
+  "writes_save": false,
+  "required_tags": [
+    "preflight",
+    "player-forecast",
+    "execution",
+    "ai-scoring",
+    "physical-single",
+    "facing",
+    "finite-guard",
+    "damage-types-dr",
+    "weapon-skill",
+    "dual-wield",
+    "managed-multistrike",
+    "native-multistrike",
+    "magic-single",
+    "magic-aoe",
+    "magic-evade",
+    "healing",
+    "undead-inversion",
+    "mp-budget",
+    "atomic-hp-mp",
+    "status-ordinary",
+    "status-retained",
+    "status-postcalc",
+    "status-grouped",
+    "status-randomfire",
+    "status-performance",
+    "duration-physical",
+    "duration-magical",
+    "taunt",
+    "interrupt",
+    "instant-ko",
+    "revive-corpse",
+    "reaction-real",
+    "reaction-vm",
+    "reaction-synthetic",
+    "final-tile",
+    "weapon-los",
+    "weight-move",
+    "lifecycle-reset",
+    "item-metadata",
+    "native-special-actions",
+    "presentation-native"
+  ],
+  "cases": [
+    {
+      "id": "clean-v1-preflight",
+      "stage": "offline-preflight",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Bind every live observation to the exact active integrated settings, action data, code DLL, Enhanced target, and three-mod Reloaded profile.",
+      "fixture": "Closed game with the canonical active integrated runtime/data pair selected; no battle state is required.",
+      "actions": [
+        "Run the declared process-free live-install preflight command.",
+        "Do not launch FFT unless the command exits zero."
+      ],
+      "pass_evidence": [
+        "The validator prints DCL live installation preflight PASS.",
+        "The emitted hashes equal the pair-bound settings, action NXD, and current Release DLL hashes."
+      ],
+      "tags": [
+        "preflight"
+      ],
+      "depends_on": [],
+      "ability_ids": [],
+      "settings_requirements": {}
+    },
+    {
+      "id": "physical-fundamentals",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate one complete physical decision from forecast through execution, including facing, bounded guard, damage typing, equipment metadata, weapon-skill routing, and native presentation.",
+      "fixture": "Two controllable generic units with known facing and existing equipment; repeat from front and rear without changing job definitions.",
+      "actions": [
+        "Preview and execute a single weapon strike from the front.",
+        "Repeat against the same target from the rear while preserving equipment.",
+        "Repeat once with a weapon-skill carrier whose active weapon is known."
+      ],
+      "pass_evidence": [
+        "Forecast and execution use the same authoritative hit decision and finite guard bounds.",
+        "Logs expose facing, damage type, equipment DR, item metadata, and active weapon provenance without changing animation or target presentation.",
+        "The execution result equals the committed DCL result and produces no duplicate application."
+      ],
+      "tags": [
+        "player-forecast",
+        "execution",
+        "physical-single",
+        "facing",
+        "finite-guard",
+        "damage-types-dr",
+        "weapon-skill",
+        "item-metadata",
+        "presentation-native"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        0
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true,
+        "DclHitControlEnabled": true,
+        "DclPhysicalContestEnabled": true
+      }
+    },
+    {
+      "id": "physical-repeat-families",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Separate dual-wield, managed multistrike, and native repeat provenance so each hit is owned exactly once.",
+      "fixture": "A dual-wield basic attacker, Pummel ability 101, and Barrage ability 358 against a durable single target.",
+      "actions": [
+        "Execute a dual-wield basic attack and preserve both native weapon identities.",
+        "Execute Pummel and record every managed repeat index.",
+        "Execute Barrage and record its native repeat index and active weapon payload."
+      ],
+      "pass_evidence": [
+        "Dual-wield produces two ordered strikes with the correct weapon for each strike.",
+        "Pummel produces one transaction per managed repeat with no carry-over decision.",
+        "Barrage remains native-repeat owned and does not receive a second managed repeat layer."
+      ],
+      "tags": [
+        "dual-wield",
+        "managed-multistrike",
+        "native-multistrike"
+      ],
+      "depends_on": [
+        "physical-fundamentals"
+      ],
+      "ability_ids": [
+        0,
+        101,
+        358
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true,
+        "DclHitControlEnabled": true
+      }
+    },
+    {
+      "id": "magic-core-and-ai",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate numeric magic computation, magic evasion, and AI scoring against the same executable outcome.",
+      "fixture": "Fire ability 16 aimed at one isolated legal target with known Faith and magic evade.",
+      "actions": [
+        "Preview Fire against the isolated target.",
+        "Allow an AI-controlled caster to score the same target state.",
+        "Execute Fire and capture the final numeric result and hit decision."
+      ],
+      "pass_evidence": [
+        "Player forecast, AI score inputs, and execution expose the same DCL numeric compute point.",
+        "Magic evade participates once and the execution decision matches the committed result."
+      ],
+      "tags": [
+        "magic-single",
+        "magic-evade",
+        "ai-scoring"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        16
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true,
+        "DclMagicEvadeEnabled": true,
+        "DclComputePointNumericEnabled": true
+      }
+    },
+    {
+      "id": "fire-aoe-authority",
+      "stage": "live-observe",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Prove authoritative target expansion and one calculation per legal target for an ordinary area spell without importing any status or forced-control mechanic.",
+      "fixture": "Fire ability 16 centered so at least two legal units occupy its area while another unit remains outside it.",
+      "actions": [
+        "Confirm Fire with the multi-target area visible.",
+        "Capture pre-confirm actor targets, expanded targets, and per-target calculations.",
+        "Let the spell resolve through its ordinary per-target calculations."
+      ],
+      "pass_evidence": [
+        "The runtime records ability 16 rather than ability 0.",
+        "The authoritative/expanded target set contains exactly the units in Fire's area and each resolved target receives one calculation.",
+        "No unrelated status or forced-control transaction is attributed to Fire."
+      ],
+      "tags": [
+        "magic-aoe"
+      ],
+      "depends_on": [
+        "magic-core-and-ai"
+      ],
+      "ability_ids": [
+        16
+      ],
+      "settings_requirements": {}
+    },
+    {
+      "id": "healing-and-undead-inversion",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate healing as a first-class numeric result and preserve native Undead inversion semantics.",
+      "fixture": "Cure ability 1 used once on a wounded living target and once on a wounded Undead target with comparable stats.",
+      "actions": [
+        "Preview and execute Cure on the living target.",
+        "Preview and execute Cure on the Undead target."
+      ],
+      "pass_evidence": [
+        "The living target receives the DCL healing result exactly once.",
+        "The Undead target receives the correctly inverted HP transaction without sign ambiguity or double inversion."
+      ],
+      "tags": [
+        "healing",
+        "undead-inversion"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        1
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true,
+        "DclComputePointNumericEnabled": true
+      }
+    },
+    {
+      "id": "mp-budget-and-atomic-result",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate MP affordability and atomic HP/MP/result-flag commit at the execution boundary.",
+      "fixture": "A caster with enough MP for one Fire cast and a controlled follow-up state near the affordability boundary.",
+      "actions": [
+        "Execute one affordable Fire and capture HP, MP, and result flags before and after commit.",
+        "Attempt the same action from a state below its MP cost."
+      ],
+      "pass_evidence": [
+        "The affordable action commits one coherent HP/MP/flags transaction.",
+        "The unaffordable action cannot create damage, a status packet, or a partial MP debit.",
+        "MP trickle does not bypass the action's affordability decision."
+      ],
+      "tags": [
+        "mp-budget",
+        "atomic-hp-mp"
+      ],
+      "depends_on": [
+        "magic-core-and-ai"
+      ],
+      "ability_ids": [
+        16
+      ],
+      "settings_requirements": {
+        "DclMpTrickleEnabled": true,
+        "DclResultFlagsControlEnabled": true
+      }
+    },
+    {
+      "id": "status-carrier-policies",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Exercise ordinary, retained-native, post-calc replacement, and grouped status ownership without overlapping writers.",
+      "fixture": "Kiyomori 81, Masamune 84, and Celestial Stasis 168 against targets with controlled resistances and existing status bits.",
+      "actions": [
+        "Resolve each retained-native carrier and verify its native status bits remain authoritative.",
+        "Resolve a suppressed ordinary conditional rider once successfully and once resisted.",
+        "Resolve the grouped Celestial Stasis packet and capture the complete add/remove mask."
+      ],
+      "pass_evidence": [
+        "Every status bit has one declared writer policy.",
+        "Retained bits survive unchanged, post-calc-owned bits are composed once, and grouped rules share one contest decision.",
+        "Resisted rules do not leak partial status writes."
+      ],
+      "tags": [
+        "status-ordinary",
+        "status-retained",
+        "status-postcalc",
+        "status-grouped"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        81,
+        84,
+        168
+      ],
+      "settings_requirements": {
+        "DclStatusControlEnabled": true,
+        "DclResultFlagsControlEnabled": true
+      }
+    },
+    {
+      "id": "status-randomfire-performance",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate random-one status grouping across performance and RandomFire repeat families without combinatorial packet growth.",
+      "fixture": "Nameless Song 91 and Celestial Void 173 with multiple legal targets and enough repetitions to expose stale group state.",
+      "actions": [
+        "Execute Nameless Song and record the selected group member for every affected target.",
+        "Execute Celestial Void and record every native RandomFire repeat and selected status member.",
+        "Advance to another action and confirm prior group state is absent."
+      ],
+      "pass_evidence": [
+        "Each target/repeat selects at most one member from its declared contest group.",
+        "Performance and RandomFire actions finish with bounded log/packet counts and no progressive slowdown.",
+        "No group selection leaks into the next action."
+      ],
+      "tags": [
+        "status-randomfire",
+        "status-performance"
+      ],
+      "depends_on": [
+        "status-carrier-policies"
+      ],
+      "ability_ids": [
+        91,
+        173
+      ],
+      "settings_requirements": {
+        "DclStatusControlEnabled": true
+      }
+    },
+    {
+      "id": "status-duration-domains",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate physical and magical duration ownership against the exact action-data/status-duration pair.",
+      "fixture": "Leg Shot 213 and Arm Shot 214 for the physical domain; Immobilize 37 and Hesitation 57 for the magical domain.",
+      "actions": [
+        "Apply each physical duration carrier and count target turns until expiry.",
+        "Apply each magical duration carrier and count target turns until expiry.",
+        "Repeat one resisted application to prove that no timer is created."
+      ],
+      "pass_evidence": [
+        "Physical and magical duration formulas produce the pair-declared target-turn count.",
+        "Expiry occurs once at the intended target-turn boundary.",
+        "A resisted status has neither a bit nor a duration counter."
+      ],
+      "tags": [
+        "duration-physical",
+        "duration-magical"
+      ],
+      "depends_on": [
+        "status-carrier-policies"
+      ],
+      "ability_ids": [
+        37,
+        57,
+        213,
+        214
+      ],
+      "settings_requirements": {
+        "DclStatusControlEnabled": true
+      }
+    },
+    {
+      "id": "taunt-and-interrupt",
+      "stage": "live-mutate",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate forced-target fallback and pending-action cancellation as distinct control mechanisms.",
+      "fixture": "Berserk ability 241 as the Taunt carrier and Potion action 368 as the temporary Interrupt carrier against a unit with a known pending action.",
+      "actions": [
+        "Apply the Taunt carrier and observe target selection with and without a legal taunt target.",
+        "Apply the Interrupt carrier to a matching pending action once resisted and once successful.",
+        "Repeat after the pending action has already cleared."
+      ],
+      "pass_evidence": [
+        "Taunt constrains only an eligible action and falls back safely when its target is unavailable.",
+        "Successful Interrupt clears exactly one matching pending action; resistance and no-pending cases perform no write.",
+        "Neither mechanism corrupts the other mechanism's state."
+      ],
+      "tags": [
+        "taunt",
+        "interrupt"
+      ],
+      "depends_on": [
+        "status-carrier-policies"
+      ],
+      "ability_ids": [
+        241,
+        368
+      ],
+      "settings_requirements": {
+        "DclStatusControlEnabled": true,
+        "DclInterruptControlEnabled": true,
+        "DclInterruptLogOnly": false
+      }
+    },
+    {
+      "id": "instant-ko-and-revive",
+      "stage": "live-mutate",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate DCL instant-KO ownership and the native corpse/revive lifecycle as one coherent defeat boundary.",
+      "fixture": "Death ability 30 against success and resistance targets, followed by Raise ability 5 on the resulting corpse.",
+      "actions": [
+        "Resolve Death on the success target and capture the zero-HP/KO transition.",
+        "Resolve Death on the resistance target.",
+        "Use Raise on the corpse created by the successful case."
+      ],
+      "pass_evidence": [
+        "Successful Death commits one KO transition and failure commits neither damage nor KO.",
+        "The corpse remains a valid native revive target.",
+        "Raise restores the unit through the native lifecycle without duplicate death or stale DCL state."
+      ],
+      "tags": [
+        "instant-ko",
+        "revive-corpse"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        5,
+        30
+      ],
+      "settings_requirements": {
+        "DclInstantKoControlEnabled": true,
+        "DclResultFlagsControlEnabled": true
+      }
+    },
+    {
+      "id": "reaction-families",
+      "stage": "live-mutate",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate real, VM-internal, and synthetic reactions through their distinct ownership paths.",
+      "fixture": "Counter 442, unknown blank owner carrier 443, and Shirahadori 451 in deterministic adjacent/non-adjacent hit fixtures.",
+      "actions": [
+        "Trigger a real Counter and capture native materialization/delivery.",
+        "Trigger Shirahadori and capture VM-internal decision evidence without expecting a queue fire.",
+        "Trigger the synthetic owner/delivery route and capture reservation, validation, and execution."
+      ],
+      "pass_evidence": [
+        "Counter is classified and delivered once by the native path.",
+        "Shirahadori is classified by its VM-internal outcome and is not falsely required to materialize as a normal reaction record.",
+        "Synthetic delivery uses the declared owner/carrier split and executes exactly once after validation."
+      ],
+      "tags": [
+        "reaction-real",
+        "reaction-vm",
+        "reaction-synthetic"
+      ],
+      "depends_on": [
+        "physical-fundamentals"
+      ],
+      "ability_ids": [
+        442,
+        443,
+        451
+      ],
+      "settings_requirements": {
+        "DclReactionTaxonomyEnabled": true,
+        "DclSyntheticReactionEnabled": true,
+        "DclSyntheticReactionLogOnly": false
+      }
+    },
+    {
+      "id": "final-tile-position-producer",
+      "stage": "live-observe",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Validate exactly one post-movement event per completed route and no event for preview, cancellation, Wait, or current-tile selection.",
+      "fixture": "One player-controlled mover plus at least one AI mover in an ordinary battle; no authored final-tile effect is enabled.",
+      "actions": [
+        "Let one AI unit complete a nonempty route.",
+        "Confirm one nonempty player route and wait for its walking animation to finish.",
+        "On a later player turn preview a different tile, cancel Move, and complete the turn with Wait.",
+        "Exercise Move against the unit's current tile without displacement."
+      ],
+      "pass_evidence": [
+        "Each completed AI/player route publishes exactly one accepted completed-movement row after coordinate convergence.",
+        "Preview/cancel, Wait without movement, and current-tile selection publish no player event.",
+        "Movement remains smooth and indivisible, with no hook failure, per-tile event, pause, slowdown, or game-state write."
+      ],
+      "tags": [
+        "final-tile"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [],
+      "settings_requirements": {
+        "DclFinalTileEventProbeEnabled": true
+      }
+    },
+    {
+      "id": "line-of-fire-and-weighted-movement",
+      "stage": "live-observe",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Preserve weapon line-of-fire constraints and expose weight-dependent movement without assigning either rule to a final job.",
+      "fixture": "A ranged weapon user with a blocking unit/terrain variant and two otherwise identical units carrying different existing equipment weights.",
+      "actions": [
+        "Preview and execute the ranged attack with a clear line and with an obstruction.",
+        "Move both weighted units along the same legal path and capture route cost/final tile."
+      ],
+      "pass_evidence": [
+        "Clear and obstructed weapon lines produce the expected legal/illegal targeting result without bypassing native presentation.",
+        "Weight changes only the declared movement budget/cost and neither unit commits an illegal tile."
+      ],
+      "tags": [
+        "weapon-los",
+        "weight-move"
+      ],
+      "depends_on": [
+        "physical-fundamentals"
+      ],
+      "ability_ids": [
+        0
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true
+      }
+    },
+    {
+      "id": "native-special-actions",
+      "stage": "live-observe",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Confirm that native special-action families outside normal formula ownership still execute and are classified without a destructive rewrite.",
+      "fixture": "One representative native special action from each catalogued non-standard execution family available in the test roster.",
+      "actions": [
+        "Preview and execute every selected native-special representative.",
+        "Capture classification, targeting, and final result for each family."
+      ],
+      "pass_evidence": [
+        "Each special action remains on its native execution route unless the clean-v1 pair explicitly declares an owner.",
+        "No action is silently coerced into ordinary physical or magic semantics and no result is duplicated."
+      ],
+      "tags": [
+        "native-special-actions"
+      ],
+      "depends_on": [
+        "clean-v1-preflight"
+      ],
+      "ability_ids": [
+        249,
+        279,
+        343
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true
+      }
+    },
+    {
+      "id": "battle-lifecycle-reset",
+      "stage": "live-regression",
+      "job_free": true,
+      "writes_save": false,
+      "purpose": "Prove all transient DCL ownership state is generation-scoped and cannot leak across actions, battle end, or a new battle.",
+      "fixture": "A battle that has exercised status groups, hit decisions, Interrupt, synthetic Reaction, and final-tile publications before ending; then start a fresh battle without saving.",
+      "actions": [
+        "End the populated battle after all listed mechanisms have created transient state.",
+        "Start a fresh battle in the same process.",
+        "Execute one ordinary action and inspect every cache/generation diagnostic."
+      ],
+      "pass_evidence": [
+        "Battle end and battle start each emit the expected generation reset.",
+        "The new battle contains no stale target, status plan, hit decision, pending cancellation, Reaction reservation, or final-tile publication state.",
+        "The first ordinary action behaves identically to a clean-process baseline."
+      ],
+      "tags": [
+        "lifecycle-reset"
+      ],
+      "depends_on": [
+        "taunt-and-interrupt",
+        "reaction-families",
+        "final-tile-position-producer"
+      ],
+      "ability_ids": [
+        0,
+        368,
+        442,
+        443
+      ],
+      "settings_requirements": {
+        "DclPipelineEnabled": true,
+        "DclStatusControlEnabled": true,
+        "DclInterruptControlEnabled": true,
+        "DclSyntheticReactionEnabled": true
+      }
+    }
+  ]
+}

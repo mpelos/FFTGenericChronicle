@@ -37,19 +37,20 @@ from the normal test path; the first required game input is the Enhanced selecto
 
 The application profile still supplies the enabled-mod list. Verify `C:\Reloaded-II\Apps\fft_enhanced.exe\AppConfig.json` before using the shortcut; the probe isolation set is the mod loader plus Generic Chronicle Battle Probe.
 
-For hash-bound DCL profiles, run `python tools/validate_dcl_live_install.py` before launching. It
-checks only configuration and installed artifacts: the exact three-mod isolation set, Enhanced
-application target, runtime settings, action-data NXD, equipment/charge tables, runtime item/ability
-catalogs, and installed DLL against the current Release build. A failure means the run cannot
-produce evidence for that paired profile.
+For hash-bound DCL profiles, run `python tools/validate_dcl_live_install.py --pair <current-pair>`
+before launching. The preflight intentionally has no default active pair; the historical clean-v1
+pair must not be selected by omission. It checks only configuration and installed artifacts: the
+exact three-mod isolation set, Enhanced application target, runtime settings, action-data NXD,
+equipment/charge tables, runtime item/ability catalogs, and installed DLL against the current
+Release build. A failure means the run cannot produce evidence for that paired profile.
 The preflight deliberately performs no process inspection.
 
-The default bundle formerly selected by `tools/install_dcl_live_bundle.py` is retired because it
-contains Approach and Fear. The installer intentionally rejects it. Do not use `--apply` until a new
-hash-bound pair without those mechanisms becomes the explicit `--pair`. For an approved pair, run a
-read-only dry run first and use `--apply` only after FFT and Reloaded are visibly closed. The
-installer performs no process inspection, backs up every destination, writes atomically, rolls back
-on failure, and requires the exact post-install preflight to pass.
+The default bundle formerly selected by `tools/install_dcl_live_bundle.py` is retired; the installer
+now has no default active pair. Do not use `--apply` until a current hash-bound pair becomes the
+explicit `--pair`. For an approved pair, run a read-only dry run first and use `--apply` only after
+FFT and Reloaded are visibly closed. The installer performs no process inspection, backs up every
+destination, writes atomically, rolls back on failure, and requires the exact post-install preflight
+to pass.
 
 ## Test-execution ownership
 
@@ -246,6 +247,13 @@ finish that session by preserving an autosave snapshot. Record the snapshot path
 target, turn, and visible command-menu state in the test journal. Do not ask the user or an unattended
 run to rebuild the same formation on the next repetition. Manual Save 05 is the fixture-construction
 baseline; the preserved autosave is the repeated-test entry point.
+
+For the canonical admission Fire probe, the useful repeated-test state is the mid-battle autosave
+that opens directly on Agrias' turn at Mandalia Plain with nearby enemies. Use the first listed
+mid-battle autosave or a named snapshot of it to skip formation. The required action is:
+**Abilities > Black Magicks > Fire > target enemy > Unit > Wait/end turn**, then collect
+`battleprobe_log.txt`. If a newly discovered pre-action state makes this faster or less ambiguous,
+record it here and in the matching `work/` test journal.
 
 If the current process reaches **Game Over**, an even shorter same-process retry is available:
 confirm **Retry**, select **Retry from Start of Battle** (one `Down` from the first confirmation

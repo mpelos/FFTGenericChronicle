@@ -176,6 +176,12 @@ Reaction window. Simultaneous due effects do not share mutable target state: eac
 atomically before the next stable identity. Forecast and AI use the same ordering without consuming
 execution RNG.
 
+The scheduler reserves one stable ActionInstance identity for a due tick and does not advance its
+`NextTickGlobalCT` cursor until that exact action has completed target apply, source payment, its
+declared Reaction policy, and settlement. Retrying a pending scheduler step reuses the reservation.
+An explicitly authored immediate payload follows the same identity and settlement rule but is not a
+scheduled tick and does not advance `NextTickGlobalCT`.
+
 Haste and Slow do not change how many Poison, Regen, zone, or delayed-effect ticks occur during a
 fixed global duration. They only change the number of eligible turns a unit may receive inside that
 duration. Stop freezes the unit's eligibility and personal CT behavior but does not freeze global

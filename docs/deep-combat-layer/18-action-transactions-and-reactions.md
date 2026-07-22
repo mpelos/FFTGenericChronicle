@@ -63,6 +63,11 @@ sequentially, but the resolver first plans the entire target batch and then comm
 engine order. Effects that explicitly chain, jump, spread, or consume a shared finite resource must
 declare their own sequential policy instead of relying on enumeration order.
 
+Finite defense snapshots carry a battle-owned revision. Commit succeeds only if the defender's
+current revision still matches the one resolved by the ActionInstance. A successful commit writes
+the resulting repeated-Parry counters and Block availability back once for the whole outer action;
+a stale retry cannot spend either resource twice.
+
 ## Strike resolution
 
 A physical multi-hit action treats every hit as an independent Strike:
@@ -122,6 +127,14 @@ once per originating Strike under
 [Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md#disruption-granularity)
 without making the originating status or forced movement improve later Strikes.
 
+For a multi-Strike physical or Area Damage action authored as `Immediate`, a surviving Major Wound
+branches its HT roll before the next Strike. Failure makes the target Stunned and Knocked Down for
+later target-local gates: Stun gives `-4` to every active defense, while Knocked Down adds `-3` to
+Dodge or `-2` to Parry and Block. Shock does not alter an active-defense score. Execution,
+forecast, and AI branch the same HT roll and reselect the next physical defense or recompute the
+next per-Strike Area Dodge from the resulting posture. This sequential visibility creates no
+additional Reaction window.
+
 Invisibility is an outer-action source rule rather than a target debuff. An immediate offensive
 Action confirmed while its source is Invisible suppresses active defense for all of its Strikes and
 targets, then removes Invisibility after the outer commit. The attack still performs every other
@@ -142,6 +155,8 @@ declare and reserve
 -> plan target results and Strikes
 -> commit damage, healing, resources, and staged states in native-compatible order
 -> complete every target and Strike
+-> commit an authored source-side effect such as a Drain transfer
+-> commit the action's MP/HP payment
 -> open the Reaction window
 -> settle cleanup and presentation
 ```
@@ -149,6 +164,20 @@ declare and reserve
 An HP resource payment is committed in the resource portion of this transaction and is not emitted
 as a damage or Injury event. It may change the payer's Critical/KO state, but it cannot manufacture
 a damage-triggered Reaction window or injury rider.
+
+A Drain first caps and commits the target debit, then derives its source transfer from the amount
+actually removed. The source credit or explicit Undead-source debit is capped against the source's
+current pool and commits before the separate action payment. Target result, source effect, and
+payment are distinct retry-stable carriers. None enters the Injury pipeline or opens an extra
+Reaction window; source or target HP reaching zero still performs the ordinary KO cleanup before
+the one post-action window.
+
+Forced movement consumes one settled native map verdict for the target and complete displacement.
+The target's origin is validated before native movement and the final destination is validated by
+readback. Aim cancellation and a Charging concentration incident depend on positive final
+displacement, not on attempted distance. A blocked zero-tile result creates neither. No tile along
+the route opens a Reaction, pauses the action, or creates stop-hit behavior; payment and the single
+Reaction window follow the completed displacement.
 
 When successful overcasting consumes the caster's last HP, the already planned action effect still
 commits. The caster then enters native KO before the post-action Reaction window; HP does not become
@@ -161,6 +190,24 @@ window. The declaration Action and elapsed CastCT are not restored.
 Forecast and AI evaluation execute the same planning path without committing state and without
 consuming execution RNG. Numeric and random ownership are defined by the
 [Numeric Resolution Contract](17-numeric-resolution-contract.md).
+
+## Timeline checkpoint boundary
+
+A battle timeline checkpoint is legal only between outer events and between unit turns. It never
+serializes a half-applied target carrier, pending payment, open Reaction window, reserved scheduler
+step, or active turn. Those transactions settle before saving.
+
+The timeline checkpoint preserves GlobalCT, the next ActionInstance identity, each unit's exact CT,
+CT rate, initiative rank and completed-turn serial, every persistent state and target revision,
+QuickLock ownership, repeated-Parry counters, Block availability and defense-resource revisions,
+per-weapon Ready/Unready and Unbalanced Parry-suppression state, and every
+pending charged declaration including target mode, declaration tile, resource commitment, ability
+binding, and due CT. Loading rebases all UnitKeys to the new battle
+generation and revalidates state fingerprints, action/profile revisions, ability bindings, target
+shapes, charged-source uniqueness, QuickLock controller/state agreement, weapon-state invariants,
+defense-resource invariants, and identity cursors before
+the timeline may resume. Native pools, equipment, occupancy, and map state are synchronized from the
+loaded battle snapshot rather than duplicated as speculative managed truth.
 
 ## Reaction timing and cardinality
 
@@ -192,6 +239,12 @@ declares exactly one controlling reference plus its explicit modifier; it never 
 several attributes. A learned Reaction does not scale directly from the current job's Job Level. It
 can improve only through the attribute or named Skill that its own rule declares.
 
+Forecast and AI evaluate the same ordered candidate set without consuming an activation roll.
+`ActivationRoll` uses the exact universal 3d6 probability for its authored reference plus modifier;
+the other two modes have no activation RNG. Trigger, eligibility, native cardinality, awareness,
+cost, and finite-use failures reduce activation probability to zero before any effect action is
+evaluated. `SkillResponse` retains its natural effect gate as a separate downstream probability.
+
 An `AutomaticTrigger` may have no MP, HP, item, or cooldown cost. Its reliability is paid for by the
 single Reaction slot, trigger narrowness, effect strength, acquisition budget, and opportunity cost.
 One hundred percent reliability is part of its capacity score rather than a hidden free benefit.
@@ -211,6 +264,12 @@ Costs and finite uses
 Failure behavior
 Presentation
 ```
+
+Binding materializes an exact effect source and target before native dispatch. `ReactorToSource`
+routes reactor → outer source; `ReactorToTarget` routes reactor → the exact target result that
+created the candidate; `SourceToReactor` routes outer source → reactor; and `Explicit` supplies both
+identities. All identities belong to the outer battle generation. A multi-target action cannot
+substitute a later enumerated target for the target that actually triggered the Reaction.
 
 ## Universal action choices
 

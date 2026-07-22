@@ -7,6 +7,12 @@ internal readonly record struct DclNativeRepeatSnapshot(
     int LeftWeaponItemId,
     int ActiveWeaponItemId);
 
+internal enum DclNativeWeaponHand
+{
+    Primary,
+    OffHand,
+}
+
 /// <summary>
 /// Current-build native repeat-carrier facts kept separate from policy math. RandomFire formulas
 /// and Barrage share the same repeat count/index globals and result-producer continuation test.
@@ -43,6 +49,18 @@ internal static class DclNativeRepeat
         return repeatCount > 2 || repeatIndex == 0
             ? rightWeapon
             : leftWeapon;
+    }
+
+    public static DclNativeWeaponHand? SelectActiveWeaponHand(
+        int actionType,
+        int repeatCount,
+        int repeatIndex)
+    {
+        if (actionType != 1 || repeatCount < 0 || repeatIndex < 0)
+            return null;
+        return repeatCount > 2 || repeatIndex == 0
+            ? DclNativeWeaponHand.Primary
+            : DclNativeWeaponHand.OffHand;
     }
 
     public static int TruthRepeatCountFromPercentile(int percentile)

@@ -22,7 +22,6 @@ import validate_dcl_status_duration_pair as duration_pair
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PAIR = ROOT / "work/1784395365-dcl-da-dm-status-duration-pair.json"
 ADD_OPERATIONS = {"add-harmful", "add-buff-or-trait"}
 
 
@@ -312,9 +311,9 @@ def markdown_text(
         "",
         "- The 150 status-bearing catalog actions have mechanism owners, but producer authority alone",
         "  never permits a native counter edit.",
-        "- Disable and Immobilize are the only current exclusive transfers. Their shared physical and",
-        "  magical producers are all owned by the validated 14-rule profile; final magical duration",
-        "  values remain calibration-open.",
+        "- A native counter is not exclusive-runtime-owned unless a current duration-pair manifest",
+        "  validates complete runtime ownership. Historical pairs with stale hashes or unresolved",
+        "  category coverage remain evidence only, not active ownership.",
         "- Doom remains engine-owned because its counter terminates in KO, not an ordinary status clear.",
         "- Blindness/Darkness, Silence, Vampire/BloodSuck, Oil, and Undead still need explicit DCL",
         "  nature decisions before full-roster contest authoring.",
@@ -342,7 +341,7 @@ def main() -> int:
     parser.add_argument("--csv-output", type=Path)
     parser.add_argument("--check-only", action="store_true")
     args = parser.parse_args()
-    pair_paths = [path.resolve() for path in (args.duration_pair or [DEFAULT_PAIR])]
+    pair_paths = [path.resolve() for path in (args.duration_pair or [])]
     rows, covered, errors = analyze(pair_paths)
     for error in errors:
         print(f"ERROR: {error}")

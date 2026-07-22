@@ -179,6 +179,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exe", type=Path, default=DEFAULT_EXE)
     parser.add_argument("--items", type=Path, default=DEFAULT_ITEMS)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--check-only", action="store_true", help="validate anchors without writing a report")
     return parser.parse_args()
 
 
@@ -186,9 +187,12 @@ def main() -> int:
     args = parse_args()
     output = args.output or ROOT / "work" / f"{int(time.time())}-dcl-weapon-line-of-fire-analysis.md"
     report, ok = render_report(args.exe, args.items, output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(report, encoding="utf-8", newline="\n")
-    print(f"wrote {output}")
+    if args.check_only:
+        print(f"checked {args.exe}")
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(report, encoding="utf-8", newline="\n")
+        print(f"wrote {output}")
     print("all line-of-fire anchors, family flags, and caller checks PASS" if ok else "one or more line-of-fire checks FAIL")
     return 0 if ok else 1
 

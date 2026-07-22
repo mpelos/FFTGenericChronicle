@@ -11,7 +11,8 @@ from typing import Any
 from validate_dcl_runtime_data_pair import PairValidationError, ROOT, validate_pair
 
 
-DEFAULT_PAIR = ROOT / "work/1784470893-dcl-unified-clean-v1-runtime-data-pair.json"
+HISTORICAL_CLEAN_V1_PAIR = ROOT / "work/1784470893-dcl-unified-clean-v1-runtime-data-pair.json"
+DEFAULT_PAIR: Path | None = ROOT / "work/1784683300-dcl-active-integrated-runtime-data-pair.json"
 DEFAULT_APP_CONFIG = Path(r"C:\Reloaded-II\Apps\fft_enhanced.exe\AppConfig.json")
 DEFAULT_INSTALLED_SETTINGS = Path(
     r"C:\Reloaded-II\Mods\fftivc.generic.chronicle.codemod\battle-runtime-settings.json"
@@ -211,6 +212,14 @@ def main() -> int:
     parser.add_argument("--installed-dll", type=Path, default=DEFAULT_INSTALLED_DLL)
     parser.add_argument("--allow-extra-mods", action="store_true")
     args = parser.parse_args()
+
+    if args.pair is None:
+        print(
+            "ERROR: no active integrated runtime/data pair is defined; "
+            "pass --pair explicitly after building a current pair"
+        )
+        print("DCL live installation preflight FAIL")
+        return 1
 
     pair_path = args.pair.resolve()
     try:

@@ -20,7 +20,7 @@ def expect_error(matrix: dict, fragment: str, directory: Path, name: str) -> Non
     path = directory / name
     path.write_text(json.dumps(matrix), encoding="utf-8")
     try:
-        validate_matrix(path)
+        validate_matrix(path, validate_runtime_pair=False)
     except MatrixError as error:
         assert fragment in str(error), (fragment, str(error))
     else:
@@ -29,12 +29,14 @@ def expect_error(matrix: dict, fragment: str, directory: Path, name: str) -> Non
 
 def main() -> int:
     source = json.loads(DEFAULT_MATRIX.read_text(encoding="utf-8"))
-    details = validate_matrix(DEFAULT_MATRIX)
+    details = validate_matrix(DEFAULT_MATRIX, validate_runtime_pair=False)
     assert len(details) == 17
     assert len(REQUIRED_TAGS) == 41
     assert any("case=final-tile-position-producer" in detail for detail in details)
     assert "fear" not in REQUIRED_TAGS and "approach" not in REQUIRED_TAGS
     assert "v4" not in DEFAULT_MATRIX.read_text(encoding="utf-8").lower()
+    assert DEFAULT_MATRIX.name == "1784683300-dcl-active-integrated-live-regression-matrix.json"
+    assert "active integrated" in DEFAULT_MATRIX.read_text(encoding="utf-8").lower()
 
     with tempfile.TemporaryDirectory(dir=ROOT) as raw:
         temp = Path(raw)

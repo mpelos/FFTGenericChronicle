@@ -110,6 +110,53 @@ internal static class RuntimeSettingsValidator
         }
         if (settings.DclDecisionMaxLogs < 0)
             report.Error("DclDecisionMaxLogs", "DclDecisionMaxLogs must be nonnegative.");
+        if (settings.DclCanonicalRuntimeEnabled)
+        {
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalAuthoringPath))
+                report.Error("DclCanonicalAuthoringPath", "the enabled canonical runtime requires the normalized action/state bundle path.");
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalItemMetadataPath))
+                report.Error("DclCanonicalItemMetadataPath", "the enabled canonical runtime requires the native-ID-bound item metadata bundle path.");
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalAbilityBindingsPath))
+                report.Error("DclCanonicalAbilityBindingsPath", "the enabled canonical runtime requires the native ability binding bundle path.");
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalReactionBindingsPath))
+                report.Error("DclCanonicalReactionBindingsPath", "the enabled canonical runtime requires the native Reaction presentation/effect binding bundle path.");
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalStatePresentationProfilesPath))
+                report.Error("DclCanonicalStatePresentationProfilesPath", "the enabled canonical runtime requires the state presentation profile bundle path.");
+        }
+        if (settings.DclCanonicalAdmissionEnabled)
+        {
+            if (!settings.DclCanonicalRuntimeEnabled)
+                report.Error("DclCanonicalAdmissionEnabled", "native outer-action admission requires DclCanonicalRuntimeEnabled.");
+            if (string.IsNullOrWhiteSpace(settings.DclCanonicalPolicyTicketTemplatesPath))
+                report.Warn("DclCanonicalPolicyTicketTemplatesPath", "native outer-action admission has no policy-ticket template path; complete admissions will wait for externally retained policy tickets or report MissingTemplate.");
+            report.Warn("DclCanonicalAdmissionEnabled", "the pre-calculation TargetBatch boundary and DirectNumeric template bridge are live-proven for the guarded hook; the hook defaults off and ignores unbound abilities.");
+        }
+        if (settings.DclCanonicalPostApplyEnabled)
+        {
+            if (!settings.DclCanonicalRuntimeEnabled)
+                report.Error("DclCanonicalPostApplyEnabled", "the native post-apply owner requires DclCanonicalRuntimeEnabled.");
+            if (!settings.DclComputePointNumericEnabled)
+                report.Error("DclCanonicalPostApplyEnabled", "the native post-apply owner requires the canonical target/Strike reservation produced by DclComputePointNumericEnabled.");
+            report.Warn("DclCanonicalPostApplyEnabled", "the state-apply epilogue anchor is static-proven but not live-proven. It refuses lethal source/payment HP writes until a native KO lifecycle carrier is bound.");
+        }
+        if (settings.DclCanonicalReactionCompletionEnabled)
+        {
+            if (!settings.DclCanonicalRuntimeEnabled)
+                report.Error("DclCanonicalReactionCompletionEnabled", "the native Reaction completion owner requires DclCanonicalRuntimeEnabled.");
+            if (!settings.DclCanonicalPostApplyEnabled)
+                report.Error("DclCanonicalReactionCompletionEnabled", "the native Reaction completion owner requires the terminal post-apply payment ticket from DclCanonicalPostApplyEnabled.");
+            if (!settings.DclCanonicalReactionEffectCompletionEnabled)
+                report.Error("DclCanonicalReactionCompletionEnabled", "terminal Reaction completion requires exact accepted-effect completion ownership.");
+            report.Warn("DclCanonicalReactionCompletionEnabled", "the state-0x2F empty-queue convergence is static-proven but not live-proven. Completion is restricted to one payment-committed canonical ActionInstance in the current battle generation.");
+        }
+        if (settings.DclCanonicalReactionEffectCompletionEnabled)
+        {
+            if (!settings.DclCanonicalReactionCompletionEnabled)
+                report.Error("DclCanonicalReactionEffectCompletionEnabled", "effect completion requires the same terminal Reaction-completion ticket owner.");
+            if (settings.DclReactionEffectProbeEnabled)
+                report.Error("DclCanonicalReactionEffectCompletionEnabled", "the managed effect-completion hook and observe-only effect probe cannot share RVA 0x212C2E.");
+            report.Warn("DclCanonicalReactionEffectCompletionEnabled", "the state-0x2C actor boundary is static-proven and live-observed but managed acknowledgement remains disabled until exact native Reaction bindings are deployed.");
+        }
         if (settings.DclMpTrickleMaxLogs < 0)
             report.Error("DclMpTrickleMaxLogs", "DclMpTrickleMaxLogs must be nonnegative.");
         if (settings.DclMpTrickleEnabled)

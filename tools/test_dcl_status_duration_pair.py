@@ -21,18 +21,21 @@ def rule(
     mask: int,
     catalog_row: dict[str, str],
 ) -> dict[str, object]:
-    physical = catalog_row["resist_category"] == "physical-body"
+    category = catalog_row["resist_category"]
+    formula = "target.will"
+    duration = 2
+    if category == "physical-health":
+        formula = "target.ht"
+        duration = 1 if catalog_row["duration_policy"] == "1-target-turn" else 2
+    elif category == "beneficial":
+        formula = ""
     return {
         "AbilityId": ability,
         "ActionType": -1,
         "StatusByteIndex": byte_index,
         "StatusMask": mask,
-        "ResistanceFormula": (
-            "clamp(target.baseHp / 20, 3, 18)"
-            if physical
-            else "clamp(18 - target.maxFaith / 10 - attacker.ma / 10, 3, 18)"
-        ),
-        "DurationTargetTurns": 1 if physical else 2,
+        "ResistanceFormula": formula,
+        "DurationTargetTurns": duration,
         "NativeRiderPolicy": validate._expected_native_policy(ability),
     }
 
@@ -45,7 +48,7 @@ def main() -> int:
     ) as temp_raw:
         temp = Path(temp_raw)
         patch = temp / "StatusEffectData.xml"
-        expected_owners = validate._expected_owners({"Immobilize", "Disable"})
+        expected_owners = validate._expected_owners({"Charmed"})
         expected = set(expected_owners)
         settings = temp / "settings.json"
         settings_value = {
@@ -66,10 +69,10 @@ def main() -> int:
         }
         settings.write_text(json.dumps(settings_value), encoding="utf-8")
 
-        selected = build.build_patch(("Immobilize", "Disable"), patch, settings_value)
-        assert [(row.table_index, row.name) for row in selected] == [(36, "Immobilize"), (37, "Disable")]
+        selected = build.build_patch(("Charmed",), patch, settings_value)
+        assert [(row.table_index, row.name) for row in selected] == [(34, "Charmed")]
         parsed = validate._status_patch(patch)
-        assert parsed == {"Immobilize": 36, "Disable": 37}
+        assert parsed == {"Charmed": 34}
         try:
             build.build_patch(("Doom",), temp / "bad.xml", settings_value)
         except ValueError as error:
@@ -95,14 +98,28 @@ def main() -> int:
         manifest.write_text(json.dumps({
             "settings": settings.relative_to(validate.ROOT).as_posix(),
             "status_effect_data_xml": patch.relative_to(validate.ROOT).as_posix(),
-            "neutralized_statuses": ["Immobilize", "Disable"],
+            "neutralized_statuses": ["Charmed"],
             "sha256": {
                 "settings": digest(settings),
                 "status_effect_data_xml": digest(patch),
             },
         }), encoding="utf-8")
         details = validate.validate_pair(manifest)
-        assert any("owned_ability_status_pairs=14" == detail for detail in details)
+        assert any("owned_ability_status_pairs=4" == detail for detail in details)
+
+        undecided_owners = validate._expected_owners({"Immobilize", "Disable"})
+        undecided_settings = {
+            "DclStatusControlEnabled": True,
+            "DclStatusRules": [
+                rule(*pair, undecided_owners[pair]) for pair in sorted(undecided_owners)
+            ],
+        }
+        try:
+            build.build_patch(("Immobilize", "Disable"), temp / "undecided.xml", undecided_settings)
+        except ValueError as error:
+            assert "unsupported category unresolved-nature" in str(error)
+        else:
+            raise AssertionError("undecided Immobilize/Disable ownership must fail closed")
 
         broken = json.loads(settings.read_text(encoding="utf-8"))
         broken["DclStatusRules"].pop(0)

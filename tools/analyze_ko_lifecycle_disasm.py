@@ -44,6 +44,7 @@ LANDMARKS = (
     Landmark("hp-write-clamped-30", 0x30A62B, "writes clamped HP to target +0x30", "66 44 89 7F 30", "rdi"),
     Landmark("ko-write-1f5", 0x30A63B, "writes FF to target +0x1F5 after HP write", "C6 87 F5 01 00 00 FF", "rdi"),
     Landmark("reraise-death-state-write-1bb", 0x30AA64, "writes 02 to target +0x1BB during revive/Reraise path", "C6 80 BB 01 00 00 02", "rax"),
+    Landmark("state-apply-post-target-epilogue", 0x30AB4D, "common epilogue after target HP/MP and status/lifecycle apply", "48 8B 5C 24 60 48 8B 6C 24 70", "r14d-slot"),
     Landmark("late-ko-read-1ef", 0x30D392, "reads target +0x1EF in later KO mask cleanup", "8A 8F EF 01 00 00", "rdi"),
     Landmark("late-ko-mask-write-1ef", 0x30D39B, "writes masked target +0x1EF in later KO cleanup", "88 8F EF 01 00 00", "rdi"),
     Landmark("late-ko-write-61", 0x30D3A4, "writes target +0x61 in later KO cleanup", "88 4F 61", "rdi"),

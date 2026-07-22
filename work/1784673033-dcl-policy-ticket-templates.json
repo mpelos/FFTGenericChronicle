@@ -1,0 +1,52 @@
+{
+  "schemaRevision": 1,
+  "templates": [
+    {
+      "abilityId": 16,
+      "unitPolicy": {
+        "sourceTileHeight": 4,
+        "targetTileHeight": 4,
+        "synchronizeNativePools": true
+      },
+      "familyPolicy": {
+        "family": "directNumeric",
+        "directNumeric": {
+          "magic": {
+            "tradition": "sentinel-magic",
+            "traditionSkill": 12,
+            "zodiacCompatibility": "neutral",
+            "targetRelativePenaltyMagnitude": 0,
+            "learned": true,
+            "sourceUsable": true,
+            "prerequisitesMet": true,
+            "overcastConfirmed": true,
+            "explicitCasterStatePenaltyMagnitude": 0
+          },
+          "defense": {
+            "kind": "dodge",
+            "target": 9,
+            "depletes": false
+          },
+          "effectiveTargetHtModifier": 0,
+          "concentrationStatePenaltyMagnitude": 0,
+          "additionalMagnitudeIntegerModifier": 0,
+          "aimRetentionModifier": 0,
+          "aimRetentionStatePenaltyMagnitude": 0,
+          "directConcentrationCancellation": false,
+          "authoredForcedDisplacement": 0,
+          "reflectionAlreadyConsumed": false,
+          "resistanceScore": null,
+          "immune": false
+        },
+        "statusApplication": null,
+        "statusRemoval": null,
+        "dispel": null,
+        "quick": null,
+        "revive": null,
+        "forcedMovement": null,
+        "areaNumeric": null,
+        "physicalDamage": null
+      }
+    }
+  ]
+}

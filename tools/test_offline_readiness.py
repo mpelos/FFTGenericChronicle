@@ -24,8 +24,9 @@ def main() -> int:
     check("death/KO canonical finding | PASS" in generated, "death/KO finding should be a passing offline check")
     check("death/KO doc consistency | PASS" in generated, "death/KO doc consistency should pass")
     check("static executable anchors | PASS" in generated, "static executable anchors should pass on this repo state")
-    check(report.OUT.exists(), f"offline readiness report missing: {report.OUT}")
-    actual = report.OUT.read_text(encoding="utf-8")
+    output = report.latest_output()
+    check(output is not None and output.exists(), "timestamped offline readiness report missing")
+    actual = output.read_text(encoding="utf-8")
     check(actual == generated, "offline readiness report is stale; run python tools/report_offline_readiness.py")
     print("offline readiness report smoke test passed")
     return 0

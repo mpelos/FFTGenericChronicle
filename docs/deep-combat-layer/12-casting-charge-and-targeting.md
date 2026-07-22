@@ -66,6 +66,13 @@ Starting a delayed cast consumes the Action immediately. While Charging, the uni
 second Action. It retains ordinary active defenses; Charging does not automatically remove Dodge,
 Parry, or Block.
 
+The charged declaration retains its original outer ActionInstance and native ability binding.
+When several casts complete at the same GlobalCT boundary, they resolve in ascending
+ActionInstance identity before periodic ticks, expiry, or newly eligible turns at that timestamp.
+Re-entering a pending delivery reuses the same reservation. The Charging entry clears only after
+that exact ActionInstance settles, or through an explicit cancellation/interruption boundary; time
+cannot advance past an unsettled charged delivery.
+
 If the caster was Invisible, declaration is the first Action and ends Invisibility through FFT's
 native status lifecycle. A `CastCT > 0` delivery therefore resolves from a visible source and grants
 its ordinary active defense. A `CastCT = 0` delivery remains inside the immediate revealing Action

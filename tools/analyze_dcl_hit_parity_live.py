@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require a forecast decision to be reused unchanged by a later calc in the same caster turn."""
+"""Verify evaluation-only hit forecasts and confirmed-execution decision reuse."""
 from __future__ import annotations
 
 import argparse
@@ -19,8 +19,10 @@ HIT_RE = re.compile(
     r"^\[DCL-HIT\] caster=(?P<caster>0x[0-9A-F]+) target=(?P<target>0x[0-9A-F]+) "
     r"ability=(?P<ability>\d+) type=(?P<type>0x[0-9A-F]+) payload=(?P<payload>-?\d+) "
     r"activeWeapon=(?P<weapon>-?\d+) repeat=(?P<repeat>\d+/\d+) "
-    r"pct=(?P<pct>\d+) roll=(?P<roll>\d+) outcome=(?P<outcome>hit|miss) "
-    r"cached=(?P<cached>[01]) turnEpoch=(?P<epoch>-?\d+)"
+    r"pct=(?P<pct>\d+) roll=(?P<roll>-?\d+) outcome=(?P<outcome>hit|miss) "
+    r"cached=(?P<cached>[01]) turnEpoch=(?P<epoch>-?\d+) "
+    r"phase=(?P<phase>evaluation|execution) origin=(?P<origin>[a-z-]+) "
+    r"battleState=(?P<state>0x[0-9A-F]+)"
 )
 
 
@@ -39,6 +41,9 @@ class HitRow:
     outcome: str
     cached: bool
     epoch: int
+    phase: str
+    origin: str
+    battle_state: int
 
     @property
     def key(self) -> tuple[object, ...]:
@@ -80,50 +85,78 @@ def parse_rows(text: str) -> list[HitRow]:
                 outcome=values["outcome"],
                 cached=values["cached"] == "1",
                 epoch=int(values["epoch"]),
+                phase=values["phase"],
+                origin=values["origin"],
+                battle_state=int(values["state"], 16),
             )
         )
     return rows
 
 
-def analyze(rows: list[HitRow]) -> tuple[list[tuple[HitRow, HitRow]], list[str]]:
+def analyze(rows: list[HitRow]) -> tuple[list[HitRow], list[tuple[HitRow, HitRow]], list[str]]:
     fresh_by_key: dict[tuple[object, ...], HitRow] = {}
-    pairs: list[tuple[HitRow, HitRow]] = []
+    executions: list[HitRow] = []
+    reuses: list[tuple[HitRow, HitRow]] = []
     errors: list[str] = []
     for row in rows:
+        if row.phase == "evaluation":
+            if row.cached:
+                errors.append(f"line {row.line_number}: evaluation read an execution cache entry")
+            if row.roll != -1:
+                errors.append(f"line {row.line_number}: evaluation consumed RNG roll {row.roll}")
+            continue
+
+        executions.append(row)
+        if row.roll < 0:
+            errors.append(f"line {row.line_number}: confirmed execution has no sampled roll")
+            continue
         if not row.cached:
             fresh_by_key[row.key] = row
             continue
         fresh = fresh_by_key.get(row.key)
         if fresh is None:
-            errors.append(f"line {row.line_number}: cached decision has no same-turn producer")
+            errors.append(f"line {row.line_number}: cached execution has no same-epoch producer")
             continue
         if row.decision != fresh.decision:
             errors.append(
-                f"lines {fresh.line_number}->{row.line_number}: cached decision changed "
+                f"lines {fresh.line_number}->{row.line_number}: cached execution changed "
                 f"{fresh.decision}->{row.decision}"
             )
             continue
-        pairs.append((fresh, row))
-    return pairs, errors
+        reuses.append((fresh, row))
+    return executions, reuses, errors
 
 
-def render(log: Path, rows: list[HitRow], minimum_pairs: int) -> tuple[str, bool]:
-    pairs, errors = analyze(rows)
-    if len(pairs) < minimum_pairs:
-        errors.append(f"expected at least {minimum_pairs} reused pair(s), found {len(pairs)}")
+def render(
+    log: Path,
+    rows: list[HitRow],
+    minimum_executions: int,
+    minimum_reuses: int = 0,
+) -> tuple[str, bool]:
+    executions, reuses, errors = analyze(rows)
+    fresh_executions = sum(not row.cached for row in executions)
+    evaluations = sum(row.phase == "evaluation" for row in rows)
+    if fresh_executions < minimum_executions:
+        errors.append(
+            f"expected at least {minimum_executions} fresh execution decision(s), found {fresh_executions}"
+        )
+    if len(reuses) < minimum_reuses:
+        errors.append(f"expected at least {minimum_reuses} execution reuse(s), found {len(reuses)}")
     digest = hashlib.sha256(log.read_bytes()).hexdigest().upper()
     lines = [
-        "# DCL hit forecast/execution parity live analysis",
+        "# DCL evaluation/execution RNG parity live analysis",
         "",
         f"- Log: `{log}`",
         f"- SHA-256: `{digest}`",
-        f"- Parsed turn-epoch hit rows: `{len(rows)}`",
-        f"- Exact reused pairs: `{len(pairs)}`",
+        f"- Parsed hit rows: `{len(rows)}`",
+        f"- RNG-free evaluation rows: `{evaluations}`",
+        f"- Fresh execution decisions: `{fresh_executions}`",
+        f"- Exact execution reuses: `{len(reuses)}`",
         "",
         "| Producer -> reuse | Action key | Decision |",
         "| --- | --- | --- |",
     ]
-    for fresh, cached in pairs:
+    for fresh, cached in reuses:
         key = (
             f"caster={fresh.caster} target={fresh.target} ability={fresh.ability} "
             f"type={fresh.action_type} payload={fresh.payload} weapon={fresh.weapon} "
@@ -146,22 +179,28 @@ def render(log: Path, rows: list[HitRow], minimum_pairs: int) -> tuple[str, bool
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", nargs="?", type=Path, default=DEFAULT_LOG)
-    parser.add_argument("--minimum-pairs", type=int, default=1)
+    parser.add_argument("--minimum-executions", type=int, default=1)
+    parser.add_argument("--minimum-reuses", type=int, default=0)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    if args.minimum_pairs < 1:
-        parser.error("--minimum-pairs must be positive")
+    if args.minimum_executions < 1 or args.minimum_reuses < 0:
+        parser.error("minimum executions must be positive and minimum reuses nonnegative")
     log = args.log.resolve()
     output = args.output or ROOT / "work" / f"{int(time.time())}-dcl-hit-parity-live-analysis.md"
     try:
         text = log.read_text(encoding="utf-8-sig")
-        report, passed = render(log, parse_rows(text), args.minimum_pairs)
+        report, passed = render(
+            log,
+            parse_rows(text),
+            args.minimum_executions,
+            args.minimum_reuses,
+        )
         output.write_text(report, encoding="utf-8", newline="\n")
     except OSError as error:
         print(f"ERROR: {error}")
         return 1
     print(f"wrote {output}")
-    print(f"hit forecast/execution parity {'PASS' if passed else 'FAIL'}")
+    print(f"hit evaluation/execution parity {'PASS' if passed else 'FAIL'}")
     return 0 if passed else 1
 
 

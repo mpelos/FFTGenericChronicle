@@ -1,0 +1,4 @@
+[DCL-CANONICAL-ADMISSION-HOOK] rva=0x281EFA addr=0x7FF612345678
+[DCL-STATE-RESET] generation=12 reason=battle-start canonicalBattle=1
+[DCL-CANONICAL-ADMISSION] sweep=7 action=1001 source=2:0x22 actionType=0x02 ability=16 selected=4:0x44 tile=10,0,12 repeat=0/1 strikes=1 targetCount=1 targets=[4:0x44] complete=1 admissionStatus=Published templateStatus=Built ticketStatus=Published bridgeStatus=Published
+[DAMAGE ptr=0x141855CE0 id=0x44] 199 -> 128 = 71 sampleAgeMs=27

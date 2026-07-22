@@ -42,6 +42,12 @@ The reset occurs whether the unit moved, acted, waited, or did nothing. Unspent 
 never retains CT. Equal gain and equal reset preserve the initial phase ordering unless Haste, Slow,
 Quick, Stop, or another explicit CT effect changes it.
 
+When several units become eligible at the same GlobalCT boundary, the scheduler grants the highest
+current CT first, then the earlier initial initiative rank, then the stable unit index. One granted
+turn remains active until its turn-completion boundary; GlobalCT and other unit turns do not advance
+through an active turn. The selected unit resets to zero when the turn is granted, while other
+eligible units retain their CT and wait in the same boundary order.
+
 Timed magical effects may consume the global CT clock without restoring Speed-based turn
 frequency. Their timing rules are owned by
 [Casting, Charge, and Magic Targeting](12-casting-charge-and-targeting.md) and

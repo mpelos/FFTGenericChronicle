@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace fftivc.generic.chronicle.codemod;
 
 internal enum DclStrengthDamageMode
@@ -13,11 +15,45 @@ internal readonly record struct DclDiceExpression
 
     public DclDiceExpression(int dice, int adds)
     {
-        if (dice < 1)
-            throw new ArgumentOutOfRangeException(nameof(dice), "DCL damage expressions require at least one d6.");
+        if (dice < 0)
+            throw new ArgumentOutOfRangeException(nameof(dice), "DCL dice expressions cannot contain negative dice.");
         Dice = dice;
         Adds = adds;
     }
+
+    public static bool TryParseAuthored(string? text, out DclDiceExpression expression)
+    {
+        expression = default;
+        if (string.IsNullOrEmpty(text) || !string.Equals(text, text.Trim(), StringComparison.Ordinal))
+            return false;
+        int marker = text.IndexOf("d6", StringComparison.Ordinal);
+        if (marker <= 0 || text.IndexOf("d6", marker + 2, StringComparison.Ordinal) >= 0)
+            return false;
+        if (!int.TryParse(text.AsSpan(0, marker), NumberStyles.None, CultureInfo.InvariantCulture, out int dice))
+            return false;
+        ReadOnlySpan<char> suffix = text.AsSpan(marker + 2);
+        int adds = 0;
+        if (!suffix.IsEmpty)
+        {
+            if (suffix.Length < 2 || suffix[0] is not ('+' or '-') ||
+                !int.TryParse(suffix, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out adds))
+                return false;
+        }
+        try
+        {
+            expression = new DclDiceExpression(dice, adds);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
+    }
+
+    public static DclDiceExpression ParseAuthored(string text)
+        => TryParseAuthored(text, out DclDiceExpression expression)
+            ? expression
+            : throw new FormatException($"'{text}' is not a canonical Xd6+Y expression.");
 
     public DclDiceExpression AddAndNormalize(int modifier)
     {
